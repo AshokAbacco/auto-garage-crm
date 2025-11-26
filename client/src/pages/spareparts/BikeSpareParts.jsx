@@ -244,7 +244,7 @@ export default function BikeSpareParts() {
                 </div>
 
                 {/* CSS for infinite scroll animation */}
-                <style jsx>{`
+                <style>{`
                     @keyframes scroll-left-to-right {
                         0% {
                             transform: translateX(0);

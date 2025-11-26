@@ -46,6 +46,8 @@ import ReferencePage from "./pages/ReferenceT&C.jsx";
 import BikeDashboard from "./bikePages/BikeDashboard.jsx";
 import WashDashboard from "./washPages/WashDashboard.jsx";
 import Reference from "./pages/Reference.jsx";
+import BikeRegister from "./pages/BikeRegister.jsx";
+import WashRegister from "./pages/WashRegister.jsx";
 
 function App() {
   return (
@@ -70,6 +72,8 @@ function App() {
         {/* Login route (public) */}
         <Route path="/login" element={<Login />} />
         <Route path="/car-register" element={<CarRegister />} />
+        <Route path="/bike-register" element={<BikeRegister />} />
+        <Route path="/washing-register" element={<WashRegister />} />
 
 
         {/* Protected routes */}

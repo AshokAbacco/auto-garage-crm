@@ -23,6 +23,7 @@ const PaymentModal = ({
     plan,
     billingPeriod,
     isDark,
+    planType,    
     onClose,
     onComplete,
 }) => {
@@ -55,6 +56,7 @@ const PaymentModal = ({
     useEffect(() => {
         if (showSuccess && paymentResponse) {
             const timer = setTimeout(() => {
+
                 onComplete(plan, formData);
 
                 const cleanPlan = {
@@ -62,26 +64,50 @@ const PaymentModal = ({
                     numericPrice: plan.numericPrice,
                 };
 
-                navigate('/car-register', {
-                    state: {
-                        paymentData: {
-                            plan: cleanPlan,
-                            billingPeriod,
-                            finalPrice: billingPeriod === 'yearly'
-                                ? Math.round(plan.numericPrice * 12 * 0.9)
-                                : plan.numericPrice,
-                            formData,
-                            paymentId: paymentResponse.razorpay_payment_id
-                        }
-                    }
-                });
+                const finalPriceCalc =
+                    billingPeriod === "yearly"
+                        ? Math.round(plan.numericPrice * 12 * 0.9)
+                        : plan.numericPrice;
+
+                const stateData = {
+                    paymentData: {
+                        plan: cleanPlan,
+                        billingPeriod,
+                        finalPrice: finalPriceCalc,
+                        formData,
+                        paymentId: paymentResponse.paymentId,   // FIXED
+                        subscriptionId: paymentResponse.subscriptionId, // added
+                    },
+                };
+
+                // 🔥 Dynamic redirect by plan type
+                if (planType === "car") {
+                    navigate("/car-register", { state: stateData });
+                } else if (planType === "bike") {
+                    navigate("/bike-register", { state: stateData });
+                } else if (planType === "washing") {
+                    navigate("/washing-register", { state: stateData });
+                } else {
+                    navigate("/car-register", { state: stateData });
+                }
 
                 setIsProcessing(false);
             }, 2000);
 
             return () => clearTimeout(timer);
         }
-    }, [showSuccess, paymentResponse, plan, formData, billingPeriod, navigate, onComplete]);
+    }, [
+        showSuccess,
+        paymentResponse,
+        plan,
+        formData,
+        billingPeriod,
+        navigate,
+        onComplete,
+        planType
+    ]);
+
+
 
     if (!show || !plan) return null;
 
@@ -103,100 +129,64 @@ const PaymentModal = ({
         return Object.keys(newErrors).length === 0;
     };
 
-    const handlePayment = async () => {
-        if (!validateForm()) return;
+const handlePayment = async () => {
+  if (!validateForm()) return;
 
-        setIsProcessing(true);
-        const API = import.meta.env.VITE_API_BASE_URL;;
+  setIsProcessing(true);
+  const API = "http://localhost:5000";
 
-        // 1️⃣ Create Order
-        const orderRes = await fetch(`${API}/api/payments/create-order`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount: finalPrice }),
-        });
+  // 1️⃣ Create subscription
+  const subRes = await fetch(`${API}/api/payments/create-subscription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan: {
+          name: plan.name,
+          numericPrice: plan.numericPrice,
+        },
+        billingPeriod,
+        customer: { ...formData },
+      }),
+  });
 
-        const orderData = await orderRes.json();
-        if (!orderData.success) {
-            alert("Failed to create order");
-            setIsProcessing(false);
-            return;
-        }
+  const data = await subRes.json();
 
-        // 2️⃣ Save form BEFORE payment
-        await fetch(`${API}/api/payments/save-form`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                customerName: formData.name,
-                companyName: formData.companyName,
-                email: formData.email,
-                phone: formData.phone,
-                referenceCode: formData.referenceCode,
-                gstNumber: formData.gstNumber, // Added GST number
-                plan: plan.name,
-                billingPeriod,
-                amount: finalPrice,
-                orderId: orderData.order.id,
-            }),
-        });
+  if (!data.success) {
+    alert(data.error || "Failed to create subscription");
+    setIsProcessing(false);
+    return;
+  }
 
-        // 3️⃣ Razorpay Options
-        const options = {
-            key: "rzp_test_ReqQSmLnQ60S7l",
-            order_id: orderData.order.id,
-            amount: finalPrice * 100,
-            currency: "INR",
-            name: "Abacco Technology",
-            description: `${plan.name} Plan Subscription`,
+  const subscription = data.subscription;
 
-            prefill: {
-                name: formData.name,
-                email: formData.email,
-                contact: formData.phone,
-            },
+  // 2️⃣ Call Razorpay
+  const options = {
+    key: "rzp_live_**********7IE",
+    subscription_id: subscription.id,
+    name: "Abacco Technology",
+    description: `${plan.name} Plan - 7 Day Trial`,
+    prefill: {
+      name: formData.name,
+      email: formData.email,
+      contact: formData.phone,
+    },
+    theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
 
-            notes: {
-                companyName: formData.companyName,
-                plan: plan.name,
-                billingPeriod,
-                referenceCode: formData.referenceCode,
-                gstNumber: formData.gstNumber, // Added GST number
-            },
+    handler: function (response) {
+      setPaymentResponse({
+        paymentId: response.razorpay_payment_id,
+        subscriptionId: response.razorpay_subscription_id,
+        signature: response.razorpay_signature,
+      });
 
-            // ⭐ FIXED — MUST CALL VERIFY API HERE
-            handler: async function (response) {
-                console.log("Payment Success, verifying...");
+      setShowSuccess(true);
+    },
+  };
 
-                const verifyRes = await fetch(`${API}/api/payments/verify`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_signature: response.razorpay_signature,
-                    }),
-                });
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+};
 
-                const verifyData = await verifyRes.json();
-                console.log("VERIFY RESULT:", verifyData);
-
-                if (verifyData.success) {
-                    setPaymentResponse(response);
-                    setShowSuccess(true);
-                } else {
-                    alert("Payment verification failed!");
-                    setIsProcessing(false);
-                }
-            },
-
-            theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
-        };
-
-        // 4️⃣ Open Razorpay Checkout
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-    };
 
     const formFields = [
         {

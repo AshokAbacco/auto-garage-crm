@@ -207,7 +207,7 @@ model OcrRecord {
 model Payment {
   id String @id @default(cuid())
 
-  // Customer details (saved before payment)
+  // Customer Details
   customerName  String?
   companyName   String?
   email         String?
@@ -216,17 +216,24 @@ model Payment {
   billingPeriod String?
   amount        Float?
 
-  referralCode String? // <-- ADD THIS (from formData.referenceCode)
-  gstNumber    String? // <-- ADD THIS
+  referralCode String?
+  gstNumber    String?
 
-  // Razorpay details (saved after payment)
+  // One-time order fields (not used for trial system anymore)
   paymentId String? @unique
-  orderId   String  @unique
+  orderId   String? @unique
   signature String?
 
-  status     String    @default("PENDING")
+  // 🔥 Subscription Fields
+  subscriptionId  String? // Razorpay subscription ID
+  isTrial         Boolean   @default(false)
+  trialEndDate    DateTime?
+  nextBillingDate DateTime?
+  status          String    @default("PENDING") // PENDING | TRIAL | ACTIVE | CANCELLED
+
   paidAt     DateTime?
   expiryDate DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

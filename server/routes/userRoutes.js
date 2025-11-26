@@ -32,7 +32,7 @@ router.put("/change-password", protect, changePassword);
 
 // Upload profile image
 
-router.post("/upload-image", protect, upload.single("image"), uploadProfileImage); 
+router.post("/upload-image", protect, uploadProfileImage);
 
 
 export default router;

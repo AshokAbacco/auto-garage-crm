@@ -240,38 +240,7 @@ const CarRegister = () => {
                   You're one step away from accessing the most powerful garage management platform.
                 </p>
               </div>
-
-              {/* Benefits List */}
-              <div className="space-y-3">
-                {[
-                  { icon: Shield, text: "Secure Payment Verified", color: "green" },
-                  { icon: CheckCircle, text: "Account Almost Ready", color: "blue" },
-                  { icon: Sparkles, text: "Premium Features Awaiting", color: "purple" }
-                ].map((feature, index) => {
-                  const Icon = feature.icon;
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-center gap-4 p-4 rounded-xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 cursor-pointer ${
-                        isDark
-                          ? 'bg-white/5 border-white/10 hover:bg-white/10'
-                          : 'bg-white/40 border-white/60 hover:bg-white/70'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg bg-gradient-to-br from-${feature.color}-500 to-${feature.color}-600`}>
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <span className={`font-medium ${
-                        isDark ? 'text-gray-200' : 'text-gray-800'
-                      }`}>
-                        {feature.text}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* ⭐ Important Notice */}
+               {/* ⭐ Important Notice */}
               <div className={`relative p-5 rounded-2xl border-2 backdrop-blur-sm overflow-hidden ${
                 isDark
                   ? 'bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/30'
@@ -303,6 +272,38 @@ const CarRegister = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Benefits List */}
+              <div className="space-y-3">
+                {[
+                  { icon: Shield, text: "Secure Payment Verified", color: "green" },
+                  { icon: CheckCircle, text: "Account Almost Ready", color: "blue" },
+                  { icon: Sparkles, text: "Premium Features Awaiting", color: "purple" }
+                ].map((feature, index) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-4 p-4 rounded-xl backdrop-blur-sm border transition-all duration-300 hover:scale-105 cursor-pointer ${
+                        isDark
+                          ? 'bg-white/5 border-white/10 hover:bg-white/10'
+                          : 'bg-white/40 border-white/60 hover:bg-white/70'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-lg bg-gradient-to-br from-${feature.color}-500 to-${feature.color}-600`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <span className={`font-medium ${
+                        isDark ? 'text-gray-200' : 'text-gray-800'
+                      }`}>
+                        {feature.text}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+             
             </div>
           </div>
 

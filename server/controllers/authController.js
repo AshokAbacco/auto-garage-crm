@@ -98,31 +98,34 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // Detect if identifier is email or username
     const isEmail = identifier.includes("@");
 
     const user = await prisma.user.findFirst({
-      where: isEmail
-        ? { email: identifier }
-        : { username: identifier },
+      where: isEmail ? { email: identifier } : { username: identifier },
     });
 
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 🚨 Check CRM access permission
+    // CRM permission check
     if (!user.allowedCrms.includes(crmType.toUpperCase())) {
       return res.status(403).json({
         message: `You do not have access to the ${crmType} CRM`,
       });
     }
+
+    // ⭐ Fetch the user's company name from payment table
+    const userPayment = await prisma.payment.findFirst({
+      where: { email: user.email },
+      orderBy: { createdAt: "desc" },
+      select: { companyName: true },
+    });
 
     const token = generateToken(user);
 
@@ -137,6 +140,7 @@ export const loginUser = async (req, res) => {
         profileImage: user.profileImage || null,
         allowedCrms: user.allowedCrms,
         crmType,
+        companyName: userPayment?.companyName || null, // ⭐ added
       },
     });
   } catch (error) {
@@ -146,6 +150,7 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -226,5 +231,32 @@ export const verifyToken = async (req, res) => {
       valid: false,
       message: "Invalid or expired token",
     });
+  }
+};
+
+/**
+ * @desc Delete user account
+ * @route DELETE /api/auth/delete
+ * @access Private
+ */
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Delete user-related payment records (if needed)
+    await prisma.payment.deleteMany({
+      where: { email: req.user.email }
+    });
+
+    // Delete user
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+
+    return res.status(200).json({ message: "Account deleted successfully" });
+
+  } catch (error) {
+    console.error("❌ Delete Account Error:", error);
+    return res.status(500).json({ message: "Failed to delete account" });
   }
 };

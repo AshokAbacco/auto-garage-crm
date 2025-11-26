@@ -30,8 +30,18 @@ export default function Profile() {
       newPassword: "",
     });
 
-    setImagePreview(storedUser?.profileImage || null);
-  }, []);
+   }, []);
+
+  useEffect(() => {
+  if (user?.profileImage) {
+    if (user.profileImage.startsWith("data:image")) {
+      setImagePreview(user.profileImage);
+    } else {
+      setImagePreview(`data:image/png;base64,${user.profileImage}`);
+    }
+  }
+}, [user]);
+
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -59,30 +69,31 @@ export default function Profile() {
     reader.readAsDataURL(file);
   };
 
-  const uploadImage = async (base64Image) => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(base64Image);
-    const blob = await res.blob();
-    const formData = new FormData();
-    formData.append("image", blob, "profile.png");
+const uploadImage = async (base64Image) => {
+  const token = localStorage.getItem("token");
 
-    try {
-      const response = await fetch(`${API_URL}/api/user/upload-image`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+  try {
+    const response = await fetch(`${API_URL}/api/user/upload-image`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ image: base64Image }),
+    });
 
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
-        window.dispatchEvent(new Event("user-updated"));
-      }
-    } catch (err) {
-      console.error("Error uploading image:", err);
+    const data = await response.json();
+
+    if (response.ok) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+      window.dispatchEvent(new Event("user-updated"));
     }
-  };
+  } catch (err) {
+    console.error("Error uploading image:", err);
+  }
+};
+
 
   const handleSave = async () => {
     const token = localStorage.getItem("token");
@@ -140,6 +151,38 @@ export default function Profile() {
     navigate("/car-dashboard");
     };
   
+const handleDeleteAccount = async () => {
+  if (!window.confirm("Are you sure? Your account will be permanently deleted!")) return;
+
+  const token = localStorage.getItem("token");
+
+  try {
+    const response = await fetch(`${API_URL}/api/auth/delete`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("Your account has been deleted.");
+
+      // Clear local storage
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Redirect to login
+      navigate("/");
+    } else {
+      alert(data.message || "Failed to delete your account");
+    }
+  } catch (err) {
+    console.error("Delete error:", err);
+    alert("Error deleting account.");
+  }
+};
 
 
   return (
@@ -406,7 +449,24 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+    
+
         </div>
+              {/* Delete Account Section */}
+          <div className="mt-10 p-4 rounded-xl border border-red-400 bg-red-500/10">
+            <h2 className="text-red-500 font-bold text-lg mb-2">Delete Account</h2>
+            <p className={`${isDark ? "text-red-300" : "text-red-600"} text-sm mb-4`}>
+              Once you delete your account, all your data will be permanently removed. This action cannot be undone.
+            </p>
+
+            <button
+              onClick={handleDeleteAccount}
+              className="w-full py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all"
+            >
+              Delete My Account
+            </button>
+          </div>
       </div>
 
       <style jsx>{`

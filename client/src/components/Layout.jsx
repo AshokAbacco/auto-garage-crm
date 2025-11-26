@@ -43,15 +43,19 @@ export default function Layout() {
     JSON.parse(localStorage.getItem("user")) || {}
   );
 
-  useEffect(() => {
-    const handleUserUpdate = () => {
-      const updatedUser = JSON.parse(localStorage.getItem("user"));
-      setUser(updatedUser);
-    };
+useEffect(() => {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  if (storedUser) setUser(storedUser);
 
-    window.addEventListener("user-updated", handleUserUpdate);
-    return () => window.removeEventListener("user-updated", handleUserUpdate);
-  }, []);
+  const handleUserUpdate = () => {
+    const updatedUser = JSON.parse(localStorage.getItem("user"));
+    setUser(updatedUser);
+  };
+
+  window.addEventListener("user-updated", handleUserUpdate);
+  return () => window.removeEventListener("user-updated", handleUserUpdate);
+}, []);
+
   const logout = () => {
     localStorage.removeItem("auth");
     navigate("/login", { replace: true });
@@ -103,7 +107,8 @@ export default function Layout() {
                     isDark ? "text-white" : "text-gray-800"
                   } text-xl transition-opacity duration-300`}
                 >
-                  Motor Desk
+                  {user?.companyName || "Motor Desk"}
+
                 </div>
               )}
             </div>
@@ -218,7 +223,8 @@ export default function Layout() {
                     isDark ? "text-white" : "text-gray-800"
                   }`}
                 >
-                  Motor Desk
+                  {user?.companyName || "Motor Desk"}
+
                 </div>
               </div>
             </div>
@@ -308,13 +314,13 @@ export default function Layout() {
                         setOpenProfileMenu(false);
                       }}
                       className={`
-    w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
-    ${
-      isDark
-        ? "text-gray-200 hover:bg-gray-700"
-        : "text-gray-800 hover:bg-gray-100"
-    }
-  `}
+                        w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
+                        ${
+                          isDark
+                            ? "text-gray-200 hover:bg-gray-700"
+                            : "text-gray-800 hover:bg-gray-100"
+                        }
+                      `}
                     >
                       Profile
                     </button>

@@ -113,25 +113,23 @@ export const changePassword = async (req, res) => {
  */
 export const uploadProfileImage = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No image provided" });
-    }
+    const { image } = req.body;
 
-    // ALWAYS store full public URL
-    const fileUrl = `${API_URL}/uploads/${req.file.filename}`;
+    if (!image) {
+      return res.status(400).json({ message: "Image is required" });
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
-      data: { profileImage: fileUrl },
+      data: { profileImage: image },
     });
 
-    return res.json({
-      message: "Image uploaded successfully",
+    return res.status(200).json({
+      message: "Profile image updated",
       user: updatedUser,
     });
   } catch (error) {
     console.error("Upload Image Error:", error);
-    res.status(500).json({ message: "Failed to upload image" });
+    return res.status(500).json({ message: "Server error updating image" });
   }
 };
-

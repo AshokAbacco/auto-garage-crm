@@ -225,7 +225,7 @@ model Payment {
   signature String?
 
   // 🔥 Subscription Fields
-  subscriptionId  String? // Razorpay subscription ID
+  subscriptionId  String? @unique
   isTrial         Boolean   @default(false)
   trialEndDate    DateTime?
   nextBillingDate DateTime?
@@ -237,3 +237,4 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+

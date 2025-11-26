@@ -1,3 +1,4 @@
+//client/src/payment/PaymentModal.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -45,12 +46,18 @@ const PaymentModal = ({
 
     // Load Razorpay script when component mounts
     useEffect(() => {
+        if (document.getElementById("razorpay-js")) {
+            setRazorpayLoaded(true);
+            return;
+        }
         const script = document.createElement("script");
+        script.id = "razorpay-js";
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
         script.async = true;
         script.onload = () => setRazorpayLoaded(true);
         document.body.appendChild(script);
     }, []);
+
 
     // Handle navigation when payment is successful
     useEffect(() => {
@@ -129,63 +136,95 @@ const PaymentModal = ({
         return Object.keys(newErrors).length === 0;
     };
 
-const handlePayment = async () => {
-  if (!validateForm()) return;
+    const handlePayment = async () => {
+        if (!validateForm()) return;
+        if (!razorpayLoaded) return alert("Razorpay is still loading…");
 
-  setIsProcessing(true);
-  const API = "http://localhost:5000";
+        setIsProcessing(true);
 
-  // 1️⃣ Create subscription
-  const subRes = await fetch(`${API}/api/payments/create-subscription`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan: {
-          name: plan.name,
-          numericPrice: plan.numericPrice,
-        },
-        billingPeriod,
-        customer: { ...formData },
-      }),
-  });
+        const API =
+            window.location.hostname === "localhost"
+                ? "http://localhost:5000"
+                : "https://auto-garage-crm-zrxc.onrender.com";
 
-  const data = await subRes.json();
+        // 1️⃣ Create subscription on backend
+        const subRes = await fetch(`${API}/api/payments/create-subscription`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                plan: {
+                    name: plan.name,
+                    numericPrice: plan.numericPrice,
+                },
+                billingPeriod,
+                customer: { ...formData },
+            }),
+        });
 
-  if (!data.success) {
-    alert(data.error || "Failed to create subscription");
-    setIsProcessing(false);
-    return;
-  }
+        const data = await subRes.json();
+        if (!data.success) {
+            alert(data.error || "Failed to create subscription");
+            setIsProcessing(false);
+            return;
+        }
 
-  const subscription = data.subscription;
+        const subscription = data.subscription;
+        const razorpayKey = data.razorpayKey;
 
-  // 2️⃣ Call Razorpay
-  const options = {
-    key: "rzp_live_**********7IE",
-    subscription_id: subscription.id,
-    name: "Abacco Technology",
-    description: `${plan.name} Plan - 7 Day Trial`,
-    prefill: {
-      name: formData.name,
-      email: formData.email,
-      contact: formData.phone,
-    },
-    theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
+        // 2️⃣ Razorpay Checkout
+        const options = {
+            key: razorpayKey,
+            subscription_id: subscription.id,
+            name: "Abacco Technology",
+            description: `${plan.name} Plan - 7 Day Trial`,
+            theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
 
-    handler: function (response) {
-      setPaymentResponse({
-        paymentId: response.razorpay_payment_id,
-        subscriptionId: response.razorpay_subscription_id,
-        signature: response.razorpay_signature,
-      });
+            prefill: {
+                name: formData.name,
+                email: formData.email,
+                contact: formData.phone,
+            },
 
-      setShowSuccess(true);
-    },
-  };
+            handler: async function (response) {
+                // For production Razorpay webhook will activate plan.
 
-  const rzp = new window.Razorpay(options);
-  rzp.open();
-};
+                // 🔥 For localhost, verify manually
+                if (window.location.hostname === "localhost") {
+                    await fetch(`${API}/api/payments/verify-payment-localhost`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            subscriptionId: response.razorpay_subscription_id,
+                            paymentId: response.razorpay_payment_id,
+                        }),
+                    });
+                }
+
+                setPaymentResponse({
+                    paymentId: response.razorpay_payment_id,
+                    subscriptionId: response.razorpay_subscription_id,
+                    signature: response.razorpay_signature,
+                });
+
+                setShowSuccess(true);
+            },
+        };
+
+        const rzp = new window.Razorpay(options);
+
+        // 3️⃣ Handle failures & dismiss
+        rzp.on("payment.failed", function () {
+            alert("Payment failed. Please try again.");
+            setIsProcessing(false);
+        });
+
+        rzp.on("checkout.closed", function () {
+            setIsProcessing(false);
+        });
+
+        rzp.open();
+    };
+
 
 
     const formFields = [

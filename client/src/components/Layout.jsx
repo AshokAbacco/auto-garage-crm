@@ -36,6 +36,7 @@ export default function Layout() {
     { to: "/ocr-scanner", label: "OCR Scanner", icon: FileText },
     { to: "/plan", label: "Your Plan", icon: IndianRupee },
     { to: "/reference", label: "Reference", icon: Network },
+    { to: "/upgrade", label: "Upgrade", icon: Network },
   ];
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);

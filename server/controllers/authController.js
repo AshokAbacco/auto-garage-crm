@@ -124,7 +124,7 @@ export const loginUser = async (req, res) => {
     const userPayment = await prisma.payment.findFirst({
       where: { email: user.email },
       orderBy: { createdAt: "desc" },
-      select: { companyName: true },
+      select: { companyName: true, phone: true },
     });
 
     const token = generateToken(user);
@@ -140,9 +140,11 @@ export const loginUser = async (req, res) => {
         profileImage: user.profileImage || null,
         allowedCrms: user.allowedCrms,
         crmType,
-        companyName: userPayment?.companyName || null, // ⭐ added
+        companyName: userPayment?.companyName || null,
+        phone: userPayment?.phone || null,   // ⭐ ADD THIS
       },
     });
+
   } catch (error) {
     console.error("❌ Login Error:", error);
     return res.status(500).json({

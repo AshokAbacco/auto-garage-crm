@@ -97,7 +97,7 @@ router.post("/create-subscription", async (req, res) => {
     // Apply trial window
     if (useTrial && isProduction) {
       // subscriptionPayload.start_at = Math.floor((Date.now() + 1 * 24 * 60 * 60 * 1000) / 1000);
-      subscriptionPayload.start_at = Math.floor((Date.now() + 10 * 60 * 1000) / 1000);
+      subscriptionPayload.start_at = Math.floor((Date.now() + 5 * 60 * 1000) / 1000);
     }
 
 
@@ -228,6 +228,9 @@ router.post("/verify-payment-localhost", async (req, res) => {
      but best practice is to use raw body for signature verification.
 ---------------------------------------------- */
 router.post("/razorpay-webhook", async (req, res) => {
+  console.log("\n============================");
+  console.log("📥 Webhook HIT! Razorpay is calling the server");
+  console.log("============================\n");
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {

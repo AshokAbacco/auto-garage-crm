@@ -42,7 +42,7 @@ import Profile from "./components/Profile.jsx";
 import Plans from "./pages/plans/Plans.jsx";
 import RefundPage from "./pages/RefundT&C.jsx";
 import ReferencePage from "./pages/ReferenceT&C.jsx";
-
+import UpgradePlans from "./payment/upgrade/UpgradePlans.jsx";
 import BikeDashboard from "./bikePages/BikeDashboard.jsx";
 import WashDashboard from "./washPages/WashDashboard.jsx";
 import Reference from "./pages/Reference.jsx";
@@ -107,7 +107,7 @@ function App() {
           <Route path="/plan" element={<Plans />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/reference" element={<Reference />} />
-
+          <Route path="/upgrade" element={<UpgradePlans />} />
         </Route>
 
 

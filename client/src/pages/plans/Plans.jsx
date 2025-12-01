@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
+
 import {
   FiAlertTriangle,
   FiCheckCircle,
@@ -7,7 +8,6 @@ import {
   FiUser,
   FiCreditCard,
   FiClock,
-  FiInfo,
 } from "react-icons/fi";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -17,7 +17,7 @@ export default function Plans() {
   const [planInfo, setPlanInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [debugInfo, setDebugInfo] = useState({});
+  const [openIndex, setOpenIndex] = useState(null); // accordion state
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userEmail = user?.email;
@@ -25,258 +25,229 @@ export default function Plans() {
   useEffect(() => {
     const loadPlan = async () => {
       try {
-        // Debug: Log the email being used
-        console.log("Fetching plan for email:", userEmail);
-        setDebugInfo(prev => ({ ...prev, userEmail }));
-
-        const res = await fetch(`${API_BASE}/api/payments/user-plan/${encodeURIComponent(userEmail)}`);
+        const res = await fetch(
+          `${API_BASE}/api/payments/user-plan/${encodeURIComponent(
+            userEmail
+          )}`
+        );
         const data = await res.json();
 
-        // Debug: Log the response
-        console.log("API Response:", data);
-        setDebugInfo(prev => ({ ...prev, apiResponse: data }));
-
-        if (data.success) {
-          setPlanInfo(data.payment);
+        if (data.currentPlan || data.previousPlan) {
+          setPlanInfo({
+            current: data.currentPlan,
+            previous: data.previousPlan,
+            history: data.history || [],
+          });
           setError(null);
         } else {
-          setError(data.message || "No plan found");
-          setPlanInfo(null);
+          setError(data.message || "No plans found");
         }
       } catch (err) {
-        console.error("Plan fetch error:", err);
-        setError("Failed to fetch plan information");
-        setDebugInfo(prev => ({ ...prev, fetchError: err.message }));
+        setError("Failed to fetch plan info");
       } finally {
         setLoading(false);
       }
     };
 
-    if (userEmail) {
-      loadPlan();
-    } else {
-      setLoading(false);
-      setError("User email not found. Please log in again.");
-      setDebugInfo(prev => ({ ...prev, userNotFound: true }));
-    }
+    if (userEmail) loadPlan();
   }, [userEmail]);
-
-  // Debug: Render debug information in development
 
   if (loading)
     return (
-      <div
-        className={`min-h-screen p-6 flex justify-center items-center ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
-          }`}
-      >
+      <div className="min-h-screen flex justify-center items-center">
         Loading...
       </div>
     );
 
-  if (error || !planInfo)
+  if (!planInfo)
     return (
-      <div
-        className={`min-h-screen p-6 flex justify-center items-center ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
-          }`}
-      >
-        <div
-          className={`rounded-3xl p-8 shadow-lg text-center ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <FiInfo className="mx-auto text-4xl mb-3 text-blue-400" />
-          <h2 className="text-xl font-semibold">No Active Plan</h2>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            {error || "You have not purchased any plan yet."}
-          </p>
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="p-8 rounded-xl bg-white shadow">
+          <h2>No Active Plans</h2>
+          <p>{error}</p>
         </div>
       </div>
     );
 
-  // Determine plan status and dates
-  const isTrial = planInfo.status === "TRIAL";
-  const isActive = planInfo.status === "ACTIVE";
-
-  // Get the most relevant expiry date
-  const getExpiryDate = () => {
-    // For trial plans, use trialEndDate
-    if (isTrial && planInfo.trialEndDate) {
-      return new Date(planInfo.trialEndDate);
-    }
-    // For active plans, use expiryDate or nextBillingDate
-    if (planInfo.expiryDate) {
-      return new Date(planInfo.expiryDate);
-    }
-    if (planInfo.nextBillingDate) {
-      return new Date(planInfo.nextBillingDate);
-    }
-    return null;
-  };
-
-  const expiryDate = getExpiryDate();
-  const today = new Date();
-  const daysLeft = expiryDate
-    ? Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24))
-    : 0;
-
-  const isExpired = daysLeft <= 0;
-
   return (
     <div
-      className={`min-h-screen p-6 lg:ml-16 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
-        }`}
+      className={`min-h-screen p-6 ${
+        isDark ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+      }`}
     >
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Page Header */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h1 className="text-3xl font-bold">Your Subscription Plan</h1>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            View your plan, status & renewal details.
-          </p>
-          
-        </div>
-
-        {/* Status Messages */}
-        {isExpired && (
-          <div className="rounded-2xl p-5 shadow-lg bg-red-100 border border-red-400 text-red-800 flex items-center gap-3">
-            <FiAlertTriangle className="text-2xl" />
-            <p className="font-semibold">
-              Your plan has expired. Please renew to continue using services.
-            </p>
-          </div>
+        {/* Current Plan */}
+        {planInfo.current && (
+          <PlanCard
+            title="Current Plan"
+            data={planInfo.current}
+            isDark={isDark}
+          />
         )}
 
-        {isActive && daysLeft <= 3 && daysLeft > 0 && (
-          <div className="rounded-2xl p-5 shadow-lg bg-yellow-100 border border-yellow-400 text-yellow-800 flex items-center gap-3">
-            <FiAlertTriangle className="text-2xl" />
-            <p className="font-semibold">
-              Your plan expires in <b>{daysLeft} days</b>. Renewal upcoming.
-            </p>
-          </div>
+        {/* Previous Plan */}
+        {planInfo.previous && (
+          <PlanCard
+            title="Previous Plan"
+            data={planInfo.previous}
+            isDark={isDark}
+          />
         )}
 
-        {isTrial && !isExpired && (
-          <div className="rounded-2xl p-5 shadow-lg bg-blue-100 border border-blue-400 text-blue-800 flex items-center gap-3">
-            <FiClock className="text-2xl" />
-            <p className="font-semibold">
-              You are on a <b>7-day free trial</b>.
-              {daysLeft > 0 ? (
-                <> <b>{daysLeft} days</b> remaining.</>
-              ) : (
-                "Trial ended."
-              )}
-            </p>
+        {/* History Section */}
+        {planInfo.history && planInfo.history.length > 2 && (
+          <div className={`rounded-3xl p-8 shadow-lg mt-6 ${isDark ? "bg-gray-800" : "bg-white"}`}>
+
+            <h2 className="text-2xl font-bold mb-4">Plan History</h2>
+
+            <div className="space-y-4">
+              {planInfo.history.map((item, index) => (
+                <div key={index} className="border rounded-xl overflow-hidden">
+                  {/* Header */}
+                  <div
+                    className="p-4 cursor-pointer flex justify-between items-center hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() =>
+                      setOpenIndex(openIndex === index ? null : index)
+                    }
+                  >
+                    <div>
+                      <p className="font-semibold text-lg">{item.plan}</p>
+                      <p className="text-sm text-gray-500">{item.status}</p>
+                    </div>
+                    <span className="text-xl">
+                      {openIndex === index ? "▲" : "▼"}
+                    </span>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {openIndex === index && (
+                    <div
+                      className={`p-4 space-y-2 ${
+                        isDark ? "bg-gray-700" : "bg-gray-50"
+                      }`}
+                    >
+                      <HistDetail label="Billing Period" value={item.billingPeriod} />
+                      <HistDetail label="Amount" value={`₹${item.amount}`} />
+                      <HistDetail label="Subscription ID" value={item.subscriptionId} />
+                      <HistDetail label="Payment ID" value={item.paymentId || "Not Available"} />
+                      <HistDetail
+                        label="Paid At"
+                        value={
+                          item.paidAt
+                            ? new Date(item.paidAt).toLocaleString()
+                            : "Pending"
+                        }
+                      />
+                      <HistDetail
+                        label="Expiry Date"
+                        value={
+                          item.expiryDate
+                            ? new Date(item.expiryDate).toLocaleDateString()
+                            : "N/A"
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
-
-        {/* MAIN PLAN CARD */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg space-y-6 ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-2xl font-bold flex items-center gap-3">
-            <FiCreditCard className="text-green-500" />
-            {planInfo.plan} Plan
-          </h2>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <DetailItem
-              icon={<FiUser />}
-              title="Customer Name"
-              value={planInfo.customerName}
-              isDark={isDark}
-            />
-
-            <DetailItem
-              icon={<FiClock />}
-              title="Billing Period"
-              value={planInfo.billingPeriod}
-              isDark={isDark}
-            />
-
-            {planInfo.paidAt && (
-              <DetailItem
-                icon={<FiCalendar />}
-                title="Purchased On"
-                value={new Date(planInfo.paidAt).toLocaleDateString()}
-                isDark={isDark}
-              />
-            )}
-
-            <DetailItem
-              icon={<FiCalendar />}
-              title={isTrial ? "Trial Ends On" : "Plan Expiry Date"}
-              value={expiryDate ? expiryDate.toLocaleDateString() : "Not available"}
-              isDark={isDark}
-            />
-
-            {isActive && (
-              <DetailItem
-                icon={<FiCalendar />}
-                title="Next Renewal"
-                value={planInfo.nextBillingDate
-                  ? new Date(planInfo.nextBillingDate).toLocaleDateString()
-                  : "Not available"}
-                isDark={isDark}
-              />
-            )}
-
-            <DetailItem
-              icon={<FiCheckCircle />}
-              title="Status"
-              value={planInfo.status}
-              isDark={isDark}
-            />
-
-            {planInfo.amount && (
-              <DetailItem
-                icon={<FiCreditCard />}
-                title="Amount"
-                value={`₹${planInfo.amount}`}
-                isDark={isDark}
-              />
-            )}
-          </div>
-
-          {/* Days Left Message */}
-          <div className="text-center pt-4">
-            <p
-              className={`text-xl font-semibold ${isExpired
-                  ? "text-red-500"
-                  : daysLeft <= 3
-                    ? "text-yellow-500"
-                    : "text-green-500"
-                }`}
-            >
-              {isExpired
-                ? "Plan Expired"
-                : daysLeft > 0
-                  ? `${daysLeft} Days Remaining`
-                  : "Trial Ended"}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
-/* Reusable Detail Card Component */
+/* -------------------------------
+   REUSABLE PLAN CARD (UPDATED)
+--------------------------------*/
+function PlanCard({ title, data, isDark }) {
+  const paidAt = data.paidAt
+    ? new Date(data.paidAt).toLocaleString()
+    : "Not Paid Yet";
+
+  const expiryDate = data.expiryDate
+    ? new Date(data.expiryDate).toLocaleDateString()
+    : "N/A";
+
+  const nextBilling = data.nextBillingDate
+    ? new Date(data.nextBillingDate).toLocaleDateString()
+    : "N/A";
+
+  // Countdown Logic
+  const daysLeft =
+    data.expiryDate &&
+    Math.ceil(
+      (new Date(data.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+    );
+
+  const countdown =
+    daysLeft > 0 ? `${daysLeft} days remaining` : "Expired";
+
+  // Color-coded status badge
+  const statusColor = {
+    ACTIVE: "text-green-500",
+    TRIAL: "text-yellow-500",
+    PENDING: "text-blue-500",
+    CANCELLED: "text-red-500",
+  }[data.status] || "text-gray-400";
+
+  return (
+    <div
+      className={`rounded-3xl p-8 shadow-lg ${
+        isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+      }`}
+    >
+      <h2 className="text-2xl font-bold mb-6">
+        {title}: {data.plan}{" "}
+        <span className={`ml-3 text-sm font-semibold ${statusColor}`}>
+          ● {data.status}
+        </span>
+      </h2>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <DetailItem icon={<FiUser />} title="Customer Name" value={data.customerName} isDark={isDark} />
+
+        <DetailItem icon={<FiClock />} title="Billing Period" value={data.billingPeriod} isDark={isDark} />
+
+        <DetailItem icon={<FiCreditCard />} title="Amount" value={`₹${data.amount}`} isDark={isDark} />
+
+        <DetailItem icon={<FiCalendar />} title="Paid At" value={paidAt} isDark={isDark} />
+
+        <DetailItem icon={<FiCalendar />} title="Expiry Date" value={expiryDate} isDark={isDark} />
+
+        <DetailItem icon={<FiCalendar />} title="Next Billing Date" value={nextBilling} isDark={isDark} />
+
+        <DetailItem icon={<FiAlertTriangle />} title="Countdown" value={countdown} isDark={isDark} />
+      </div>
+    </div>
+  );
+}
+
+/* Reusable Detail Item */
 function DetailItem({ icon, title, value, isDark }) {
   return (
     <div
-      className={`p-4 rounded-xl flex items-center gap-4 shadow ${isDark ? "bg-gray-700" : "bg-gray-50"
-        }`}
+      className={`p-4 rounded-xl flex items-center gap-4 shadow ${
+        isDark ? "bg-gray-700" : "bg-gray-50"
+      }`}
     >
       <div className="text-green-500 text-2xl">{icon}</div>
       <div>
-        <p className={`${isDark ? "text-gray-400" : "text-gray-500"} text-sm`}>
+        <p className={`${isDark ? "text-gray-300" : "text-gray-600"} text-sm`}>
           {title}
         </p>
         <p className="text-lg font-semibold">{value}</p>
       </div>
     </div>
+  );
+}
+
+/* History Detail Line */
+function HistDetail({ label, value }) {
+  return (
+    <p>
+      <b>{label}:</b> {value}
+    </p>
   );
 }

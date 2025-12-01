@@ -95,9 +95,23 @@ router.post("/create-subscription", async (req, res) => {
     };
 
     // Apply trial window
-    if (useTrial && isProduction) {
+   // ❗ If user already has a plan → DO NOT USE TRIAL
+    const existingPlans = await prisma.payment.findMany({
+      where: { email: customer.email.toLowerCase() }
+    });
+
+
+    const isUpgrade = existingPlans.length > 0;
+
+    // Apply trial only for NEW users, not upgrade
+   if (!isUpgrade && useTrial) {
+      // new user → give trial
       subscriptionPayload.start_at = Math.floor((Date.now() + 1 * 24 * 60 * 60 * 1000) / 1000);
+    } else {
+      // upgrade → activate immediately
+      subscriptionPayload.start_at = undefined; 
     }
+
 
 
     // Create subscription with Razorpay
@@ -124,7 +138,7 @@ router.post("/create-subscription", async (req, res) => {
         data: {
           customerName: customer.name,
           companyName: customer.companyName || null,
-          email: customer.email,
+          email: customer.email.toLowerCase(),
           phone: customer.phone,
           plan: plan.name,
           billingPeriod,
@@ -220,11 +234,6 @@ router.post("/verify-payment-localhost", async (req, res) => {
 
 /* ----------------------------------------------
    3️⃣ RAZORPAY WEBHOOK
-   IMPORTANT:
-   - app must mount express.raw({ type: 'application/json' }) on this path
-     e.g. app.use('/api/payments/razorpay-webhook', express.raw({ type: 'application/json' }))
-   - If you cannot mount raw, this handler will *try* to compute signature using a JSON string fallback,
-     but best practice is to use raw body for signature verification.
 ---------------------------------------------- */
 router.post("/razorpay-webhook", async (req, res) => {
   try {
@@ -371,71 +380,41 @@ router.post("/razorpay-webhook", async (req, res) => {
 ---------------------------------------------- */
 router.get("/user-plan/:email", async (req, res) => {
   try {
-    const { email } = req.params;
-    console.log("Searching for plan with email:", email);
-
-    // Normalize email (trim and lowercase) to ensure consistent matching
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // First, let's check if any payment exists for this email at all
-    const anyPayment = await prisma.payment.findFirst({
-      where: {
-        email: {
-          equals: normalizedEmail,
-          mode: 'insensitive' // Case-insensitive comparison
-        }
-      }
-    });
-
-    console.log("Any payment found:", anyPayment);
-
-    if (!anyPayment) {
-      return res.json({ success: false, message: "No payment records found for this user" });
+    let { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
 
-    // Now get the most recent payment with ACTIVE or TRIAL status
-    const payment = await prisma.payment.findFirst({
-      where: {
-        email: {
-          equals: normalizedEmail,
-          mode: 'insensitive' // Case-insensitive comparison
-        },
-        status: { in: ["ACTIVE", "TRIAL"] }
-      },
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const allPayments = await prisma.payment.findMany({
+      where: { email: normalizedEmail },
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("Active/Trial payment found:", payment);
-
-    if (!payment) {
-      // If no active/trial plan, check if there's any payment with different status
-      const allPayments = await prisma.payment.findMany({
-        where: {
-          email: {
-            equals: normalizedEmail,
-            mode: 'insensitive'
-          }
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      console.log("All payments for user:", allPayments);
-
+    if (allPayments.length === 0) {
       return res.json({
         success: false,
-        message: "No active plan found for this user",
-        debug: {
-          email: normalizedEmail,
-          paymentCount: allPayments.length,
-          lastStatus: allPayments.length > 0 ? allPayments[0].status : null
-        }
+        message: "No payment records found for this user",
       });
     }
 
-    return res.json({ success: true, payment });
+    const currentPlan = allPayments[0];
+    const previousPlan = allPayments.length > 1 ? allPayments[1] : null;
+
+    return res.json({
+      success: true,
+      currentPlan,
+      previousPlan,
+      history: allPayments   
+    });
+
   } catch (err) {
-    console.error("Fetch plan error:", err);
-    return res.status(500).json({ error: "Error fetching plan" });
+    return res.status(500).json({
+      success: false,
+      error: "Error fetching plan",
+      details: err.message,
+    });
   }
 });
 

@@ -16,19 +16,25 @@ export default function Profile() {
     email: "",
     password: "",
     newPassword: "",
+    phone: "",
+    companyName: "",
   });
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(storedUser);
 
-    setFormData({
-      username: storedUser?.username || "",
-      email: storedUser?.email || "",
-      password: "",
-      newPassword: "",
-    });
+  setFormData({
+    username: storedUser?.username || "",
+    email: storedUser?.email || "",
+    password: "",
+    newPassword: "",
+    phone: storedUser?.phone || "",
+    companyName: storedUser?.companyName || "",
+  });
+
 
    }, []);
 
@@ -108,7 +114,10 @@ const uploadImage = async (base64Image) => {
       body: JSON.stringify({
         username: formData.username,
         email: formData.email,
+        phone: formData.phone,
+        companyName: formData.companyName,
       }),
+
     });
 
     const profileResponse = await updateProfile.json();
@@ -415,6 +424,54 @@ const handleDeleteAccount = async () => {
                   </button>
                 </div>
               </div>
+              {/* Phone Number */}
+              <div className="space-y-2">
+                <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                  Phone Number
+                </label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    onFocus={() => setFocusedInput("phone")}
+                    onBlur={() => setFocusedInput("")}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 
+                      ${focusedInput === "phone"
+                        ? "bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                        : isDark
+                        ? "bg-white/5 border-white/10 focus:border-indigo-500"
+                        : "bg-white/50 border-gray-200 focus:border-indigo-500"} 
+                      focus:outline-none ${isDark ? "text-white" : "text-gray-900"}`}
+                  />
+                </div>
+              </div>
+              {/* Company Name */}
+              <div className="space-y-2">
+                <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                  Company Name
+                </label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleInputChange}
+                    onFocus={() => setFocusedInput("companyName")}
+                    onBlur={() => setFocusedInput("")}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 
+                      ${focusedInput === "companyName"
+                        ? "bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                        : isDark
+                        ? "bg-white/5 border-white/10 focus:border-indigo-500"
+                        : "bg-white/50 border-gray-200 focus:border-indigo-500"} 
+                      focus:outline-none ${isDark ? "text-white" : "text-gray-900"}`}
+                  />
+                </div>
+              </div>
+
+
 
               {/* Save Button */}
               <button

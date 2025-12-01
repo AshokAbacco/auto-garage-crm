@@ -2,15 +2,12 @@
 
 import bcrypt from "bcryptjs";
 import prisma from "../models/prismaClient.js";
- 
+
 /**
  * @desc Get logged-in user's profile
  * @route GET /api/user/profile
  * @access Private
  */
-
-const API_URL = process.env.VITE_API_BASE_URL;
-
 export const getProfile = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -19,6 +16,8 @@ export const getProfile = async (req, res) => {
         id: true,
         username: true,
         email: true,
+        phone: true,
+        companyName: true,
         role: true,
         profileImage: true,
         createdAt: true,
@@ -33,28 +32,41 @@ export const getProfile = async (req, res) => {
 };
 
 /**
- * @desc Update profile (username, email)
+ * @desc Update profile (username, email, phone, companyName)
  * @route PUT /api/user/update
  * @access Private
  */
 export const updateProfile = async (req, res) => {
   try {
-    const { username, email } = req.body;
+    const { username, email, phone, companyName } = req.body;
 
-    // Username/email update
+    // Update user table
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
         username,
         email,
+        phone,
+        companyName,
       },
       select: {
         id: true,
         username: true,
         email: true,
+        phone: true,
+        companyName: true,
         profileImage: true,
         role: true,
         updatedAt: true,
+      },
+    });
+
+    // Update payment table (all records for this user)
+    await prisma.payment.updateMany({
+      where: { email: updatedUser.email },
+      data: {
+        phone: phone || undefined,
+        companyName: companyName || undefined,
       },
     });
 
@@ -62,8 +74,9 @@ export const updateProfile = async (req, res) => {
       message: "Profile updated successfully",
       user: updatedUser,
     });
+
   } catch (error) {
-    console.error("Update Profile Error:", error);
+    console.error("🔥 Update Profile Error:", error);
     res.status(500).json({ message: "Failed to update profile" });
   }
 };
@@ -100,6 +113,7 @@ export const changePassword = async (req, res) => {
     });
 
     return res.json({ message: "Password updated successfully" });
+
   } catch (error) {
     console.error("Change Password Error:", error);
     res.status(500).json({ message: "Failed to change password" });

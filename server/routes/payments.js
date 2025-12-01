@@ -96,7 +96,7 @@ router.post("/create-subscription", async (req, res) => {
 
     // Apply trial window
     if (useTrial && isProduction) {
-      subscriptionPayload.start_at = Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000);
+      subscriptionPayload.start_at = Math.floor((Date.now() + 1 * 24 * 60 * 60 * 1000) / 1000);
     }
 
 

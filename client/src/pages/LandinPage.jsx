@@ -127,8 +127,8 @@ export default function LandingPage() {
 
                             <button
                                 className={`px-8 py-4 rounded-xl border-2 font-semibold transition-all flex items-center gap-3 ${isDark
-                                        ? 'border-gray-700 hover:bg-gray-800 text-white'
-                                        : 'border-gray-300 hover:bg-white text-gray-900 shadow-sm'
+                                    ? 'border-gray-700 hover:bg-gray-800 text-white'
+                                    : 'border-gray-300 hover:bg-white text-gray-900 shadow-sm'
                                     }`}
                             >
                                 <Play className="w-5 h-5" />
@@ -161,10 +161,10 @@ export default function LandingPage() {
                                                 key={index}
                                                 onClick={() => setActiveFeature(index)}
                                                 className={`p-4 rounded-2xl transition-all ${activeFeature === index
-                                                        ? `bg-gradient-to-r ${feature.color} text-white shadow-lg scale-105`
-                                                        : isDark
-                                                            ? 'bg-gray-800 hover:bg-gray-750 text-gray-300'
-                                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                                    ? `bg-gradient-to-r ${feature.color} text-white shadow-lg scale-105`
+                                                    : isDark
+                                                        ? 'bg-gray-800 hover:bg-gray-750 text-gray-300'
+                                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                                                     }`}
                                             >
                                                 <Icon className="w-8 h-8 mx-auto mb-2" />
@@ -207,8 +207,8 @@ export default function LandingPage() {
                                 <div
                                     key={index}
                                     className={`text-center p-8 rounded-2xl transition-all hover:scale-105 ${isDark
-                                            ? 'bg-gray-800 border border-gray-700'
-                                            : 'bg-gray-50 border border-gray-200 shadow-lg'
+                                        ? 'bg-gray-800 border border-gray-700'
+                                        : 'bg-gray-50 border border-gray-200 shadow-lg'
                                         }`}
                                 >
                                     <Icon className="w-12 h-12 mx-auto mb-4 text-indigo-500" />
@@ -254,8 +254,8 @@ export default function LandingPage() {
                                 <div
                                     key={index}
                                     className={`group p-8 rounded-2xl transition-all hover:scale-105 ${isDark
-                                            ? 'bg-gray-900 border border-gray-800 hover:border-gray-700'
-                                            : 'bg-white border border-gray-200 shadow-lg hover:shadow-xl'
+                                        ? 'bg-gray-900 border border-gray-800 hover:border-gray-700'
+                                        : 'bg-white border border-gray-200 shadow-lg hover:shadow-xl'
                                         }`}
                                 >
                                     <div className="w-14 h-14 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -291,8 +291,8 @@ export default function LandingPage() {
                             <div
                                 key={index}
                                 className={`p-8 rounded-2xl transition-all hover:scale-105 ${isDark
-                                        ? 'bg-gray-800 border border-gray-700'
-                                        : 'bg-gray-50 border border-gray-200 shadow-lg'
+                                    ? 'bg-gray-800 border border-gray-700'
+                                    : 'bg-gray-50 border border-gray-200 shadow-lg'
                                     }`}
                             >
                                 <div className="flex items-center gap-4 mb-6">
@@ -334,7 +334,7 @@ export default function LandingPage() {
                                 Ready to Transform Your Garage?
                             </h2>
                             <p className="text-xl text-white/90 max-w-2xl mx-auto">
-                                Join thousands of successful garage owners. Start your free 15-day trial today.
+                                Join thousands of successful garage owners. Start your free 7-day trial today.
                             </p>
                             <div className="flex flex-wrap gap-4 justify-center pt-4">
                                 <button
@@ -352,14 +352,14 @@ export default function LandingPage() {
                                 </button>
                             </div>
                             <p className="text-sm text-white/80 pt-4">
-                                No credit card required • 15-day free trial • Cancel anytime
+                                No credit card required • 7-day free trial • Cancel anytime
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
             {/* Footer */}
-            
+
             <Footer />
         </div>
     );

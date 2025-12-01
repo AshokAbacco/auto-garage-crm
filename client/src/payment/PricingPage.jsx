@@ -31,7 +31,7 @@ export default function ModernPricingPage() {
       id: "basic",
       name: "Basic",
       tagline: "For small garages",
-      numericPrice: 1000,
+      numericPrice: 50,
       icon: Zap,
       features: [
         "Upload RC images (up to 10/day)",
@@ -45,7 +45,7 @@ export default function ModernPricingPage() {
       id: "standard",
       name: "Standard",
       tagline: "Most popular choice",
-      numericPrice: 2000,
+      numericPrice: 100,
       icon: Star,
       badge: "POPULAR",
       features: [

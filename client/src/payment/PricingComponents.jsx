@@ -298,7 +298,7 @@ export const TrustSection = ({ isDark }) => {
       label: "24/7 Support",
       desc: "Always here to help",
     },
-    { icon: BadgeCheck, label: "15-Day Guarantee", desc: "Risk-free trial" },
+    { icon: BadgeCheck, label: "7-Day Guarantee", desc: "Risk-free trial" },
     { icon: Timer, label: "Instant Setup", desc: "Start in minutes" },
   ];
 
@@ -495,7 +495,7 @@ export const FAQSection = ({ isDark }) => {
     {
       question: "Is there a free trial available?",
       answer:
-        "All plans come with a 14-day money-back guarantee. Try risk-free!",
+        "All plans come with a 7-day money-back guarantee. Try risk-free!",
     },
   ];
 

@@ -25,16 +25,17 @@ console.log("Models in Prisma:", Object.keys(prisma));
 // Load environment variables
 dotenv.config();
 
-// 🔥 RAW BODY for Razorpay webhook (/api/payments)
-app.use(
-  '/api/payments/razorpay-webhook',
-  express.raw({ type: 'application/json' })
-)
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
+// 🔥 RAW BODY for Razorpay webhook (/api/payments)
+app.use(
+  '/api/payments/razorpay-webhook',
+  express.raw({ type: 'application/json' })
+)
 /* -----------------------------------------------------
    🧩 Middleware Configuration
 ----------------------------------------------------- */

@@ -31,6 +31,40 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
+// Enable CORS (allow frontend connection)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://auto-garage-crm-r7l4.onrender.com",
+  "https://themotordesk.com",
+  "https://www.themotordesk.com",
+
+  "https://tm04xn0p-5173.inc1.devtunnels.ms"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
+app.options('*', cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+}))
+
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
@@ -47,30 +81,7 @@ app.use("/api/payments", paymentRoutes);
 app.use(helmet());
 
 
-  // Enable CORS (allow frontend connection)
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "https://auto-garage-crm-r7l4.onrender.com",
-    "https://themotordesk.com",
-    "https://www.themotordesk.com",
-
-    "https://tm04xn0p-5173.inc1.devtunnels.ms"
-  ];
-
-  app.use(
-    cors({
-      origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        } else {
-          return callback(new Error("Not allowed by CORS"));
-        }
-      },
-      credentials: true,
-    })
-  );
+ 
 
 // Logging (Morgan)
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));

@@ -64,7 +64,7 @@ app.post(
 );
 
 
-app.use("/api/payments", paymentRoutes);
+
 /* -----------------------------------------------------
    🧩 Middleware Configuration
 ----------------------------------------------------- */
@@ -82,6 +82,8 @@ app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 const BODY_LIMIT = process.env.BODY_LIMIT || "10mb";
 app.use(express.json({ limit: BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
+
+app.use("/api/payments", paymentRoutes);
 
 /* -----------------------------------------------------
    🧠 Health Check Route

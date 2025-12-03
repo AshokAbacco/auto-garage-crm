@@ -32,10 +32,13 @@ const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
-app.use(
-  '/api/payments/razorpay-webhook',
-  express.raw({ type: 'application/json' })
-)
+app.post(
+  "/api/payments/razorpay-webhook",
+  express.raw({ type: "application/json" })
+);
+
+
+app.use("/api/payments", paymentRoutes);
 /* -----------------------------------------------------
    🧩 Middleware Configuration
 ----------------------------------------------------- */
@@ -108,7 +111,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes); // 🔑 Auth routes (login/register/profile)
 app.use("/api/clients", clientRoutes); // 👥 Client routes
 app.use("/api/services", serviceRoutes); // 🧰 Service routes
-app.use("/api/payments", paymentRoutes);
+
 
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reports", reportRoutes);

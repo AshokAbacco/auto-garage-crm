@@ -51,24 +51,55 @@ router.post("/create-subscription", async (req, res) => {
   try {
     const { plan, billingPeriod, customer } = req.body || {};
 
-    // Basic input validation
+    // ---------------------------
+    // Basic validation
+    // ---------------------------
     if (!plan || !plan.name || typeof plan.numericPrice !== "number") {
-      return res.status(400).json({ success: false, error: "Invalid 'plan' object. Expect { name, numericPrice }" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid 'plan' object. Expect { name, numericPrice }",
+      });
     }
+
     if (!billingPeriod || !["monthly", "yearly"].includes(billingPeriod)) {
-      return res.status(400).json({ success: false, error: "Invalid 'billingPeriod'. Use 'monthly' or 'yearly'." });
-    }
-    if (!customer || !customer.email || !customer.name || !customer.phone) {
-      return res.status(400).json({ success: false, error: "Invalid 'customer' object. Expect { name, email, phone }" });
-    }
-
-    // Check Razorpay config
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      console.error("Razorpay keys missing in env!");
-      return res.status(500).json({ success: false, error: "Server misconfiguration: missing Razorpay keys" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid 'billingPeriod'. Use 'monthly' or 'yearly'.",
+      });
     }
 
-    const rawName = (plan?.name || "").toLowerCase().trim().replace(/\s+/g, "");
+    if (
+      !customer ||
+      !customer.email ||
+      !customer.name ||
+      !customer.phone
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid 'customer' object. Expect { name, email, phone }",
+      });
+    }
+
+    // Razorpay keys check
+    if (
+      !process.env.RAZORPAY_KEY_ID ||
+      !process.env.RAZORPAY_KEY_SECRET
+    ) {
+      console.error("Missing Razorpay keys in .env");
+      return res.status(500).json({
+        success: false,
+        error: "Server misconfiguration: Razorpay keys missing",
+      });
+    }
+
+    // -------------
+    // Plan Mapping
+    // -------------
+    const rawName = (plan?.name || "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "");
+
     const planMapping = {
       basic: process.env.RAZORPAY_PLAN_CAR_BASIC?.trim(),
       standard: process.env.RAZORPAY_PLAN_CAR_STANDARD?.trim(),
@@ -76,17 +107,42 @@ router.post("/create-subscription", async (req, res) => {
     };
 
     const planID = planMapping[rawName];
+
     if (!planID) {
-      console.warn("No mapping for plan:", rawName, "planMapping:", planMapping);
-      return res.status(400).json({ success: false, error: `Invalid plan name '${plan.name}'. Contact admin.` });
+      console.warn("No plan mapping found for:", rawName);
+      return res.status(400).json({
+        success: false,
+        error: `Invalid plan name '${plan.name}'`,
+      });
     }
 
-    // Build payload
+    // ---------------------------
+    // Check existing user → trial or no trial
+    // ---------------------------
+    const existingPlans = await prisma.payment.findMany({
+      where: { email: customer.email.toLowerCase() },
+    });
+
+    const isUpgrade = existingPlans.length > 0;
+
+    const useTrial = true; // keep your trial setting
+
+    // ---------------------------
+    // Build subscription payload
+    // ---------------------------
     const subscriptionPayload = {
       plan_id: planID,
       total_count: 12,
       quantity: 1,
       customer_notify: 1,
+
+      // 🔥 Absolute MUST FIX
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        contact: customer.phone,
+      },
+
       notes: {
         planName: plan.name,
         customerEmail: customer.email,
@@ -94,44 +150,48 @@ router.post("/create-subscription", async (req, res) => {
       },
     };
 
-    // Apply trial window
-   // ❗ If user already has a plan → DO NOT USE TRIAL
-    const existingPlans = await prisma.payment.findMany({
-      where: { email: customer.email.toLowerCase() }
-    });
-
-
-    const isUpgrade = existingPlans.length > 0;
-
-    // Apply trial only for NEW users, not upgrade
-   if (!isUpgrade && useTrial) {
-      // new user → give trial
-      subscriptionPayload.start_at = Math.floor((Date.now() + 1 * 24 * 60 * 60 * 1000) / 1000);
-    } else {
-      // upgrade → activate immediately
-      subscriptionPayload.start_at = undefined; 
+    // Trial = New users only
+    if (!isUpgrade && useTrial) {
+      subscriptionPayload.start_at = Math.floor(
+        (Date.now() + 24 * 60 * 60 * 1000) / 1000
+      );
     }
 
-
-
-    // Create subscription with Razorpay
+    // ---------------------------
+    // Create subscription in Razorpay
+    // ---------------------------
     let subscription;
     try {
-      subscription = await razorpay.subscriptions.create(subscriptionPayload);
-    } catch (razErr) {
-      console.error("Razorpay subscription creation error:", razErr && razErr.error ? razErr.error : razErr);
-      // If Razorpay returned structured error, return it to client in dev
-      const razorMsg = razErr && razErr.error && razErr.error.description
-        ? razErr.error.description
-        : razErr.message || "Razorpay error";
-      return res.status(502).json({ success: false, error: `Razorpay create subscription failed: ${razorMsg}` });
+      subscription = await razorpay.subscriptions.create(
+        subscriptionPayload
+      );
+    } catch (err) {
+      console.error("Razorpay subscription error:", err);
+      const msg =
+        err?.error?.description ||
+        err.message ||
+        "Razorpay error occurred";
+
+      return res.status(502).json({
+        success: false,
+        error: `Razorpay create subscription failed: ${msg}`,
+      });
     }
 
-    // Build DB fields
-    const trialEndDate = subscriptionPayload.start_at ? new Date(subscriptionPayload.start_at * 1000) : null;
-    const nextBillingDate = trialEndDate ? trialEndDate : addInterval(new Date(), billingPeriod);
+    // ---------------------------
+    // Calculate trial/billing dates
+    // ---------------------------
+    const trialEndDate = subscriptionPayload.start_at
+      ? new Date(subscriptionPayload.start_at * 1000)
+      : null;
 
-    // Save to DB
+    const nextBillingDate = trialEndDate
+      ? trialEndDate
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // ---------------------------
+    // Save subscription in DB
+    // ---------------------------
     let created;
     try {
       created = await prisma.payment.create({
@@ -148,22 +208,28 @@ router.post("/create-subscription", async (req, res) => {
           subscriptionId: subscription.id,
           isTrial: !!subscriptionPayload.start_at,
           status: subscriptionPayload.start_at ? "TRIAL" : "PENDING",
-          trialEndDate: trialEndDate,
-          nextBillingDate: nextBillingDate,
+          trialEndDate,
+          nextBillingDate,
         },
       });
     } catch (dbErr) {
-      console.error("Prisma DB save error:", dbErr);
-      // If subscription already exists in DB (unique constraint) handle gracefully
+      console.error("Prisma create error:", dbErr);
+
       if (dbErr.code === "P2002") {
-        // Unique constraint violation - subscriptionId or paymentId duplicate
-        return res.status(409).json({ success: false, error: "Duplicate subscription (already exists in DB)" });
+        return res
+          .status(409)
+          .json({ success: false, error: "Duplicate subscription" });
       }
-      // Return detailed error in dev, generic in prod
-      return res.status(500).json({ success: false, error: isProduction ? "DB error saving subscription" : dbErr.message });
+
+      return res.status(500).json({
+        success: false,
+        error: dbErr.message,
+      });
     }
 
-    // Success
+    // ---------------------------
+    // SUCCESS RESPONSE
+    // ---------------------------
     return res.json({
       success: true,
       subscription,
@@ -172,13 +238,15 @@ router.post("/create-subscription", async (req, res) => {
       trialEndDate,
       paymentRecordId: created.id,
     });
-
-  } catch (err) {
-    // Unexpected
-    console.error("create-subscription unexpected error:", err);
-    return res.status(500).json({ success: false, error: process.env.NODE_ENV === "production" ? "Server error" : (err.stack || err.message) });
+  } catch (e) {
+    console.error("Unexpected Error:", e);
+    return res.status(500).json({
+      success: false,
+      error: e.message,
+    });
   }
 });
+
 
 
 /* ----------------------------------------------
@@ -237,146 +305,140 @@ router.post("/verify-payment-localhost", async (req, res) => {
 ---------------------------------------------- */
 router.post("/razorpay-webhook", async (req, res) => {
   console.log("\n============================");
-  console.log("📥 Webhook HIT! Razorpay is calling the server");
+  console.log("📥 Webhook HIT!");
   console.log("============================\n");
+
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
-      console.error("Webhook secret not set in env (RAZORPAY_WEBHOOK_SECRET)");
-      return res.status(500).json({ success: false, error: "Webhook secret not configured" });
+      return res.status(500).json({ success: false, error: "Webhook secret missing" });
     }
 
-    // Determine payload raw buffer & compute signature
-    // If req.body is a Buffer (when express.raw used), use it directly.
-    // Otherwise fall back to stringified JSON (less ideal).
-    let payloadBuffer;
-    if (Buffer.isBuffer(req.body)) {
-      payloadBuffer = req.body;
-    } else {
-      // fallback: stringify parsed body (works only if express.json parsed it and no whitespace changes)
-      payloadBuffer = Buffer.from(JSON.stringify(req.body));
-    }
+    // 🔥 Always raw buffer
+    const payloadBuffer = req.body;
 
     const signature = req.headers["x-razorpay-signature"];
     if (!signature) {
-      console.error("Missing x-razorpay-signature header");
+      console.error("Missing signature");
       return res.status(400).json({ success: false, error: "Missing signature" });
     }
 
-    const expected = crypto.createHmac("sha256", secret).update(payloadBuffer).digest("hex");
+    // Verify signature
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(payloadBuffer)
+      .digest("hex");
+
     if (expected !== signature) {
-      console.error("❌ Invalid webhook signature - expected does not match provided");
+      console.error("❌ Invalid signature");
       return res.status(400).json({ success: false, error: "Invalid signature" });
     }
 
-    // Parse body
+    // Parse raw payload
     const body = JSON.parse(payloadBuffer.toString());
     const event = body.event;
-    console.log("📥 Razorpay webhook event:", event);
+    console.log("📥 Event:", event);
 
     /* ---------------------------------------------------
-       EVENT: subscription.activated (subscription created/activated)
+       EVENT: subscription.authenticated (UPI Mandate Approved)
     --------------------------------------------------- */
-    if (event === "subscription.activated") {
+    if (event === "subscription.authenticated") {
       const sub = body.payload.subscription.entity;
-      console.log("subscription.activated:", sub.id);
+      console.log("subscription.authenticated:", sub.id);
 
-      const record = await prisma.payment.findUnique({ where: { subscriptionId: sub.id } });
+      const record = await prisma.payment.findUnique({
+        where: { subscriptionId: sub.id },
+      });
+
       if (record) {
-        const trialDate = sub.start_at ? new Date(sub.start_at * 1000) : record.trialEndDate;
         await prisma.payment.update({
           where: { subscriptionId: sub.id },
           data: {
             status: "TRIAL",
             isTrial: true,
-            trialEndDate: trialDate,
-            // nextBillingDate likely already set to trialEndDate during creation
+            trialEndDate: record.trialEndDate,
           },
         });
-        console.log("Updated DB to TRIAL for subscription:", sub.id);
+
+        console.log("DB updated to TRIAL for:", sub.id);
       } else {
-        console.warn("No DB record found for subscription.activated:", sub.id);
+        console.warn("No record found for:", sub.id);
       }
 
       return res.json({ success: true });
     }
 
     /* ---------------------------------------------------
-       EVENT: subscription.charged (invoice/payment created & paid)
-       This is where we flip TRIAL -> ACTIVE on first charge and update paidAt/paymentId
+       EVENT: subscription.charged (Auto-debit successful)
     --------------------------------------------------- */
     if (event === "subscription.charged") {
       const sub = body.payload.subscription.entity;
       const paymentEntity = body.payload.payment.entity;
-      console.log("subscription.charged for:", sub.id, "payment:", paymentEntity?.id);
 
-      const record = await prisma.payment.findUnique({ where: { subscriptionId: sub.id } });
-      if (!record) {
-        console.warn("No DB record for subscription.charged:", sub.id);
-        return res.json({ success: true });
-      }
+      console.log("subscription.charged:", sub.id);
 
-      // Determine created time for paymentEntity (Razorpay uses created_at as unix seconds)
-      const firstChargeAt = paymentEntity && paymentEntity.created_at
-        ? new Date(paymentEntity.created_at * 1000)
-        : new Date();
-
-      const nextBillingDate = addInterval(firstChargeAt, record.billingPeriod);
-
-      await prisma.payment.update({
+      const record = await prisma.payment.findUnique({
         where: { subscriptionId: sub.id },
-        data: {
-          status: "ACTIVE",
-          isTrial: false,
-          paidAt: firstChargeAt,
-          paymentId: paymentEntity?.id || null,
-          nextBillingDate: nextBillingDate,
-          expiryDate: nextBillingDate,
-        },
       });
 
-      console.log("Subscription charged -> status ACTIVE for:", sub.id);
+      if (record) {
+        const paidAt = paymentEntity.created_at
+          ? new Date(paymentEntity.created_at * 1000)
+          : new Date();
+
+        const nextBillingDate = addInterval(paidAt, record.billingPeriod);
+
+        await prisma.payment.update({
+          where: { subscriptionId: sub.id },
+          data: {
+            status: "ACTIVE",
+            isTrial: false,
+            paidAt,
+            paymentId: paymentEntity.id,
+            nextBillingDate,
+            expiryDate: nextBillingDate,
+          },
+        });
+
+        console.log("DB updated to ACTIVE for:", sub.id);
+      } else {
+        console.warn("No DB record found for subscription.charged:", sub.id);
+      }
+
       return res.json({ success: true });
     }
 
     /* ---------------------------------------------------
-       EVENT: subscription.cancelled
+       subscription.cancelled
     --------------------------------------------------- */
     if (event === "subscription.cancelled") {
       const sub = body.payload.subscription.entity;
-      console.log("subscription.cancelled:", sub.id);
-
-      // Use update (unique subscriptionId)
       await prisma.payment.updateMany({
         where: { subscriptionId: sub.id },
         data: { status: "CANCELLED" },
       });
-
       return res.json({ success: true });
     }
 
     /* ---------------------------------------------------
-       EVENT: subscription.paused (could be due to failed payments)
+       subscription.paused
     --------------------------------------------------- */
     if (event === "subscription.paused") {
       const sub = body.payload.subscription.entity;
-      console.log("subscription.paused:", sub.id);
-
       await prisma.payment.updateMany({
         where: { subscriptionId: sub.id },
         data: { status: "PAUSED" },
       });
-
       return res.json({ success: true });
     }
 
-    // Unhandled events - return success so Razorpay won't retry excessively
     return res.json({ success: true });
   } catch (err) {
-    console.error("❌ Webhook handler error:", err);
-    return res.status(500).json({ success: false, error: err.message || "Webhook error" });
+    console.error("Webhook handler error:", err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 /* ----------------------------------------------
    4️⃣ FETCH USER PLAN (ACTIVE)

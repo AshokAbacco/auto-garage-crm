@@ -190,8 +190,22 @@ const PaymentModal = ({
     });
 
     const data = await subRes.json();
-    if (!data.success) {
-      alert(data.error || "Failed to create subscription");
+    // if (!data.success) {
+    //   alert(data.error || "Failed to create subscription");
+    //   setIsProcessing(false);
+    //   return;
+    // }
+
+    if (!data || !data.success) {
+      console.error("Create-subscription response:", data);
+      alert(data?.error || "Failed to create subscription");
+      setIsProcessing(false);
+      return;
+    }
+
+    if (!data.subscription || !data.subscription.id) {
+      console.error("Missing subscription in response:", data);
+      alert("Subscription not created correctly. Check server logs.");
       setIsProcessing(false);
       return;
     }

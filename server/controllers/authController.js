@@ -28,7 +28,7 @@ export const registerUser = async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const updatedUser = await prisma.user.update({
-        where: { email },
+        where: { email: email.toLowerCase() },
         data: {
           username,
           password: hashedPassword,
@@ -54,7 +54,7 @@ export const registerUser = async (req, res) => {
     const newUser = await prisma.user.create({
       data: {
         username,
-        email,
+        email: email.toLowerCase(),
         password: hashedPassword,
         role: "user",
         profileImage: null,
@@ -79,10 +79,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
-
-
-
 /**
  * @desc Login a user
  * @route POST /api/auth/login
@@ -101,7 +97,7 @@ export const loginUser = async (req, res) => {
     const isEmail = identifier.includes("@");
 
     const user = await prisma.user.findFirst({
-      where: isEmail ? { email: identifier } : { username: identifier },
+        where: isEmail ? { email: identifier.toLowerCase() } : { username: identifier },
     });
 
     if (!user) {
@@ -135,7 +131,7 @@ export const loginUser = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email,
+        email: user.email.toLowerCase(),
         role: user.role,
         profileImage: user.profileImage || null,
         allowedCrms: user.allowedCrms,

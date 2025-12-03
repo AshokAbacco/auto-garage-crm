@@ -433,6 +433,10 @@ router.post("/razorpay-webhook", async (req, res) => {
   console.log("\n============================");
   console.log("📥 Webhook HIT!");
   console.log("============================\n");
+  console.log("\n================ WEBHOOK RAW BODY ================");
+  console.log("RAW BODY RECEIVED >>>", req.body);
+  console.log("=================================================\n");
+
 
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;

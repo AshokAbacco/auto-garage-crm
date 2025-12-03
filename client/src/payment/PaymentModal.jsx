@@ -114,27 +114,27 @@ const PaymentModal = ({
     planType,
   ]);
 
-useEffect(() => {
+  useEffect(() => {
     if (isUpgradePage && userData) {
 
-        const autoName =
-            userData.name ||
-            userData.fullName ||
-            userData.username ||
-            userData.ownerName ||
-            userData.firstName + " " + (userData.lastName || "") ||
-            "";
+      const autoName =
+        userData.name ||
+        userData.fullName ||
+        userData.username ||
+        userData.ownerName ||
+        userData.firstName + " " + (userData.lastName || "") ||
+        "";
 
-        setFormData({
-            name: autoName.trim(),
-            companyName: userData.companyName || "",
-            email: userData.email || "",
-            phone: userData.phone || "",
-            referenceCode: "",
-            gstNumber: ""
-        });
+      setFormData({
+        name: autoName.trim(),
+        companyName: userData.companyName || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        referenceCode: "",
+        gstNumber: ""
+      });
     }
-}, [isUpgradePage, userData]);
+  }, [isUpgradePage, userData]);
 
 
   if (!show || !plan) return null;
@@ -204,7 +204,7 @@ useEffect(() => {
       key: razorpayKey,
       subscription_id: subscription.id,
       name: "Abacco Technology",
-      description: `${plan.name} Plan - 7 Day Trial`,
+      description: `${plan.name} Plan`,
       theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
 
       prefill: {
@@ -214,31 +214,31 @@ useEffect(() => {
       },
 
       handler: async function (response) {
-  // Razorpay returns correct payment + subscription IDs
-  const subscriptionId = response.razorpay_subscription_id;
-  const paymentId = response.razorpay_payment_id;
+        // Razorpay returns correct payment + subscription IDs
+        const subscriptionId = response.razorpay_subscription_id;
+        const paymentId = response.razorpay_payment_id;
 
-  // 🔥 For localhost, verify manually
-  if (window.location.hostname === "localhost") {
-    await fetch(`${API}/api/payments/verify-payment-localhost`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subscriptionId,
-        paymentId,
-      }),
-    });
-  }
+        // 🔥 For localhost, verify manually
+        if (window.location.hostname === "localhost") {
+          await fetch(`${API}/api/payments/verify-payment-localhost`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subscriptionId,
+              paymentId,
+            }),
+          });
+        }
 
-  // Save for UI
-  setPaymentResponse({
-    paymentId,
-    subscriptionId,
-    signature: response.razorpay_signature,
-  });
+        // Save for UI
+        setPaymentResponse({
+          paymentId,
+          subscriptionId,
+          signature: response.razorpay_signature,
+        });
 
-  setShowSuccess(true);
-},
+        setShowSuccess(true);
+      },
 
     };
 
@@ -298,9 +298,8 @@ useEffect(() => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 ${
-        show ? "opacity-100" : "opacity-0 pointer-events-none"
-      }`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 ${show ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
     >
       {/* Backdrop with blur */}
       <div
@@ -311,13 +310,11 @@ useEffect(() => {
 
       {/* Modal Container */}
       <div
-        className={`relative rounded-3xl shadow-2xl w-full max-w-2xl transition-all duration-500 transform ${
-          show ? "scale-100 opacity-100" : "scale-95 opacity-0"
-        } ${
-          isDark
+        className={`relative rounded-3xl shadow-2xl w-full max-w-2xl transition-all duration-500 transform ${show ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          } ${isDark
             ? "bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700/50"
             : "bg-white"
-        } max-h-[95vh] flex flex-col overflow-hidden`}
+          } max-h-[95vh] flex flex-col overflow-hidden`}
       >
         {/* Decorative gradient overlay */}
         <div className="absolute top-0 left-0 right-0 h-48 pointer-events-none bg-gradient-to-br from-violet-600/20 via-fuchsia-500/20 to-transparent blur-3xl"></div>
@@ -325,11 +322,10 @@ useEffect(() => {
         {/* Close button */}
         <button
           onClick={onClose}
-          className={`absolute top-4 right-4 p-2 rounded-full ${
-            isDark
+          className={`absolute top-4 right-4 p-2 rounded-full ${isDark
               ? "bg-gray-800/80 hover:bg-gray-700 text-gray-300"
               : "bg-white/90 hover:bg-gray-100 text-gray-700"
-          } backdrop-blur-sm transition-all duration-200 z-10 shadow-lg hover:scale-110 group`}
+            } backdrop-blur-sm transition-all duration-200 z-10 shadow-lg hover:scale-110 group`}
         >
           <FaTimes className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90" />
         </button>
@@ -349,9 +345,8 @@ useEffect(() => {
                 Payment Successful!
               </h2>
               <p
-                className={`text-lg ${
-                  isDark ? "text-gray-300" : "text-gray-600"
-                }`}
+                className={`text-lg ${isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
               >
                 Your subscription is being activated
               </p>
@@ -366,9 +361,8 @@ useEffect(() => {
             {/* Progress bar */}
             <div className="w-full max-w-xs pt-6">
               <div
-                className={`w-full h-2 overflow-hidden rounded-full ${
-                  isDark ? "bg-gray-700" : "bg-gray-200"
-                }`}
+                className={`w-full h-2 overflow-hidden rounded-full ${isDark ? "bg-gray-700" : "bg-gray-200"
+                  }`}
               >
                 <div className="h-full rounded-full shadow-lg bg-gradient-to-r from-green-400 to-emerald-500 animate-progress"></div>
               </div>
@@ -395,9 +389,8 @@ useEffect(() => {
                     Complete Your Order
                   </h2>
                   <p
-                    className={`text-sm sm:text-base mt-2 ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-sm sm:text-base mt-2 ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Subscribe to{" "}
                     <span className="font-bold text-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text">
@@ -423,9 +416,8 @@ useEffect(() => {
                   return (
                     <div key={field.key} className="space-y-2">
                       <label
-                        className={`block text-sm font-semibold ${
-                          isDark ? "text-gray-300" : "text-gray-700"
-                        }`}
+                        className={`block text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"
+                          }`}
                       >
                         {field.label}{" "}
                         {field.optional && (
@@ -439,20 +431,18 @@ useEffect(() => {
                       {isUpgradePage ? (
                         <div className="relative group">
                           <div
-                            className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${
-                              isDark ? "text-gray-400" : "text-gray-500"
-                            }`}
+                            className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${isDark ? "text-gray-400" : "text-gray-500"
+                              }`}
                           >
                             <Icon className="w-5 h-5" />
                           </div>
 
                           <div
                             className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 text-sm font-medium 
-                    ${
-                      isDark
-                        ? "bg-gray-800/80 border-gray-700 text-white"
-                        : "bg-gray-100 border-gray-300 text-gray-700"
-                    }
+                    ${isDark
+                                ? "bg-gray-800/80 border-gray-700 text-white"
+                                : "bg-gray-100 border-gray-300 text-gray-700"
+                              }
                     backdrop-blur-sm`}
                           >
                             {formData[field.key] || "—"}
@@ -462,15 +452,14 @@ useEffect(() => {
                         /* NORMAL PAYMENT PAGE INPUT */
                         <div className="relative group">
                           <div
-                            className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${
-                              focusedField === field.key
+                            className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${focusedField === field.key
                                 ? "text-violet-400 scale-110"
                                 : errors[field.key]
-                                ? "text-red-400"
-                                : isDark
-                                ? "text-gray-400"
-                                : "text-gray-500"
-                            }`}
+                                  ? "text-red-400"
+                                  : isDark
+                                    ? "text-gray-400"
+                                    : "text-gray-500"
+                              }`}
                           >
                             <Icon className="w-5 h-5" />
                           </div>
@@ -487,19 +476,17 @@ useEffect(() => {
                             }}
                             onFocus={() => setFocusedField(field.key)}
                             onBlur={() => setFocusedField(null)}
-                            className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 text-sm font-medium relative ${
-                              errors[field.key]
+                            className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 text-sm font-medium relative ${errors[field.key]
                                 ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-900/10"
                                 : focusedField === field.key
-                                ? "border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.02]"
-                                : isDark
-                                ? "bg-gray-800/80 border-gray-600 hover:border-gray-500 focus:border-violet-500"
-                                : "bg-gray-50 border-gray-200 hover:border-gray-300 focus:border-violet-500"
-                            } focus:outline-none backdrop-blur-sm ${
-                              isDark
+                                  ? "border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.02]"
+                                  : isDark
+                                    ? "bg-gray-800/80 border-gray-600 hover:border-gray-500 focus:border-violet-500"
+                                    : "bg-gray-50 border-gray-200 hover:border-gray-300 focus:border-violet-500"
+                              } focus:outline-none backdrop-blur-sm ${isDark
                                 ? "text-white placeholder-gray-500"
                                 : "text-gray-900 placeholder-gray-400"
-                            }`}
+                              }`}
                             placeholder={field.placeholder}
                           />
 
@@ -519,9 +506,8 @@ useEffect(() => {
               {/* Reference Code Field - Full Width */}
               <div className="space-y-2">
                 <label
-                  className={`block text-sm font-semibold ${
-                    isDark ? "text-gray-300" : "text-gray-700"
-                  }`}
+                  className={`block text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
                 >
                   Reference Code{" "}
                   <span className="text-xs font-normal text-gray-500">
@@ -530,13 +516,12 @@ useEffect(() => {
                 </label>
                 <div className="relative group">
                   <div
-                    className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${
-                      focusedField === "referenceCode"
+                    className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${focusedField === "referenceCode"
                         ? "text-violet-400 scale-110"
                         : isDark
-                        ? "text-gray-400"
-                        : "text-gray-500"
-                    }`}
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                      }`}
                   >
                     <FaTag className="w-5 h-5" />
                   </div>
@@ -551,17 +536,15 @@ useEffect(() => {
                     }}
                     onFocus={() => setFocusedField("referenceCode")}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 text-sm font-medium relative ${
-                      focusedField === "referenceCode"
+                    className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 text-sm font-medium relative ${focusedField === "referenceCode"
                         ? "border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.01]"
                         : isDark
-                        ? "bg-gray-800/80 border-gray-600 hover:border-gray-500 focus:border-violet-500"
-                        : "bg-gray-50 border-gray-200 hover:border-gray-300 focus:border-violet-500"
-                    } focus:outline-none backdrop-blur-sm ${
-                      isDark
+                          ? "bg-gray-800/80 border-gray-600 hover:border-gray-500 focus:border-violet-500"
+                          : "bg-gray-50 border-gray-200 hover:border-gray-300 focus:border-violet-500"
+                      } focus:outline-none backdrop-blur-sm ${isDark
                         ? "text-white placeholder-gray-500"
                         : "text-gray-900 placeholder-gray-400"
-                    }`}
+                      }`}
                     placeholder="Enter code if you have one"
                   />
                 </div>
@@ -569,35 +552,31 @@ useEffect(() => {
 
               {/* Payment Summary Card */}
               <div
-                className={`relative p-5 rounded-2xl overflow-hidden ${
-                  isDark
+                className={`relative p-5 rounded-2xl overflow-hidden ${isDark
                     ? "bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50"
                     : "bg-gradient-to-br from-gray-50 to-white border border-gray-200"
-                } backdrop-blur-sm transition-all duration-300 hover:shadow-xl`}
+                  } backdrop-blur-sm transition-all duration-300 hover:shadow-xl`}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 blur-3xl"></div>
 
                 <div className="relative space-y-3">
                   <div className="flex items-center justify-between pb-3 border-b border-gray-600/20">
                     <span
-                      className={`text-sm font-semibold ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                      className={`text-sm font-semibold ${isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
                     >
                       Order Summary
                     </span>
                     <FaCreditCard
-                      className={`w-4 h-4 ${
-                        isDark ? "text-gray-500" : "text-gray-400"
-                      }`}
+                      className={`w-4 h-4 ${isDark ? "text-gray-500" : "text-gray-400"
+                        }`}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-sm ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
                     >
                       Plan
                     </span>
@@ -608,9 +587,8 @@ useEffect(() => {
 
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-sm ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
                     >
                       Billing Period
                     </span>
@@ -629,9 +607,8 @@ useEffect(() => {
                   {billingPeriod === "yearly" && (
                     <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-green-500/5 border-green-500/20">
                       <span
-                        className={`text-xs ${
-                          isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
+                        className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
                       >
                         Per month equivalent
                       </span>
@@ -659,11 +636,10 @@ useEffect(() => {
 
               {/* Security Badge */}
               <div
-                className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${
-                  isDark
+                className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${isDark
                     ? "bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-violet-500/10 border border-blue-500/20"
                     : "bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
                   <FaShieldAlt className="w-6 h-6 text-white" />
@@ -671,9 +647,8 @@ useEffect(() => {
                 <div className="flex-1">
                   <p className="text-sm font-bold">Secure Payment Gateway</p>
                   <p
-                    className={`text-xs mt-0.5 ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-xs mt-0.5 ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Powered by Razorpay • 256-bit SSL encryption
                   </p>
@@ -683,21 +658,19 @@ useEffect(() => {
 
             {/* Fixed bottom section with buttons */}
             <div
-              className={`p-6 pt-4 ${
-                isDark
+              className={`p-6 pt-4 ${isDark
                   ? "bg-gray-900/50 border-t border-gray-700/50"
                   : "bg-white border-t border-gray-100"
-              } backdrop-blur-sm`}
+                } backdrop-blur-sm`}
             >
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={onClose}
-                  className={`px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 flex-1 text-sm ${
-                    isDark
+                  className={`px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 flex-1 text-sm ${isDark
                       ? "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
-                  } hover:scale-[1.02] active:scale-95`}
+                    } hover:scale-[1.02] active:scale-95`}
                 >
                   Cancel
                 </button>
@@ -725,9 +698,8 @@ useEffect(() => {
               {/* Security Footer */}
               <div className="flex items-center justify-center gap-2 pt-4 text-xs">
                 <FaLock
-                  className={`w-3 h-3 ${
-                    isDark ? "text-gray-500" : "text-gray-400"
-                  }`}
+                  className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"
+                    }`}
                 />
                 <span className={isDark ? "text-gray-500" : "text-gray-500"}>
                   Your payment information is secure and encrypted

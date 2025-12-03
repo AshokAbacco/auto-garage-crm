@@ -51,54 +51,49 @@ router.post("/create-subscription", async (req, res) => {
   try {
     const { plan, billingPeriod, customer } = req.body || {};
 
-    // ---------------------------
-    // Basic validation
-    // ---------------------------
-    if (!plan || !plan.name || typeof plan.numericPrice !== "number") {
+    /* ---------------------------
+       VALIDATION
+    --------------------------- */
+    if (!plan || !plan.name) {
       return res.status(400).json({
         success: false,
-        error: "Invalid 'plan' object. Expect { name, numericPrice }",
+        error: "Invalid 'plan' object. 'name' required",
+      });
+    }
+
+    if (plan.numericPrice === undefined || isNaN(Number(plan.numericPrice))) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid 'numericPrice'. Must be a number.",
       });
     }
 
     if (!billingPeriod || !["monthly", "yearly"].includes(billingPeriod)) {
       return res.status(400).json({
         success: false,
-        error: "Invalid 'billingPeriod'. Use 'monthly' or 'yearly'.",
+        error: "Invalid billingPeriod. Use 'monthly' or 'yearly'",
       });
     }
 
-    if (
-      !customer ||
-      !customer.email ||
-      !customer.name ||
-      !customer.phone
-    ) {
+    if (!customer || !customer.name || !customer.email || !customer.phone) {
       return res.status(400).json({
         success: false,
-        error: "Invalid 'customer' object. Expect { name, email, phone }",
+        error: "Invalid customer object. Expect { name, email, phone }",
       });
     }
 
-    // Razorpay keys check
-    if (
-      !process.env.RAZORPAY_KEY_ID ||
-      !process.env.RAZORPAY_KEY_SECRET
-    ) {
-      console.error("Missing Razorpay keys in .env");
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error("Missing Razorpay keys!");
       return res.status(500).json({
         success: false,
-        error: "Server misconfiguration: Razorpay keys missing",
+        error: "Server misconfigured: Razorpay keys missing",
       });
     }
 
-    // -------------
-    // Plan Mapping
-    // -------------
-    const rawName = (plan?.name || "")
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "");
+    /* ---------------------------
+       PLAN MAPPING
+    --------------------------- */
+    const rawName = plan.name.toLowerCase().trim().replace(/\s+/g, "");
 
     const planMapping = {
       basic: process.env.RAZORPAY_PLAN_CAR_BASIC?.trim(),
@@ -109,39 +104,30 @@ router.post("/create-subscription", async (req, res) => {
     const planID = planMapping[rawName];
 
     if (!planID) {
-      console.warn("No plan mapping found for:", rawName);
       return res.status(400).json({
         success: false,
-        error: `Invalid plan name '${plan.name}'`,
+        error: `Invalid plan name '${plan.name}'. No matching Razorpay plan.`,
       });
     }
 
-    // ---------------------------
-    // Check existing user → trial or no trial
-    // ---------------------------
+    /* ---------------------------
+       USER EXISTING SUBSCRIPTIONS
+    --------------------------- */
     const existingPlans = await prisma.payment.findMany({
       where: { email: customer.email.toLowerCase() },
     });
 
     const isUpgrade = existingPlans.length > 0;
 
-    const useTrial = true; // keep your trial setting
-
-    // ---------------------------
-    // Build subscription payload
-    // ---------------------------
+    /* ---------------------------
+       BUILD RAZORPAY PAYLOAD
+       🔥 DO NOT ADD customer:{} → Causes Razorpay error
+    --------------------------- */
     const subscriptionPayload = {
       plan_id: planID,
       total_count: 12,
       quantity: 1,
       customer_notify: 1,
-
-      // 🔥 Absolute MUST FIX
-      customer: {
-        name: customer.name,
-        email: customer.email,
-        contact: customer.phone,
-      },
 
       notes: {
         planName: plan.name,
@@ -150,27 +136,31 @@ router.post("/create-subscription", async (req, res) => {
       },
     };
 
-    // Trial = New users only
-    if (!isUpgrade && useTrial) {
+    /* ---------------------------
+       TRIAL LOGIC (5 MINUTES)
+       Only for NEW users
+    --------------------------- */
+    if (!isUpgrade) {
+      // 5 minutes = 300 seconds
+      const fiveMinutes = 5 * 60 * 1000;
+
       subscriptionPayload.start_at = Math.floor(
-        (Date.now() + 24 * 60 * 60 * 1000) / 1000
+        (Date.now() + fiveMinutes) / 1000
       );
     }
 
-    // ---------------------------
-    // Create subscription in Razorpay
-    // ---------------------------
+    /* ---------------------------
+       CREATE SUBSCRIPTION
+    --------------------------- */
     let subscription;
     try {
-      subscription = await razorpay.subscriptions.create(
-        subscriptionPayload
-      );
+      subscription = await razorpay.subscriptions.create(subscriptionPayload);
     } catch (err) {
       console.error("Razorpay subscription error:", err);
       const msg =
         err?.error?.description ||
         err.message ||
-        "Razorpay error occurred";
+        "Unknown Razorpay error";
 
       return res.status(502).json({
         success: false,
@@ -178,9 +168,9 @@ router.post("/create-subscription", async (req, res) => {
       });
     }
 
-    // ---------------------------
-    // Calculate trial/billing dates
-    // ---------------------------
+    /* ---------------------------
+       TRIAL & NEXT BILLING DATES
+    --------------------------- */
     const trialEndDate = subscriptionPayload.start_at
       ? new Date(subscriptionPayload.start_at * 1000)
       : null;
@@ -189,9 +179,9 @@ router.post("/create-subscription", async (req, res) => {
       ? trialEndDate
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    // ---------------------------
-    // Save subscription in DB
-    // ---------------------------
+    /* ---------------------------
+       SAVE IN DATABASE
+    --------------------------- */
     let created;
     try {
       created = await prisma.payment.create({
@@ -202,23 +192,26 @@ router.post("/create-subscription", async (req, res) => {
           phone: customer.phone,
           plan: plan.name,
           billingPeriod,
-          amount: plan.numericPrice,
+          amount: Number(plan.numericPrice),
           referralCode: customer.referenceCode || null,
           gstNumber: customer.gstNumber || null,
+
           subscriptionId: subscription.id,
           isTrial: !!subscriptionPayload.start_at,
           status: subscriptionPayload.start_at ? "TRIAL" : "PENDING",
+
           trialEndDate,
           nextBillingDate,
         },
       });
     } catch (dbErr) {
-      console.error("Prisma create error:", dbErr);
+      console.error("Prisma save error:", dbErr);
 
       if (dbErr.code === "P2002") {
-        return res
-          .status(409)
-          .json({ success: false, error: "Duplicate subscription" });
+        return res.status(409).json({
+          success: false,
+          error: "Duplicate subscription ID exists",
+        });
       }
 
       return res.status(500).json({
@@ -227,9 +220,9 @@ router.post("/create-subscription", async (req, res) => {
       });
     }
 
-    // ---------------------------
-    // SUCCESS RESPONSE
-    // ---------------------------
+    /* ---------------------------
+       SUCCESS
+    --------------------------- */
     return res.json({
       success: true,
       subscription,
@@ -246,6 +239,7 @@ router.post("/create-subscription", async (req, res) => {
     });
   }
 });
+
 
 
 

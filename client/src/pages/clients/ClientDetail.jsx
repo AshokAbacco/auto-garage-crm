@@ -497,7 +497,7 @@ export default function ClientDetail() {
               )}
               {activeTab === "invoices" && (
                 <Link
-                  to="/invoices/new"
+                  to="/billing/new"
                   state={{ customerId: client.id }}
                   className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-600 to-teal-500 text-white hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap"
                 >

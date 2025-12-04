@@ -48,7 +48,13 @@ import WashDashboard from "./washPages/WashDashboard.jsx";
 import Reference from "./pages/Reference.jsx";
 import BikeRegister from "./pages/BikeRegister.jsx";
 import WashRegister from "./pages/WashRegister.jsx";
-
+import BikeLayoutPage from "./components/BikeLayoutPage.jsx";
+import Clients from "./bikePages/client/Clients.jsx";
+import Services from "./bikePages/services/services.jsx";
+import Billings from "./bikePages/Billing/Billings.jsx";
+import Reminders from "./bikePages/Reminders/Reminders.jsx";
+import Report from "./bikePages/Reports/Reports.jsx";
+import OCRScanner from "./bikePages/OCRScanner/OCRScanner.jsx";
 function App() {
   return (
     <ThemeProvider>
@@ -112,7 +118,19 @@ function App() {
 
 
         {/* Bike Garage CRM Routes */}
-        <Route path="/bike-dashboard" element={<BikeDashboard />} />
+       <Route path="/" element={<BikeLayoutPage />}>
+          <Route path="bike-dashboard" element={<BikeDashboard />} />
+          <Route path="bike-clients" element={<Clients />} />
+          <Route path="bike-services" element={<Services />} />
+          <Route path="bike-billing" element={<Billings />} />
+          <Route path="bike-reminders" element={<Reminders />} />
+          <Route path="bike-reports" element={<Report />} />
+          <Route path="bike-ocr-scanner" element={<OCRScanner />} />
+          <Route path="bike-plan" element={<Plans />} />
+          <Route path="bike-reference" element={<Reference />} />
+          <Route path="bike-upgrade" element={<UpgradePlans />} />
+      </Route>
+       
 
         {/* Washing CRM Routes */}
         <Route path="/wash-dashboard" element={<WashDashboard />} />

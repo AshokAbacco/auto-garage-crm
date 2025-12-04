@@ -1,0 +1,45 @@
+{
+  "account_id": "acc_HaqJqyhgtXmi7p",
+  "contains": ["subscription"],
+  "created_at": 1764788490,
+  "entity": "event",
+  "event": "subscription.authenticated",
+  "payload": {
+    "subscription": {
+      "entity": {
+        "auth_attempts": 0,
+        "change_scheduled_at": null,
+        "charge_at": 1764788976,
+        "created_at": 1764788378,
+        "current_end": null,
+        "current_start": null,
+        "customer_contact": "+918553402044",
+        "customer_email": "rasheedg055@gmail.com",
+        "customer_id": "cust_RkPgBaPkFE30x8",
+        "customer_notify": true,
+        "end_at": 1793730600,
+        "ended_at": null,
+        "entity": "subscription",
+        "expire_by": null,
+        "has_scheduled_changes": false,
+        "id": "sub_RnFKHCuLPkf9zi",
+        "notes": {
+          "customerEmail": "rasul1@gmail.com",
+          "customerPhone": "7204986825",
+          "planName": "Basic"
+        },
+        "offer_id": null,
+        "paid_count": 0,
+        "payment_method": "upi",
+        "plan_id": "plan_RmMAq21SBVD0b3",
+        "quantity": 1,
+        "remaining_count": 12,
+        "short_url": null,
+        "source": "api",
+        "start_at": 1764788976,
+        "status": "authenticated",
+        "total_count": 12
+      }
+    }
+  }
+}

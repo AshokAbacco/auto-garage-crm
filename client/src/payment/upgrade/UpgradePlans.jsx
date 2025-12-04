@@ -69,7 +69,7 @@ export default function UpgradePlans() {
       id: "basic",
       name: "Basic",
       tagline: "For small garages",
-      numericPrice: 50,
+      numericPrice: 1000,
       icon: Zap,
       features: [
         "Upload RC images (up to 10/day)",
@@ -83,7 +83,7 @@ export default function UpgradePlans() {
       id: "standard",
       name: "Standard",
       tagline: "Most popular choice",
-      numericPrice: 100,
+      numericPrice: 2000,
       icon: Star,
       badge: "POPULAR",
       features: [

@@ -236,6 +236,9 @@ router.post("/verify-payment-localhost", async (req, res) => {
    3️⃣ RAZORPAY WEBHOOK
 ---------------------------------------------- */
 router.post("/razorpay-webhook", async (req, res) => {
+  console.log("\n============================");
+  console.log("📥 Webhook HIT! Razorpay is calling the server");
+  console.log("============================\n");
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {

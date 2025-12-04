@@ -25,10 +25,17 @@ console.log("Models in Prisma:", Object.keys(prisma));
 // Load environment variables
 dotenv.config();
 
+
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
+// 🔥 RAW BODY for Razorpay webhook (/api/payments)
+app.use(
+  '/api/payments/razorpay-webhook',
+  express.raw({ type: 'application/json' })
+)
 /* -----------------------------------------------------
    🧩 Middleware Configuration
 ----------------------------------------------------- */
@@ -90,6 +97,8 @@ app.use((req, res, next) => {
   next();
 });
 
+
+
 app.use("/uploads", express.static("uploads"));
 
 /* -----------------------------------------------------
@@ -109,7 +118,7 @@ app.use("/api/ocr", ocrRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/referral", referralRoutes);
 
-app.use('/api/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
+
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

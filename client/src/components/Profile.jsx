@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Camera, Save, Mail, User, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import { Camera, Save, Mail, User, Lock, Eye, EyeOff, ArrowRight, Sparkles, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../contexts/ThemeContext";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -10,7 +11,8 @@ export default function Profile() {
   const [imagePreview, setImagePreview] = useState(null);
   const [focusedInput, setFocusedInput] = useState("");
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isDark] = useState(true); // Detect from your theme context
+ const { isDark } = useTheme();
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -22,32 +24,32 @@ export default function Profile() {
 
   const navigate = useNavigate();
 
+  // Update theme when isDark changes
+ 
+
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(storedUser);
 
-  setFormData({
-    username: storedUser?.username || "",
-    email: storedUser?.email || "",
-    password: "",
-    newPassword: "",
-    phone: storedUser?.phone || "",
-    companyName: storedUser?.companyName || "",
-  });
-
-
-   }, []);
+    setFormData({
+      username: storedUser?.username || "",
+      email: storedUser?.email || "",
+      password: "",
+      newPassword: "",
+      phone: storedUser?.phone || "",
+      companyName: storedUser?.companyName || "",
+    });
+  }, []);
 
   useEffect(() => {
-  if (user?.profileImage) {
-    if (user.profileImage.startsWith("data:image")) {
-      setImagePreview(user.profileImage);
-    } else {
-      setImagePreview(`data:image/png;base64,${user.profileImage}`);
+    if (user?.profileImage) {
+      if (user.profileImage.startsWith("data:image")) {
+        setImagePreview(user.profileImage);
+      } else {
+        setImagePreview(`data:image/png;base64,${user.profileImage}`);
+      }
     }
-  }
-}, [user]);
-
+  }, [user]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -75,31 +77,30 @@ export default function Profile() {
     reader.readAsDataURL(file);
   };
 
-const uploadImage = async (base64Image) => {
-  const token = localStorage.getItem("token");
+  const uploadImage = async (base64Image) => {
+    const token = localStorage.getItem("token");
 
-  try {
-    const response = await fetch(`${API_URL}/api/user/upload-image`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ image: base64Image }),
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/user/upload-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ image: base64Image }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
-      window.dispatchEvent(new Event("user-updated"));
+      if (response.ok) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+        window.dispatchEvent(new Event("user-updated"));
+      }
+    } catch (err) {
+      console.error("Error uploading image:", err);
     }
-  } catch (err) {
-    console.error("Error uploading image:", err);
-  }
-};
-
+  };
 
   const handleSave = async () => {
     const token = localStorage.getItem("token");
@@ -117,7 +118,6 @@ const uploadImage = async (base64Image) => {
         phone: formData.phone,
         companyName: formData.companyName,
       }),
-
     });
 
     const profileResponse = await updateProfile.json();
@@ -158,45 +158,43 @@ const uploadImage = async (base64Image) => {
 
     // 5️⃣ Navigate to dashboard
     navigate("/car-dashboard");
-    };
-  
-const handleDeleteAccount = async () => {
-  if (!window.confirm("Are you sure? Your account will be permanently deleted!")) return;
+  };
 
-  const token = localStorage.getItem("token");
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Are you sure? Your account will be permanently deleted!")) return;
 
-  try {
-    const response = await fetch(`${API_URL}/api/auth/delete`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const token = localStorage.getItem("token");
 
-    const data = await response.json();
+    try {
+      const response = await fetch(`${API_URL}/api/auth/delete`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (response.ok) {
-      alert("Your account has been deleted.");
+      const data = await response.json();
 
-      // Clear local storage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      if (response.ok) {
+        alert("Your account has been deleted.");
 
-      // Redirect to login
-      navigate("/");
-    } else {
-      alert(data.message || "Failed to delete your account");
+        // Clear local storage
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        // Redirect to login
+        navigate("/");
+      } else {
+        alert(data.message || "Failed to delete your account");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error deleting account.");
     }
-  } catch (err) {
-    console.error("Delete error:", err);
-    alert("Error deleting account.");
-  }
-};
-
+  };
 
   return (
-
-    <div className={`min-h-screen pt-20 pb-10 relative overflow-hidden transition-all duration-700  `}>
+    <div className={`min-h-screen pt-20 pb-10 relative overflow-hidden transition-all duration-700 ${isDark ? 'dark' : ''}`}>
 
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -244,8 +242,8 @@ const handleDeleteAccount = async () => {
       {/* Main Content */}
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6">
         <div className={`rounded-3xl backdrop-blur-2xl border shadow-2xl transition-all duration-500 ${isDark
-            ? 'bg-white/10 border-white/20'
-            : 'bg-white/80 border-white/40'
+            ? 'bg-gray-900/80 border-gray-700'
+            : 'bg-white/90 border-gray-200'
           }`}>
 
           {/* Decorative Top Element */}
@@ -253,8 +251,8 @@ const handleDeleteAccount = async () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-2xl opacity-60 animate-pulse"></div>
               <div className={`relative w-24 h-24 rounded-full flex items-center justify-center backdrop-blur-xl border-4 shadow-2xl ${isDark
-                  ? 'bg-slate-100 border-white/20'
-                  : 'bg-white border-white/60'
+                  ? 'bg-gray-800 border-gray-700'
+                  : 'bg-white border-gray-200'
                 }`}>
                 <User className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text" strokeWidth={2.5} />
               </div>
@@ -265,10 +263,10 @@ const handleDeleteAccount = async () => {
 
             {/* Header */}
             <div className="text-center space-y-2">
-              <h1 className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <h1 className={`text-[30px] font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
                 Profile Settings
               </h1>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 Manage your account information and preferences
               </p>
             </div>
@@ -276,213 +274,223 @@ const handleDeleteAccount = async () => {
             {/* Profile Image Upload */}
             <div className="flex flex-col items-center gap-4">
               <label className="relative cursor-pointer group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-all duration-300"></div>
+                <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-all"></div>
+
                 <img
                   src={imagePreview || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                   alt="Profile"
-                  className="relative w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-2xl group-hover:scale-105 transition-transform duration-300"
+                  className="relative w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-2xl group-hover:scale-105 transition-transform"
                 />
+
                 <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
-                <div className="absolute bottom-2 right-2 p-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-xl group-hover:scale-110 transition-transform duration-300">
+
+                <div className="absolute bottom-2 right-2 p-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-xl group-hover:scale-110 transition-all">
                   <Camera className="w-5 h-5 text-white" />
                 </div>
               </label>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+
+              <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 Click to upload profile picture
               </p>
             </div>
 
-            {/* Form */}
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-5">
 
-              {/* Username */}
+              {/* USERNAME */}
               <div className="space-y-2">
-                <label className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                   Username
                 </label>
+
                 <div className="relative group">
-                  <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300 ${focusedInput === 'username'
-                      ? 'text-indigo-500 scale-110'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
-                    }`} />
+                  <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5
+                    ${focusedInput === "username" ? "text-indigo-500" : isDark ? "text-gray-400" : "text-gray-600"}
+                  `} />
+
                   <input
                     type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleInputChange}
-                    onFocus={() => setFocusedInput('username')}
-                    onBlur={() => setFocusedInput('')}
-                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 ${focusedInput === 'username'
-                        ? 'bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]'
-                        : isDark
-                          ? 'bg-white/5 border-white/10 focus:border-indigo-500'
-                          : 'bg-white/50 border-gray-200 focus:border-indigo-500'
-                      } focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    onFocus={() => setFocusedInput("username")}
+                    onBlur={() => setFocusedInput("")}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                      ${focusedInput === "username"
+                        ? "border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                        : isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-300"
+                      }
+                      ${isDark ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"}
+                    `}
                   />
                 </div>
               </div>
 
-              {/* Email */}
+              {/* EMAIL */}
               <div className="space-y-2">
-                <label className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                   Email Address
                 </label>
+
                 <div className="relative group">
-                  <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300 ${focusedInput === 'email'
-                      ? 'text-indigo-500 scale-110'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
-                    }`} />
+                  <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5
+                    ${focusedInput === "email" ? "text-indigo-500" : isDark ? "text-gray-400" : "text-gray-600"}
+                  `} />
+
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    onFocus={() => setFocusedInput('email')}
-                    onBlur={() => setFocusedInput('')}
-                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 ${focusedInput === 'email'
-                        ? 'bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]'
-                        : isDark
-                          ? 'bg-white/5 border-white/10 focus:border-indigo-500'
-                          : 'bg-white/50 border-gray-200 focus:border-indigo-500'
-                      } focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    onFocus={() => setFocusedInput("email")}
+                    onBlur={() => setFocusedInput("")}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                      ${focusedInput === "email"
+                        ? "border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                        : isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-300"
+                      }
+                      ${isDark ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"}
+                    `}
                   />
                 </div>
               </div>
 
-              {/* Current Password */}
+              {/* CURRENT PASSWORD */}
               <div className="space-y-2">
-                <label className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                   Current Password
                 </label>
+
                 <div className="relative group">
-                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300 ${focusedInput === 'password'
-                      ? 'text-indigo-500 scale-110'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
-                    }`} />
+                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5
+                    ${focusedInput === "password" ? "text-indigo-500" : isDark ? "text-gray-400" : "text-gray-600"}
+                  `} />
+
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     placeholder="Enter current password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    onFocus={() => setFocusedInput('password')}
-                    onBlur={() => setFocusedInput('')}
-                    className={`w-full pl-12 pr-12 py-4 rounded-xl border-2 transition-all duration-300 ${focusedInput === 'password'
-                        ? 'bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]'
-                        : isDark
-                          ? 'bg-white/5 border-white/10 focus:border-indigo-500'
-                          : 'bg-white/50 border-gray-200 focus:border-indigo-500'
-                      } focus:outline-none ${isDark ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'}`}
+                    onFocus={() => setFocusedInput("password")}
+                    onBlur={() => setFocusedInput("")}
+                    className={`w-full pl-12 pr-12 py-4 rounded-xl border-2 transition-all duration-300
+                      ${focusedInput === "password"
+                        ? "border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                        : isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-300"
+                      }
+                      ${isDark ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"}
+                    `}
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${isDark
-                        ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
-                        : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-                      }`}
+                    className={`absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg
+                      ${isDark ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-100 text-gray-700"}
+                    `}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              {/* New Password */}
+              {/* NEW PASSWORD */}
               <div className="space-y-2">
-                <label className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                   New Password
                 </label>
+
                 <div className="relative group">
-                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300 ${focusedInput === 'newPassword'
-                      ? 'text-indigo-500 scale-110'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
-                    }`} />
+                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5
+                    ${focusedInput === "newPassword" ? "text-indigo-500" : isDark ? "text-gray-400" : "text-gray-600"}
+                  `} />
+
                   <input
                     type={showPassword ? "text" : "password"}
                     name="newPassword"
                     placeholder="Enter new password"
                     value={formData.newPassword}
                     onChange={handleInputChange}
-                    onFocus={() => setFocusedInput('newPassword')}
-                    onBlur={() => setFocusedInput('')}
-                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 ${focusedInput === 'newPassword'
-                        ? 'bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]'
-                        : isDark
-                          ? 'bg-white/5 border-white/10 focus:border-indigo-500'
-                          : 'bg-white/50 border-gray-200 focus:border-indigo-500'
-                      } focus:outline-none ${isDark ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'}`}
+                    onFocus={() => setFocusedInput("newPassword")}
+                    onBlur={() => setFocusedInput("")}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                      ${focusedInput === "newPassword"
+                        ? "border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                        : isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-300"
+                      }
+                      ${isDark ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"}
+                    `}
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all ${isDark
-                        ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
-                        : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-                      }`}
+                    className={`absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg
+                      ${isDark ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-100 text-gray-700"}
+                    `}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
-              {/* Phone Number */}
+
+              {/* PHONE */}
               <div className="space-y-2">
                 <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                   Phone Number
                 </label>
-                <div className="relative group">
-                  <input
-                    type="text"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    onFocus={() => setFocusedInput("phone")}
-                    onBlur={() => setFocusedInput("")}
-                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 
-                      ${focusedInput === "phone"
-                        ? "bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
-                        : isDark
-                        ? "bg-white/5 border-white/10 focus:border-indigo-500"
-                        : "bg-white/50 border-gray-200 focus:border-indigo-500"} 
-                      focus:outline-none ${isDark ? "text-white" : "text-gray-900"}`}
-                  />
-                </div>
+
+                <input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  onFocus={() => setFocusedInput("phone")}
+                  onBlur={() => setFocusedInput("")}
+                  className={`w-full pl-4 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                    ${focusedInput === "phone"
+                      ? "border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                      : isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-300"
+                    }
+                    ${isDark ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"}
+                  `}
+                />
               </div>
-              {/* Company Name */}
+
+              {/* COMPANY NAME */}
               <div className="space-y-2">
                 <label className={`text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                   Company Name
                 </label>
-                <div className="relative group">
-                  <input
-                    type="text"
-                    name="companyName"
-                    value={formData.companyName}
-                    onChange={handleInputChange}
-                    onFocus={() => setFocusedInput("companyName")}
-                    onBlur={() => setFocusedInput("")}
-                    className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 
-                      ${focusedInput === "companyName"
-                        ? "bg-white/10 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
-                        : isDark
-                        ? "bg-white/5 border-white/10 focus:border-indigo-500"
-                        : "bg-white/50 border-gray-200 focus:border-indigo-500"} 
-                      focus:outline-none ${isDark ? "text-white" : "text-gray-900"}`}
-                  />
-                </div>
+
+                <input
+                  type="text"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleInputChange}
+                  onFocus={() => setFocusedInput("companyName")}
+                  onBlur={() => setFocusedInput("")}
+                  className={`w-full pl-4 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                    ${focusedInput === "companyName"
+                      ? "border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]"
+                      : isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-300"
+                    }
+                    ${isDark ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"}
+                  `}
+                />
               </div>
 
-
-
-              {/* Save Button */}
+              {/* SAVE BUTTON */}
               <button
                 type="submit"
-                className="group relative w-full py-4 rounded-xl font-bold text-white shadow-2xl transform transition-all duration-300 hover:scale-[1.02] overflow-hidden mt-8"
+                className="group relative w-full py-4 rounded-xl font-bold text-white shadow-2xl hover:scale-[1.02] mt-8 overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 transition-transform duration-300 group-hover:scale-110"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 group-hover:scale-110 transition-transform"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
                 <div className="relative flex items-center justify-center gap-2">
                   <Save className="w-5 h-5" />
-                  <span>Save Changes</span>
+                  Save Changes
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
@@ -490,7 +498,7 @@ const handleDeleteAccount = async () => {
 
             {/* Info Box */}
             <div className={`p-4 rounded-xl border-2 ${isDark
-                ? 'bg-indigo-500/10 border-indigo-500/30'
+                ? 'bg-indigo-900/20 border-indigo-700/50'
                 : 'bg-indigo-50 border-indigo-200'
               }`}>
               <div className="flex items-start gap-2">
@@ -506,24 +514,25 @@ const handleDeleteAccount = async () => {
               </div>
             </div>
           </div>
-
-    
-
         </div>
-              {/* Delete Account Section */}
-          <div className="mt-10 p-4 rounded-xl border border-red-400 bg-red-500/10">
-            <h2 className="text-red-500 font-bold text-lg mb-2">Delete Account</h2>
-            <p className={`${isDark ? "text-red-300" : "text-red-600"} text-sm mb-4`}>
-              Once you delete your account, all your data will be permanently removed. This action cannot be undone.
-            </p>
 
-            <button
-              onClick={handleDeleteAccount}
-              className="w-full py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all"
-            >
-              Delete My Account
-            </button>
-          </div>
+        {/* Delete Account Section */}
+        <div className={`mt-10 p-4 rounded-xl border ${isDark
+            ? 'bg-red-900/20 border-red-700/50'
+            : 'bg-red-50 border-red-200'
+          }`}>
+          <h2 className={`font-bold text-lg mb-2 ${isDark ? "text-red-400" : "text-red-600"}`}>Delete Account</h2>
+          <p className={`text-sm mb-4 ${isDark ? "text-red-300" : "text-red-600"}`}>
+            Once you delete your account, all your data will be permanently removed. This action cannot be undone.
+          </p>
+
+          <button
+            onClick={handleDeleteAccount}
+            className="w-full py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all"
+          >
+            Delete My Account
+          </button>
+        </div>
       </div>
 
       <style jsx>{`
@@ -543,6 +552,5 @@ const handleDeleteAccount = async () => {
         }
       `}</style>
     </div>
-
   );
 }

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Wrench, Clock, CheckCircle, DollarSign, TrendingUp, Users, AlertTriangle, Settings } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const BikeDashboard = () => {
+    const { isDark } = useTheme();
     const [selectedPeriod, setSelectedPeriod] = useState('today');
 
     const stats = [
@@ -33,24 +35,33 @@ const BikeDashboard = () => {
     ];
 
     const getPriorityColor = (priority) => {
-        switch (priority) {
-            case 'high': return 'bg-red-100 text-red-700';
-            case 'medium': return 'bg-yellow-100 text-yellow-700';
-            case 'low': return 'bg-green-100 text-green-700';
-            default: return 'bg-gray-100 text-gray-700';
+        if (isDark) {
+            switch (priority) {
+                case 'high': return 'bg-red-900/30 text-red-400';
+                case 'medium': return 'bg-yellow-900/30 text-yellow-400';
+                case 'low': return 'bg-green-900/30 text-green-400';
+                default: return 'bg-gray-700 text-gray-300';
+            }
+        } else {
+            switch (priority) {
+                case 'high': return 'bg-red-100 text-red-700';
+                case 'medium': return 'bg-yellow-100 text-yellow-700';
+                case 'low': return 'bg-green-100 text-green-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
         }
     };
 
     return (
-        <div className="min-h-screen pl-[6%] bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100 p-6">
+        <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100'} p-6`}>
             {/* Header */}
             <div className="mb-8 animate-fade-in">
                 <div className="flex items-center justify-between mb-2">
                     <div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                        <h1 className="text-4xl py-5 font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                             Bike Garage Dashboard
                         </h1>
-                        <p className="text-gray-600 mt-1">Manage repairs, service & maintenance</p>
+                        <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage repairs, service & maintenance</p>
                     </div>
                     <div className="flex gap-2">
                         {['today', 'week', 'month'].map((period) => (
@@ -59,7 +70,9 @@ const BikeDashboard = () => {
                                 onClick={() => setSelectedPeriod(period)}
                                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${selectedPeriod === period
                                         ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg scale-105'
-                                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                                        : isDark 
+                                            ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                            : 'bg-white text-gray-600 hover:bg-gray-100'
                                     }`}
                             >
                                 {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -74,7 +87,7 @@ const BikeDashboard = () => {
                 {stats.map((stat, index) => (
                     <div
                         key={index}
-                        className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-slide-up"
+                        className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-slide-up`}
                         style={{ animationDelay: `${index * 100}ms` }}
                     >
                         <div className="flex items-start justify-between mb-4">
@@ -86,8 +99,8 @@ const BikeDashboard = () => {
                                 {stat.change}
                             </span>
                         </div>
-                        <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
-                        <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
+                        <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm mb-1`}>{stat.label}</p>
+                        <p className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{stat.value}</p>
                     </div>
                 ))}
             </div>
@@ -95,10 +108,10 @@ const BikeDashboard = () => {
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 {/* Active Repairs */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+                <div className={`lg:col-span-2 ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300`}>
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Active Repairs</h2>
-                        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
+                        <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Active Repairs</h2>
+                        <span className={`px-3 py-1 ${isDark ? 'bg-orange-900/30 text-orange-400' : 'bg-orange-100 text-orange-700'} rounded-full text-sm font-semibold`}>
                             {activeRepairs.length} in progress
                         </span>
                     </div>
@@ -106,7 +119,11 @@ const BikeDashboard = () => {
                         {activeRepairs.map((repair, index) => (
                             <div
                                 key={index}
-                                className="p-4 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 transition-all duration-300 border border-orange-200"
+                                className={`p-4 rounded-xl ${
+                                    isDark 
+                                        ? 'bg-gray-700/50 hover:bg-gray-700 border border-gray-600' 
+                                        : 'bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border border-orange-200'
+                                } transition-all duration-300`}
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-3 flex-1">
@@ -114,30 +131,30 @@ const BikeDashboard = () => {
                                             <Wrench className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-gray-800">{repair.customer}</p>
-                                            <p className="text-sm text-gray-600">{repair.bike}</p>
+                                            <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>{repair.customer}</p>
+                                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{repair.bike}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-medium text-gray-800">{repair.id}</p>
+                                        <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>{repair.id}</p>
                                         <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(repair.priority)}`}>
                                             {repair.priority}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="mb-3">
-                                    <p className="text-sm font-medium text-gray-700 mb-1">
+                                    <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
                                         <Settings className="w-4 h-4 inline mr-1" />
                                         {repair.issue}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="flex-1">
-                                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                                        <div className={`flex items-center justify-between text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
                                             <span>Progress</span>
                                             <span className="font-semibold">{repair.progress}%</span>
                                         </div>
-                                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div className={`w-full h-2 ${isDark ? 'bg-gray-600' : 'bg-gray-200'} rounded-full overflow-hidden`}>
                                             <div
                                                 className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-500"
                                                 style={{ width: `${repair.progress}%` }}
@@ -155,22 +172,26 @@ const BikeDashboard = () => {
                 </div>
 
                 {/* Upcoming Appointments */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Appointments</h2>
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300`}>
+                    <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-6`}>Appointments</h2>
                     <div className="space-y-3">
                         {upcomingAppointments.map((appointment, index) => (
                             <div
                                 key={index}
-                                className="p-3 rounded-lg bg-gradient-to-r from-slate-50 to-orange-50 border border-slate-200 hover:border-orange-300 transition-all duration-300"
+                                className={`p-3 rounded-lg ${
+                                    isDark 
+                                        ? 'bg-gray-700/50 border border-gray-600 hover:border-orange-500' 
+                                        : 'bg-gradient-to-r from-slate-50 to-orange-50 border border-slate-200 hover:border-orange-300'
+                                } transition-all duration-300`}
                             >
                                 <div className="flex items-center gap-2 mb-2">
                                     <Clock className="w-4 h-4 text-orange-600" />
-                                    <span className="font-semibold text-gray-800 text-sm">{appointment.time}</span>
+                                    <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'} text-sm`}>{appointment.time}</span>
                                 </div>
-                                <p className="font-medium text-gray-800 text-sm">{appointment.customer}</p>
+                                <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'} text-sm`}>{appointment.customer}</p>
                                 <div className="flex items-center justify-between mt-1">
-                                    <p className="text-xs text-gray-600">{appointment.bike}</p>
-                                    <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full font-medium">
+                                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{appointment.bike}</p>
+                                    <span className={`text-xs px-2 py-1 ${isDark ? 'bg-orange-900/30 text-orange-400' : 'bg-orange-100 text-orange-700'} rounded-full font-medium`}>
                                         {appointment.service}
                                     </span>
                                 </div>
@@ -182,22 +203,22 @@ const BikeDashboard = () => {
 
             {/* Services Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Service Categories</h2>
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300`}>
+                    <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-6`}>Service Categories</h2>
                     <div className="space-y-5">
                         {services.map((service, index) => (
                             <div key={index} className="group">
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="font-semibold text-gray-800 group-hover:text-orange-600 transition-colors">
+                                    <p className={`font-semibold ${isDark ? 'text-white group-hover:text-orange-400' : 'text-gray-800 group-hover:text-orange-600'} transition-colors`}>
                                         {service.name}
                                     </p>
                                     <span className="text-sm font-medium text-green-600">{service.revenue}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                                <div className={`flex items-center justify-between text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
                                     <span>{service.count} repairs</span>
                                     <span className="text-xs font-medium">{service.percentage}% capacity</span>
                                 </div>
-                                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div className={`w-full h-2 ${isDark ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
                                     <div
                                         className={`h-full bg-gradient-to-r ${service.color} rounded-full transition-all duration-500`}
                                         style={{ width: `${service.percentage}%` }}

@@ -251,11 +251,12 @@ export default function ServicesList() {
                 Number(s.partsCost || 0) + Number(s.laborCost || 0);
 
               const statusColor =
-                s.status === "Processing"
-                  ? "bg-yellow-500"
-                  : s.status === "Pending"
-                    ? "bg-red-500"
-                    : "bg-gray-400";
+              s.status === "Pending"
+                ? "bg-red-500 text-white"
+                : s.status === "Paid"
+                ? "bg-green-600 text-white"
+                : "bg-gray-400 text-white";
+
 
               return (
                 <div

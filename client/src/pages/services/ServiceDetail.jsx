@@ -80,11 +80,12 @@ export default function ServiceDetail() {
   const estimatedTotal = (totalParts + totalLabor).toFixed(2);
 
   const statusColor =
-    service.status === "Processing"
-      ? "bg-yellow-500"
-      : service.status === "Pending"
-        ? "bg-red-500"
-        : "bg-gray-400";
+    service.status === "Pending"
+      ? "bg-red-500"
+      : service.status === "Paid"
+      ? "bg-green-600"
+      : "bg-gray-400";
+
 
   // Prepare service data for invoice creation
   const serviceDataForInvoice = {

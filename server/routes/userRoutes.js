@@ -7,6 +7,7 @@ import {
   updateProfile,
   changePassword,
   uploadProfileImage,
+  checkEmail,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -33,6 +34,8 @@ router.put("/change-password", protect, changePassword);
 // Upload profile image
 
 router.post("/upload-image", protect, uploadProfileImage);
+
+router.post("/check-email", checkEmail);
 
 
 export default router;

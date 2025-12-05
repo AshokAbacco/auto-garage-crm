@@ -13,27 +13,40 @@ export const registerUser = async (req, res) => {
   try {
     const { username, email, password, crmType } = req.body;
 
-    // Validate
+    // Basic validation
     if (!username || !email || !password || !crmType) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check if user already exists (TEMP USER created after payment)
-    let existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    const emailLower = email.toLowerCase().trim();
 
-    // === CASE 1: USER EXISTS → UPDATE IT ===
-    if (existingUser) {
+    // 🔍 Check both email and username up front
+    const [existingUserByEmail, existingUserByUsername] = await Promise.all([
+      prisma.user.findUnique({ where: { email: emailLower } }),
+      prisma.user.findUnique({ where: { username } }),
+    ]);
+
+    // ⭐ USERNAME ALREADY USED BY SOMEONE ELSE
+    if (
+      existingUserByUsername &&
+      (!existingUserByEmail || existingUserByUsername.id !== existingUserByEmail.id)
+    ) {
+      return res.status(400).json({
+        message: "This username is already taken. Please choose a different username.",
+      });
+    }
+
+    // === CASE 1: USER EXISTS BY EMAIL → TEMP USER CREATED AFTER PAYMENT ===
+    if (existingUserByEmail) {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const updatedUser = await prisma.user.update({
-        where: { email: email.toLowerCase() },
+        where: { email: emailLower },
         data: {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-        }
+        },
       });
 
       const token = generateToken(updatedUser);
@@ -41,11 +54,11 @@ export const registerUser = async (req, res) => {
       return res.status(200).json({
         message: "Registration completed successfully",
         token,
-        user: updatedUser
+        user: updatedUser,
       });
     }
 
-    // === CASE 2: NEW USER (no payment) ===
+    // === CASE 2: COMPLETELY NEW USER (NO EMAIL FOUND) ===
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const myReferralCode =
@@ -54,7 +67,7 @@ export const registerUser = async (req, res) => {
     const newUser = await prisma.user.create({
       data: {
         username,
-        email: email.toLowerCase(),
+        email: emailLower,
         password: hashedPassword,
         role: "user",
         profileImage: null,
@@ -70,14 +83,39 @@ export const registerUser = async (req, res) => {
     return res.status(201).json({
       message: "User registered successfully",
       token,
-      user: newUser
+      user: newUser,
     });
-
   } catch (error) {
     console.error("❌ Registration Error:", error);
+
+    // 🔥 Prisma unique constraint error (P2002) – nice message instead of 500
+    if (error.code === "P2002") {
+      const target = error.meta?.target || [];
+
+      if (target.includes("username")) {
+        return res.status(400).json({
+          message: "This username is already taken. Please choose a different username.",
+        });
+      }
+
+      if (target.includes("email")) {
+        return res.status(400).json({
+          message:
+            "This email is already registered. Please login instead of registering again.",
+        });
+      }
+
+      // fallback if target unknown
+      return res.status(400).json({
+        message: "Duplicate value for a unique field. Please use different details.",
+      });
+    }
+
+    // Generic unexpected error
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 /**
  * @desc Login a user

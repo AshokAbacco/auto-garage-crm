@@ -147,3 +147,48 @@ export const uploadProfileImage = async (req, res) => {
     return res.status(500).json({ message: "Server error updating image" });
   }
 };
+
+
+// 🔹 NEW ROUTE: check if email already exists
+export const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    // 🔴 OLD (wrong – Mongoose)
+    // const user = await User.findOne({ email: cleanEmail });
+
+    // ✅ NEW (Prisma)
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (user) {
+      return res.json({
+        success: true,
+        exists: true,
+        message:
+          "Email already registered. Please login using this email and password.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      exists: false,
+    });
+  } catch (err) {
+    console.error("Error in /api/user/check-email:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while checking email",
+    });
+  }
+};
+

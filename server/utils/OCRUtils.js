@@ -22,10 +22,7 @@ export const ensureAuth = (req, res, next) => {
     }
 };
 
-/**
- * Advanced OCR text parser (same logic as frontend)
- * Extracts structured vehicle registration details from RC text.
- */
+
 export const parseOCRText = (text = "", confidence = 0) => {
     const cleaned = text
         .replace(/\r\n/g, "\n")

@@ -5,9 +5,6 @@ import prisma from "../models/prismaClient.js"; // ✅ use Prisma to verify the 
 
 dotenv.config();
 
-/**
- * @desc Middleware to protect routes using JWT
- */
 export const protect = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -22,7 +19,7 @@ export const protect = async (req, res, next) => {
         // ✅ Verify user still exists in DB (extra security)
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
-            select: { id: true, username: true, email: true, role: true },
+            select: { id: true, username: true, email: true, role: true, plan: true },
         });
 
         if (!user) {

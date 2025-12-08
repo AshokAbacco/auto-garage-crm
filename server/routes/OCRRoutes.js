@@ -1,14 +1,13 @@
-// server/routes/OCRRoutes.js
 import express from "express";
 import multer from "multer";
 import path from "path";
-import { ensureAuth } from "../utils/OCRUtils.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { requirePlan } from "../middleware/planMiddleware.js";
+import prisma from "../models/prismaClient.js";
 import * as ocrController from "../controllers/OCRController.js";
 
 const router = express.Router();
 
-// Configure upload directory (ensure folder exists)
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads/ocr";
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -18,13 +17,44 @@ const storage = multer.diskStorage({
         cb(null, name);
     },
 });
-const upload = multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } }); // 8MB
+const upload = multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } });
 
-// OCR routes (protected)
-router.post("/upload", ensureAuth, upload.single("image"), ocrController.uploadRecord);
-router.get("/history", ensureAuth, ocrController.listRecords);
-router.delete("/:id", ensureAuth, ocrController.deleteRecord);
-router.get("/all", ensureAuth, ocrController.listAllRecords);
+// UPLOAD OCR (with plan limit)
+router.post(
+    "/upload",
+    protect,
+    async (req, res, next) => {
+        const { plan, id } = req.user;
 
+        if (plan === "BASIC") {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+
+            const count = await prisma.ocrRecord.count({
+                where: {
+                    userId: id,
+                    createdAt: { gte: todayStart }
+                }
+            });
+
+            if (count >= 10) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Daily upload limit reached for BASIC plan."
+                });
+            }
+        }
+
+        next();
+    },
+    upload.single("image"),
+    ocrController.uploadRecord
+);
+
+router.get("/history", protect, ocrController.listRecords);
+router.delete("/:id", protect, ocrController.deleteRecord);
+
+// Premium-only: list ALL OCR entries in the system
+router.get("/all", protect, requirePlan(["PREMIUM"]), ocrController.listAllRecords);
 
 export default router;

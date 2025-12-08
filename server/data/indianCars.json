@@ -1,0 +1,153 @@
+{
+  "TATA": [
+    "Nexon",
+    "Nexon EV",
+    "Punch",
+    "Punch EV",
+    "Harrier",
+    "Safari",
+    "Tiago",
+    "Tiago EV",
+    "Tigor",
+    "Tigor EV",
+    "Altroz",
+    "Altroz Racer"
+  ],
+
+  "MAHINDRA": [
+    "Scorpio",
+    "Scorpio N",
+    "Scorpio Classic",
+    "Bolero",
+    "Bolero Neo",
+    "XUV300",
+    "XUV300 TurboSport",
+    "XUV400 EV",
+    "XUV700",
+    "Thar",
+    "Thar 5-Door",
+    "Marazzo"
+  ],
+
+  "MARUTI SUZUKI": [
+    "Swift",
+    "Dzire",
+    "Baleno",
+    "Celerio",
+    "Ertiga",
+    "XL6",
+    "Vitara Brezza",
+    "Brezza",
+    "Fronx",
+    "Grand Vitara",
+    "S-Presso",
+    "Ignis",
+    "Alto K10",
+    "Alto 800",
+    "Ciaz",
+    "WagonR"
+  ],
+
+  "HYUNDAI": [
+    "Creta",
+    "Creta N Line",
+    "Venue",
+    "Venue N Line",
+    "i20",
+    "i20 N Line",
+    "Verna",
+    "Grand i10 Nios",
+    "Aura",
+    "Alcazar",
+    "Exter",
+    "Tucson",
+    "Ioniq 5",
+    "Kona EV"
+  ],
+
+  "KIA": ["Seltos", "Sonet", "Carens", "Carnival", "EV6"],
+
+  "TOYOTA": [
+    "Fortuner",
+    "Innova Crysta",
+    "Innova HyCross",
+    "Urban Cruiser Hyryder",
+    "Glanza",
+    "Rumion",
+    "Camry",
+    "Hilux",
+    "Vellfire"
+  ],
+
+  "HONDA": ["City", "City Hybrid", "Amaze", "Elevate", "WR-V (old)"],
+
+  "NISSAN": ["Magnite", "Kicks (discontinued)"],
+
+  "RENAULT": ["Kwid", "Triber", "Kiger"],
+
+  "SKODA": ["Kushaq", "Slavia", "Octavia", "Superb", "Kodiaq"],
+
+  "VOLKSWAGEN": ["Taigun", "Virtus", "Tiguan"],
+
+  "MG": ["Hector", "Hector Plus", "Astor", "Gloster", "ZS EV", "Comet EV"],
+
+  "JEEP": ["Compass", "Grand Cherokee", "Meridian"],
+
+  "BMW": [
+    "X1",
+    "X3",
+    "X4",
+    "X5",
+    "X7",
+    "3 Series",
+    "5 Series",
+    "7 Series",
+    "iX",
+    "i4"
+  ],
+
+  "MERCEDES-BENZ": [
+    "A-Class",
+    "C-Class",
+    "E-Class",
+    "S-Class",
+    "GLA",
+    "GLB",
+    "GLC",
+    "GLE",
+    "GLS",
+    "EQB",
+    "EQS"
+  ],
+
+  "AUDI": ["A4", "A6", "Q3", "Q5", "Q7", "Q8", "e-tron"],
+
+  "VOLVO": ["XC40", "XC40 Recharge", "XC60", "XC90", "S90"],
+
+  "CITROEN": ["C3", "C3 Aircross", "eC3", "C5 Aircross"],
+
+  "LEXUS": ["NX350h", "RX350h", "ES300h", "LX500d"],
+
+  "BYD": ["Atto 3", "Seal", "e6"],
+
+  "PORSCHE": ["Macan", "Cayenne", "Panamera", "Taycan"],
+
+  "JAGUAR": ["F-Pace", "I-Pace", "XF"],
+
+  "LAND ROVER": [
+    "Defender",
+    "Discovery",
+    "Range Rover",
+    "Range Rover Sport",
+    "Range Rover Evoque",
+    "Range Rover Velar"
+  ],
+
+  "MINI": ["Cooper", "Cooper Convertible", "Countryman"],
+
+  "ISUZU": ["MU-X", "D-Max V-Cross"],
+
+  "FORCE MOTORS": ["Gurkha", "Trax Cruiser", "Trax Toofan"],
+
+  "BAJAJ": ["Qute"]
+}

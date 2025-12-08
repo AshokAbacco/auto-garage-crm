@@ -56,6 +56,10 @@ const DetailsPage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [historyData, setHistoryData] = useState([]);
 
+  const [dailyUsage, setDailyUsage] = useState(0);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
   const processingRef = useRef(false);
 
   /* -----------------------------------------------------
@@ -135,11 +139,21 @@ const DetailsPage = () => {
     fetchHistory();
   }, [clientId]);
 
-  /* -----------------------------------------------------
-   🚀 Start OCR process
-  ----------------------------------------------------- */
+
+  // ----------------------------------------------------------
+  // 🚀 Start OCR Process (with plan limit check)
+  // ----------------------------------------------------------
   const handleStartOCR = async (image) => {
     if (!image || processingRef.current) return;
+
+    // PLAN LIMIT CHECK
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    if (user?.plan === "BASIC" && dailyUsage >= 10) {
+      setShowUpgrade(true);
+      return;
+    }
+
     processingRef.current = true;
     setError(null);
     setOcrProgress(0);
@@ -172,9 +186,10 @@ const DetailsPage = () => {
     }
   };
 
-  /* -----------------------------------------------------
-   💾 Save record to backend
-  ----------------------------------------------------- */
+
+  // ----------------------------------------------------------
+  // 💾 Save OCR Result (update daily usage)
+  // ----------------------------------------------------------
   const handleSave = async (data) => {
     try {
       if (!clientId) {
@@ -183,9 +198,7 @@ const DetailsPage = () => {
       }
 
       const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Authentication token not found. Please log in again.");
-      }
+      if (!token) throw new Error("Authentication token missing");
 
       const res = await fetch(`${API_BASE}/api/ocr/upload`, {
         method: "POST",
@@ -201,16 +214,14 @@ const DetailsPage = () => {
         }),
       });
 
+      // Duplicate RC
       if (res.status === 400) {
         const errorData = await res.json();
         if (errorData.duplicate) {
-          toast.error(
-            `Duplicate! RC already registered to ${errorData.clientName}`
-          );
+          toast.error(`Duplicate! RC registered to ${errorData.clientName}`);
           return;
         }
       }
-
 
       if (!res.ok) {
         const errMsg = await res.text();
@@ -218,14 +229,37 @@ const DetailsPage = () => {
       }
 
       const { record } = await res.json();
+
+      // --------------------------
+      // UPDATE OCR DAILY LIMIT
+      // --------------------------
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+      if (user?.plan === "BASIC") {
+        const today = new Date().toLocaleDateString();
+        const usageData = JSON.parse(localStorage.getItem("ocr_usage") || "{}");
+
+        const newCount =
+          usageData.date === today ? (usageData.count || 0) + 1 : 1;
+
+        localStorage.setItem(
+          "ocr_usage",
+          JSON.stringify({ date: today, count: newCount })
+        );
+
+        setDailyUsage(newCount);
+      }
+
       setHistoryData((prev) => [...prev, record]);
       setIsSaved(true);
       toast.success("OCR data saved successfully!");
+
       setTimeout(() => setIsSaved(false), 2500);
     } catch (err) {
       toast.error(err.message);
     }
   };
+
 
   /* -----------------------------------------------------
    🔄 Reset OCR process
@@ -240,6 +274,25 @@ const DetailsPage = () => {
     setOcrStatus("idle");
     setDebugInfo({});
   };
+
+
+  // Load daily OCR usage from localStorage
+  useEffect(() => {
+    const today = new Date().toLocaleDateString();
+    const usageData = JSON.parse(localStorage.getItem("ocr_usage") || "{}");
+
+    if (usageData.date !== today) {
+      // Reset for new day
+      localStorage.setItem(
+        "ocr_usage",
+        JSON.stringify({ date: today, count: 0 })
+      );
+      setDailyUsage(0);
+    } else {
+      setDailyUsage(usageData.count || 0);
+    }
+  }, []);
+
 
   return (
     <div className={`min-h-screen p-4 sm:p-6 ${isDark ? "bg-gray-900" : "bg-gray-50"} transition-colors duration-300`}>
@@ -487,6 +540,121 @@ const DetailsPage = () => {
           </div>
         </div>
       </div>
+      {showUpgrade && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className={`relative max-w-md w-full transform transition-all duration-300 scale-100 animate-slideUp ${isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
+            {/* Decorative element */}
+            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+              </svg>
+            </div>
+
+            <div className="pt-16 pb-6 px-8">
+              <h2 className="text-2xl font-bold text-center mb-2">Daily OCR Limit Reached</h2>
+
+              <div className={`my-6 p-4 rounded-lg ${isDark ? "bg-gray-700" : "bg-blue-50"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>Current Plan</span>
+                  <span className="text-sm font-semibold">Basic</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mb-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full" style={{ width: "100%" }}></div>
+                </div>
+                <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>10/10 scans used today</p>
+              </div>
+
+              <p className={`text-center mb-6 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                Upgrade to <span className="font-semibold">Standard or Premium</span> for unlimited scanning and additional features.
+              </p>
+
+              {/* Feature comparison */}
+              <div className={`grid grid-cols-2 gap-4 mb-6 ${isDark ? "bg-gray-700" : "bg-gray-50"} rounded-lg p-4`}>
+                <div className="text-center">
+                  <h3 className="font-semibold mb-2 text-blue-600">Standard</h3>
+                  <ul className={`text-sm space-y-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                    <li className="flex items-center justify-center">
+                      <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      Unlimited OCR
+                    </li>
+                    <li className="flex items-center justify-center">
+                      <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      Priority Support
+                    </li>
+                  </ul>
+                </div>
+                <div className="text-center">
+                  <h3 className="font-semibold mb-2 text-purple-600">Premium</h3>
+                  <ul className={`text-sm space-y-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                    <li className="flex items-center justify-center">
+                      <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      All Standard
+                    </li>
+                    <li className="flex items-center justify-center">
+                      <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      Advanced Features
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowUpgrade(false)}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-800"}`}
+                >
+                  Maybe Later
+                </button>
+                <button
+                  onClick={() => (window.location.href = "/upgrade")}
+                  className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setShowUpgrade(false)}
+              className={`absolute top-4 right-4 rounded-full p-1 transition-colors duration-200 ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .animate-slideUp {
+    animation: slideUp 0.3s ease-out;
+  }
+`}</style>
+
     </div>
   );
 };

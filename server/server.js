@@ -18,7 +18,7 @@ import userRoutes from "./routes/userRoutes.js";
 
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import referralRoutes from "./routes/referral.js";
-
+import carRoutes from "./routes/carRoutes.js";
 console.log("Models in Prisma:", Object.keys(prisma));
 
 
@@ -108,6 +108,9 @@ app.use((req, res, next) => {
 
 
 app.use("/uploads", express.static("uploads"));
+
+//car company names and models
+app.use("/api/cars", carRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

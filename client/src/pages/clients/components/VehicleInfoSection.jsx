@@ -1,40 +1,88 @@
-import React from "react";
+// VehicleInfoSection.jsx
+import React, { useState, useEffect } from "react";
 import { FiCalendar, FiHash } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
-export default function VehicleInfoSection({ form, setForm, isDark }) {
+export default function VehicleInfoSection({
+    form,
+    setForm,
+    isDark,
+    userPlan = "BASIC",
+    carMakes = [],
+    carModels = [],
+    fetchCarModels,
+    fuelTypes = [],
+    seatOptions = [],
+}) {
+    const [brandInput, setBrandInput] = useState(form.vehicleMake || "");
+    const [filteredMakes, setFilteredMakes] = useState([]);
+
+    // Keep local input in sync with form (for RC + edit mode)
+    useEffect(() => {
+        setBrandInput(form.vehicleMake || "");
+    }, [form.vehicleMake]);
+
+    // Filter BRAND suggestions (only Standard/Premium)
+    useEffect(() => {
+        if (!brandInput || userPlan === "BASIC") {
+            setFilteredMakes([]);
+            return;
+        }
+
+        const inputLower = brandInput.toLowerCase();
+        const matches = (carMakes || []).filter((m) =>
+            m.make.toLowerCase().includes(inputLower)
+        );
+
+        setFilteredMakes(matches);
+    }, [brandInput, carMakes, userPlan]);
+
+    const handleBrandSelect = (brandObj) => {
+        setBrandInput(brandObj.make);
+        setForm((prev) => ({
+            ...prev,
+            vehicleMake: brandObj.make,
+            vehicleModel: "",
+        }));
+        fetchCarModels(brandObj.make);
+        setFilteredMakes([]);
+    };
+
+    const handleBrandChange = (value) => {
+        setBrandInput(value);
+        setForm((prev) => ({ ...prev, vehicleMake: value }));
+    };
+
+    const handleModelSelect = (modelName) => {
+        setForm((prev) => ({ ...prev, vehicleModel: modelName }));
+    };
+
     return (
         <div
-            className={`${isDark ? "bg-gray-800/50 border-gray-700/50" : "bg-white border-gray-200"
-                } rounded-2xl shadow-lg border backdrop-blur-sm overflow-hidden transition-all duration-300`}
+            className={`${isDark
+                    ? "bg-gray-800/50 border-gray-700/50"
+                    : "bg-white border-gray-200"
+                } rounded-2xl shadow-lg border`}
         >
             {/* Header */}
             <div
                 className={`px-6 py-5 border-b ${isDark
-                        ? "border-gray-700/50 bg-gradient-to-r from-emerald-900/20 to-teal-900/20"
-                        : "border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50"
+                        ? "border-gray-700/50 bg-emerald-900/10"
+                        : "border-gray-100 bg-emerald-50"
                     }`}
             >
                 <div className="flex items-center gap-3">
                     <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center ${isDark
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-emerald-500/10 text-emerald-600"
-                            }`}
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center ${isDark ? "text-emerald-400" : "text-emerald-600"
+                            } bg-emerald-500/10`}
                     >
                         <FaCar size={20} />
                     </div>
                     <div>
-                        <h2
-                            className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"
-                                }`}
-                        >
+                        <h2 className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>
                             Vehicle Information
                         </h2>
-                        <p
-                            className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"
-                                }`}
-                        >
+                        <p className={isDark ? "text-gray-400" : "text-gray-600"}>
                             Vehicle details and registration
                         </p>
                     </div>
@@ -44,95 +92,176 @@ export default function VehicleInfoSection({ form, setForm, isDark }) {
             {/* Body */}
             <div className="p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Vehicle Make */}
+                    {/* BRAND FIELD */}
                     <InputField
                         icon={<FaCar />}
                         label="Vehicle Make"
                         required
-                        value={form.vehicleMake}
-                        onChange={(e) =>
-                            setForm({ ...form, vehicleMake: e.target.value })
-                        }
-                        placeholder="e.g., Toyota, BMW"
+                        value={brandInput}
+                        onChange={(e) => handleBrandChange(e.target.value)}
+                        placeholder="Start typing brand (e.g., Tata)"
                         isDark={isDark}
-                        listId="makes"
                     />
-                    <datalist id="makes">
-                        <option value="Toyota" />
-                        <option value="Honda" />
-                        <option value="Ford" />
-                        <option value="Hyundai" />
-                        <option value="Mahindra" />
-                        <option value="BMW" />
-                        <option value="Audi" />
-                    </datalist>
 
-                    {/* Vehicle Model */}
-                    <InputField
-                        icon={<FaCar />}
-                        label="Vehicle Model"
-                        required
-                        value={form.vehicleModel}
-                        onChange={(e) =>
-                            setForm({ ...form, vehicleModel: e.target.value })
-                        }
-                        placeholder="e.g., Camry, X5, Creta"
-                        isDark={isDark}
-                        listId="models"
-                    />
-                    <datalist id="models">
-                        <option value="Camry" />
-                        <option value="Civic" />
-                        <option value="X5" />
-                        <option value="i20" />
-                        <option value="Scorpio" />
-                    </datalist>
+                    {/* BRAND LOGO CARDS (Standard & Premium) */}
+                    {userPlan !== "BASIC" &&
+                        brandInput.length >= 2 &&
+                        filteredMakes.length > 0 && (
+                            <div className="col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {filteredMakes.map((m, i) => (
+                                    <div
+                                        key={i}
+                                        onClick={() => handleBrandSelect(m)}
+                                        className={`cursor-pointer border rounded-2xl p-4 shadow hover:shadow-lg transition ${isDark
+                                                ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
+                                                : "bg-white border-gray-200 hover:bg-gray-100"
+                                            }`}
+                                    >
+                                        <img
+                                            src={m.logoUrl}
+                                            alt={m.make}
+                                            className="w-full h-24 object-contain mb-3"
+                                        />
+                                        <p className="text-center font-semibold">{m.make}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-                    {/* Vehicle Year */}
+                    {/* MODEL FIELD */}
+                    {userPlan === "BASIC" ? (
+                        <InputField
+                            icon={<FaCar />}
+                            label="Vehicle Model"
+                            required
+                            value={form.vehicleModel}
+                            onChange={(e) =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    vehicleModel: e.target.value,
+                                }))
+                            }
+                            placeholder="Enter model"
+                            isDark={isDark}
+                        />
+                    ) : (
+                        <div className="w-full">
+                            <label
+                                className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
+                                    }`}
+                            >
+                                Vehicle Model
+                            </label>
+
+                            <select
+                                value={form.vehicleModel}
+                                onChange={(e) => handleModelSelect(e.target.value)}
+                                className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border ${isDark
+                                        ? "bg-gray-700/50 border-gray-600 text-white"
+                                        : "bg-gray-50 border-gray-300 text-gray-900"
+                                    }`}
+                            >
+                                <option value="">Select Model</option>
+
+                                {carModels.map((m) => (
+                                    <option key={m.id} value={m.name}>
+                                        {m.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* MODEL THUMBNAILS GRID */}
+                            {carModels.length > 0 && (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-3">
+                                    {carModels.map((m, i) => (
+                                        <div
+                                            key={i}
+                                            onClick={() => handleModelSelect(m.name)}
+                                            className={`cursor-pointer border rounded-xl p-2 shadow hover:shadow-lg ${form.vehicleModel === m.name
+                                                    ? "ring-2 ring-emerald-500"
+                                                    : ""
+                                                }`}
+                                        >
+                                            <img
+                                                src={m.thumbnailUrl}
+                                                alt={m.name}
+                                                className="w-full object-cover rounded-md"
+                                            />
+                                            <p className="mt-1 text-center text-sm">{m.name}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* YEAR */}
                     <InputField
                         icon={<FiCalendar />}
                         label="Vehicle Year"
                         type="number"
                         value={form.vehicleYear}
                         onChange={(e) =>
-                            setForm({ ...form, vehicleYear: e.target.value })
+                            setForm((prev) => ({ ...prev, vehicleYear: e.target.value }))
                         }
                         placeholder="2024"
-                        isDark={isDark}
                         min="1990"
                         max={new Date().getFullYear() + 1}
+                        isDark={isDark}
                     />
 
-                    {/* Registration Number */}
+                    {/* REG NUMBER */}
                     <InputField
                         icon={<FiHash />}
                         label="Registration Number"
                         required
                         value={form.regNumber}
                         onChange={(e) =>
-                            setForm({
-                                ...form,
+                            setForm((prev) => ({
+                                ...prev,
                                 regNumber: e.target.value.toUpperCase(),
-                            })
+                            }))
                         }
-                        placeholder="ABC1234"
+                        placeholder="KA01AB1234"
+                        isDark={isDark}
+                    />
+
+                    {/* FUEL */}
+                    <SelectField
+                        label="Fuel Type"
+                        value={form.fuel}
+                        onChange={(e) =>
+                            setForm((prev) => ({ ...prev, fuel: e.target.value }))
+                        }
+                        options={fuelTypes}
+                        isDark={isDark}
+                    />
+
+                    {/* SEATS */}
+                    <SelectField
+                        label="Seats"
+                        value={form.seats}
+                        onChange={(e) =>
+                            setForm((prev) => ({ ...prev, seats: e.target.value }))
+                        }
+                        options={seatOptions}
                         isDark={isDark}
                     />
                 </div>
 
-                {/* VIN / Chassis Number - Full Width */}
+                {/* VIN */}
                 <div className="mt-5">
                     <InputField
                         icon={<FiHash />}
                         label="VIN / Chassis Number"
                         value={form.vin}
                         onChange={(e) =>
-                            setForm({
-                                ...form,
+                            setForm((prev) => ({
+                                ...prev,
                                 vin: e.target.value.toUpperCase(),
-                            })
+                            }))
                         }
-                        placeholder="1HGCM82633A123456"
+                        placeholder="MA1TA1234XYZ56789"
                         isDark={isDark}
                     />
                 </div>
@@ -141,7 +270,7 @@ export default function VehicleInfoSection({ form, setForm, isDark }) {
     );
 }
 
-/* ===== Reusable Input Field ===== */
+/* Reusable Input Component */
 function InputField({
     icon,
     label,
@@ -150,7 +279,6 @@ function InputField({
     placeholder,
     isDark,
     type = "text",
-    listId,
     required,
     min,
     max,
@@ -164,25 +292,54 @@ function InputField({
                 <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>
                     {icon}
                 </span>
-                <span>
-                    {label} {required && <span className="text-red-500">*</span>}
-                </span>
+                {label} {required && <span className="text-red-500">*</span>}
             </label>
+
             <input
                 type={type}
-                list={listId}
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                required={required}
                 min={min}
                 max={max}
                 autoComplete="off"
-                className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${isDark
-                        ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                        : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                    } focus:outline-none`}
+                required={required}
+                className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border ${isDark
+                        ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-400"
+                        : "bg-gray-50 border-gray-300 placeholder-gray-400"
+                    }`}
             />
+        </div>
+    );
+}
+
+/* Reusable Select Component */
+function SelectField({ label, value, onChange, options, isDark }) {
+    return (
+        <div>
+            <label
+                className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+            >
+                {label}
+            </label>
+
+            <select
+                value={value}
+                onChange={onChange}
+                className={`w-full px-4 py-2.5 rounded-xl border ${isDark
+                        ? "bg-gray-700/50 border-gray-600 text-white"
+                        : "bg-gray-50 border-gray-300"
+                    }`}
+            >
+                <option value="">Select {label}</option>
+
+                {(options || []).map((opt) => (
+                    <option key={opt} value={opt}>
+                        {opt}
+                    </option>
+                ))}
+            </select>
         </div>
     );
 }

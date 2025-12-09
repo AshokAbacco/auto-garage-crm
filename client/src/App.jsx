@@ -55,6 +55,24 @@ import Billings from "./bikePages/Billing/Billings.jsx";
 import Reminders from "./bikePages/Reminders/Reminders.jsx";
 import Report from "./bikePages/Reports/Reports.jsx";
 import OCRScanner from "./bikePages/OCRScanner/OCRScanner.jsx";
+import WashingLayout from "./components/WashingLayout.jsx";
+import Client from "./washPages/client/Client.jsx";
+import Service from "./washPages/services/Services.jsx";
+import Bill from "./washPages/billing/Billing.jsx";
+import Repor from "./washPages/reports/Reports.jsx";
+import Referenc from "./washPages/reference/Reference.jsx";
+import Upgra from "./washPages/upgrade/Upgrade.jsx";
+
+import SMSalert from "./washPages//sms/sms.jsx"
+import Plan from "./washPages/plans/Plans.jsx";
+import Newclient from "./washPages/client/AddClient.jsx"
+import NewService from "./washPages/services/AddService.jsx"
+import NewInvoice from "./washPages/billing/NewInvoice.jsx"
+
+import Subservice from "./washPages/services/SubServices.jsx";
+import NewSubService from "./washPages/services/AddSubService.jsx";
+import WashingProfile from "./components/WashingProfile.jsx"
+
 function App() {
   return (
     <ThemeProvider>
@@ -118,7 +136,7 @@ function App() {
 
 
         {/* Bike Garage CRM Routes */}
-       <Route path="/" element={<BikeLayoutPage />}>
+        <Route path="/" element={<BikeLayoutPage />}>
           <Route path="bike-dashboard" element={<BikeDashboard />} />
           <Route path="bike-clients" element={<Clients />} />
           <Route path="bike-services" element={<Services />} />
@@ -129,14 +147,33 @@ function App() {
           <Route path="bike-plan" element={<Plans />} />
           <Route path="bike-reference" element={<Reference />} />
           <Route path="bike-upgrade" element={<UpgradePlans />} />
-      </Route>
-       
+        </Route>
+
 
         {/* Washing CRM Routes */}
-        <Route path="/wash-dashboard" element={<WashDashboard />} />
+        <Route path="/" element={<WashingLayout />}>
+          <Route path="/wash-dashboard" element={<WashDashboard />} />
+          <Route path="/washing-clients" element={<Client />} />
+          <Route path="/washing-services" element={<Service />} />
+          <Route path="/washing-billing" element={<Bill />} />
+          <Route path="/washing-reports" element={<Repor />} />
+          <Route path="/washing-reference" element={<Referenc />} />
+          <Route path="/washing-upgrade" element={<Upgra />} />
+          <Route path="/washing-services/sub-services" element={<Subservice />} />
+          <Route path="/washing-alerts" element={<SMSalert />} />
+          <Route path="/addclient" element={<Newclient />} />
+          <Route path="/add-service" element={<NewService />} />
+          <Route path="/washing-plan" element={<Plan />} />
+          <Route path="/create-invoice" element={<NewInvoice />} />
+          <Route path="/add-subservice" element={<NewSubService />} />
+          <Route path="/washProfile" element={<WashingProfile />} />
+
+
+
+        </Route>
 
         {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ThemeProvider>
   );

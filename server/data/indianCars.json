@@ -206,144 +206,144 @@
       {
         "name": "Scorpio",
         "slug": "scorpio",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/scorpio/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/scorpio/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/scorpio/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/scorpio/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg"
           }
         }
       },
       {
         "name": "Scorpio N",
         "slug": "scorpio-n",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-n/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-n/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-n/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-n/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg"
           }
         }
       },
       {
         "name": "Scorpio Classic",
         "slug": "scorpio-classic",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-classic/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-classic/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-classic/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/scorpio-classic/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg"
           }
         }
       },
       {
         "name": "Bolero",
         "slug": "bolero",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/bolero/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/bolero/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/bolero/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/bolero/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg"
           }
         }
       },
       {
         "name": "Bolero Neo",
         "slug": "bolero-neo",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/bolero-neo/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/bolero-neo/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/bolero-neo/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/bolero-neo/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg"
           }
         }
       },
       {
         "name": "XUV300",
         "slug": "xuv300",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv300/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv300/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv300/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv300/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg"
           }
         }
       },
       {
-        "name": "XUV300 TurboSport",
-        "slug": "xuv300-turbosport",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv300-turbosport/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv300-turbosport/hero.jpg",
+        "name": "XUV300 3X0",
+        "slug": "xuv300-3x0",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv300-turbosport/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv300-turbosport/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg"
           }
         }
       },
       {
         "name": "XUV400 EV",
         "slug": "xuv400-ev",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv400-ev/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv400-ev/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv400-ev/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv400-ev/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg"
           }
         }
       },
       {
         "name": "XUV700",
         "slug": "xuv700",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv700/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv700/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/xuv700/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/xuv700/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg"
           }
         }
       },
       {
         "name": "Thar",
         "slug": "thar",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/thar/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/thar/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/thar/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/thar/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg"
           }
         }
       },
       {
         "name": "Thar 5-Door",
         "slug": "thar-5-door",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/thar-5-door/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/thar-5-door/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/thar-5-door/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/thar-5-door/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg"
           }
         }
       },
       {
         "name": "Marazzo",
         "slug": "marazzo",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/marazzo/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/mahindra/marazzo/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/mahindra/marazzo/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/mahindra/marazzo/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg"
           }
         }
       }
@@ -357,192 +357,192 @@
       {
         "name": "Swift",
         "slug": "swift",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/swift/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/swift/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/swift/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/swift/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg"
           }
         }
       },
       {
         "name": "Dzire",
         "slug": "dzire",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/dzire/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/dzire/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/dzire/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/dzire/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg"
           }
         }
       },
       {
         "name": "Baleno",
         "slug": "baleno",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/baleno/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/baleno/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/baleno/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/baleno/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg"
           }
         }
       },
       {
         "name": "Celerio",
         "slug": "celerio",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/celerio/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/celerio/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/celerio/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/celerio/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg"
           }
         }
       },
       {
         "name": "Ertiga",
         "slug": "ertiga",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ertiga/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ertiga/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ertiga/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ertiga/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg"
           }
         }
       },
       {
         "name": "XL6",
         "slug": "xl6",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/xl6/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/xl6/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/xl6/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/xl6/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg"
           }
         }
       },
       {
         "name": "Vitara Brezza",
         "slug": "vitara-brezza",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/vitara-brezza/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/vitara-brezza/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/vitara-brezza/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/vitara-brezza/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg"
           }
         }
       },
       {
         "name": "Brezza",
         "slug": "brezza",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/brezza/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/brezza/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/brezza/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/brezza/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg"
           }
         }
       },
       {
         "name": "Fronx",
         "slug": "fronx",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/fronx/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/fronx/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/fronx/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/fronx/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg"
           }
         }
       },
       {
         "name": "Grand Vitara",
         "slug": "grand-vitara",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/grand-vitara/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/grand-vitara/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/grand-vitara/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/grand-vitara/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg"
           }
         }
       },
       {
         "name": "S-Presso",
         "slug": "s-presso",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/s-presso/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/s-presso/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/s-presso/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/s-presso/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg"
           }
         }
       },
       {
         "name": "Ignis",
         "slug": "ignis",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ignis/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ignis/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ignis/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ignis/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg"
           }
         }
       },
       {
         "name": "Alto K10",
         "slug": "alto-k10",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-k10/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-k10/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-k10/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-k10/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg"
           }
         }
       },
       {
         "name": "Alto 800",
         "slug": "alto-800",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-800/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-800/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-800/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/alto-800/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg"
           }
         }
       },
       {
         "name": "Ciaz",
         "slug": "ciaz",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ciaz/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ciaz/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ciaz/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/ciaz/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg"
           }
         }
       },
       {
         "name": "WagonR",
         "slug": "wagonr",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/wagonr/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/wagonr/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/maruti-suzuki/wagonr/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/maruti-suzuki/wagonr/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg"
           }
         }
       }

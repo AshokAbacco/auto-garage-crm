@@ -46,7 +46,9 @@ export default function ClientForm() {
   const [loadingClient, setLoadingClient] = useState(false);
   const [isProcessingRC, setIsProcessingRC] = useState(false);
 
+  // carMakes: [{ make, slug, logoUrl }]
   const [carMakes, setCarMakes] = useState([]);
+  // carModels: [{ id, name, thumbnailUrl, heroUrl, yearVariants }]
   const [carModels, setCarModels] = useState([]);
   const [fuelTypes, setFuelTypes] = useState([]);
   const [seatOptions, setSeatOptions] = useState([]);
@@ -55,11 +57,19 @@ export default function ClientForm() {
   const cameraInputRef = useRef(null);
 
   // -------------------------------
-  // SMART NORMALIZATION HELPERS
+  // SMART NORMALIZATION HELPERS (OCR)
   // -------------------------------
   const CLEANWORDS = [
-    "india", "ltd", "limited", "pvt", "private", "motors", "motor",
-    "automobiles", "automobile", "company"
+    "india",
+    "ltd",
+    "limited",
+    "pvt",
+    "private",
+    "motors",
+    "motor",
+    "automobiles",
+    "automobile",
+    "company",
   ];
 
   const normalizeText = (s = "") =>
@@ -67,38 +77,17 @@ export default function ClientForm() {
 
   const cleanBrand = (s = "") => {
     let t = s.toLowerCase();
-    CLEANWORDS.forEach(w => t = t.replace(w, ""));
+    CLEANWORDS.forEach((w) => (t = t.replace(w, "")));
     return t.replace(/[^a-z]/gi, "").trim();
   };
 
   const cleanModel = (s = "") =>
     s.toLowerCase().replace(/[^a-z0-9]/gi, "").trim();
 
-  const fuzzyMatch = (input, list) => {
-    if (!input || list.length === 0) return "";
-
-    const target = normalizeText(input);
-
-    let bestMatch = "";
-    let bestScore = Infinity;
-
-    list.forEach(item => {
-      const norm = normalizeText(item);
-      let dist = levenshtein(target, norm);
-      if (dist < bestScore) {
-        bestScore = dist;
-        bestMatch = item;
-      }
-    });
-
-    return bestMatch;
-  };
-
-  // Levenshtein Distance (string difference)
   const levenshtein = (a, b) => {
-    const matrix = Array(a.length + 1).fill(null).map(() =>
-      Array(b.length + 1).fill(null)
-    );
+    const matrix = Array(a.length + 1)
+      .fill(null)
+      .map(() => Array(b.length + 1).fill(null));
 
     for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
     for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
@@ -117,16 +106,36 @@ export default function ClientForm() {
     return matrix[a.length][b.length];
   };
 
-  // -------------------------------
-  // SMART OCR MAPPER
-  // -------------------------------
+  const fuzzyMatch = (input, list) => {
+    if (!input || list.length === 0) return "";
+
+    const target = normalizeText(input);
+
+    let bestMatch = "";
+    let bestScore = Infinity;
+
+    list.forEach((item) => {
+      const norm = normalizeText(item);
+      const dist = levenshtein(target, norm);
+      if (dist < bestScore) {
+        bestScore = dist;
+        bestMatch = item;
+      }
+    });
+
+    return bestMatch;
+  };
+
   const normalizeReg = (s = "") =>
     String(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
 
   const extractFuel = (s = "") => {
-    const parts = s.split(/\/|,| |-|\(|\)/).map(p => p.trim().toLowerCase());
+    const parts = s
+      .split(/\/|,| |-|\(|\)/)
+      .map((p) => p.trim().toLowerCase())
+      .filter(Boolean);
     const fuels = ["petrol", "diesel", "cng", "electric", "hybrid"];
-    const found = parts.find(p => fuels.includes(p));
+    const found = parts.find((p) => fuels.includes(p));
     return found ? found.charAt(0).toUpperCase() + found.slice(1) : "";
   };
 
@@ -135,13 +144,16 @@ export default function ClientForm() {
     return m ? m[0] : "";
   };
 
+  // -------------------------------
+  // SMART OCR → FORM MAPPER
+  // -------------------------------
   const mapOcrToForm = async (parsed = {}) => {
     let newData = { ...form };
 
     const grab = (keys) => {
       for (let k of keys) {
         if (parsed[k]) return parsed[k];
-        const found = Object.keys(parsed).find(x =>
+        const found = Object.keys(parsed).find((x) =>
           x.toLowerCase().includes(k.toLowerCase())
         );
         if (found) return parsed[found];
@@ -157,7 +169,7 @@ export default function ClientForm() {
 
     // YEAR
     const y = grab(["year", "mfg"]);
-    const ym = y.match(/\b(19|20)\d{2}\b/);
+    const ym = String(y).match(/\b(19|20)\d{2}\b/);
     if (ym) newData.vehicleYear = ym[0];
 
     // COLOR
@@ -171,38 +183,41 @@ export default function ClientForm() {
 
     // MAKE (SMART)
     const rawMake = grab(["make", "manufacturer", "maker", "brand"]);
-    const cleaned = cleanBrand(rawMake);
+    const cleanedMake = cleanBrand(rawMake);
 
-    const bestMake =
-      carMakes.find(m => cleanBrand(m).includes(cleaned)) ||
-      fuzzyMatch(rawMake, carMakes);
+    const makeNames = carMakes.map((m) => m.make);
 
-    newData.vehicleMake = bestMake || rawMake;
+    const directMakeObj =
+      carMakes.find((m) => cleanBrand(m.make).includes(cleanedMake)) || null;
 
-    // MODEL (SMART) – use API models directly, no setTimeout
+    const fuzzyMakeName = fuzzyMatch(rawMake, makeNames);
+    const selectedMakeName = directMakeObj?.make || fuzzyMakeName;
+
+    newData.vehicleMake = selectedMakeName || rawMake;
+
+    // MODEL (SMART)
     const rawModel = grab(["model", "variant"]);
+    let bestModelName = rawModel;
 
-    if (bestMake) {
+    if (selectedMakeName) {
       try {
-        // fetchCarModels now returns the list it sets in state
-        const models = await fetchCarModels(bestMake);
-        const justNames = (models || []).map(m => m.name);
+        const models = await fetchCarModels(selectedMakeName);
+        const justNames = (models || []).map((m) => m.name);
         const bestModel = fuzzyMatch(rawModel, justNames);
-        newData.vehicleModel = bestModel || rawModel;
+        bestModelName = bestModel || rawModel;
       } catch (err) {
         console.error("Model match error:", err);
-        newData.vehicleModel = rawModel;
+        bestModelName = rawModel;
       }
-    } else {
-      // No matched brand, still keep whatever OCR gave
-      newData.vehicleModel = rawModel;
     }
+
+    newData.vehicleModel = bestModelName;
 
     return newData;
   };
 
   // -------------------------------
-  // PROCESS RC SCAN
+  // RC FILE HANDLER
   // -------------------------------
   const handleRCFile = async (e) => {
     const file = e.target.files?.[0];
@@ -226,11 +241,9 @@ export default function ClientForm() {
 
         const ocr = await processImage(dataUrl);
 
-        // Optional: debug OCR output
-        // console.log("OCR parsed:", ocr?.parsed);
-
         const mapped = await mapOcrToForm(ocr?.parsed || {});
 
+        // Merge OCR result into form (user can still manually edit afterwards)
         setForm((prev) => ({ ...prev, ...mapped }));
 
         toast.success("RC scanned — details auto-filled!");
@@ -254,7 +267,7 @@ export default function ClientForm() {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(`${API_BASE}/api/cars/meta`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const data = await res.json();
@@ -273,40 +286,95 @@ export default function ClientForm() {
   // -------------------------------
   useEffect(() => {
     const loadMakes = async () => {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/cars/local-makes`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setCarMakes(data.makes || []);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE}/api/cars/local-makes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        // keep full objects for logo, slug, etc.
+        setCarMakes(data.makes || []);
+      } catch (err) {
+        console.error("Makes load error", err);
+      }
     };
+
     loadMakes();
   }, []);
 
   // -------------------------------
   // LOAD MODELS WHEN MAKE SELECTED
   // -------------------------------
-  const fetchCarModels = async (make) => {
+  const fetchCarModels = async (makeName) => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `${API_BASE}/api/cars/local-models?make=${encodeURIComponent(make)}`,
+        `${API_BASE}/api/cars/local-models?make=${encodeURIComponent(
+          makeName
+        )}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
-      const models = (data.models || []).map((m, i) => ({ id: i + 1, name: m }));
+
+      const models = (data.models || []).map((m, i) => ({
+        id: i + 1,
+        name: m.name,
+        thumbnailUrl: m.thumbnailUrl,
+        heroUrl: m.heroUrl,
+        yearVariants: m.yearVariants || {},
+      }));
+
       setCarModels(models);
-      // ✅ return models so OCR mapping can use them immediately
       return models;
     } catch (e) {
-      console.log(e);
+      console.log("Models load error", e);
       return [];
     }
   };
 
-  // ----------------------------------------
+  // -------------------------------
+  // AUTO LOAD CAR IMAGE FROM LOCAL DATASET
+  // -------------------------------
+  useEffect(() => {
+    const make = form.vehicleMake;
+    const model = form.vehicleModel;
+    const year = form.vehicleYear;
+
+    if (!make || !model) return;
+
+    const loadLocalImage = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          `${API_BASE}/api/cars/local-image?make=${encodeURIComponent(
+            make
+          )}&model=${encodeURIComponent(model)}&year=${encodeURIComponent(
+            year || ""
+          )}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const data = await res.json();
+
+        if (res.ok) {
+          setForm((prev) => ({
+            ...prev,
+            carImage: data.heroUrl || data.thumbnailUrl || prev.carImage,
+          }));
+        }
+      } catch (err) {
+        console.error("Local image fetch error", err);
+      }
+    };
+
+    loadLocalImage();
+  }, [form.vehicleMake, form.vehicleModel, form.vehicleYear]);
+
+  // -------------------------------
   // SAVE CLIENT
-  // ----------------------------------------
+  // -------------------------------
   const handleSubmit = async (ev) => {
     ev.preventDefault();
     setLoading(true);
@@ -350,12 +418,14 @@ export default function ClientForm() {
   // MAIN UI
   // -------------------------------
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"}`}>
+    <div
+      className={`min-h-screen p-6 lg:ml-16 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
+        }`}
+    >
       <Toaster position="top-right" />
 
       <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-8">
-
-        {/* Hidden Inputs */}
+        {/* Hidden Inputs for RC */}
         <input
           ref={fileInputRef}
           type="file"
@@ -373,10 +443,17 @@ export default function ClientForm() {
         />
 
         {/* Header */}
-        <div className={`rounded-3xl p-8 shadow-lg flex items-center justify-between ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        <div
+          className={`rounded-3xl p-8 shadow-lg flex items-center justify-between ${isDark ? "bg-gray-800" : "bg-white"
+            }`}
+        >
           <div>
-            <h1 className="text-3xl font-bold">{id ? "Edit Client" : "New Client"}</h1>
-            <p className={isDark ? "text-gray-400" : "text-gray-600"}>Manage customer & vehicle details</p>
+            <h1 className="text-3xl font-bold">
+              {id ? "Edit Client" : "New Client"}
+            </h1>
+            <p className={isDark ? "text-gray-400" : "text-gray-600"}>
+              Manage customer & vehicle details
+            </p>
           </div>
 
           {user?.plan !== "BASIC" ? (
@@ -389,8 +466,8 @@ export default function ClientForm() {
               }
               disabled={isProcessingRC}
               className={`px-5 py-3 rounded-xl flex items-center gap-2 text-white shadow-md ${isDark
-                ? "bg-indigo-600 hover:bg-indigo-700"
-                : "bg-indigo-500 hover:bg-indigo-600"
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-indigo-500 hover:bg-indigo-600"
                 }`}
             >
               <FiCamera />
@@ -404,13 +481,19 @@ export default function ClientForm() {
         </div>
 
         {/* Personal Info */}
-        <div className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        <div
+          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
+            }`}
+        >
           <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
           <PersonalInfoSection form={form} setForm={setForm} isDark={isDark} />
         </div>
 
         {/* Vehicle Info */}
-        <div className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        <div
+          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
+            }`}
+        >
           <h2 className="text-xl font-semibold mb-4">Vehicle Information</h2>
 
           <VehicleInfoSection
@@ -426,9 +509,24 @@ export default function ClientForm() {
           />
         </div>
 
-        {/* Images */}
-        <div className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        {/* Vehicle Images */}
+        <div
+          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
+            }`}
+        >
           <h2 className="text-xl font-semibold mb-4">Vehicle Images</h2>
+
+          {/* Auto-filled image from local dataset */}
+          {form.carImage && (
+            <div className="mb-4">
+              <img
+                src={form.carImage}
+                className="w-100 rounded-2xl shadow-lg object-cover"
+                alt="Vehicle Preview"
+              />
+            </div>
+          )}
+
           <ImageUploader
             form={form}
             setForm={setForm}
@@ -443,8 +541,8 @@ export default function ClientForm() {
             type="button"
             onClick={() => navigate("/clients")}
             className={`px-6 py-3 rounded-xl font-medium shadow ${isDark
-              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
               }`}
           >
             <FiX className="inline-block mr-1" />
@@ -455,10 +553,10 @@ export default function ClientForm() {
             type="submit"
             disabled={loading}
             className={`px-6 py-3 rounded-xl flex items-center gap-2 text-white font-semibold shadow ${loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : isDark
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-green-500 hover:bg-green-600"
+                ? "bg-gray-400 cursor-not-allowed"
+                : isDark
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-green-500 hover:bg-green-600"
               }`}
           >
             <FiSave />

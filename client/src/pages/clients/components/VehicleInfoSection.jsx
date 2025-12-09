@@ -1,25 +1,7 @@
+// VehicleInfoSection.jsx
 import React, { useState, useEffect } from "react";
 import { FiCalendar, FiHash } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
-
-// Words that should be removed when matching brands
-const EXTRA_WORDS = [
-    "india", "ltd", "limited", "motors", "pvt", "private", "automobile",
-    "automobiles", "motor", "company"
-];
-
-// Normalize brand text
-const normalizeBrand = (str = "") => {
-    let t = str.toLowerCase();
-    EXTRA_WORDS.forEach(w => {
-        t = t.replace(w, "");
-    });
-    return t.replace(/[^a-z]/g, "").trim(); // keep alphabetical only
-};
-
-// Normalize model for fuzzy match (currently unused but kept)
-const normalizeModel = (str = "") =>
-    String(str).toLowerCase().replace(/[^a-z0-9]/g, "").trim();
 
 export default function VehicleInfoSection({
     form,
@@ -35,71 +17,58 @@ export default function VehicleInfoSection({
     const [brandInput, setBrandInput] = useState(form.vehicleMake || "");
     const [filteredMakes, setFilteredMakes] = useState([]);
 
-    // ✅ Keep local input in sync with form (important for RC scan + edit mode)
+    // Keep local input in sync with form (for RC + edit mode)
     useEffect(() => {
         setBrandInput(form.vehicleMake || "");
     }, [form.vehicleMake]);
 
-    // ----------------------------------------------------
-    // FILTER BRAND SUGGESTIONS (SMART MATCHING)
-    // ----------------------------------------------------
+    // Filter BRAND suggestions (only Standard/Premium)
     useEffect(() => {
         if (!brandInput || userPlan === "BASIC") {
             setFilteredMakes([]);
             return;
         }
 
-        const normalizedInput = normalizeBrand(brandInput);
-
-        if (!normalizedInput) {
-            setFilteredMakes([]);
-            return;
-        }
-
-        const matches = (carMakes || []).filter((brand) => {
-            return normalizeBrand(brand).includes(normalizedInput);
-        });
+        const inputLower = brandInput.toLowerCase();
+        const matches = (carMakes || []).filter((m) =>
+            m.make.toLowerCase().includes(inputLower)
+        );
 
         setFilteredMakes(matches);
     }, [brandInput, carMakes, userPlan]);
 
-    // ----------------------------------------------------
-    // BRAND SELECTED
-    // ----------------------------------------------------
-    const handleBrandSelect = (brand) => {
-        setBrandInput(brand);
-        setForm((prev) => ({ ...prev, vehicleMake: brand, vehicleModel: "" }));
-        fetchCarModels(brand);
+    const handleBrandSelect = (brandObj) => {
+        setBrandInput(brandObj.make);
+        setForm((prev) => ({
+            ...prev,
+            vehicleMake: brandObj.make,
+            vehicleModel: "",
+        }));
+        fetchCarModels(brandObj.make);
         setFilteredMakes([]);
     };
 
-    // ----------------------------------------------------
-    // BRAND INPUT CHANGE
-    // ----------------------------------------------------
     const handleBrandChange = (value) => {
         setBrandInput(value);
         setForm((prev) => ({ ...prev, vehicleMake: value }));
     };
 
-    // ----------------------------------------------------
-    // MODEL SELECT
-    // ----------------------------------------------------
-    const handleModelSelect = (model) => {
-        setForm((prev) => ({ ...prev, vehicleModel: model }));
+    const handleModelSelect = (modelName) => {
+        setForm((prev) => ({ ...prev, vehicleModel: modelName }));
     };
 
     return (
         <div
             className={`${isDark
-                ? "bg-gray-800/50 border-gray-700/50"
-                : "bg-white border-gray-200"
+                    ? "bg-gray-800/50 border-gray-700/50"
+                    : "bg-white border-gray-200"
                 } rounded-2xl shadow-lg border`}
         >
             {/* Header */}
             <div
                 className={`px-6 py-5 border-b ${isDark
-                    ? "border-gray-700/50 bg-emerald-900/10"
-                    : "border-gray-100 bg-emerald-50"
+                        ? "border-gray-700/50 bg-emerald-900/10"
+                        : "border-gray-100 bg-emerald-50"
                     }`}
             >
                 <div className="flex items-center gap-3">
@@ -123,7 +92,6 @@ export default function VehicleInfoSection({
             {/* Body */}
             <div className="p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
                     {/* BRAND FIELD */}
                     <InputField
                         icon={<FaCar />}
@@ -135,18 +103,26 @@ export default function VehicleInfoSection({
                         isDark={isDark}
                     />
 
-                    {/* BRAND SUGGESTIONS */}
+                    {/* BRAND LOGO CARDS (Standard & Premium) */}
                     {userPlan !== "BASIC" &&
                         brandInput.length >= 2 &&
-                        (filteredMakes || []).length > 0 && (
-                            <div className="col-span-2 border rounded-lg bg-white dark:bg-gray-800 shadow max-h-60 overflow-auto">
-                                {(filteredMakes || []).map((brand, index) => (
+                        filteredMakes.length > 0 && (
+                            <div className="col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {filteredMakes.map((m, i) => (
                                     <div
-                                        key={`${brand}-${index}`}
-                                        onClick={() => handleBrandSelect(brand)}
-                                        className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                                        key={i}
+                                        onClick={() => handleBrandSelect(m)}
+                                        className={`cursor-pointer border rounded-2xl p-4 shadow hover:shadow-lg transition ${isDark
+                                                ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
+                                                : "bg-white border-gray-200 hover:bg-gray-100"
+                                            }`}
                                     >
-                                        {brand}
+                                        <img
+                                            src={m.logoUrl}
+                                            alt={m.make}
+                                            className="w-full h-24 object-contain mb-3"
+                                        />
+                                        <p className="text-center font-semibold">{m.make}</p>
                                     </div>
                                 ))}
                             </div>
@@ -181,18 +157,41 @@ export default function VehicleInfoSection({
                                 value={form.vehicleModel}
                                 onChange={(e) => handleModelSelect(e.target.value)}
                                 className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border ${isDark
-                                    ? "bg-gray-700/50 border-gray-600 text-white"
-                                    : "bg-gray-50 border-gray-300 text-gray-900"
+                                        ? "bg-gray-700/50 border-gray-600 text-white"
+                                        : "bg-gray-50 border-gray-300 text-gray-900"
                                     }`}
                             >
                                 <option value="">Select Model</option>
 
-                                {(carModels || []).map((m) => (
+                                {carModels.map((m) => (
                                     <option key={m.id} value={m.name}>
                                         {m.name}
                                     </option>
                                 ))}
                             </select>
+
+                            {/* MODEL THUMBNAILS GRID */}
+                            {carModels.length > 0 && (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-3">
+                                    {carModels.map((m, i) => (
+                                        <div
+                                            key={i}
+                                            onClick={() => handleModelSelect(m.name)}
+                                            className={`cursor-pointer border rounded-xl p-2 shadow hover:shadow-lg ${form.vehicleModel === m.name
+                                                    ? "ring-2 ring-emerald-500"
+                                                    : ""
+                                                }`}
+                                        >
+                                            <img
+                                                src={m.thumbnailUrl}
+                                                alt={m.name}
+                                                className="w-full object-cover rounded-md"
+                                            />
+                                            <p className="mt-1 text-center text-sm">{m.name}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -228,62 +227,26 @@ export default function VehicleInfoSection({
                     />
 
                     {/* FUEL */}
-                    <div>
-                        <label
-                            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-                                }`}
-                        >
-                            Fuel Type
-                        </label>
-
-                        <select
-                            value={form.fuel}
-                            onChange={(e) =>
-                                setForm((prev) => ({ ...prev, fuel: e.target.value }))
-                            }
-                            className={`w-full px-4 py-2.5 rounded-xl border ${isDark
-                                ? "bg-gray-700/50 border-gray-600 text-white"
-                                : "bg-gray-50 border-gray-300"
-                                }`}
-                        >
-                            <option value="">Select Fuel</option>
-
-                            {(fuelTypes || []).map((fuel) => (
-                                <option key={fuel} value={fuel}>
-                                    {fuel}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <SelectField
+                        label="Fuel Type"
+                        value={form.fuel}
+                        onChange={(e) =>
+                            setForm((prev) => ({ ...prev, fuel: e.target.value }))
+                        }
+                        options={fuelTypes}
+                        isDark={isDark}
+                    />
 
                     {/* SEATS */}
-                    <div>
-                        <label
-                            className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-                                }`}
-                        >
-                            Seats
-                        </label>
-
-                        <select
-                            value={form.seats}
-                            onChange={(e) =>
-                                setForm((prev) => ({ ...prev, seats: e.target.value }))
-                            }
-                            className={`w-full px-4 py-2.5 rounded-xl border ${isDark
-                                ? "bg-gray-700/50 border-gray-600 text-white"
-                                : "bg-gray-50 border-gray-300"
-                                }`}
-                        >
-                            <option value="">Select Seats</option>
-
-                            {(seatOptions || []).map((s) => (
-                                <option key={s} value={s}>
-                                    {s}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    <SelectField
+                        label="Seats"
+                        value={form.seats}
+                        onChange={(e) =>
+                            setForm((prev) => ({ ...prev, seats: e.target.value }))
+                        }
+                        options={seatOptions}
+                        isDark={isDark}
+                    />
                 </div>
 
                 {/* VIN */}
@@ -342,10 +305,41 @@ function InputField({
                 autoComplete="off"
                 required={required}
                 className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border ${isDark
-                    ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-gray-50 border-gray-300 placeholder-gray-400"
+                        ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-400"
+                        : "bg-gray-50 border-gray-300 placeholder-gray-400"
                     }`}
             />
+        </div>
+    );
+}
+
+/* Reusable Select Component */
+function SelectField({ label, value, onChange, options, isDark }) {
+    return (
+        <div>
+            <label
+                className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+            >
+                {label}
+            </label>
+
+            <select
+                value={value}
+                onChange={onChange}
+                className={`w-full px-4 py-2.5 rounded-xl border ${isDark
+                        ? "bg-gray-700/50 border-gray-600 text-white"
+                        : "bg-gray-50 border-gray-300"
+                    }`}
+            >
+                <option value="">Select {label}</option>
+
+                {(options || []).map((opt) => (
+                    <option key={opt} value={opt}>
+                        {opt}
+                    </option>
+                ))}
+            </select>
         </div>
     );
 }

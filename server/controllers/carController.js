@@ -7,14 +7,26 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load Indian car dataset safely
+// Load Indian car dataset
 const CAR_DATA_PATH = path.join(__dirname, "..", "data", "indianCars.json");
 
+// carData will be converted to:
+// {
+//   "TATA": { make, slug, logoUrl, models: [...] },
+//   "MAHINDRA": { ... }
+// }
 let carData = {};
+
 try {
     const raw = fs.readFileSync(CAR_DATA_PATH, "utf-8");
-    carData = JSON.parse(raw);
-    console.log("Loaded Indian cars dataset.");
+    const arr = JSON.parse(raw);
+
+    // Convert array → map
+    arr.forEach(entry => {
+        carData[entry.make.toUpperCase()] = entry;
+    });
+
+    console.log("Loaded Indian cars dataset (normalized).");
 } catch (err) {
     console.error("Failed to load indianCars.json", err);
     carData = {};
@@ -26,124 +38,100 @@ try {
 export const getMetaData = (req, res) => {
     return res.json({
         fuelTypes: ["Petrol", "Diesel", "CNG", "Electric", "Hybrid"],
-        seats: ["2", "4", "5", "6", "7", "8"]
+        seats: ["2", "4", "5", "6", "7", "8"],
     });
 };
 
 // ------------------------------------
-// NHTSA API FOR GLOBAL MAKES
-// ------------------------------------
-const NHTSA_BASE = "https://vpic.nhtsa.dot.gov/api/vehicles";
-
-let makesCache = {
-    data: null,
-    fetchedAt: 0,
-};
-
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const isCacheStale = () =>
-    !makesCache.data || Date.now() - makesCache.fetchedAt > ONE_DAY_MS;
-
-export const getMakes = async (req, res, next) => {
-    try {
-        const search = (req.query.search || "").toLowerCase();
-        const limit = parseInt(req.query.limit, 10) || 20;
-
-        if (isCacheStale()) {
-            const { data } = await axios.get(
-                `${NHTSA_BASE}/GetAllMakes?format=json`
-            );
-
-            makesCache = {
-                data: data?.Results || [],
-                fetchedAt: Date.now(),
-            };
-        }
-
-        let results = makesCache.data;
-
-        if (search) {
-            results = results.filter((m) =>
-                m.Make_Name?.toLowerCase().includes(search)
-            );
-        }
-
-        const payload = results.slice(0, limit).map((m) => ({
-            id: m.Make_ID,
-            name: m.Make_Name,
-            slug: m.Make_Name.toLowerCase().replace(/\s+/g, "-"),
-        }));
-
-        res.json({ makes: payload });
-
-    } catch (err) {
-        next(err);
-    }
-};
-
-export const getModels = async (req, res, next) => {
-    try {
-        const make = req.query.make;
-        if (!make) {
-            return res.status(400).json({ message: "make is required" });
-        }
-
-        const makeEncoded = encodeURIComponent(make);
-
-        const { data } = await axios.get(
-            `${NHTSA_BASE}/GetModelsForMake/${makeEncoded}?format=json`
-        );
-
-        const models = (data?.Results || []).map((m) => ({
-            id: m.Model_ID,
-            name: m.Model_Name,
-        }));
-
-        res.json({ models });
-
-    } catch (err) {
-        next(err);
-    }
-};
-
-// ------------------------------------
-// OPTION A: INDIA LOCAL DATASET
+// LOCAL INDIA MAKES
 // ------------------------------------
 export const getLocalMakes = (req, res) => {
-    const makes = Object.keys(carData); // ["TATA", "MAHINDRA", ...]
+    const makes = Object.values(carData).map(m => ({
+        make: m.make,
+        slug: m.slug,
+        logoUrl: m.logoUrl,
+    }));
+
     res.json({ makes });
 };
 
+// ------------------------------------
+// LOCAL INDIA MODELS
+// ------------------------------------
 export const getLocalModels = (req, res) => {
     const make = (req.query.make || "").toUpperCase();
+    const entry = carData[make];
 
-    if (!make || !carData[make]) {
-        return res.json({ models: [] });
+    if (!entry) {
+        return res.json({ make, models: [] });
     }
 
     res.json({
-        make,
-        models: carData[make]
+        make: entry.make,
+        slug: entry.slug,
+        logoUrl: entry.logoUrl,
+        models: entry.models,
     });
 };
 
 // ------------------------------------
-// BRAND LOGO ASSETS (Premium)
+// LOCAL IMAGE LOOKUP (thumbnail + hero)
 // ------------------------------------
-const BRAND_ASSETS = {
-    TATA: { logo: "https://www.carlogos.org/car-logos/tata-logo.png" },
-    MAHINDRA: { logo: "https://www.carlogos.org/car-logos/mahindra-logo.png" },
-    "MARUTI SUZUKI": { logo: "https://www.carlogos.org/car-logos/maruti-suzuki-logo.png" },
-    HYUNDAI: { logo: "https://www.carlogos.org/car-logos/hyundai-logo.png" },
-    HONDA: { logo: "https://www.carlogos.org/car-logos/honda-logo.png" },
+export const getLocalImage = (req, res) => {
+    const { make, model, year } = req.query;
+
+    if (!make || !model) {
+        return res.status(400).json({ message: "make and model are required" });
+    }
+
+    const entry = carData[make.toUpperCase()];
+    if (!entry) {
+        return res.status(404).json({ message: "Make not found" });
+    }
+
+    const foundModel = entry.models.find(
+        m => m.name.toLowerCase() === model.toLowerCase()
+    );
+
+    if (!foundModel) {
+        return res.status(404).json({ message: "Model not found" });
+    }
+
+    // Prefer year-specific images if available
+    if (year && foundModel.yearVariants && foundModel.yearVariants[year]) {
+        return res.json({
+            make: entry.make,
+            model: foundModel.name,
+            year,
+            thumbnailUrl: foundModel.yearVariants[year].thumbnailUrl,
+            heroUrl: foundModel.yearVariants[year].heroUrl,
+        });
+    }
+
+    // Default images
+    return res.json({
+        make: entry.make,
+        model: foundModel.name,
+        thumbnailUrl: foundModel.thumbnailUrl,
+        heroUrl: foundModel.heroUrl,
+    });
 };
 
+// ------------------------------------
+// BRAND LOGO ASSETS (Optional / Legacy)
+// ------------------------------------
 export const getBrandAssets = (req, res) => {
     const make = (req.query.make || "").toUpperCase();
-    const assets = BRAND_ASSETS[make] || null;
+    const entry = carData[make];
 
-    res.json({
-        make,
-        assets,
+    if (!entry) {
+        return res.json({ make, assets: null });
+    }
+
+    return res.json({
+        make: entry.make,
+        assets: {
+            logo: entry.logoUrl,
+        },
     });
 };

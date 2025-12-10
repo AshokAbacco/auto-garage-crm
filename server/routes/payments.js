@@ -104,7 +104,7 @@ router.post("/create-subscription", async (req, res) => {
     let startAt = undefined;
 
     if (!isUpgrade && useTrial) {
-      startAt = Math.floor((Date.now() + 10 * 60 * 1000) / 1000); // 10 minutes
+      startAt = Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000);
     }
 
     // ---------------------------

@@ -114,6 +114,9 @@ app.use((req, res, next) => {
 
 app.use("/uploads", express.static("uploads"));
 
+//car company names and models
+app.use("/api/cars", carRoutes);
+
 /* -----------------------------------------------------
    🚀 Mount API Routes
 ----------------------------------------------------- */

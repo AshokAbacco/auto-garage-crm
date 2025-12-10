@@ -582,11 +582,15 @@ export default function ServiceForm() {
               name="status"
               value={form.status}
               onChange={handleChange}
-              className={`w-full rounded-lg border p-3 ${isDark ? "bg-gray-700 border-gray-600" : "bg-gray-50 border-gray-300"}`}
+              className={`rounded-lg border p-3 text-sm ${
+                isDark ? "bg-gray-700 border-gray-600 text-white" : "bg-gray-50 border-gray-300 text-gray-900"
+              }`}
             >
               <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
+              <option value="Paid">Paid</option>
             </select>
+
+
           </div>
 
           {/* Estimated Total Display */}

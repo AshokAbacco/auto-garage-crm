@@ -282,16 +282,21 @@ const WashRegister = () => {
                     <label className="text-sm font-semibold text-gray-300">
                       Username <span className="text-xs text-gray-500">(from payment)</span>
                     </label>
+
                     <div className="relative group">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+
                       <input
                         type="text"
                         value={formData.username}
-                        disabled
-                        className="w-full pl-12 pr-4 py-4 rounded-xl border-2 cursor-not-allowed bg-white/5 border-white/10 text-gray-400"
+                        onChange={(e) =>
+                          setFormData({ ...formData, username: e.target.value })
+                        }
+                        className="w-full pl-12 pr-4 py-4 rounded-xl border-2 bg-white/5 border-white/10 text-gray-200 focus:border-indigo-500 focus:outline-none"
                       />
                     </div>
                   </div>
+
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-300">

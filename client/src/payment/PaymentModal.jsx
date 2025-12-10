@@ -164,16 +164,161 @@ const PaymentModal = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // const handlePayment = async () => {
+  //   if (!validateForm()) return;
+  //   if (!razorpayLoaded) return alert("Razorpay is still loading…");
+
+  //   setIsProcessing(true);
+
+  //   const API =
+  //     window.location.hostname === "localhost"
+  //       ? "http://localhost:5000"
+  //       : "https://auto-garage-crm-zrxc.onrender.com";
+
+  //   // 1️⃣ Create subscription on backend
+  //   const subRes = await fetch(`${API}/api/payments/create-subscription`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({
+  //       plan: {
+  //         name: plan.name,
+  //         numericPrice: plan.numericPrice,
+  //       },
+  //       billingPeriod,
+  //       customer: { ...formData },
+  //     }),
+  //   });
+
+  //   const data = await subRes.json();
+  //   // if (!data.success) {
+  //   //   alert(data.error || "Failed to create subscription");
+  //   //   setIsProcessing(false);
+  //   //   return;
+  //   // }
+
+  //   if (!data || !data.success) {
+  //     console.error("Create-subscription response:", data);
+  //     alert(data?.error || "Failed to create subscription");
+  //     setIsProcessing(false);
+  //     return;
+  //   }
+
+  //   if (!data.subscription || !data.subscription.id) {
+  //     console.error("Missing subscription in response:", data);
+  //     alert("Subscription not created correctly. Check server logs.");
+  //     setIsProcessing(false);
+  //     return;
+  //   }
+
+  //   const subscription = data.subscription;
+  //   const razorpayKey = data.razorpayKey;
+
+  //   // 2️⃣ Razorpay Checkout
+  //   const options = {
+  //     key: razorpayKey,
+  //     subscription_id: subscription.id,
+  //     name: "Abacco Technology",
+  //     description: `${plan.name} Plan`,
+  //     theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
+
+  //     prefill: {
+  //       name: formData.name,
+  //       email: formData.email,
+  //       contact: formData.phone,
+  //     },
+
+  //     handler: async function (response) {
+  //       // Razorpay returns correct payment + subscription IDs
+  //       const subscriptionId = response.razorpay_subscription_id;
+  //       const paymentId = response.razorpay_payment_id;
+
+  //       // 🔥 For localhost, verify manually
+  //       if (window.location.hostname === "localhost") {
+  //         await fetch(`${API}/api/payments/verify-payment-localhost`, {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({
+  //             subscriptionId,
+  //             paymentId,
+  //           }),
+  //         });
+  //       }
+
+  //       // Save for UI
+  //       setPaymentResponse({
+  //         paymentId,
+  //         subscriptionId,
+  //         signature: response.razorpay_signature,
+  //       });
+
+  //       setShowSuccess(true);
+  //     },
+
+  //   };
+
+  //   const rzp = new window.Razorpay(options);
+
+  //   // 3️⃣ Handle failures & dismiss
+  //   rzp.on("payment.failed", function () {
+  //     alert("Payment failed. Please try again.");
+  //     setIsProcessing(false);
+  //   });
+
+  //   rzp.on("checkout.closed", function () {
+  //     setIsProcessing(false);
+  //   });
+
+  //   rzp.open();
+  // };
+
   const handlePayment = async () => {
     if (!validateForm()) return;
-    if (!razorpayLoaded) return alert("Razorpay is still loading…");
-
-    setIsProcessing(true);
+    if (!razorpayLoaded) {
+      alert("Razorpay is still loading…");
+      return;
+    }
 
     const API =
       window.location.hostname === "localhost"
         ? "http://localhost:5000"
         : "https://auto-garage-crm-zrxc.onrender.com";
+
+    // ✅ Step 0: check email already registered (ONLY for new registration, not upgrade)
+    if (!isUpgradePage) {
+      try {
+        const checkRes = await fetch(`${API}/api/user/check-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        });
+
+        const checkData = await checkRes.json();
+
+        if (!checkRes.ok || !checkData.success) {
+          console.error("Email check error:", checkData);
+          alert(
+            checkData?.message ||
+            "Unable to verify email right now. Please try again."
+          );
+          return;
+        }
+
+        if (checkData.exists) {
+          // Email already registered → stop payment and ask to login / use different email
+          alert(
+            "This email is already registered.\n\nPlease login using this email and password, or use a different email ID for new registration."
+          );
+          return; // ⛔ Do NOT continue to payment
+        }
+      } catch (err) {
+        console.error("Email check failed:", err);
+        alert("Unable to verify email right now. Please try again.");
+        return;
+      }
+    }
+
+    // ✅ Only reach here if email is OK (or it's upgrade page)
+    setIsProcessing(true);
 
     // 1️⃣ Create subscription on backend
     const subRes = await fetch(`${API}/api/payments/create-subscription`, {
@@ -190,11 +335,6 @@ const PaymentModal = ({
     });
 
     const data = await subRes.json();
-    // if (!data.success) {
-    //   alert(data.error || "Failed to create subscription");
-    //   setIsProcessing(false);
-    //   return;
-    // }
 
     if (!data || !data.success) {
       console.error("Create-subscription response:", data);
@@ -228,11 +368,9 @@ const PaymentModal = ({
       },
 
       handler: async function (response) {
-        // Razorpay returns correct payment + subscription IDs
         const subscriptionId = response.razorpay_subscription_id;
         const paymentId = response.razorpay_payment_id;
 
-        // 🔥 For localhost, verify manually
         if (window.location.hostname === "localhost") {
           await fetch(`${API}/api/payments/verify-payment-localhost`, {
             method: "POST",
@@ -244,7 +382,6 @@ const PaymentModal = ({
           });
         }
 
-        // Save for UI
         setPaymentResponse({
           paymentId,
           subscriptionId,
@@ -253,7 +390,6 @@ const PaymentModal = ({
 
         setShowSuccess(true);
       },
-
     };
 
     const rzp = new window.Razorpay(options);
@@ -271,6 +407,7 @@ const PaymentModal = ({
     rzp.open();
   };
 
+  
   const formFields = [
     {
       key: "name",

@@ -72,6 +72,13 @@ import NewInvoice from "./washPages/billing/NewInvoice.jsx"
 import Subservice from "./washPages/services/SubServices.jsx";
 import NewSubService from "./washPages/services/AddSubService.jsx";
 import WashingProfile from "./components/WashingProfile.jsx"
+import AddClients from "./bikePages/client/AddClients.jsx";
+import BikeDetail from "./bikePages/client/clientDetail.jsx";
+import AddService from "./bikePages/services/AddService.jsx";
+import ServiceDetails from "./bikePages/services/ServiceDetails.jsx";
+import AddBilling from "./bikePages/Billing/AddBilling.jsx";
+import InvoiceBill from "./bikePages/Billing/InvoiceBill.jsx";
+import BikeProfile from "./components/BikeProfile.jsx";
 
 function App() {
   return (
@@ -138,6 +145,7 @@ function App() {
         {/* Bike Garage CRM Routes */}
         <Route path="/" element={<BikeLayoutPage />}>
           <Route path="bike-dashboard" element={<BikeDashboard />} />
+          <Route path="/bike-profile" element={<BikeProfile />} />
           <Route path="bike-clients" element={<Clients />} />
           <Route path="bike-services" element={<Services />} />
           <Route path="bike-billing" element={<Billings />} />
@@ -149,6 +157,17 @@ function App() {
           <Route path="bike-upgrade" element={<UpgradePlans />} />
         </Route>
 
+          <Route path="/editclient/:id" element={<AddClients />} />
+          <Route path="/editclient/new" element={<AddClients />} />
+          <Route path="/bikes/:id" element={<BikeDetail />} />
+          <Route path="/bike-services/add" element={<AddService />} />
+          <Route path="/bike-services/:id" element={<ServiceDetails />} />
+          <Route path="/bike-services/:id/edit" element={<AddService />} />
+          <Route path="/bill/new" element={<AddBilling />} />
+          <Route path="/bill/:id/edit" element={<AddBilling />} />
+          <Route path="/bill/:id" element={<InvoiceBill />} />
+      </Route>
+       
 
         {/* Washing CRM Routes */}
         <Route path="/" element={<WashingLayout />}>

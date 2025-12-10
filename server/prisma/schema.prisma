@@ -49,10 +49,12 @@ model User {
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
-  clients        Client[]
-  invoices       Invoice[]
-  reminders      Reminder[]
-  ocrs           OcrRecord[]
+  clients       Client[]
+  invoices      Invoice[]
+  reminders     Reminder[]
+  ocrs          OcrRecord[]
+  bikes         Bike[]
+  bikeReminders BikeReminder[]
   washingClients WashingClient[]
 }
 
@@ -348,13 +350,167 @@ model WashingServiceMedia {
   url      String
   mimeType String?
   fileName String?
+//  Bike Tables
+
+model Bike {
+  id        Int     @id @default(autoincrement())
+  ownerName String
+  phone     String
+  email     String?
+  address   String?
+
+  bikeBrand String
+  bikeModel String
+  bikeYear  Int?
+
+  regNumber    String
+  engineNumber String?
+  vin          String?
+
+  bikeImage    String?
+  adImage      String?
+  damageImages String[]
+
+  receiverName String?
+  color        String?
+  fuel         String?
+  notes        String?
+  bikeServices BikeService[]
+  userId       Int?
+  user         User?         @relation(fields: [userId], references: [id])
+
+  createdAt     DateTime       @default(now())
+  bikeInvoices  BikeInvoice[]
+  bikeReminders BikeReminder[]
+}
+
+model BikeService {
+  id Int @id @default(autoincrement())
+
+  clientId Int
+  client   Bike @relation(fields: [clientId], references: [id])
+
+  categoryId Int
+  category   BikeServiceCategory @relation(fields: [categoryId], references: [id])
+
+  subServiceId Int
+  subService   BikeSubService @relation(fields: [subServiceId], references: [id])
+
+  date  DateTime
+  notes String?
+
+  partsCost Float @default(0)
+  partsGst  Float @default(0)
+
+  laborCost Float @default(0)
+  laborGst  Float @default(0)
+
+  cost   Float  @default(0)
+  status String @default("Pending")
+
+  invoiceId Int?
+  invoice   BikeInvoice? @relation("InvoiceServices", fields: [invoiceId], references: [id])
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  bikeServiceMedias BikeServiceMedia[]
+}
+
+model BikeServiceCategory {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  bikeBrand String? // Honda, Yamaha, etc
+
+  subServices BikeSubService[]
+  services    BikeService[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BikeSubService {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  categoryId Int
+  category   BikeServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  services BikeService[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BikeServiceMedia {
+  id Int @id @default(autoincrement())
+
+  serviceId Int
+  service   BikeService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  fileName String?
+  mimeType String?
+  data     Bytes
 
   createdAt DateTime @default(now())
 }
 
-enum ServiceStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+model BikeInvoice {
+  id            Int    @id @default(autoincrement())
+  invoiceNumber String @unique
+
+  // relation to Bike (your client)
+  bikeId Int
+  bike   Bike @relation(fields: [bikeId], references: [id])
+
+  // Bike service info (optional or detailed stored data)
+  serviceCategory    String?
+  serviceSubCategory String?
+  serviceNotes       String?
+
+  vehicle String? // bikeModel or brand if needed
+
+  // Pricing
+  partsCost Float @default(0)
+  partsGst  Float @default(0)
+  laborCost Float @default(0)
+  laborGst  Float @default(0)
+  tax       Float @default(0)
+  discount  Float @default(0)
+
+  grandTotal Float
+
+  // Payment
+  paymentMode String?
+  status      String    @default("Pending")
+  paidAt      DateTime?
+  dueDate     DateTime?
+
+  notes String?
+
+  // relation to BikeService (each service inside invoice)
+  services BikeService[] @relation("InvoiceServices")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BikeReminder {
+  id Int @id @default(autoincrement())
+
+  bikeClientId Int
+  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+
+  message String
+
+  remindDate DateTime
+  remindTime String?
+
+  isDone Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

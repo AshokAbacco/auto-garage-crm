@@ -1,240 +1,439 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Receipt,
-  Search,
-  PlusCircle,
-  IndianRupee,
-  CheckCircle,
-  XCircle,
-  Clock,
-} from "lucide-react";
+  FiEye,
+  FiTrash2,
+  FiPlus,
+  FiEdit,
+  FiSearch,
+  FiFileText,
+  FiDollarSign,
+  FiCheckCircle,
+  FiClock,
+  FiTrendingUp,
+  FiAlertCircle,
+  FiRefreshCw
+} from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
+import { Toaster, toast } from "react-hot-toast";
 
-const Billing = () => {
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
+const getAuthToken = () =>
+  localStorage.getItem("token") || localStorage.getItem("authToken");
+
+const fetchWithAuth = async (url, options = {}) => {
+  const token = getAuthToken();
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+    ...options.headers,
+  };
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    localStorage.clear();
+    window.location.href = "/login";
+  }
+  return res;
+};
+
+export default function BillingList() {
   const { isDark } = useTheme();
+  const [invoices, setInvoices] = useState([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const invoices = [
-    {
-      id: "#INV-1023",
-      customer: "Rajesh Kumar",
-      amount: "₹1,200",
-      service: "General Service",
-      date: "02 Dec 2025",
-      status: "paid",
-    },
-    {
-      id: "#INV-1024",
-      customer: "Priya Sharma",
-      amount: "₹4,500",
-      service: "Engine Repair",
-      date: "01 Dec 2025",
-      status: "pending",
-    },
-    {
-      id: "#INV-1025",
-      customer: "Amit Patel",
-      amount: "₹850",
-      service: "Brake Service",
-      date: "30 Nov 2025",
-      status: "failed",
-    },
-    {
-      id: "#INV-1026",
-      customer: "Sneha Reddy",
-      amount: "₹600",
-      service: "Electrical Work",
-      date: "28 Nov 2025",
-      status: "paid",
-    },
-  ];
+  // LOAD BIKE INVOICES
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "paid":
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "failed":
-        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchWithAuth(`${API_URL}/api/bike-invoices`);
+      const data = await res.json();
+      setInvoices(data);
+    } catch (err) {
+      toast.error("Failed to load invoices");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircle className="w-4 h-4" />;
-      case "pending":
-        return <Clock className="w-4 h-4" />;
-      case "failed":
-        return <XCircle className="w-4 h-4" />;
+  // SEARCH BY OWNER NAME / REG NUMBER / INVOICE NUMBER
+  const filtered = useMemo(() => {
+    return invoices.filter(inv =>
+      inv.invoiceNumber?.toLowerCase().includes(query.toLowerCase()) ||
+      inv.bike?.ownerName?.toLowerCase().includes(query.toLowerCase()) ||
+      inv.bike?.regNumber?.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, invoices]);
+
+  // DELETE
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this invoice?")) return;
+    
+    try {
+      await fetchWithAuth(`${API_URL}/api/bike-invoices/${id}`, { method: "DELETE" });
+      setInvoices(prev => prev.filter(i => i.id !== id));
+      toast.success("Invoice deleted successfully");
+    } catch (err) {
+      toast.error("Failed to delete invoice");
     }
   };
+
+  // Calculate stats
+  const totalInvoices = invoices.length;
+  const paidInvoices = invoices.filter(inv => inv.status === "Paid").length;
+  const pendingInvoices = invoices.filter(inv => inv.status === "Pending").length;
+  const totalRevenue = invoices
+    .filter(inv => inv.status === "Paid")
+    .reduce((sum, inv) => sum + Number(inv.grandTotal || 0), 0)
+    .toFixed(2);
 
   return (
-    <div
-      className={`min-h-screen p-6 ${
-        isDark
-          ? "bg-gray-900"
-          : "bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100"
-      }`}
-    >
-      {/* Header */}
-      <div className="animate-fade-in mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl py-5 font-bold bg-gradient-to-r from-orange-600 to-red-600 text-transparent bg-clip-text">
-            Billing
-          </h1>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>
-            Manage invoices, payments & billing history
-          </p>
-        </div>
+    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+      isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+    }`}>
+      <Toaster position="top-right" />
 
-        {/* Add Invoice Button */}
-        <button className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300">
-          <PlusCircle className="w-5 h-5" />
-          Create Invoice
-        </button>
+      {/* Header Section */}
+      <div className="mb-8 animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent`}>
+              Billing Management
+            </h1>
+            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Track and manage all invoices and payments
+            </p>
+          </div>
+
+          <Link
+            to="/bill/new"
+            className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
+          >
+            <FiPlus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+            New Invoice
+          </Link>
+        </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div
-          className={`rounded-2xl p-6 shadow-lg ${
-            isDark ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white">
-              <IndianRupee className="w-6 h-6" />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-down">
+        {/* Total Invoices */}
+        <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
+          isDark
+            ? "bg-gray-800 border-gray-700 hover:border-blue-500/50"
+            : "bg-white border-gray-100 hover:border-blue-500/30"
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className={`p-3 rounded-xl ${
+              isDark ? "bg-blue-500/20" : "bg-blue-50"
+            }`}>
+              <FiFileText size={24} className="text-blue-500" />
             </div>
+            <FiTrendingUp size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-blue-500 transition-colors`} />
           </div>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-600"} text-sm`}>
-            Total Revenue
+          <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            Total Invoices
           </p>
-          <p className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}>
-            ₹6,850
-          </p>
+          <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+            {totalInvoices}
+          </h2>
         </div>
 
-        <div
-          className={`rounded-2xl p-6 shadow-lg ${
-            isDark ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
-            <Clock className="w-6 h-6" />
+        {/* Pending Invoices */}
+        <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
+          isDark
+            ? "bg-gray-800 border-gray-700 hover:border-orange-500/50"
+            : "bg-white border-gray-100 hover:border-orange-500/30"
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className={`p-3 rounded-xl ${
+              isDark ? "bg-orange-500/20" : "bg-orange-50"
+            }`}>
+              <FiClock size={24} className="text-orange-500" />
+            </div>
+            <FiAlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-orange-500 transition-colors`} />
           </div>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-600"} text-sm`}>
+          <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
             Pending Payments
           </p>
-          <p className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}>
-            ₹4,500
-          </p>
+          <h2 className="text-3xl font-bold text-orange-500">
+            {pendingInvoices}
+          </h2>
         </div>
 
-        <div
-          className={`rounded-2xl p-6 shadow-lg ${
-            isDark ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <div className="p-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white">
-            <XCircle className="w-6 h-6" />
+        {/* Paid Invoices */}
+        <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
+          isDark
+            ? "bg-gray-800 border-gray-700 hover:border-green-500/50"
+            : "bg-white border-gray-100 hover:border-green-500/30"
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className={`p-3 rounded-xl ${
+              isDark ? "bg-green-500/20" : "bg-green-50"
+            }`}>
+              <FiCheckCircle size={24} className="text-green-500" />
+            </div>
+            <FiCheckCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-green-500 transition-colors`} />
           </div>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-600"} text-sm`}>
-            Failed Transactions
+          <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            Paid Invoices
           </p>
-          <p className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}>
-            ₹850
+          <h2 className="text-3xl font-bold text-green-500">
+            {paidInvoices}
+          </h2>
+        </div>
+
+        {/* Total Revenue */}
+        <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
+          isDark
+            ? "bg-gradient-to-br from-blue-900/50 to-indigo-900/50 border-blue-700/50 hover:border-blue-500/50"
+            : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 hover:border-blue-500/30"
+        }`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className={`p-3 rounded-xl ${
+              isDark ? "bg-blue-500/30" : "bg-blue-100"
+            }`}>
+              <FiDollarSign size={24} className="text-blue-600" />
+            </div>
+            <FiTrendingUp size={20} className={`${isDark ? "text-blue-400" : "text-blue-500"} group-hover:scale-110 transition-transform`} />
+          </div>
+          <p className={`text-sm mb-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+            Total Revenue
           </p>
+          <h2 className="text-3xl font-bold text-blue-600">
+            ₹{totalRevenue}
+          </h2>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6 flex justify-between items-center">
-        <div
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg w-full max-w-md ${
-            isDark ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-200"
-          }`}
-        >
-          <Search className="w-5 h-5 text-gray-400" />
+      <div className="mb-8 animate-slide-down">
+        <div className="relative max-w-2xl">
+          <FiSearch className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
+            isDark ? "text-gray-400" : "text-gray-500"
+          }`} size={20} />
           <input
             type="text"
-            placeholder="Search invoices..."
-            className={`w-full outline-none bg-transparent ${
-              isDark ? "text-white" : "text-gray-700"
+            placeholder="Search by invoice number, owner name, or registration..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              isDark
+                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 shadow-sm"
             }`}
           />
         </div>
       </div>
 
-      {/* Invoice Table */}
-      <div
-        className={`rounded-2xl shadow-lg overflow-hidden ${
-          isDark ? "bg-gray-800 border border-gray-700" : "bg-white"
-        }`}
-      >
-        <table className="w-full table-auto">
-          <thead>
-            <tr
-              className={`text-left ${
-                isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              <th className="py-3 px-6">Invoice ID</th>
-              <th className="py-3 px-6">Customer</th>
-              <th className="py-3 px-6">Service</th>
-              <th className="py-3 px-6">Amount</th>
-              <th className="py-3 px-6">Date</th>
-              <th className="py-3 px-6">Status</th>
-            </tr>
-          </thead>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <FiRefreshCw className="animate-spin text-blue-500" size={40} />
+            <p className={`text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Loading invoices...
+            </p>
+          </div>
+        </div>
+      )}
 
-          <tbody>
-            {invoices.map((invoice, index) => (
-              <tr
-                key={index}
-                className={`transition-all ${
-                  isDark ? "hover:bg-gray-700" : "hover:bg-orange-50"
-                }`}
-              >
-                <td className="py-4 px-6 font-medium">{invoice.id}</td>
-                <td className="py-4 px-6">{invoice.customer}</td>
-                <td className="py-4 px-6">{invoice.service}</td>
-                <td className="py-4 px-6 font-semibold">{invoice.amount}</td>
-                <td className="py-4 px-6">{invoice.date}</td>
+      {/* Invoices List */}
+      {!loading && (
+        <div className="space-y-4 animate-fade-in">
+          {filtered.length === 0 ? (
+            <div className={`flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed ${
+              isDark ? "border-gray-700 bg-gray-800/50" : "border-gray-300 bg-white"
+            }`}>
+              <FiFileText size={64} className={isDark ? "text-gray-600" : "text-gray-400"} />
+              <p className={`mt-4 text-lg font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                {query ? "No invoices found" : "No invoices yet"}
+              </p>
+              <p className={`mt-2 text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                {query ? "Try adjusting your search" : "Create your first invoice to get started"}
+              </p>
+            </div>
+          ) : (
+            filtered.map((invoice, index) => (
+              <InvoiceCard
+                key={invoice.id}
+                invoice={invoice}
+                isDark={isDark}
+                index={index}
+                onView={() => navigate(`/bill/${invoice.id}`)}
+                onEdit={() => navigate(`/bill/${invoice.id}/edit`)}
+                onDelete={() => handleDelete(invoice.id)}
+              />
+            ))
+          )}
+        </div>
+      )}
 
-                <td className="py-4 px-6">
-                  <span
-                    className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(
-                      invoice.status
-                    )}`}
-                  >
-                    {getStatusIcon(invoice.status)}
-                    {invoice.status.toUpperCase()}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Animations */}
+      {/* Custom Styles */}
       <style jsx>{`
         @keyframes fade-in {
           from {
             opacity: 0;
+            transform: translateY(10px);
           }
           to {
             opacity: 1;
+            transform: translateY(0);
           }
         }
+
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slide-up {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         .animate-fade-in {
-          animation: fade-in 0.7s ease-out;
+          animation: fade-in 0.5s ease-out;
+        }
+
+        .animate-slide-down {
+          animation: slide-down 0.5s ease-out;
+        }
+
+        .animate-slide-up {
+          animation: slide-up 0.5s ease-out;
         }
       `}</style>
     </div>
   );
-};
+}
 
-export default Billing;
+function InvoiceCard({ invoice, isDark, index, onView, onEdit, onDelete }) {
+  const statusColors = {
+    Paid: isDark
+      ? "bg-green-500/20 text-green-400 border-green-500/50"
+      : "bg-green-100 text-green-700 border-green-200",
+    Pending: isDark
+      ? "bg-orange-500/20 text-orange-400 border-orange-500/50"
+      : "bg-orange-100 text-orange-700 border-orange-200",
+  };
+
+  return (
+    <div
+      className={`group flex flex-col md:flex-row gap-6 items-start md:items-center rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 p-6 border-2 animate-slide-up ${
+        isDark
+          ? "bg-gray-800 border-gray-700 hover:border-blue-500/50"
+          : "bg-white border-gray-100 hover:border-blue-500/30"
+      }`}
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      {/* Invoice Icon */}
+      <div className={`p-4 rounded-xl ${
+        isDark ? "bg-blue-500/20" : "bg-gradient-to-br from-blue-50 to-indigo-50"
+      } group-hover:scale-110 transition-transform duration-300`}>
+        <FiFileText size={32} className="text-blue-500" />
+      </div>
+
+      {/* Invoice Info */}
+      <div className="flex-1 space-y-2 min-w-0">
+        <div className="flex items-center gap-3">
+          <h2 className={`text-xl font-bold ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}>
+            #{invoice.invoiceNumber}
+          </h2>
+          <span className={`px-3 py-1 rounded-lg text-xs font-semibold border-2 transition-all duration-300 ${
+            statusColors[invoice.status] || statusColors.Pending
+          }`}>
+            {invoice.status}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <p className={`text-sm font-medium ${
+            isDark ? "text-gray-300" : "text-gray-700"
+          }`}>
+            {invoice.bike?.ownerName}
+          </p>
+          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            {invoice.bike?.regNumber}
+          </p>
+        </div>
+
+        {invoice.serviceCategory && (
+          <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+            {invoice.serviceCategory}
+          </p>
+        )}
+      </div>
+
+      {/* Amount and Actions */}
+      <div className="flex flex-col items-end gap-3 min-w-fit">
+        <div className="text-right">
+          <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"} mb-1`}>
+            Total Amount
+          </p>
+          <p className="text-2xl font-bold text-green-600">
+            ₹{Number(invoice.grandTotal).toFixed(2)}
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={onView}
+            className={`p-2.5 rounded-lg font-medium transition-all duration-300 hover:scale-110 active:scale-95 ${
+              isDark
+                ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+            }`}
+            title="View Invoice"
+          >
+            <FiEye size={18} />
+          </button>
+
+          <button
+            onClick={onEdit}
+            className={`p-2.5 rounded-lg font-medium transition-all duration-300 hover:scale-110 active:scale-95 ${
+              isDark
+                ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30"
+                : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+            }`}
+            title="Edit Invoice"
+          >
+            <FiEdit size={18} />
+          </button>
+
+          <button
+            onClick={onDelete}
+            className={`p-2.5 rounded-lg font-medium transition-all duration-300 hover:scale-110 active:scale-95 ${
+              isDark
+                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                : "bg-red-50 text-red-600 hover:bg-red-100"
+            }`}
+            title="Delete Invoice"
+          >
+            <FiTrash2 size={18} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,220 +1,328 @@
-import React from "react";
-import {
-  Bell,
-  Calendar,
-  Clock,
-  Wrench,
-  AlertTriangle,
-  PlusCircle,
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { FiBell, FiPlus, FiX, FiAlertCircle, FiCalendar, FiTrendingUp } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
 
-const Reminders = () => {
+import BikeReminderForm from "./BikeReminderForm";
+import BikeReminderCard from "./BikeReminderCard";
+import axios from "axios";
+
+export default function BikeReminders() {
   const { isDark } = useTheme();
+  const [reminders, setReminders] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
 
-  const reminders = [
-    {
-      title: "Service follow-up",
-      description: "Follow up with Rajesh for engine repair status.",
-      date: "03 Dec 2025",
-      time: "10:00 AM",
-      priority: "high",
-      icon: Wrench,
-    },
-    {
-      title: "Pickup Reminder",
-      description: "Customer Priya will pick up Activa.",
-      date: "02 Dec 2025",
-      time: "05:00 PM",
-      priority: "medium",
-      icon: Clock,
-    },
-    {
-      title: "Pending Payment",
-      description: "Amit needs to clear invoice #1025.",
-      date: "04 Dec 2025",
-      time: "12:30 PM",
-      priority: "low",
-      icon: AlertTriangle,
-    },
-    {
-      title: "Service Booking Call",
-      description: "Call Sneha about upcoming deep cleaning service.",
-      date: "01 Dec 2025",
-      time: "07:00 PM",
-      priority: "medium",
-      icon: Bell,
-    },
-  ];
+  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      case "medium":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "low":
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+  const getAuth = () => {
+    const token = localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    };
+  };
+
+  const fetchBikeReminders = async () => {
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/bike-reminders`,
+        getAuth()
+      );
+      setReminders(res.data.data || []);
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchBikeReminders();
+  }, []);
+
+  // Calculate statistics
+  const getStatistics = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const dayAfterTomorrow = new Date(today);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+    const stats = {
+      total: reminders.length,
+      today: 0,
+      tomorrow: 0,
+      upcoming: 0
+    };
+
+    reminders.forEach(reminder => {
+      const reminderDate = new Date(reminder.remindDate);
+      reminderDate.setHours(0, 0, 0, 0);
+
+      if (reminderDate.getTime() === today.getTime()) {
+        stats.today++;
+      } else if (reminderDate.getTime() === tomorrow.getTime()) {
+        stats.tomorrow++;
+      } else if (reminderDate.getTime() >= dayAfterTomorrow.getTime()) {
+        stats.upcoming++;
+      }
+    });
+
+    return stats;
+  };
+
+  const stats = getStatistics();
+
+  // Filter reminders based on search and status
+  const filteredReminders = reminders.filter(reminder => {
+    const matchesSearch = searchQuery === "" || 
+      reminder.bike?.ownerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      reminder.bike?.bikeModel?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      reminder.message?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === "All Status") return true;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const dayAfterTomorrow = new Date(today);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+    const reminderDate = new Date(reminder.remindDate);
+    reminderDate.setHours(0, 0, 0, 0);
+
+    if (statusFilter === "Today" && reminderDate.getTime() === today.getTime()) return true;
+    if (statusFilter === "Tomorrow" && reminderDate.getTime() === tomorrow.getTime()) return true;
+    if (statusFilter === "Upcoming" && reminderDate.getTime() >= dayAfterTomorrow.getTime()) return true;
+
+    return false;
+  });
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-96 text-gray-500 text-lg">
+        Loading...
+      </div>
+    );
+
   return (
-    <div
-      className={`min-h-screen p-6 ${
-        isDark
-          ? "bg-gray-900"
-          : "bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100"
-      }`}
-    >
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
+      isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+    }`}>
       {/* Header */}
-      <div className="animate-fade-in mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl py-5 font-bold bg-gradient-to-r from-orange-600 to-red-600 text-transparent bg-clip-text">
-            Reminders
-          </h1>
-          <p className={`${isDark ? "text-gray-400" : "text-gray-600"}`}>
-            Stay on track with follow-ups & important alerts
-          </p>
+      <div className="mb-8 animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+              Reminders & Notifications
+            </h1>
+            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              Stay on top of service schedules and renewals
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-down">
+        {/* Total Reminders */}
+        <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
+          isDark 
+            ? "bg-gray-800 border-gray-700 hover:border-blue-500/50" 
+            : "bg-white border-gray-100 hover:border-blue-500/30"
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-semibold uppercase mb-2 tracking-wider ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}>
+                Total Reminders
+              </p>
+              <h3 className={`text-4xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}>{stats.total}</h3>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <FiBell size={24} className="text-white" />
+            </div>
+          </div>
         </div>
 
-        <button className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:scale-105 transition-all duration-300">
-          <PlusCircle className="w-5 h-5" />
-          Add Reminder
+        {/* Today */}
+        <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
+          isDark 
+            ? "bg-gray-800 border-gray-700 hover:border-orange-500/50" 
+            : "bg-white border-gray-100 hover:border-orange-500/30"
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-semibold uppercase mb-2 tracking-wider ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}>
+                Due Today
+              </p>
+              <h3 className={`text-4xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}>{stats.today}</h3>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <FiAlertCircle size={24} className="text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Tomorrow */}
+        <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
+          isDark 
+            ? "bg-gray-800 border-gray-700 hover:border-purple-500/50" 
+            : "bg-white border-gray-100 hover:border-purple-500/30"
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-semibold uppercase mb-2 tracking-wider ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}>
+                Tomorrow
+              </p>
+              <h3 className={`text-4xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}>{stats.tomorrow}</h3>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <FiCalendar size={24} className="text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming */}
+        <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
+          isDark 
+            ? "bg-gray-800 border-gray-700 hover:border-green-500/50" 
+            : "bg-white border-gray-100 hover:border-green-500/30"
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-xs font-semibold uppercase mb-2 tracking-wider ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}>
+                Upcoming
+              </p>
+              <h3 className={`text-4xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}>{stats.upcoming}</h3>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <FiTrendingUp size={24} className="text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col md:flex-row gap-4 items-center mb-8 animate-slide-down">
+        {/* Search Input */}
+        <div className="flex-1 relative w-full">
+          <svg className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
+            isDark ? "text-gray-400" : "text-gray-500"
+          }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search reminders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-full px-4 py-4 pl-12 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+              isDark
+                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 shadow-sm"
+            }`}
+          />
+        </div>
+
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className={`px-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+            isDark
+              ? "bg-gray-800 border-gray-700 text-white"
+              : "bg-white border-gray-200 text-gray-900 shadow-sm"
+          }`}
+        >
+          <option value="All Status">All Status</option>
+          <option value="Today">Today</option>
+          <option value="Tomorrow">Tomorrow</option>
+          <option value="Upcoming">Upcoming</option>
+        </select>
+
+        {/* Add Button */}
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="group flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium whitespace-nowrap"
+        >
+          {showForm ? (
+            <>
+              <FiX size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+              Cancel
+            </>
+          ) : (
+            <>
+              <FiPlus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+              Add Reminder
+            </>
+          )}
         </button>
       </div>
 
-      {/* Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {[
-          { label: "Today", count: 3, icon: Clock, color: "from-blue-500 to-blue-600" },
-          { label: "Upcoming", count: 4, icon: Calendar, color: "from-green-500 to-green-600" },
-          { label: "Urgent", count: 1, icon: AlertTriangle, color: "from-red-500 to-red-600" },
-        ].map((box, i) => {
-          const Icon = box.icon;
-          return (
-            <div
-              key={i}
-              className={`rounded-2xl p-6 shadow-lg hover:-translate-y-1 transition-all duration-300 ${
-                isDark ? "bg-gray-800" : "bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div
-                  className={`w-12 h-12 rounded-xl bg-gradient-to-r ${box.color} flex items-center justify-center text-white`}
-                >
-                  <Icon className="w-6 h-6" />
-                </div>
-                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {box.count}
-                </span>
-              </div>
-              <p className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-800"}`}>
-                {box.label}
-              </p>
-            </div>
-          );
-        })}
+      {/* Form */}
+      {showForm && (
+        <BikeReminderForm
+          refresh={fetchBikeReminders}
+          close={() => setShowForm(false)}
+        />
+      )}
+
+      {/* List */}
+      <div className="space-y-4 animate-fade-in">
+        {filteredReminders.length === 0 ? (
+          <div className={`flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed ${
+            isDark ? "border-gray-700 bg-gray-800/50" : "border-gray-300 bg-white"
+          }`}>
+            <FiBell size={64} className={isDark ? "text-gray-600" : "text-gray-400"} />
+            <p className={`mt-4 text-lg font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              {searchQuery || statusFilter !== "All Status" 
+                ? "No reminders match your filters" 
+                : "No bike reminders found"}
+            </p>
+            <p className={`mt-2 text-sm ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+              {!showForm && (searchQuery || statusFilter !== "All Status" 
+                ? "Try adjusting your search or filters"
+                : "Click 'Add Reminder' to create your first reminder")}
+            </p>
+          </div>
+        ) : (
+          filteredReminders.map((item, i) => (
+            <BikeReminderCard
+              key={item.id}
+              reminder={item}
+              refresh={fetchBikeReminders}
+              index={i}
+            />
+          ))
+        )}
       </div>
-
-      {/* Reminder List */}
-      <div
-        className={`rounded-2xl shadow-lg p-6 ${
-          isDark ? "bg-gray-800 border border-gray-700" : "bg-white"
-        }`}
-      >
-        <h2 className={`text-2xl font-bold mb-6 ${isDark ? "text-white" : "text-gray-800"}`}>
-          All Reminders
-        </h2>
-
-        <div className="space-y-5">
-          {reminders.map((rem, index) => {
-            const Icon = rem.icon;
-            return (
-              <div
-                key={index}
-                className={`p-5 rounded-xl hover:shadow-lg transition-all duration-300 animate-slide-up ${
-                  isDark
-                    ? "bg-gray-700/50 hover:bg-gray-700 border border-gray-600"
-                    : "bg-orange-50 hover:bg-orange-100 border border-orange-200"
-                }`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-12 h-12 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-white shadow-md`}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3
-                        className={`text-lg font-semibold ${
-                          isDark ? "text-white" : "text-gray-800"
-                        }`}
-                      >
-                        {rem.title}
-                      </h3>
-                      <p className={`${isDark ? "text-gray-300" : "text-gray-600"} text-sm`}>
-                        {rem.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(
-                      rem.priority
-                    )}`}
-                  >
-                    {rem.priority.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 mt-4 text-sm">
-                  <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                    <Calendar className="w-4 h-4" />
-                    {rem.date}
-                  </div>
-
-                  <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
-                    <Clock className="w-4 h-4" />
-                    {rem.time}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Animations */}
-      <style jsx>{`
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(15px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.6s ease-out;
-        }
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-      `}</style>
     </div>
   );
-};
-
-export default Reminders;
+}

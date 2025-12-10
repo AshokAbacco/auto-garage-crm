@@ -5,47 +5,46 @@ import prisma from "../models/prismaClient.js";
 import { generateToken } from "../utils/generateToken.js";
 
 /**
- * @desc Register a new user
- * @route POST /api/auth/register
- * @access Public 
+ * =============================================
+ * REGISTER USER
+ * =============================================
  */
 export const registerUser = async (req, res) => {
   try {
     const { username, email, password, crmType } = req.body;
 
-    // Basic validation
     if (!username || !email || !password || !crmType) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     const emailLower = email.toLowerCase().trim();
 
-    // 🔍 Check both email and username up front
+    // Check duplicates
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
       prisma.user.findUnique({ where: { username } }),
     ]);
 
-    // ⭐ USERNAME ALREADY USED BY SOMEONE ELSE
     if (
       existingUserByUsername &&
       (!existingUserByEmail || existingUserByUsername.id !== existingUserByEmail.id)
     ) {
       return res.status(400).json({
-        message: "This username is already taken. Please choose a different username.",
+        message: "This username is already taken.",
       });
     }
 
-    // === CASE 1: USER EXISTS BY EMAIL → TEMP USER CREATED AFTER PAYMENT ===
-    if (existingUserByEmail) {
-      const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
+    // CASE 1 — User exists by email (temporary user previously created)
+    if (existingUserByEmail) {
       const updatedUser = await prisma.user.update({
         where: { email: emailLower },
         data: {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
+          plan: "BASIC", // ⭐ Default plan on registration
         },
       });
 
@@ -58,9 +57,7 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // === CASE 2: COMPLETELY NEW USER (NO EMAIL FOUND) ===
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // CASE 2 — New user
     const myReferralCode =
       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -70,11 +67,12 @@ export const registerUser = async (req, res) => {
         email: emailLower,
         password: hashedPassword,
         role: "user",
-        profileImage: null,
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
+        profileImage: null,
         referredByCode: null,
         referredByUserId: null,
+        plan: "BASIC", // ⭐ Default plan
       },
     });
 
@@ -88,39 +86,22 @@ export const registerUser = async (req, res) => {
   } catch (error) {
     console.error("❌ Registration Error:", error);
 
-    // 🔥 Prisma unique constraint error (P2002) – nice message instead of 500
     if (error.code === "P2002") {
       const target = error.meta?.target || [];
-
-      if (target.includes("username")) {
-        return res.status(400).json({
-          message: "This username is already taken. Please choose a different username.",
-        });
-      }
-
-      if (target.includes("email")) {
-        return res.status(400).json({
-          message:
-            "This email is already registered. Please login instead of registering again.",
-        });
-      }
-
-      // fallback if target unknown
-      return res.status(400).json({
-        message: "Duplicate value for a unique field. Please use different details.",
-      });
+      if (target.includes("username"))
+        return res.status(400).json({ message: "Username already taken" });
+      if (target.includes("email"))
+        return res.status(400).json({ message: "Email already registered" });
     }
 
-    // Generic unexpected error
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-
 /**
- * @desc Login a user
- * @route POST /api/auth/login
- * @access Public
+ * =============================================
+ * LOGIN USER
+ * =============================================
  */
 export const loginUser = async (req, res) => {
   try {
@@ -128,14 +109,14 @@ export const loginUser = async (req, res) => {
 
     if (!identifier || !password || !crmType) {
       return res.status(400).json({
-        message: "Email/Username, password and CRM type are required",
+        message: "Email/Username, password, and CRM type are required",
       });
     }
 
     const isEmail = identifier.includes("@");
 
     const user = await prisma.user.findFirst({
-        where: isEmail ? { email: identifier.toLowerCase() } : { username: identifier },
+      where: isEmail ? { email: identifier.toLowerCase() } : { username: identifier },
     });
 
     if (!user) {
@@ -154,13 +135,14 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // ⭐ Fetch the user's company name from payment table
+    // Fetch extra fields from payment table (optional)
     const userPayment = await prisma.payment.findFirst({
       where: { email: user.email },
       orderBy: { createdAt: "desc" },
       select: { companyName: true, phone: true },
     });
 
+    // ⭐ Token now includes plan
     const token = generateToken(user);
 
     return res.status(200).json({
@@ -171,14 +153,14 @@ export const loginUser = async (req, res) => {
         username: user.username,
         email: user.email.toLowerCase(),
         role: user.role,
+        plan: user.plan, // ⭐ RETURN PLAN
         profileImage: user.profileImage || null,
         allowedCrms: user.allowedCrms,
         crmType,
         companyName: userPayment?.companyName || null,
-        phone: userPayment?.phone || null,   // ⭐ ADD THIS
+        phone: userPayment?.phone || null,
       },
     });
-
   } catch (error) {
     console.error("❌ Login Error:", error);
     return res.status(500).json({
@@ -187,18 +169,13 @@ export const loginUser = async (req, res) => {
   }
 };
 
-
-
-
-
 /**
- * @desc Get current user's profile
- * @route GET /api/auth/profile
- * @access Private
+ * =============================================
+ * GET PROFILE
+ * =============================================
  */
 export const getProfile = async (req, res) => {
   try {
-    // ✅ Fetch user from DB
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -206,15 +183,14 @@ export const getProfile = async (req, res) => {
         username: true,
         email: true,
         role: true,
+        plan: true, // ⭐ RETURN PLAN
         profileImage: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json(user);
   } catch (error) {
@@ -224,37 +200,28 @@ export const getProfile = async (req, res) => {
 };
 
 /**
- * @desc Verify JWT token validity
- * @route GET /api/auth/verify
- * @access Public (self-check)
+ * =============================================
+ * VERIFY TOKEN
+ * =============================================
  */
 export const verifyToken = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({
-        valid: false,
-        message: "No token provided",
-      });
+      return res.status(401).json({ valid: false, message: "No token provided" });
     }
 
     const token = authHeader.split(" ")[1];
-
-    // ✅ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ Confirm user exists
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, username: true, email: true, role: true },
+      select: { id: true, username: true, email: true, role: true, plan: true },
     });
 
     if (!user) {
-      return res.status(404).json({
-        valid: false,
-        message: "User not found for this token",
-      });
+      return res.status(404).json({ valid: false, message: "User not found" });
     }
 
     return res.status(200).json({
@@ -263,34 +230,28 @@ export const verifyToken = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Token Verification Error:", error);
-    return res.status(401).json({
-      valid: false,
-      message: "Invalid or expired token",
-    });
+    return res.status(401).json({ valid: false, message: "Invalid or expired token" });
   }
 };
 
 /**
- * @desc Delete user account
- * @route DELETE /api/auth/delete
- * @access Private
+ * =============================================
+ * DELETE ACCOUNT
+ * =============================================
  */
 export const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Delete user-related payment records (if needed)
     await prisma.payment.deleteMany({
-      where: { email: req.user.email }
+      where: { email: req.user.email },
     });
 
-    // Delete user
     await prisma.user.delete({
-      where: { id: userId }
+      where: { id: userId },
     });
 
-    return res.status(200).json({ message: "Account deleted successfully" });
-
+    res.status(200).json({ message: "Account deleted successfully" });
   } catch (error) {
     console.error("❌ Delete Account Error:", error);
     return res.status(500).json({ message: "Failed to delete account" });

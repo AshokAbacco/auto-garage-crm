@@ -21,7 +21,6 @@ import {
   Crown
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
-import BikeDashboard from "../bikePages/BikeDashboard.jsx";
 import { useNavigate, Outlet  } from "react-router-dom";
 
 export default function BikeLayoutPage() {
@@ -47,15 +46,20 @@ export default function BikeLayoutPage() {
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [user, setUser] = useState({
-    username: "Demo User",
-    email: "demo@bikegarage.com",
-    companyName: "Bike Garage Pro"
-  });
+
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Demo data - in actual app, this would sync with localStorage/API
-  }, []);
+    const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+
+    if (!storedUser || !token) {
+      routerNavigate("/login", { replace: true });
+    } else {
+      setUser(JSON.parse(storedUser));
+    }
+  }, [routerNavigate]);
+
 
 const logout = () => {
   localStorage.removeItem("auth");
@@ -273,9 +277,10 @@ const logout = () => {
                           }`}
                       >
                         <span className="text-white font-medium">
-                          {user.username
+                          {user?.username
                             ? user.username.charAt(0).toUpperCase()
                             : "U"}
+
                         </span>
                       </div>
                     )}
@@ -287,14 +292,10 @@ const logout = () => {
                       isDark ? "text-white" : "text-gray-800"
                     }`}
                   >
-                    <div className="font-medium">{user.username || "User"}</div>
-                    <div
-                      className={`text-xs ${
-                        isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      {user.email || "no-email@example.com"}
-                    </div>
+                   <div className="font-medium">{user?.username || "User"}</div>
+
+                    <div className="text-xs">{user?.email || "no-email@example.com"}</div>
+
                   </div>
                 </button>
 
@@ -312,9 +313,10 @@ const logout = () => {
                   >
                     <button
                       onClick={() => {
-                        navigate("/bike-profile");
+                        routerNavigate("/bike-profile");
                         setOpenProfileMenu(false);
                       }}
+
                       className={`
                         w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
                         ${

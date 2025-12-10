@@ -19,6 +19,13 @@ import userRoutes from "./routes/userRoutes.js";
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import referralRoutes from "./routes/referral.js";
 
+//bike routes
+import bikeRoutes from "./routes/bikeRoutes.js";
+import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
+import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
+import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
+
+
 console.log("Models in Prisma:", Object.keys(prisma));
 
 
@@ -108,6 +115,14 @@ app.use((req, res, next) => {
 
 
 app.use("/uploads", express.static("uploads"));
+
+
+// bike routes
+app.use("/api/bikes", bikeRoutes);
+app.use("/api/bike-services", bikeServiceRoutes);
+app.use("/api/bike-invoices", bikeInvoiceRoutes);
+app.use("/api/bike-reminders", bikeReminderRoutes);
+
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

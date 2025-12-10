@@ -29,12 +29,12 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "nodemon": "^3.1.10",
     "razorpay": "^2.9.6",
     "xlsx": "^0.18.5",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "nodemon": "^3.1.11",
     "prisma": "^6.18.0"
   }
 }

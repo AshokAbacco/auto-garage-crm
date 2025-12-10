@@ -55,6 +55,7 @@ model User {
   ocrs          OcrRecord[]
   bikes         Bike[]
   bikeReminders BikeReminder[]
+  washingClients WashingClient[]
 }
 
 model Client {
@@ -110,8 +111,15 @@ model Service {
   category   ServiceCategory? @relation(fields: [categoryId], references: [id])
   subService SubService?      @relation(fields: [subServiceId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  washingClient            WashingClient?          @relation(fields: [washingClientId], references: [id])
+  washingClientId          Int?
+  washingServiceCategory   WashingServiceCategory? @relation(fields: [washingServiceCategoryId], references: [id])
+  washingServiceCategoryId Int?
+  washingSubService        WashingSubService?      @relation(fields: [washingSubServiceId], references: [id])
+  washingSubServiceId      Int?
+  washingServiceMedias     WashingServiceMedia[]
 }
 
 model ServiceMedia {
@@ -123,8 +131,10 @@ model ServiceMedia {
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime?       @updatedAt
+  washingService   WashingService? @relation(fields: [washingServiceId], references: [id])
+  washingServiceId Int?
 }
 
 model Invoice {
@@ -161,9 +171,11 @@ model Invoice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  services Service[]
+  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  services        Service[]
+  washingClient   WashingClient? @relation(fields: [washingClientId], references: [id])
+  washingClientId Int?
 
   @@index([status])
   @@index([paymentMode])
@@ -183,22 +195,27 @@ model Reminder {
 }
 
 model ServiceCategory {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
-  subServices SubService[]
-  services    Service[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                 Int                 @id @default(autoincrement())
+  name               String              @unique
+  subServices        SubService[]
+  services           Service[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  washingSubServices WashingSubService[]
+  washingServices    WashingService[]
 }
 
 model SubService {
-  id         Int              @id @default(autoincrement())
-  name       String
-  categoryId Int?
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  services   Service[]
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  id                       Int                     @id @default(autoincrement())
+  name                     String
+  categoryId               Int?
+  category                 ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  services                 Service[]
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  washingServiceCategory   WashingServiceCategory? @relation(fields: [washingServiceCategoryId], references: [id])
+  washingServiceCategoryId Int?
+  washingServices          WashingService[]
 }
 
 model OcrRecord {
@@ -256,6 +273,83 @@ model Payment {
   updatedAt DateTime @updatedAt
 }
 
+//washhing crm client schema
+
+model WashingClient {
+  id               Int              @id @default(autoincrement())
+  fullName         String
+  phone            String
+  address          String?
+  vehicleMake      String
+  vehicleModel     String
+  mainImage        String?
+  additionalImages String[]
+  userId           Int?
+  createdAt        DateTime         @default(now())
+  user             User?            @relation(fields: [userId], references: [id])
+  services         Service[]
+  invoices         Invoice[]
+  washingServices  WashingService[]
+}
+
+model WashingServiceCategory {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  subServices SubService[]
+  services    Service[]
+}
+
+model WashingSubService {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  categoryId Int
+  category   ServiceCategory @relation(fields: [categoryId], references: [id])
+
+  services Service[]
+}
+
+model WashingService {
+  id   Int      @id @default(autoincrement())
+  date DateTime
+
+  status ServiceStatus @default(PENDING)
+
+  clientId Int
+  client   WashingClient @relation(fields: [clientId], references: [id])
+
+  categoryId Int
+  category   ServiceCategory @relation(fields: [categoryId], references: [id])
+
+  subServiceId Int?
+  subService   SubService? @relation(fields: [subServiceId], references: [id])
+
+  partsCost      Decimal @default(0) @db.Decimal(10, 2)
+  laborCost      Decimal @default(0) @db.Decimal(10, 2)
+  estimatedTotal Decimal @default(0) @db.Decimal(10, 2)
+
+  notes String?
+
+  media ServiceMedia[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([categoryId])
+}
+
+model WashingServiceMedia {
+  id        Int     @id @default(autoincrement())
+  serviceId Int
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  url      String
+  mimeType String?
+  fileName String?
 //  Bike Tables
 
 model Bike {

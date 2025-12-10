@@ -45,18 +45,18 @@ export default function Layout() {
     JSON.parse(localStorage.getItem("user")) || {}
   );
 
-useEffect(() => {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  if (storedUser) setUser(storedUser);
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) setUser(storedUser);
 
-  const handleUserUpdate = () => {
-    const updatedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(updatedUser);
-  };
+    const handleUserUpdate = () => {
+      const updatedUser = JSON.parse(localStorage.getItem("user"));
+      setUser(updatedUser);
+    };
 
-  window.addEventListener("user-updated", handleUserUpdate);
-  return () => window.removeEventListener("user-updated", handleUserUpdate);
-}, []);
+    window.addEventListener("user-updated", handleUserUpdate);
+    return () => window.removeEventListener("user-updated", handleUserUpdate);
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("auth");
@@ -65,9 +65,8 @@ useEffect(() => {
 
   return (
     <div
-      className={`min-h-screen flex ${
-        isDark ? "dark bg-gray-900" : "bg-gray-50"
-      }`}
+      className={`min-h-screen flex ${isDark ? "dark bg-gray-900" : "bg-gray-50"
+        }`}
     >
       {/* Overlay for mobile */}
       {sidebarOpen && (
@@ -83,8 +82,7 @@ useEffect(() => {
           fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
           ${sidebarExpanded ? "w-64" : "w-16"}
           lg:translate-x-0
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }
           ${isDark ? "bg-gray-800" : "bg-white"}
           shadow-xl
@@ -95,19 +93,17 @@ useEffect(() => {
         <div className="flex flex-col h-screen">
           {/* Logo */}
           <div
-            className={`flex items-center justify-between h-16 px-4 border-b ${
-              isDark ? "border-gray-700" : "border-gray-200"
-            }`}
+            className={`flex items-center justify-between h-16 px-4 border-b ${isDark ? "border-gray-700" : "border-gray-200"
+              }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg shadow-lg bg-gradient-to-br from-blue-500 to-purple-600">
                 <Car className="w-6 h-6 text-white" />
               </div>
               {sidebarExpanded && (
                 <div
-                  className={`font-poppins font-bold ${
-                    isDark ? "text-white" : "text-gray-800"
-                  } text-xl transition-opacity duration-300`}
+                  className={`font-poppins font-bold ${isDark ? "text-white" : "text-gray-800"
+                    } text-xl transition-opacity duration-300`}
                 >
                   {user?.companyName || "Motor Desk"}
 
@@ -116,12 +112,11 @@ useEffect(() => {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-1 transition-colors rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <X
-                className={`w-5 h-5 ${
-                  isDark ? "text-gray-400" : "text-gray-500"
-                }`}
+                className={`w-5 h-5 ${isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
               />
             </button>
           </div>
@@ -136,10 +131,9 @@ useEffect(() => {
                 className={({ isActive }) =>
                   `
                   flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-                  ${
-                    isActive
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                      : isDark
+                  ${isActive
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                    : isDark
                       ? "text-gray-300 hover:bg-gray-700 hover:text-white"
                       : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   }
@@ -151,13 +145,12 @@ useEffect(() => {
                   return (
                     <>
                       <Icon
-                        className={`w-5 h-5 flex-shrink-0 ${
-                          isActive
+                        className={`w-5 h-5 flex-shrink-0 ${isActive
                             ? "text-white"
                             : isDark
-                            ? "text-gray-400"
-                            : "text-gray-500"
-                        }`}
+                              ? "text-gray-400"
+                              : "text-gray-500"
+                          }`}
                       />
                       {sidebarExpanded && (
                         <span className="transition-opacity duration-300">
@@ -179,17 +172,15 @@ useEffect(() => {
             py-3
             rounded-xl font-medium
             transition-all duration-200
-            ${
-              isDark
+            ${isDark
                 ? "text-red-400 bg-red-900/20 hover:bg-red-900/30 border border-red-800/30"
                 : "text-red-600 bg-red-50 hover:bg-red-100 border border-red-200"
-            }
+              }
           `}
           >
             <LogOut
-              className={`w-5 h-5 flex-shrink-0 ${
-                sidebarExpanded ? "mr-1" : ""
-              }`}
+              className={`w-5 h-5 flex-shrink-0 ${sidebarExpanded ? "mr-1" : ""
+                }`}
             />
             {sidebarExpanded && <span>Logout</span>}
           </button>
@@ -197,33 +188,30 @@ useEffect(() => {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-col min-h-screen w-full lg:ml-0">
+      <div className="flex flex-col w-full min-h-screen lg:ml-0">
         {/* Header */}
         <header
-          className={`${
-            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-          } shadow-sm border-b`}
+          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+            } shadow-sm border-b`}
         >
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 transition-colors rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <Menu
-                  className={`w-5 h-5 ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
+                  className={`w-5 h-5 ${isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
                 />
               </button>
-              <div className="lg:hidden flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="flex items-center gap-3 lg:hidden">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
                   <Car className="w-5 h-5 text-white" />
                 </div>
                 <div
-                  className={`font-bold ${
-                    isDark ? "text-white" : "text-gray-800"
-                  }`}
+                  className={`font-bold ${isDark ? "text-white" : "text-gray-800"
+                    }`}
                 >
                   {user?.companyName || "Motor Desk"}
 
@@ -235,11 +223,10 @@ useEffect(() => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className={`p-2 rounded-lg transition-colors ${
-                  isDark
+                className={`p-2 rounded-lg transition-colors ${isDark
                     ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {isDark ? (
                   <Sun className="w-5 h-5" />
@@ -256,23 +243,22 @@ useEffect(() => {
                   className="flex items-center gap-3"
                 >
                   {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 dark:border-gray-600">
+                  <div className="w-10 h-10 overflow-hidden border border-gray-300 rounded-full dark:border-gray-600">
                     {user?.profileImage ? (
                       <img
                         src={user.profileImage}
                         alt="Profile"
-                        className="w-full h-full object-cover"
+                        className="object-cover w-full h-full"
                       />
                     ) : (
                       <div
                         className={`w-full h-full flex items-center justify-center 
-                      ${
-                        isDark
-                          ? "bg-gradient-to-br from-blue-600 to-purple-600"
-                          : "bg-gradient-to-br from-blue-500 to-purple-500"
-                      }`}
+                      ${isDark
+                            ? "bg-gradient-to-br from-blue-600 to-purple-600"
+                            : "bg-gradient-to-br from-blue-500 to-purple-500"
+                          }`}
                       >
-                        <span className="text-white font-medium">
+                        <span className="font-medium text-white">
                           {user.username
                             ? user.username.charAt(0).toUpperCase()
                             : "U"}
@@ -283,15 +269,13 @@ useEffect(() => {
 
                   {/* Username & Email */}
                   <div
-                    className={`hidden sm:block ${
-                      isDark ? "text-white" : "text-gray-800"
-                    }`}
+                    className={`hidden sm:block ${isDark ? "text-white" : "text-gray-800"
+                      }`}
                   >
                     <div className="font-medium">{user.username || "User"}</div>
                     <div
-                      className={`text-xs ${
-                        isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
+                      className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"
+                        }`}
                     >
                       {user.email || "no-email@example.com"}
                     </div>
@@ -303,11 +287,10 @@ useEffect(() => {
                   <div
                     className={`
                     absolute right-0 mt-3 w-48 rounded-xl shadow-lg border p-3 z-50
-                    ${
-                      isDark
+                    ${isDark
                         ? "bg-gray-800 border-gray-700"
                         : "bg-white border-gray-200"
-                    }
+                      }
                   `}
                   >
                     <button
@@ -317,10 +300,9 @@ useEffect(() => {
                       }}
                       className={`
                         w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
-                        ${
-                          isDark
-                            ? "text-gray-200 hover:bg-gray-700"
-                            : "text-gray-800 hover:bg-gray-100"
+                        ${isDark
+                          ? "text-gray-200 hover:bg-gray-700"
+                          : "text-gray-800 hover:bg-gray-100"
                         }
                       `}
                     >
@@ -347,7 +329,7 @@ useEffect(() => {
         ${isDark ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
           >
             {/* Title */}
-            <h2 className="text-xl font-bold mb-2">Confirm Logout</h2>
+            <h2 className="mb-2 text-xl font-bold">Confirm Logout</h2>
             <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
               Are you sure you want to logout?
             </p>
@@ -358,11 +340,10 @@ useEffect(() => {
                 onClick={() => setShowLogoutModal(false)}
                 className={`
               px-4 py-2 rounded-lg font-medium
-              ${
-                isDark
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }
+              ${isDark
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-gray-200 hover:bg-gray-300"
+                  }
             `}
               >
                 Cancel
@@ -373,10 +354,7 @@ useEffect(() => {
                   setShowLogoutModal(false);
                   logout();
                 }}
-                className="
-              px-4 py-2 rounded-lg font-medium text-white 
-              bg-red-600 hover:bg-red-700
-            "
+                className="px-4 py-2 font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
               >
                 Logout
               </button>

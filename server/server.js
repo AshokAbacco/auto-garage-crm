@@ -19,6 +19,10 @@ import userRoutes from "./routes/userRoutes.js";
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import referralRoutes from "./routes/referral.js";
 
+
+
+//washing crm import statements
+import washingClientRoutes from "./routes/washingRoutes.js";
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
 import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
@@ -145,6 +149,9 @@ app.use("/api/ocr", ocrRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/referral", referralRoutes);
 
+
+//washing crm related routes
+app.use("/api/washing-clients", washingClientRoutes);
 
 
 /* -----------------------------------------------------

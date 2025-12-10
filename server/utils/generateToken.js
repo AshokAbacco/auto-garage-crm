@@ -18,11 +18,13 @@ export const generateToken = (user) => {
         {
             id: user.id,
             username: user.username,
+            email: user.email,
             role: user.role || "user",
+            plan: user.plan || "BASIC",   // ⭐ CRITICAL: Add plan to token
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: "7d", // Token valid for 7 days
+            expiresIn: "7d",
         }
     );
 };

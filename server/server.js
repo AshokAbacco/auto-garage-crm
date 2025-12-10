@@ -26,6 +26,7 @@ import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 
 
+import carRoutes from "./routes/carRoutes.js";
 console.log("Models in Prisma:", Object.keys(prisma));
 
 
@@ -123,6 +124,8 @@ app.use("/api/bike-services", bikeServiceRoutes);
 app.use("/api/bike-invoices", bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
 
+//car company names and models
+app.use("/api/cars", carRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

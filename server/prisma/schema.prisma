@@ -13,20 +13,36 @@ enum CrmType {
   WASH
 }
 
+//⭐⭐  ADD PLAN ENUM
+enum PlanType {
+  BASIC
+  STANDARD
+  PREMIUM
+}
+
 model User {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
-  username         String?   @unique
-  password         String
-  role             String    @default("user")
-  allowedCrms      CrmType[] @default([])
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  profileImage     String?
-  phone            String? // ⭐ ADD THIS
-  companyName      String? // ⭐ ADD THIS
-  // ⭐ REFERRAL FIELDS
-  myReferralCode   String    @unique
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  username    String?   @unique
+  password    String
+  role        String    @default("user")
+  allowedCrms CrmType[] @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  profileImage String?
+  phone        String?
+  companyName  String?
+
+  //⭐⭐ Subscription fields
+  plan       PlanType  @default(BASIC)
+  planExpiry DateTime?
+
+  //⭐⭐ Link to Payment (subscriptions)
+  payments Payment[]
+
+  // Referral System
+  myReferralCode   String  @unique
   referredByCode   String?
   referredByUserId Int?
 
@@ -52,11 +68,11 @@ model Client {
   vehicleYear  Int
   regNumber    String
   vin          String?
-  carImage     String? // main image URL/base64 (legacy)
-  adImage      String? // image used by 3D viewer / front-banner
-  staffPerson  String? // legacy
-  receiverName String? // NEW: person receiving vehicle
-  damageImages Json? // NEW: stores array of image URLs or base64
+  carImage     String?
+  adImage      String?
+  staffPerson  String?
+  receiverName String?
+  damageImages Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   userId       Int?
@@ -64,8 +80,8 @@ model Client {
   user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   services  Service[]
   invoices  Invoice[]
-  reminders Reminder[] // FIXED: field name should be plural and distinct
-  ocrs      OcrRecord[] // <- linked OCR records
+  reminders Reminder[]
+  ocrs      OcrRecord[]
 
   @@unique([userId, regNumber])
   @@index([userId])
@@ -87,7 +103,6 @@ model Service {
   subServiceId Int?
   invoiceId    Int?
 
-  // Relation: one Service -> many ServiceMedia
   mediaFiles ServiceMedia[]
 
   client     Client           @relation(fields: [clientId], references: [id])
@@ -137,7 +152,6 @@ model Invoice {
 
   notes String?
 
-  // ✅ Add missing service details
   serviceCategory    String?
   serviceSubCategory String?
   serviceNotes       String?
@@ -168,9 +182,6 @@ model Reminder {
   user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
-/**
- * ServiceCategory and SubService unchanged
- */
 model ServiceCategory {
   id          Int          @id @default(autoincrement())
   name        String       @unique
@@ -210,29 +221,33 @@ model OcrRecord {
 model Payment {
   id String @id @default(cuid())
 
+  // ⭐⭐ Link to user
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+
   // Customer Details
-  customerName  String?
-  companyName   String?
-  email         String?
-  phone         String?
-  plan          String?
+  customerName String?
+  companyName  String?
+  email        String?
+  phone        String?
+
+  // ⭐⭐ Plan should be enum
+  plan          PlanType?
   billingPeriod String?
   amount        Float?
 
   referralCode String?
   gstNumber    String?
 
-  // One-time order fields (not used for trial system anymore)
   paymentId String? @unique
   orderId   String? @unique
   signature String?
 
-  // 🔥 Subscription Fields
   subscriptionId  String?   @unique
   isTrial         Boolean   @default(false)
   trialEndDate    DateTime?
   nextBillingDate DateTime?
-  status          String    @default("PENDING") // PENDING | TRIAL | ACTIVE | CANCELLED
+  status          String    @default("PENDING")
 
   paidAt     DateTime?
   expiryDate DateTime?

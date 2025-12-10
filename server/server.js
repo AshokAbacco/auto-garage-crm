@@ -24,6 +24,7 @@ import referralRoutes from "./routes/referral.js";
 //washing crm import statements
 import washingClientRoutes from "./routes/washingRoutes.js";
 
+import carRoutes from "./routes/carRoutes.js";
 console.log("Models in Prisma:", Object.keys(prisma));
 
 

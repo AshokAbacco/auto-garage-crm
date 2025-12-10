@@ -21,12 +21,15 @@ const clientBaseSchema = z.object({
         .nullable(),
     regNumber: z.string().min(1),
     vin: z.string().optional().nullable(),
+    fuel: z.string().optional().nullable(),   // NEW
+    seats: z.preprocess((v) => (v ? Number(v) : null), z.number().int().optional().nullable()), // NEW
     carImage: z.string().optional().nullable(),
     adImage: z.string().optional().nullable(),
     staffPerson: z.string().optional().nullable(),
-    receiverName: z.string().optional().nullable(), // NEW FIELD
-    damageImages: z.array(z.string()).optional().nullable(), // NEW FIELD (array of image URLs/base64)
+    receiverName: z.string().optional().nullable(),
+    damageImages: z.array(z.string()).optional().nullable(),
 });
+
 
 const clientCreateSchema = clientBaseSchema;
 const clientUpdateSchema = clientBaseSchema.partial();

@@ -3,6 +3,84 @@ import React, { useState, useEffect } from "react";
 import { FiCalendar, FiHash } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
+// Assume InputField and SelectField components are defined elsewhere or included below
+// For simplicity, I will include the updated SelectField and InputField for modern styling
+
+// --- Reusable Input Component (Updated Styling) ---
+function InputField({
+    icon,
+    label,
+    value,
+    onChange,
+    placeholder,
+    isDark,
+    type = "text",
+    required,
+    min,
+    max,
+}) {
+    return (
+        <div className="w-full">
+            <label
+                className={`block text-sm font-medium mb-1.5 flex items-center gap-2 ${isDark ? "text-gray-200" : "text-gray-700"
+                    }`}
+            >
+                <span className={isDark ? "text-emerald-300" : "text-emerald-600"}>
+                    {icon}
+                </span>
+                {label} {required && <span className="text-red-500">*</span>}
+            </label>
+
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                min={min}
+                max={max}
+                autoComplete="off"
+                required={required}
+                className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium border focus:ring-2 focus:ring-emerald-500 transition duration-150 ${isDark
+                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                    : "bg-white border-gray-300 placeholder-gray-400 focus:border-emerald-500"
+                    }`}
+            />
+        </div>
+    );
+}
+
+// --- Reusable Select Component (Updated Styling) ---
+function SelectField({ label, value, onChange, options, isDark }) {
+    return (
+        <div>
+            <label
+                className={`block text-sm font-medium mb-1.5 ${isDark ? "text-gray-200" : "text-gray-700"
+                    }`}
+            >
+                {label}
+            </label>
+
+            <select
+                value={value}
+                onChange={onChange}
+                className={`w-full px-4 py-2.5 rounded-lg border text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-emerald-500 transition duration-150 ${isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900 focus:border-emerald-500"
+                    }`}
+            >
+                <option value="">Select {label}</option>
+
+                {(options || []).map((opt) => (
+                    <option key={opt} value={opt}>
+                        {opt}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+// --- Main Component ---
 export default function VehicleInfoSection({
     form,
     setForm,
@@ -60,29 +138,29 @@ export default function VehicleInfoSection({
     return (
         <div
             className={`${isDark
-                    ? "bg-gray-800/50 border-gray-700/50"
-                    : "bg-white border-gray-200"
-                } rounded-2xl shadow-lg border`}
+                ? "bg-gray-900 border-gray-700"
+                : "bg-white border-gray-200"
+                } rounded-xl shadow-2xl border`} // Modernized shadow and border
         >
             {/* Header */}
             <div
-                className={`px-6 py-5 border-b ${isDark
-                        ? "border-gray-700/50 bg-emerald-900/10"
-                        : "border-gray-100 bg-emerald-50"
-                    }`}
+                className={`px-6 py-4 border-b ${isDark
+                    ? "border-gray-700/70 bg-gray-800/50"
+                    : "border-gray-100 bg-emerald-50/70"
+                    } rounded-t-xl`}
             >
                 <div className="flex items-center gap-3">
                     <div
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center ${isDark ? "text-emerald-400" : "text-emerald-600"
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${isDark ? "text-emerald-400" : "text-emerald-600"
                             } bg-emerald-500/10`}
                     >
-                        <FaCar size={20} />
+                        <FaCar />
                     </div>
                     <div>
-                        <h2 className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>
+                        <h2 className={`text-lg font-extrabold ${isDark ? "text-white" : "text-gray-900"}`}>
                             Vehicle Information
                         </h2>
-                        <p className={isDark ? "text-gray-400" : "text-gray-600"}>
+                        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
                             Vehicle details and registration
                         </p>
                     </div>
@@ -91,7 +169,7 @@ export default function VehicleInfoSection({
 
             {/* Body */}
             <div className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* BRAND FIELD */}
                     <InputField
                         icon={<FaCar />}
@@ -103,32 +181,7 @@ export default function VehicleInfoSection({
                         isDark={isDark}
                     />
 
-                    {/* BRAND LOGO CARDS (Standard & Premium) */}
-                    {userPlan !== "BASIC" &&
-                        brandInput.length >= 2 &&
-                        filteredMakes.length > 0 && (
-                            <div className="col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {filteredMakes.map((m, i) => (
-                                    <div
-                                        key={i}
-                                        onClick={() => handleBrandSelect(m)}
-                                        className={`cursor-pointer border rounded-2xl p-4 shadow hover:shadow-lg transition ${isDark
-                                                ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
-                                                : "bg-white border-gray-200 hover:bg-gray-100"
-                                            }`}
-                                    >
-                                        <img
-                                            src={m.logoUrl}
-                                            alt={m.make}
-                                            className="w-full h-24 object-contain mb-3"
-                                        />
-                                        <p className="text-center font-semibold">{m.make}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                    {/* MODEL FIELD */}
+                    {/* MODEL FIELD - Moved to right side of BRAND */}
                     {userPlan === "BASIC" ? (
                         <InputField
                             icon={<FaCar />}
@@ -145,56 +198,85 @@ export default function VehicleInfoSection({
                             isDark={isDark}
                         />
                     ) : (
-                        <div className="w-full">
-                            <label
-                                className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-                                    }`}
-                            >
-                                Vehicle Model
-                            </label>
-
-                            <select
+                        <div>
+                            <SelectField
+                                label="Vehicle Model"
                                 value={form.vehicleModel}
                                 onChange={(e) => handleModelSelect(e.target.value)}
-                                className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border ${isDark
-                                        ? "bg-gray-700/50 border-gray-600 text-white"
-                                        : "bg-gray-50 border-gray-300 text-gray-900"
-                                    }`}
-                            >
-                                <option value="">Select Model</option>
+                                options={carModels.map(m => m.name)} // Pass names for basic dropdown
+                                isDark={isDark}
+                            />
+                        </div>
+                    )}
+                </div>
 
-                                {carModels.map((m) => (
-                                    <option key={m.id} value={m.name}>
-                                        {m.name}
-                                    </option>
+                {/* BRAND LOGO CARDS (Standard & Premium) - Below the input fields */}
+                {userPlan !== "BASIC" &&
+                    brandInput.length >= 2 &&
+                    filteredMakes.length > 0 && (
+                        <div className="mt-5">
+                            <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                                Select Make
+                            </h3>
+                            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                {filteredMakes.map((m, i) => (
+                                    <div
+                                        key={i}
+                                        onClick={() => handleBrandSelect(m)}
+                                        className={`cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:ring-2 ring-emerald-500 transition duration-200 ${isDark
+                                            ? "bg-gray-800 border-gray-700 hover:bg-gray-700"
+                                            : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                            }`}
+                                    >
+                                        <img
+                                            src={m.logoUrl}
+                                            alt={m.make}
+                                            className="w-full h-12 object-contain mb-2"
+                                        />
+                                        <p className="text-center text-xs font-semibold">{m.make}</p>
+                                    </div>
                                 ))}
-                            </select>
-
-                            {/* MODEL THUMBNAILS GRID */}
-                            {carModels.length > 0 && (
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mt-3">
-                                    {carModels.map((m, i) => (
-                                        <div
-                                            key={i}
-                                            onClick={() => handleModelSelect(m.name)}
-                                            className={`cursor-pointer border rounded-xl p-2 shadow hover:shadow-lg ${form.vehicleModel === m.name
-                                                    ? "ring-2 ring-emerald-500"
-                                                    : ""
-                                                }`}
-                                        >
-                                            <img
-                                                src={m.thumbnailUrl}
-                                                alt={m.name}
-                                                className="w-full object-cover rounded-md"
-                                            />
-                                            <p className="mt-1 text-center text-sm">{m.name}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            </div>
                         </div>
                     )}
 
+
+                {/* MODEL THUMBNAILS GRID (Standard & Premium) - Below inputs/brand cards */}
+                {userPlan !== "BASIC" && carModels.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                            Choose Model
+                        </h3>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                            {carModels.map((m, i) => (
+                                <div
+                                    key={i}
+                                    onClick={() => handleModelSelect(m.name)}
+                                    // Disable right-click on the model card
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    className={`cursor-pointer border rounded-xl p-2.5 flex flex-col items-center transition duration-200 ${form.vehicleModel === m.name
+                                        ? "ring-2 ring-emerald-500 border-emerald-500 shadow-md"
+                                        : isDark ? "border-gray-700 hover:bg-gray-800" : "border-gray-200 hover:bg-gray-50"
+                                        }`}
+                                >
+                                    <div className="w-full aspect-video flex items-center justify-center overflow-hidden">
+                                        <img
+                                            src={m.thumbnailUrl}
+                                            alt={m.name}
+                                            // Enforce uniform image size/fit
+                                            className="w-full h-24 object-contain rounded-md"
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-center text-base font-semibold">
+                                        {m.name}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     {/* YEAR */}
                     <InputField
                         icon={<FiCalendar />}
@@ -250,7 +332,7 @@ export default function VehicleInfoSection({
                 </div>
 
                 {/* VIN */}
-                <div className="mt-5">
+                <div className="mt-6">
                     <InputField
                         icon={<FiHash />}
                         label="VIN / Chassis Number"
@@ -270,76 +352,4 @@ export default function VehicleInfoSection({
     );
 }
 
-/* Reusable Input Component */
-function InputField({
-    icon,
-    label,
-    value,
-    onChange,
-    placeholder,
-    isDark,
-    type = "text",
-    required,
-    min,
-    max,
-}) {
-    return (
-        <div className="w-full">
-            <label
-                className={`block text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? "text-gray-300" : "text-gray-700"
-                    }`}
-            >
-                <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>
-                    {icon}
-                </span>
-                {label} {required && <span className="text-red-500">*</span>}
-            </label>
-
-            <input
-                type={type}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                min={min}
-                max={max}
-                autoComplete="off"
-                required={required}
-                className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium border ${isDark
-                        ? "bg-gray-700/50 border-gray-600 text-white placeholder-gray-400"
-                        : "bg-gray-50 border-gray-300 placeholder-gray-400"
-                    }`}
-            />
-        </div>
-    );
-}
-
-/* Reusable Select Component */
-function SelectField({ label, value, onChange, options, isDark }) {
-    return (
-        <div>
-            <label
-                className={`block text-sm font-semibold mb-2 ${isDark ? "text-gray-300" : "text-gray-700"
-                    }`}
-            >
-                {label}
-            </label>
-
-            <select
-                value={value}
-                onChange={onChange}
-                className={`w-full px-4 py-2.5 rounded-xl border ${isDark
-                        ? "bg-gray-700/50 border-gray-600 text-white"
-                        : "bg-gray-50 border-gray-300"
-                    }`}
-            >
-                <option value="">Select {label}</option>
-
-                {(options || []).map((opt) => (
-                    <option key={opt} value={opt}>
-                        {opt}
-                    </option>
-                ))}
-            </select>
-        </div>
-    );
-}
+// NOTE: InputField and SelectField definitions were included above for completeness.

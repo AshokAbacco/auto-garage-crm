@@ -25,8 +25,8 @@ import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
 import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 
-
 import carRoutes from "./routes/carRoutes.js";
+
 console.log("Models in Prisma:", Object.keys(prisma));
 
 

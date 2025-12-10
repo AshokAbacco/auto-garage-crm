@@ -1,153 +1,2303 @@
-{
-  "TATA": [
-    "Nexon",
-    "Nexon EV",
-    "Punch",
-    "Punch EV",
-    "Harrier",
-    "Safari",
-    "Tiago",
-    "Tiago EV",
-    "Tigor",
-    "Tigor EV",
-    "Altroz",
-    "Altroz Racer"
-  ],
-
-  "MAHINDRA": [
-    "Scorpio",
-    "Scorpio N",
-    "Scorpio Classic",
-    "Bolero",
-    "Bolero Neo",
-    "XUV300",
-    "XUV300 TurboSport",
-    "XUV400 EV",
-    "XUV700",
-    "Thar",
-    "Thar 5-Door",
-    "Marazzo"
-  ],
-
-  "MARUTI SUZUKI": [
-    "Swift",
-    "Dzire",
-    "Baleno",
-    "Celerio",
-    "Ertiga",
-    "XL6",
-    "Vitara Brezza",
-    "Brezza",
-    "Fronx",
-    "Grand Vitara",
-    "S-Presso",
-    "Ignis",
-    "Alto K10",
-    "Alto 800",
-    "Ciaz",
-    "WagonR"
-  ],
-
-  "HYUNDAI": [
-    "Creta",
-    "Creta N Line",
-    "Venue",
-    "Venue N Line",
-    "i20",
-    "i20 N Line",
-    "Verna",
-    "Grand i10 Nios",
-    "Aura",
-    "Alcazar",
-    "Exter",
-    "Tucson",
-    "Ioniq 5",
-    "Kona EV"
-  ],
-
-  "KIA": ["Seltos", "Sonet", "Carens", "Carnival", "EV6"],
-
-  "TOYOTA": [
-    "Fortuner",
-    "Innova Crysta",
-    "Innova HyCross",
-    "Urban Cruiser Hyryder",
-    "Glanza",
-    "Rumion",
-    "Camry",
-    "Hilux",
-    "Vellfire"
-  ],
-
-  "HONDA": ["City", "City Hybrid", "Amaze", "Elevate", "WR-V (old)"],
-
-  "NISSAN": ["Magnite", "Kicks (discontinued)"],
-
-  "RENAULT": ["Kwid", "Triber", "Kiger"],
-
-  "SKODA": ["Kushaq", "Slavia", "Octavia", "Superb", "Kodiaq"],
-
-  "VOLKSWAGEN": ["Taigun", "Virtus", "Tiguan"],
-
-  "MG": ["Hector", "Hector Plus", "Astor", "Gloster", "ZS EV", "Comet EV"],
-
-  "JEEP": ["Compass", "Grand Cherokee", "Meridian"],
-
-  "BMW": [
-    "X1",
-    "X3",
-    "X4",
-    "X5",
-    "X7",
-    "3 Series",
-    "5 Series",
-    "7 Series",
-    "iX",
-    "i4"
-  ],
-
-  "MERCEDES-BENZ": [
-    "A-Class",
-    "C-Class",
-    "E-Class",
-    "S-Class",
-    "GLA",
-    "GLB",
-    "GLC",
-    "GLE",
-    "GLS",
-    "EQB",
-    "EQS"
-  ],
-
-  "AUDI": ["A4", "A6", "Q3", "Q5", "Q7", "Q8", "e-tron"],
-
-  "VOLVO": ["XC40", "XC40 Recharge", "XC60", "XC90", "S90"],
-
-  "CITROEN": ["C3", "C3 Aircross", "eC3", "C5 Aircross"],
-
-  "LEXUS": ["NX350h", "RX350h", "ES300h", "LX500d"],
-
-  "BYD": ["Atto 3", "Seal", "e6"],
-
-  "PORSCHE": ["Macan", "Cayenne", "Panamera", "Taycan"],
-
-  "JAGUAR": ["F-Pace", "I-Pace", "XF"],
-
-  "LAND ROVER": [
-    "Defender",
-    "Discovery",
-    "Range Rover",
-    "Range Rover Sport",
-    "Range Rover Evoque",
-    "Range Rover Velar"
-  ],
-
-  "MINI": ["Cooper", "Cooper Convertible", "Countryman"],
-
-  "ISUZU": ["MU-X", "D-Max V-Cross"],
-
-  "FORCE MOTORS": ["Gurkha", "Trax Cruiser", "Trax Toofan"],
-
-  "BAJAJ": ["Qute"]
-}
+[
+  {
+    "make": "TATA",
+    "slug": "tata",
+    "logoUrl": "https://images.seeklogo.com/logo-png/53/1/tata-logo-png_seeklogo-536643.png",
+    "models": [
+      {
+        "name": "Nexon",
+        "slug": "nexon",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PureGrey-30-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PureGrey-30-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PureGrey-30-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PureGrey-30-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Nexon EV",
+        "slug": "nexon-ev",
+            "thumbnailUrl": "https://images.91wheels.com/assets/c_images/gallery/tata/nexon-ev/tata-nexon-ev-0-1738987688.jpg?w=840&q=50",
+            "heroUrl": "https://images.91wheels.com/assets/c_images/gallery/tata/nexon-ev/tata-nexon-ev-0-1738987688.jpg?w=840&q=50",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://images.91wheels.com/assets/c_images/gallery/tata/nexon-ev/tata-nexon-ev-0-1738987688.jpg?w=840&q=50",
+            "thumbnailUrl": "https://images.91wheels.com/assets/c_images/gallery/tata/nexon-ev/tata-nexon-ev-0-1738987688.jpg?w=840&q=50"
+          }
+        }
+      },
+      {
+        "name": "Punch",
+        "slug": "punch",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotorsstage/DaytonaGrey-29-6?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotorsstage/DaytonaGrey-29-6?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotorsstage/DaytonaGrey-29-6?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotorsstage/DaytonaGrey-29-6?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Punch EV",
+        "slug": "punch-ev",
+        "thumbnailUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1749469046.jpg?w=840&q=50",
+        "heroUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1749469046.jpg?w=840&q=50",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1749469046.jpg?w=840&q=50",
+            "thumbnailUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1749469046.jpg?w=840&q=50"
+          }
+        }
+      },
+      {
+        "name": "Harrier",
+        "slug": "harrier",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotorsperf/PebbleGrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotorsperf/PebbleGrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotorsperf/PebbleGrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotorsperf/PebbleGrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Harrier EV",
+        "slug": "harrier-ev",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/AshGrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1749037110.jpg?w=600&q=60",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1749037110.jpg?w=600&q=60",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/AshGrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Safari",
+        "slug": "safari",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/StardustAsh-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl":"https://s7ap1.scene7.com/is/image/tatamotors/StardustAsh-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl":"https://s7ap1.scene7.com/is/image/tatamotors/StardustAsh-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl":"https://s7ap1.scene7.com/is/image/tatamotors/StardustAsh-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Tiago",
+        "slug": "tiago",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PolarWhiteDT-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PolarWhiteDT-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PolarWhiteDT-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PolarWhiteDT-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Tiago EV",
+        "slug": "tiago-ev",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/daytonagrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/daytonagrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/daytonagrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/daytonagrey-30?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Tigor",
+        "slug": "tigor",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/OpalWhite-30-4?$PO-850-600-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/OpalWhite-30-4?$PO-850-600-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/OpalWhite-30-4?$PO-850-600-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/OpalWhite-30-4?$PO-850-600-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Tigor EV",
+        "slug": "tigor-ev",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/DaytonaGrey-30-1?$PO-850-600-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/DaytonaGrey-30-1?$PO-850-600-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/DaytonaGrey-30-1?$PO-850-600-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/DaytonaGrey-30-1?$PO-850-600-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Altroz",
+        "slug": "altroz",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PrestineWhite-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PrestineWhite-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PrestineWhite-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PrestineWhite-30-1?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "Altroz Racer",
+        "slug": "altroz-racer",
+        "thumbnailUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1744785602.jpg?w=840&q=50",
+        "heroUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1744785602.jpg?w=840&q=50",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1744785602.jpg?w=840&q=50",
+            "thumbnailUrl": "https://images.91wheels.com/assets/b_images/main/models/profile/profile1744785602.jpg?w=840&q=50"
+          }
+        }
+      },
+      {
+        "name": "CURVV",
+        "slug": "curvv",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PristineWhite-1-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PristineWhite-1-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PristineWhite-1-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/PristineWhite-1-3?$PO-750-500-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      },
+      {
+        "name": "CURVV EV",
+        "slug": "curvv-ev",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/puregrey-29-2?$PO-750-500-S$&fit=crop&fmt=webp-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/puregrey-29-2?$PO-750-500-S$&fit=crop&fmt=webp-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/puregrey-29-2?$PO-750-500-S$&fit=crop&fmt=webp-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatapassenger/puregrey-29-2?$PO-750-500-S$&fit=crop&fmt=webp-alpha"
+          }
+        }
+      },
+      {
+        "name": "SIERRA",
+        "slug": "sierra",
+        "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/AndamanAdventure-30?$PO-1228-468-S$&fit=crop&fmt=avif-alpha",
+        "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/AndamanAdventure-30?$PO-1228-468-S$&fit=crop&fmt=avif-alpha",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://s7ap1.scene7.com/is/image/tatamotors/AndamanAdventure-30?$PO-1228-468-S$&fit=crop&fmt=avif-alpha",
+            "thumbnailUrl": "https://s7ap1.scene7.com/is/image/tatamotors/AndamanAdventure-30?$PO-1228-468-S$&fit=crop&fmt=avif-alpha"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "MAHINDRA",
+    "slug": "mahindra",
+    "logoUrl": "https://images.seeklogo.com/logo-png/61/1/mahindra-auto-logo-png_seeklogo-613492.png",
+    "models": [
+      {
+        "name": "Scorpio",
+        "slug": "scorpio",
+        "thumbnailUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/4c/bf/02/4cbf027b7108bcde531f171a2ff9ad87.jpg"
+          }
+        }
+      },
+      {
+        "name": "Scorpio N",
+        "slug": "scorpio-n",
+        "thumbnailUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/8b/29/9f/8b299f0ea4a28506d1da370c9a7008ab.jpg"
+          }
+        }
+      },
+      {
+        "name": "Scorpio Classic",
+        "slug": "scorpio-classic",
+        "thumbnailUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/65/d2/b3/65d2b3879d4f972146603a463e92644e.jpg"
+          }
+        }
+      },
+      {
+        "name": "Bolero",
+        "slug": "bolero",
+        "thumbnailUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/63/44/9c/63449c460824a1db345d893e1fea4e94.jpg"
+          }
+        }
+      },
+      {
+        "name": "Bolero Neo",
+        "slug": "bolero-neo",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ff/53/8a/ff538ac46968b1cdfdca1dc2ac4de45b.jpg"
+          }
+        }
+      },
+      {
+        "name": "XUV300",
+        "slug": "xuv300",
+        "thumbnailUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/b8/5d/ad/b85dad291d9556844dffa16523ac912b.jpg"
+          }
+        }
+      },
+      {
+        "name": "XUV300 3X0",
+        "slug": "xuv300-3x0",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/e1/58/d7/e158d776ed4f1392cea7060071b4614b.jpg"
+          }
+        }
+      },
+      {
+        "name": "XUV400 EV",
+        "slug": "xuv400-ev",
+        "thumbnailUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/eb/8f/2d/eb8f2d8e1dd925e86199f0d36b1b33b8.jpg"
+          }
+        }
+      },
+      {
+        "name": "XUV700",
+        "slug": "xuv700",
+        "thumbnailUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/9b/f3/1e/9bf31ec9101cb0daf2d3e520116c3c61.jpg"
+          }
+        }
+      },
+      {
+        "name": "Thar",
+        "slug": "thar",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/bc/fe/28/bcfe28986a5f2bbd4a483efa1830eb60.jpg"
+          }
+        }
+      },
+      {
+        "name": "Thar 5-Door",
+        "slug": "thar-5-door",
+        "thumbnailUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/a7/59/02/a7590276a6dbe3a8a8d592cfaab4663e.jpg"
+          }
+        }
+      },
+      {
+        "name": "Marazzo",
+        "slug": "marazzo",
+        "thumbnailUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/00/0d/47/000d473c4ca0202770cf8cf66d047994.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "MARUTI SUZUKI",
+    "slug": "maruti-suzuki",
+    "logoUrl": "https://images.seeklogo.com/logo-png/13/1/suzuki-logo-png_seeklogo-134277.png",
+    "models": [
+      {
+        "name": "Swift",
+        "slug": "swift",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/4b/c6/fa/4bc6fa6da4aa025431a4ba5f525407cb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Dzire",
+        "slug": "dzire",
+        "thumbnailUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/0e/0d/a2/0e0da2818b70f0eed5f478bd4a893b13.jpg"
+          }
+        }
+      },
+      {
+        "name": "Baleno",
+        "slug": "baleno",
+        "thumbnailUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/02/f3/b1/02f3b1bf4b0120c7c6299c8ae1d01fee.jpg"
+          }
+        }
+      },
+      {
+        "name": "Celerio",
+        "slug": "celerio",
+        "thumbnailUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/73/4e/a9/734ea9873679e4ca9dfaeceddb1be52b.jpg"
+          }
+        }
+      },
+      {
+        "name": "Ertiga",
+        "slug": "ertiga",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/ed/24/ef/ed24ef892aec45a5dd26031f58711b62.jpg"
+          }
+        }
+      },
+      {
+        "name": "XL6",
+        "slug": "xl6",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ac/03/40/ac0340d5124fb4fc8badbced14a15bec.jpg"
+          }
+        }
+      },
+      {
+        "name": "Vitara Brezza",
+        "slug": "vitara-brezza",
+        "thumbnailUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/9e/84/83/9e848384c691252a49c858c784fe6a2e.jpg"
+          }
+        }
+      },
+      {
+        "name": "Brezza",
+        "slug": "brezza",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/58/07/56/5807560dd9aa577142a821ba8ab79a60.jpg"
+          }
+        }
+      },
+      {
+        "name": "Fronx",
+        "slug": "fronx",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/1e/10/d6/1e10d66c42b5aca62d6eecedc58cca9f.jpg"
+          }
+        }
+      },
+      {
+        "name": "Grand Vitara",
+        "slug": "grand-vitara",
+        "thumbnailUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/15/1c/6e/151c6e84f2fafcbc5db0d8a15da8faaf.jpg"
+          }
+        }
+      },
+      {
+        "name": "S-Presso",
+        "slug": "s-presso",
+        "thumbnailUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/94/90/ff/9490ffced9152df0f25ac1b09d520730.jpg"
+          }
+        }
+      },
+      {
+        "name": "Ignis",
+        "slug": "ignis",
+        "thumbnailUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/81/c6/5e/81c65eef83f20cd48edc12c5e40cb135.jpg"
+          }
+        }
+      },
+      {
+        "name": "Alto K10",
+        "slug": "alto-k10",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/64/56/27/645627a369952fefd3a74feae7ab307f.jpg"
+          }
+        }
+      },
+      {
+        "name": "Alto 800",
+        "slug": "alto-800",
+        "thumbnailUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/6b/12/25/6b1225f7c41a08485c5908f71e6d6b29.jpg"
+          }
+        }
+      },
+      {
+        "name": "Ciaz",
+        "slug": "ciaz",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ef/bc/8a/efbc8aae796627101be74b3f92983d19.jpg"
+          }
+        }
+      },
+      {
+        "name": "WagonR",
+        "slug": "wagonr",
+        "thumbnailUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/4a/8d/c9/4a8dc9b8063644b0b7002b904c03f791.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "HYUNDAI",
+    "slug": "hyundai",
+    "logoUrl": "https://images.seeklogo.com/logo-png/30/1/hyundai-logo-png_seeklogo-309777.png",
+    "models": [
+      {
+        "name": "Creta",
+        "slug": "creta",
+        "thumbnailUrl": "https://i.pinimg.com/736x/19/8c/ee/198cee8fa4697bcf304d57b8b116d5fb.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/19/8c/ee/198cee8fa4697bcf304d57b8b116d5fb.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/19/8c/ee/198cee8fa4697bcf304d57b8b116d5fb.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/19/8c/ee/198cee8fa4697bcf304d57b8b116d5fb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Creta N Line",
+        "slug": "creta-n-line",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/49/e5/17/49e517c793957bf6e767cfca038f624e.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/49/e5/17/49e517c793957bf6e767cfca038f624e.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/49/e5/17/49e517c793957bf6e767cfca038f624e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/49/e5/17/49e517c793957bf6e767cfca038f624e.jpg"
+          }
+        }
+      },
+      {
+        "name": "Venue",
+        "slug": "venue",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/b1/3e/9f/b13e9fb876ca87a2e594ff747c7a420b.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/b1/3e/9f/b13e9fb876ca87a2e594ff747c7a420b.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/b1/3e/9f/b13e9fb876ca87a2e594ff747c7a420b.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/b1/3e/9f/b13e9fb876ca87a2e594ff747c7a420b.jpg"
+          }
+        }
+      },
+      {
+        "name": "Venue N Line",
+        "slug": "venue-n-line",
+        "thumbnailUrl": "https://imgd.aeplcdn.com/664x374/n/cw/ec/210466/new-venue-n-line-exterior-right-front-three-quarter-11.png?isig=0&q=80",
+        "heroUrl": "https://imgd.aeplcdn.com/664x374/n/cw/ec/210466/new-venue-n-line-exterior-right-front-three-quarter-11.png?isig=0&q=80",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://imgd.aeplcdn.com/664x374/n/cw/ec/210466/new-venue-n-line-exterior-right-front-three-quarter-11.png?isig=0&q=80",
+            "thumbnailUrl": "https://imgd.aeplcdn.com/664x374/n/cw/ec/210466/new-venue-n-line-exterior-right-front-three-quarter-11.png?isig=0&q=80"
+          }
+        }
+      },
+      {
+        "name": "i20",
+        "slug": "i20",
+        "thumbnailUrl": "https://i.pinimg.com/736x/b2/3a/de/b23adee27032b0d8322fc3efdf2a7b0e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/b2/3a/de/b23adee27032b0d8322fc3efdf2a7b0e.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/b2/3a/de/b23adee27032b0d8322fc3efdf2a7b0e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/b2/3a/de/b23adee27032b0d8322fc3efdf2a7b0e.jpg"
+          }
+        }
+      },
+      {
+        "name": "i20 N Line",
+        "slug": "i20-n-line",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/c8/e1/37/c8e137b381bd49e3e7a42398a7f5cb4f.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/c8/e1/37/c8e137b381bd49e3e7a42398a7f5cb4f.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/c8/e1/37/c8e137b381bd49e3e7a42398a7f5cb4f.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/c8/e1/37/c8e137b381bd49e3e7a42398a7f5cb4f.jpg"
+          }
+        }
+      },
+      {
+        "name": "Verna",
+        "slug": "verna",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/95/8e/16/958e16fd074a661dc4e2876da3ec8477.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/95/8e/16/958e16fd074a661dc4e2876da3ec8477.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/95/8e/16/958e16fd074a661dc4e2876da3ec8477.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/95/8e/16/958e16fd074a661dc4e2876da3ec8477.jpg"
+          }
+        }
+      },
+      {
+        "name": "Grand i10 Nios",
+        "slug": "grand-i10-nios",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ae/8f/a8/ae8fa89eff9d806046f3986a76030c42.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ae/8f/a8/ae8fa89eff9d806046f3986a76030c42.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/ae/8f/a8/ae8fa89eff9d806046f3986a76030c42.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ae/8f/a8/ae8fa89eff9d806046f3986a76030c42.jpg"
+          }
+        }
+      },
+      {
+        "name": "Aura",
+        "slug": "aura",
+        "thumbnailUrl": "https://i.pinimg.com/736x/60/bb/2e/60bb2e33755e68d75546909abf92b7ed.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/60/bb/2e/60bb2e33755e68d75546909abf92b7ed.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/60/bb/2e/60bb2e33755e68d75546909abf92b7ed.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/60/bb/2e/60bb2e33755e68d75546909abf92b7ed.jpg"
+          }
+        }
+      },
+      {
+        "name": "Alcazar",
+        "slug": "alcazar",
+        "thumbnailUrl": "https://i.pinimg.com/736x/2e/a6/61/2ea6617595ee90b4c39a098e26e0b663.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/2e/a6/61/2ea6617595ee90b4c39a098e26e0b663.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/2e/a6/61/2ea6617595ee90b4c39a098e26e0b663.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/2e/a6/61/2ea6617595ee90b4c39a098e26e0b663.jpg"
+          }
+        }
+      },
+      {
+        "name": "Exter",
+        "slug": "exter",
+        "thumbnailUrl": "https://i.pinimg.com/736x/5d/41/45/5d41451dd7757bf92c9b9e4ff3b8a80e.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/5d/41/45/5d41451dd7757bf92c9b9e4ff3b8a80e.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/5d/41/45/5d41451dd7757bf92c9b9e4ff3b8a80e.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/5d/41/45/5d41451dd7757bf92c9b9e4ff3b8a80e.jpg"
+          }
+        }
+      },
+      {
+        "name": "Tucson",
+        "slug": "tucson",
+        "thumbnailUrl": "https://i.pinimg.com/736x/e4/0e/19/e40e1939827ac9d1af2f8fbce8bdc4e3.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/e4/0e/19/e40e1939827ac9d1af2f8fbce8bdc4e3.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/e4/0e/19/e40e1939827ac9d1af2f8fbce8bdc4e3.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/e4/0e/19/e40e1939827ac9d1af2f8fbce8bdc4e3.jpg"
+          }
+        }
+      },
+      {
+        "name": "Ioniq 5",
+        "slug": "ioniq-5",
+        "thumbnailUrl": "https://i.pinimg.com/736x/5f/1b/ff/5f1bff05b48f9a79ab3d0e2bab8cb9a4.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/5f/1b/ff/5f1bff05b48f9a79ab3d0e2bab8cb9a4.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/5f/1b/ff/5f1bff05b48f9a79ab3d0e2bab8cb9a4.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/5f/1b/ff/5f1bff05b48f9a79ab3d0e2bab8cb9a4.jpg"
+          }
+        }
+      },
+      {
+        "name": "Kona EV",
+        "slug": "kona-ev",
+        "thumbnailUrl": "https://i.pinimg.com/736x/9c/06/68/9c06685d9e0ab25ee0281a7cd5d86756.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/9c/06/68/9c06685d9e0ab25ee0281a7cd5d86756.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/9c/06/68/9c06685d9e0ab25ee0281a7cd5d86756.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/9c/06/68/9c06685d9e0ab25ee0281a7cd5d86756.jpg"
+          }
+        }
+      },
+      {
+        "name": "Grand i10",
+        "slug": "grand-i10",
+        "thumbnailUrl": "https://i.pinimg.com/736x/ea/a1/8c/eaa18c0cb12b58604035bea810712f60.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/ea/a1/8c/eaa18c0cb12b58604035bea810712f60.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/ea/a1/8c/eaa18c0cb12b58604035bea810712f60.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/ea/a1/8c/eaa18c0cb12b58604035bea810712f60.jpg"
+          }
+        }
+      },
+      {
+        "name": "i10",
+        "slug": "i10",
+        "thumbnailUrl": "https://i.pinimg.com/736x/88/03/fd/8803fd0b4aeb54b8f25433697b176af4.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/88/03/fd/8803fd0b4aeb54b8f25433697b176af4.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/88/03/fd/8803fd0b4aeb54b8f25433697b176af4.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/88/03/fd/8803fd0b4aeb54b8f25433697b176af4.jpg"
+          }
+        }
+      },
+      {
+        "name": "Santro",
+        "slug": "santro",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/a2/a9/23/a2a923a6d3f6523ff45e59fd934a0a66.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/a2/a9/23/a2a923a6d3f6523ff45e59fd934a0a66.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/a2/a9/23/a2a923a6d3f6523ff45e59fd934a0a66.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/a2/a9/23/a2a923a6d3f6523ff45e59fd934a0a66.jpg"
+          }
+        }
+      },
+      {
+        "name": "Accent",
+        "slug": "accent",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/fe/04/ff/fe04ff8598be11af163f61a807b3bbcc.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/fe/04/ff/fe04ff8598be11af163f61a807b3bbcc.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/fe/04/ff/fe04ff8598be11af163f61a807b3bbcc.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/fe/04/ff/fe04ff8598be11af163f61a807b3bbcc.jpg"
+          }
+        }
+      },
+      {
+        "name": "Elantra",
+        "slug": "elantra",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/48/6a/ce/486ace302063f5a3b0e506a94371bb70.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/48/6a/ce/486ace302063f5a3b0e506a94371bb70.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/48/6a/ce/486ace302063f5a3b0e506a94371bb70.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/48/6a/ce/486ace302063f5a3b0e506a94371bb70.jpg"
+          }
+        }
+      },
+      {
+        "name": "Accent Viva",
+        "slug": "accent-viva",
+        "thumbnailUrl": "https://imgd.aeplcdn.com/370x208/cw/cars/discontinued/hyundai/accent-1999-2003.jpg?q=80",
+        "heroUrl": "https://imgd.aeplcdn.com/370x208/cw/cars/discontinued/hyundai/accent-1999-2003.jpg?q=80",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://imgd.aeplcdn.com/370x208/cw/cars/discontinued/hyundai/accent-1999-2003.jpg?q=80",
+            "thumbnailUrl": "https://imgd.aeplcdn.com/370x208/cw/cars/discontinued/hyundai/accent-1999-2003.jpg?q=80"
+          }
+        }
+      },
+      {
+        "name": "Xcent",
+        "slug": "xcent",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/d4/5d/8c/d45d8c5d16a80d1b72973af188f4dd1a.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/d4/5d/8c/d45d8c5d16a80d1b72973af188f4dd1a.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/d4/5d/8c/d45d8c5d16a80d1b72973af188f4dd1a.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/d4/5d/8c/d45d8c5d16a80d1b72973af188f4dd1a.jpg"
+          }
+        }
+      },
+      {
+        "name": "Sonata",
+        "slug": "sonata",
+        "thumbnailUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/sonata-2011-2015.jpg?q=80",
+        "heroUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/sonata-2011-2015.jpg?q=80",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/sonata-2011-2015.jpg?q=80",
+            "thumbnailUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/sonata-2011-2015.jpg?q=80"
+          }
+        }
+      },
+      {
+        "name": "Getz",
+        "slug": "getz",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/d4/ac/26/d4ac2630193907f99901b3d73d87ca45.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/d4/ac/26/d4ac2630193907f99901b3d73d87ca45.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/1200x/d4/ac/26/d4ac2630193907f99901b3d73d87ca45.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/d4/ac/26/d4ac2630193907f99901b3d73d87ca45.jpg"
+          }
+        }
+      },
+      {
+        "name": "Getz Prime",
+        "slug": "getz-prime",
+        "thumbnailUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/getz-prime-2007-2010.jpg?q=80",
+        "heroUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/getz-prime-2007-2010.jpg?q=80",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/getz-prime-2007-2010.jpg?q=80",
+            "thumbnailUrl": "https://imgd.aeplcdn.com/664x374/cw/cars/discontinued/hyundai/getz-prime-2007-2010.jpg?q=80"
+          }
+        }
+      },
+      {
+        "name": "Terracan",
+        "slug": "terracan",
+        "thumbnailUrl": "https://i.pinimg.com/736x/57/0d/f6/570df63ec719abd8049d60ec3a10c1c4.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/57/0d/f6/570df63ec719abd8049d60ec3a10c1c4.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/57/0d/f6/570df63ec719abd8049d60ec3a10c1c4.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/57/0d/f6/570df63ec719abd8049d60ec3a10c1c4.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "KIA",
+    "slug": "kia",
+    "logoUrl": "https://images.seeklogo.com/logo-png/39/1/kia-new-2021-logo-png_seeklogo-394641.png",
+    "models": [
+      {
+        "name": "Seltos",
+        "slug": "seltos",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/seltos/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/kia/seltos/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/kia/seltos/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/seltos/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Sonet",
+        "slug": "sonet",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/sonet/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/kia/sonet/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/kia/sonet/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/sonet/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Carens",
+        "slug": "carens",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carens/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/kia/carens/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/kia/carens/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carens/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Carnival",
+        "slug": "carnival",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carnival/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/kia/carnival/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/kia/carnival/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carnival/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "EV6",
+        "slug": "ev6",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/ev6/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/kia/ev6/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/kia/ev6/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/ev6/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "TOYOTA",
+    "slug": "toyota",
+    "logoUrl": "https://images.seeklogo.com/logo-png/14/1/toyota-logo-png_seeklogo-141411.png",
+    "models": [
+      {
+        "name": "Fortuner",
+        "slug": "fortuner",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/fortuner/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/fortuner/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/fortuner/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/fortuner/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Innova Crysta",
+        "slug": "innova-crysta",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/innova-crysta/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/innova-crysta/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/innova-crysta/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/innova-crysta/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Innova HyCross",
+        "slug": "innova-hycross",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/innova-hycross/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/innova-hycross/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/innova-hycross/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/innova-hycross/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Urban Cruiser Hyryder",
+        "slug": "urban-cruiser-hyryder",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/urban-cruiser-hyryder/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/urban-cruiser-hyryder/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/urban-cruiser-hyryder/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/urban-cruiser-hyryder/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Glanza",
+        "slug": "glanza",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/glanza/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/glanza/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/glanza/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/glanza/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Rumion",
+        "slug": "rumion",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/rumion/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/rumion/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/rumion/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/rumion/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Camry",
+        "slug": "camry",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/camry/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/camry/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/camry/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/camry/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Hilux",
+        "slug": "hilux",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/hilux/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/hilux/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/hilux/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/hilux/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Vellfire",
+        "slug": "vellfire",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/vellfire/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/toyota/vellfire/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/toyota/vellfire/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/toyota/vellfire/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "HONDA",
+    "slug": "honda",
+    "logoUrl": "https://images.seeklogo.com/logo-png/27/1/honda-logo-png_seeklogo-271495.png",
+    "models": [
+      {
+        "name": "City",
+        "slug": "city",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/honda/city/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/honda/city/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/honda/city/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/honda/city/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "City Hybrid",
+        "slug": "city-hybrid",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/honda/city-hybrid/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/honda/city-hybrid/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/honda/city-hybrid/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/honda/city-hybrid/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Amaze",
+        "slug": "amaze",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/honda/amaze/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/honda/amaze/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/honda/amaze/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/honda/amaze/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Elevate",
+        "slug": "elevate",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/honda/elevate/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/honda/elevate/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/honda/elevate/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/honda/elevate/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "WR-V (old)",
+        "slug": "wr-v-old",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/honda/wr-v-old/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/honda/wr-v-old/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/honda/wr-v-old/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/honda/wr-v-old/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "NISSAN",
+    "slug": "nissan",
+    "logoUrl": "https://images.seeklogo.com/logo-png/9/1/nissan-logo-png_seeklogo-99770.png",
+    "models": [
+      {
+        "name": "Magnite",
+        "slug": "magnite",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/nissan/magnite/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/nissan/magnite/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/nissan/magnite/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/nissan/magnite/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Kicks (discontinued)",
+        "slug": "kicks-discontinued",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/nissan/kicks-discontinued/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/nissan/kicks-discontinued/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/nissan/kicks-discontinued/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/nissan/kicks-discontinued/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "RENAULT",
+    "slug": "renault",
+    "logoUrl": "https://images.seeklogo.com/logo-png/11/1/renault-logo-png_seeklogo-117490.png",
+    "models": [
+      {
+        "name": "Kwid",
+        "slug": "kwid",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/renault/kwid/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/renault/kwid/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/renault/kwid/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/renault/kwid/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Triber",
+        "slug": "triber",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/renault/triber/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/renault/triber/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/renault/triber/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/renault/triber/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Kiger",
+        "slug": "kiger",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/renault/kiger/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/renault/kiger/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/renault/kiger/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/renault/kiger/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "SKODA",
+    "slug": "skoda",
+    "logoUrl": "https://images.seeklogo.com/logo-png/24/1/skoda-logo-png_seeklogo-242292.png",
+    "models": [
+      {
+        "name": "Kushaq",
+        "slug": "kushaq",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/kushaq/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/skoda/kushaq/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/skoda/kushaq/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/kushaq/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Slavia",
+        "slug": "slavia",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/slavia/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/skoda/slavia/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/skoda/slavia/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/slavia/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Octavia",
+        "slug": "octavia",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/octavia/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/skoda/octavia/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/skoda/octavia/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/octavia/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Superb",
+        "slug": "superb",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/superb/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/skoda/superb/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/skoda/superb/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/superb/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Kodiaq",
+        "slug": "kodiaq",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/kodiaq/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/skoda/kodiaq/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/skoda/kodiaq/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/skoda/kodiaq/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "VOLKSWAGEN",
+    "slug": "volkswagen",
+    "logoUrl": "https://images.seeklogo.com/logo-png/25/1/volkswagen-new-logo-png_seeklogo-259537.png",
+    "models": [
+      {
+        "name": "Taigun",
+        "slug": "taigun",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volkswagen/taigun/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volkswagen/taigun/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volkswagen/taigun/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volkswagen/taigun/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Virtus",
+        "slug": "virtus",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volkswagen/virtus/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volkswagen/virtus/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volkswagen/virtus/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volkswagen/virtus/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Tiguan",
+        "slug": "tiguan",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volkswagen/tiguan/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volkswagen/tiguan/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volkswagen/tiguan/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volkswagen/tiguan/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "MG",
+    "slug": "mg",
+    "logoUrl": "https://images.seeklogo.com/logo-png/9/1/mg-logo-png_seeklogo-91883.png",
+    "models": [
+      {
+        "name": "Hector",
+        "slug": "hector",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mg/hector/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mg/hector/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mg/hector/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mg/hector/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Hector Plus",
+        "slug": "hector-plus",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mg/hector-plus/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mg/hector-plus/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mg/hector-plus/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mg/hector-plus/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Astor",
+        "slug": "astor",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mg/astor/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mg/astor/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mg/astor/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mg/astor/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Gloster",
+        "slug": "gloster",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mg/gloster/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mg/gloster/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mg/gloster/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mg/gloster/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "ZS EV",
+        "slug": "zs-ev",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mg/zs-ev/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mg/zs-ev/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mg/zs-ev/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mg/zs-ev/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Comet EV",
+        "slug": "comet-ev",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mg/comet-ev/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mg/comet-ev/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mg/comet-ev/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mg/comet-ev/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "JEEP",
+    "slug": "jeep",
+    "logoUrl": "https://images.seeklogo.com/logo-png/7/1/jeep-logo-png_seeklogo-75284.png",
+    "models": [
+      {
+        "name": "Compass",
+        "slug": "compass",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/jeep/compass/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/jeep/compass/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/jeep/compass/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/jeep/compass/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Grand Cherokee",
+        "slug": "grand-cherokee",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/jeep/grand-cherokee/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/jeep/grand-cherokee/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/jeep/grand-cherokee/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/jeep/grand-cherokee/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Meridian",
+        "slug": "meridian",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/jeep/meridian/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/jeep/meridian/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/jeep/meridian/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/jeep/meridian/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "BMW",
+    "slug": "bmw",
+    "logoUrl": "https://images.seeklogo.com/logo-png/24/1/bmw-logo-png_seeklogo-240426.png",
+    "models": [
+      {
+        "name": "X1",
+        "slug": "x1",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x1/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/x1/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/x1/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x1/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "X3",
+        "slug": "x3",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x3/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/x3/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/x3/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x3/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "X4",
+        "slug": "x4",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x4/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/x4/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/x4/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x4/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "X5",
+        "slug": "x5",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x5/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/x5/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/x5/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x5/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "X7",
+        "slug": "x7",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x7/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/x7/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/x7/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/x7/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "3 Series",
+        "slug": "3-series",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/3-series/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/3-series/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/3-series/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/3-series/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "5 Series",
+        "slug": "5-series",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/5-series/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/5-series/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/5-series/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/5-series/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "7 Series",
+        "slug": "7-series",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/7-series/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/7-series/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/7-series/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/7-series/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "iX",
+        "slug": "ix",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/ix/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/ix/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/ix/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/ix/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "i4",
+        "slug": "i4",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/i4/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bmw/i4/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bmw/i4/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bmw/i4/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "MERCEDES-BENZ",
+    "slug": "mercedes-benz",
+    "logoUrl": "https://images.seeklogo.com/logo-png/33/1/mercedes-benz-logo-png_seeklogo-332844.png",
+    "models": [
+      {
+        "name": "A-Class",
+        "slug": "a-class",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/a-class/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/a-class/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/a-class/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/a-class/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "C-Class",
+        "slug": "c-class",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/c-class/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/c-class/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/c-class/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/c-class/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "E-Class",
+        "slug": "e-class",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/e-class/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/e-class/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/e-class/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/e-class/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "S-Class",
+        "slug": "s-class",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/s-class/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/s-class/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/s-class/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/s-class/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "GLA",
+        "slug": "gla",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/gla/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/gla/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/gla/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/gla/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "GLB",
+        "slug": "glb",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/glb/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/glb/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/glb/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/glb/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "GLC",
+        "slug": "glc",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/glc/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/glc/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/glc/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/glc/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "GLE",
+        "slug": "gle",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/gle/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/gle/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/gle/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/gle/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "GLS",
+        "slug": "gls",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/gls/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/gls/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/gls/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/gls/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "EQB",
+        "slug": "eqb",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqb/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqb/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqb/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqb/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "EQS",
+        "slug": "eqs",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqs/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqs/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqs/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mercedes-benz/eqs/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "AUDI",
+    "slug": "audi",
+    "logoUrl": "https://images.seeklogo.com/logo-png/1/1/audi-logo-png_seeklogo-13438.png",
+    "models": [
+      {
+        "name": "A4",
+        "slug": "a4",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/a4/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/a4/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/a4/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/a4/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "A6",
+        "slug": "a6",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/a6/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/a6/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/a6/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/a6/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Q3",
+        "slug": "q3",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q3/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/q3/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/q3/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q3/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Q5",
+        "slug": "q5",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q5/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/q5/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/q5/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q5/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Q7",
+        "slug": "q7",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q7/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/q7/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/q7/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q7/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Q8",
+        "slug": "q8",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q8/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/q8/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/q8/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/q8/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "e-tron",
+        "slug": "e-tron",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/audi/e-tron/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/audi/e-tron/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/audi/e-tron/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/audi/e-tron/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "VOLVO",
+    "slug": "volvo",
+    "logoUrl": "https://images.seeklogo.com/logo-png/15/1/volvo-logo-png_seeklogo-150599.png",
+    "models": [
+      {
+        "name": "XC40",
+        "slug": "xc40",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc40/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volvo/xc40/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volvo/xc40/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc40/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "XC40 Recharge",
+        "slug": "xc40-recharge",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc40-recharge/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volvo/xc40-recharge/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volvo/xc40-recharge/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc40-recharge/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "XC60",
+        "slug": "xc60",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc60/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volvo/xc60/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volvo/xc60/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc60/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "XC90",
+        "slug": "xc90",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc90/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volvo/xc90/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volvo/xc90/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/xc90/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "S90",
+        "slug": "s90",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/s90/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/volvo/s90/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/volvo/s90/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/volvo/s90/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "CITROEN",
+    "slug": "citroen",
+    "logoUrl": "https://images.seeklogo.com/logo-png/18/1/citroen-2009-logo-png_seeklogo-189184.png",
+    "models": [
+      {
+        "name": "C3",
+        "slug": "c3",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/c3/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/citroen/c3/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/citroen/c3/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/c3/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "C3 Aircross",
+        "slug": "c3-aircross",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/c3-aircross/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/citroen/c3-aircross/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/citroen/c3-aircross/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/c3-aircross/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "eC3",
+        "slug": "ec3",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/ec3/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/citroen/ec3/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/citroen/ec3/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/ec3/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "C5 Aircross",
+        "slug": "c5-aircross",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/c5-aircross/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/citroen/c5-aircross/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/citroen/c5-aircross/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/citroen/c5-aircross/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "LEXUS",
+    "slug": "lexus",
+    "logoUrl": "https://images.seeklogo.com/logo-png/30/1/lexus-logo-png_seeklogo-309726.png",
+    "models": [
+      {
+        "name": "NX350h",
+        "slug": "nx350h",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/nx350h/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/lexus/nx350h/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/lexus/nx350h/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/nx350h/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "RX350h",
+        "slug": "rx350h",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/rx350h/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/lexus/rx350h/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/lexus/rx350h/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/rx350h/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "ES300h",
+        "slug": "es300h",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/es300h/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/lexus/es300h/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/lexus/es300h/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/es300h/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "LX500d",
+        "slug": "lx500d",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/lx500d/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/lexus/lx500d/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/lexus/lx500d/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/lexus/lx500d/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "BYD",
+    "slug": "byd",
+    "logoUrl": "https://images.seeklogo.com/logo-png/54/1/byd-logo-png_seeklogo-546145.png",
+    "models": [
+      {
+        "name": "Atto 3",
+        "slug": "atto-3",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/byd/atto-3/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/byd/atto-3/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/byd/atto-3/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/byd/atto-3/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Seal",
+        "slug": "seal",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/byd/seal/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/byd/seal/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/byd/seal/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/byd/seal/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "e6",
+        "slug": "e6",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/byd/e6/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/byd/e6/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/byd/e6/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/byd/e6/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "PORSCHE",
+    "slug": "porsche",
+    "logoUrl": "https://images.seeklogo.com/logo-png/16/1/porsche-logo-png_seeklogo-168544.png",
+    "models": [
+      {
+        "name": "Macan",
+        "slug": "macan",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/macan/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/porsche/macan/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/porsche/macan/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/macan/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Cayenne",
+        "slug": "cayenne",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/cayenne/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/porsche/cayenne/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/porsche/cayenne/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/cayenne/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Panamera",
+        "slug": "panamera",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/panamera/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/porsche/panamera/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/porsche/panamera/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/panamera/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Taycan",
+        "slug": "taycan",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/taycan/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/porsche/taycan/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/porsche/taycan/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/porsche/taycan/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "JAGUAR",
+    "slug": "jaguar",
+    "logoUrl": "https://images.seeklogo.com/logo-png/7/1/jaguar-logo-png_seeklogo-74766.png",
+    "models": [
+      {
+        "name": "F-Pace",
+        "slug": "f-pace",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/jaguar/f-pace/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/jaguar/f-pace/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/jaguar/f-pace/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/jaguar/f-pace/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "I-Pace",
+        "slug": "i-pace",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/jaguar/i-pace/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/jaguar/i-pace/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/jaguar/i-pace/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/jaguar/i-pace/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "XF",
+        "slug": "xf",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/jaguar/xf/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/jaguar/xf/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/jaguar/xf/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/jaguar/xf/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "LAND ROVER",
+    "slug": "land-rover",
+    "logoUrl": "https://images.seeklogo.com/logo-png/20/1/land-rover-logo-png_seeklogo-201638.png",
+    "models": [
+      {
+        "name": "Defender",
+        "slug": "defender",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/defender/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/land-rover/defender/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/land-rover/defender/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/defender/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Discovery",
+        "slug": "discovery",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/discovery/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/land-rover/discovery/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/land-rover/discovery/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/discovery/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Range Rover",
+        "slug": "range-rover",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Range Rover Sport",
+        "slug": "range-rover-sport",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-sport/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-sport/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-sport/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-sport/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Range Rover Evoque",
+        "slug": "range-rover-evoque",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-evoque/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-evoque/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-evoque/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-evoque/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Range Rover Velar",
+        "slug": "range-rover-velar",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-velar/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-velar/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-velar/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/land-rover/range-rover-velar/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "MINI",
+    "slug": "mini",
+    "logoUrl": "https://images.seeklogo.com/logo-png/22/1/mini-cooper-logo-png_seeklogo-224659.png",
+    "models": [
+      {
+        "name": "Cooper",
+        "slug": "cooper",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mini/cooper/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mini/cooper/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mini/cooper/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mini/cooper/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Cooper Convertible",
+        "slug": "cooper-convertible",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mini/cooper-convertible/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mini/cooper-convertible/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mini/cooper-convertible/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mini/cooper-convertible/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Countryman",
+        "slug": "countryman",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/mini/countryman/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/mini/countryman/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/mini/countryman/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/mini/countryman/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "ISUZU",
+    "slug": "isuzu",
+    "logoUrl": "https://images.seeklogo.com/logo-png/7/1/isuzu-logo-png_seeklogo-73978.png",
+    "models": [
+      {
+        "name": "MU-X",
+        "slug": "mu-x",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/isuzu/mu-x/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/isuzu/mu-x/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/isuzu/mu-x/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/isuzu/mu-x/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "D-Max V-Cross",
+        "slug": "d-max-v-cross",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/isuzu/d-max-v-cross/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/isuzu/d-max-v-cross/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/isuzu/d-max-v-cross/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/isuzu/d-max-v-cross/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "FORCE MOTORS",
+    "slug": "force-motors",
+    "logoUrl": "https://images.seeklogo.com/logo-png/21/1/force-motors-logo-png_seeklogo-215774.png",
+    "models": [
+      {
+        "name": "Gurkha",
+        "slug": "gurkha",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/force-motors/gurkha/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/force-motors/gurkha/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/force-motors/gurkha/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/force-motors/gurkha/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Trax Cruiser",
+        "slug": "trax-cruiser",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/force-motors/trax-cruiser/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/force-motors/trax-cruiser/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/force-motors/trax-cruiser/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/force-motors/trax-cruiser/2024/thumb.jpg"
+          }
+        }
+      },
+      {
+        "name": "Trax Toofan",
+        "slug": "trax-toofan",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/force-motors/trax-toofan/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/force-motors/trax-toofan/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/force-motors/trax-toofan/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/force-motors/trax-toofan/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "make": "BAJAJ",
+    "slug": "bajaj",
+    "logoUrl": "https://images.seeklogo.com/logo-png/32/1/bajaj-logo-png_seeklogo-320908.png",
+    "models": [
+      {
+        "name": "Qute",
+        "slug": "qute",
+        "thumbnailUrl": "https://cdn.yoursite.com/images/bajaj/qute/thumb.jpg",
+        "heroUrl": "https://cdn.yoursite.com/images/bajaj/qute/hero.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://cdn.yoursite.com/images/bajaj/qute/2024/hero.jpg",
+            "thumbnailUrl": "https://cdn.yoursite.com/images/bajaj/qute/2024/thumb.jpg"
+          }
+        }
+      }
+    ]
+  }
+]

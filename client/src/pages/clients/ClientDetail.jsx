@@ -17,7 +17,9 @@ import {
   FiFileText,
   FiCamera,
   FiEye,
+  FiUsers,
 } from "react-icons/fi";
+import { BsFuelPumpFill } from "react-icons/bs";
 import { useTheme } from "../../contexts/ThemeContext";
 import OCRUploader from "../details/components/OCRUploader";
 import OCRResults from "../details/components/OCRResults";
@@ -356,92 +358,85 @@ export default function ClientDetail() {
           <span className="font-medium">Back to Clients</span>
         </Link>
 
-        {/* Header Card */}
-        <div className={`rounded-2xl overflow-hidden shadow-xl ${isDark ? 'bg-gray-800' : 'bg-white'} transition-all duration-300 hover:shadow-2xl`}>
-          <div className={`p-6 sm:p-8 ${isDark ? 'bg-gradient-to-r from-blue-900/50 to-purple-900/50' : 'bg-gradient-to-r from-blue-500 to-purple-600'}`}>
-            <div className="flex flex-col lg:flex-row gap-6 items-start">
-              {/* Client Info */}
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white font-bold text-2xl sm:text-3xl shadow-lg flex-shrink-0 transition-transform duration-300 hover:scale-105">
-                  {client.fullName?.charAt(0)?.toUpperCase() || "C"}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate">
-                    {client.fullName}
-                  </h1>
-                  <p className="text-green-300 flex items-center gap-2 text-sm font-medium mt-1">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                    Active Client
-                  </p>
-                </div>
-              </div>
-
-              {/* Edit & Scan Buttons */}
-              <div className="flex gap-3 items-center">
-                <Link
-                  to={`/clients/${id}/edit`}
-                  state={{ clientData: client }} // Pass client data via state
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/20 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-                >
-                  <FiEdit className="w-5 h-5" />
-                  <span className="font-medium">Edit</span>
-                </Link>
-
-                <button
-                  onClick={handleScanNavigate}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl transition-all duration-300 hover:scale-105"
-                >
-                  <FiCamera className="w-5 h-5" />
-                  <span className="font-medium">Scan RC Document</span>
-                </button>
-              </div>
-            </div>
+        {/* Hero Section with Background Image */}
+        <div className="relative rounded-2xl overflow-hidden shadow-xl">
+          {/* Background Image */}
+          <div className="relative h-100 sm:h-[600px]">
+            <img
+              src={
+                client.carImage ||
+                `https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80`
+              }
+              alt="vehicle"
+              className="w-full h-full object-cover"
+            />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
           </div>
 
-          {/* Vehicle Info */}
-          <div className={`p-6 sm:p-8 ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium mb-6 ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-white text-gray-700'} shadow-sm transition-all duration-300 hover:shadow-md`}>
-              <span>{client.vehicleMake} {client.vehicleModel}</span>
-              <span className="text-gray-400">•</span>
-              <span>{client.vehicleYear}</span>
-              <span className="text-gray-400">•</span>
-              <span className="font-mono">{client.regNumber}</span>
+          {/* Content Overlay */}
+          <div className="absolute inset-0 p-6 sm:p-8">
+            {/* Top Right Buttons */}
+            <div className="flex justify-between items-start mb-6">
+              <Link
+                to="/clients"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${isDark
+                  ? "text-gray-300 hover:text-white hover:bg-gray-800"
+                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+              >
+                <FiArrowLeft className="w-4 h-4" />
+                <span className="font-medium">Back</span>
+              </Link>
+              <button
+                onClick={handleScanNavigate}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <FiCamera className="w-4 h-4" />
+                <span className="font-medium">Scan RC</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Car Image */}
-              <div className="w-full overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg">
-                <img
-                  src={
-                    client.carImage ||
-                    `https://via.placeholder.com/600x400?text=${encodeURIComponent(
-                      client.vehicleMake
-                    )}+${encodeURIComponent(client.vehicleModel)}`
-                  }
-                  alt="vehicle"
-                  className="w-full h-64 object-contain rounded-xl transition-transform duration-500 hover:scale-105"
-                />
+            {/* Client Info */}
+            <div className="flex items-start gap-4 mb-6">
+              {/* Client Initial */}
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                {client.fullName?.charAt(0)?.toUpperCase() || "C"}
               </div>
-
-              {/* Damage Images */}
-              {Array.isArray(client.damageImages) && client.damageImages.length > 0 && (
-                <div>
-                  <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    Additional Images
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {client.damageImages.slice(0, 4).map((img, idx) => (
-                      <div key={idx} className="aspect-video rounded-xl overflow-hidden shadow transition-all duration-300 hover:shadow-lg hover:scale-105">
-                        <img
-                          src={img}
-                          alt={`damage-${idx}`}
-                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                        />
-                      </div>
-                    ))}
-                  </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
+                  {client.fullName}
+                </h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="px-3 py-1 bg-green-500 text-white text-sm font-medium rounded-full">
+                    ACTIVE CLIENT
+                  </span>
+                  <span className="text-white/80 text-sm font-mono">
+                    {client.regNumber}
+                  </span>
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Vehicle Info */}
+            <div className="mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+                {client.vehicleMake} {client.vehicleModel}
+              </h2>
+              <p className="text-white/80 text-sm">
+                Total Lifetime Value
+              </p>
+              <p className="text-2xl font-bold text-white">
+                ₹{totalBilled.toFixed(2)}
+              </p>
+            </div>
+
+            {/* Vehicle Specifications */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <SpecCard icon={<BsFuelPumpFill />} label="FUEL TYPE" value={client.fuel} />
+              <SpecCard icon={<FiUsers />} label="SEATS" value={client.seats} />
+              <SpecCard icon={<FiHash />} label="COLOR" value={client.color || "N/A"} />
+              <SpecCard icon={<FiTool />} label="BODY TYPE" value={client.bodyType || "SUV"} />
             </div>
           </div>
         </div>
@@ -451,13 +446,15 @@ export default function ClientDetail() {
           <h2 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Contact Information
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <ContactCard icon={<FiPhone />} label="Phone" value={client.phone} isDark={isDark} />
             <ContactCard icon={<FiMail />} label="Email" value={client.email} isDark={isDark} />
             <ContactCard icon={<FiMapPin />} label="Address" value={client.address} isDark={isDark} />
             <ContactCard icon={<FiCreditCard />} label="Registration No." value={client.regNumber} isDark={isDark} />
             <ContactCard icon={<FiHash />} label="VIN / Chassis" value={client.vin} isDark={isDark} />
             <ContactCard icon={<FiCalendar />} label="Last Service" value={lastService} isDark={isDark} />
+            <ContactCard icon={<BsFuelPumpFill />} label="Fuel Type" value={client.fuel} isDark={isDark} />
+            <ContactCard icon={<FiUsers />} label="Seating Capacity" value={client.seats} isDark={isDark} />
           </div>
         </div>
 
@@ -672,113 +669,113 @@ export default function ClientDetail() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* OCR Detail Modal – redesigned and grouped */}
-      {selectedOCR && (
-        <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-6 overflow-y-auto backdrop-blur-sm">
-          <div className={`w-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl ${isDark ? "bg-gray-800" : "bg-white"} transform transition-all duration-300 scale-95 animate-scaleIn`}>
-            <div className={`flex items-center justify-between p-4 ${isDark ? "bg-gradient-to-r from-blue-900/60 to-purple-900/60 text-white" : "bg-gradient-to-r from-blue-500 to-purple-600 text-white"}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white">
-                  <FiFileText />
-                </div>
-                <h3 className="text-lg font-semibold">OCR Record Details</h3>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-white/80 mr-4">Created: {new Date(selectedOCR.createdAt).toLocaleString()}</div>
-                <button
-                  onClick={() => setSelectedOCR(null)}
-                  className="text-white hover:opacity-90 transition-opacity duration-300"
-                >
-                  <FiX size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Group: Vehicle Identification */}
-              <Section title="🚗 Vehicle Identification">
-                <TwoCol label="Registration Number" value={selectedOCR.parsedData?.regNo} isDark={isDark} />
-                <TwoCol label="Registration Date" value={selectedOCR.parsedData?.regDate} isDark={isDark} />
-                <TwoCol label="Chassis Number" value={selectedOCR.parsedData?.chassisNo} isDark={isDark} />
-                <TwoCol label="Engine Number" value={selectedOCR.parsedData?.engineNo} isDark={isDark} />
-                <TwoCol label="Maker (Manufacturer)" value={selectedOCR.parsedData?.maker || selectedOCR.parsedData?.mfr} isDark={isDark} />
-                <TwoCol label="Model / Variant" value={(selectedOCR.parsedData?.model || "") + (selectedOCR.parsedData?.variant ? ` / ${selectedOCR.parsedData.variant}` : "")} isDark={isDark} />
-              </Section>
-
-              {/* Group: Vehicle Specifications */}
-              <Section title="⚙️ Vehicle Specifications">
-                <TwoCol label="Vehicle Class" value={selectedOCR.parsedData?.vehicleClass} isDark={isDark} />
-                <TwoCol label="Body Type" value={selectedOCR.parsedData?.body || selectedOCR.parsedData?.bodyType} isDark={isDark} />
-                <TwoCol label="Colour" value={selectedOCR.parsedData?.colour || selectedOCR.parsedData?.color} isDark={isDark} />
-                <TwoCol label="Fuel Type" value={selectedOCR.parsedData?.fuel || selectedOCR.parsedData?.fuelType} isDark={isDark} />
-                <TwoCol label="Wheel Base" value={selectedOCR.parsedData?.wheelBase} isDark={isDark} />
-                <TwoCol label="MFG Date" value={selectedOCR.parsedData?.mfgDate} isDark={isDark} />
-                <TwoCol label="Seating Capacity" value={selectedOCR.parsedData?.seating || selectedOCR.parsedData?.seatingCapacity} isDark={isDark} />
-                <TwoCol label="No. of Cylinders" value={selectedOCR.parsedData?.noOfCyl} isDark={isDark} />
-                <TwoCol label="Unladen Weight" value={selectedOCR.parsedData?.unladenWt} isDark={isDark} />
-                <TwoCol label="CC" value={selectedOCR.parsedData?.cc} isDark={isDark} />
-              </Section>
-
-              {/* Group: Registration / Validity */}
-              <Section title="🧾 Registration / Validity">
-                <TwoCol label="Reg/FC Valid Upto" value={selectedOCR.parsedData?.regFcUpto} isDark={isDark} />
-                <TwoCol label="Fitness Valid Upto" value={selectedOCR.parsedData?.fitUpto || selectedOCR.parsedData?.fitnessUpto} isDark={isDark} />
-                <TwoCol label="Insurance Valid Upto" value={selectedOCR.parsedData?.insuranceUpto} isDark={isDark} />
-                <TwoCol label="Tax Valid Upto" value={selectedOCR.parsedData?.taxUpto} isDark={isDark} />
-              </Section>
-
-              {/* Group: Ownership */}
-              <Section title="👤 Ownership">
-                <TwoCol label="Owner Name" value={selectedOCR.parsedData?.ownerName} isDark={isDark} />
-                <TwoCol label="S/W/D Of" value={selectedOCR.parsedData?.swdOf} isDark={isDark} />
-                <div className="col-span-full">
-                  <div className="text-xs font-semibold text-gray-400 mb-2">Address</div>
-                  <div className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 border-gray-600 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}>
-                    {selectedOCR.parsedData?.address || "—"}
+        {/* OCR Detail Modal – redesigned and grouped */}
+        {selectedOCR && (
+          <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-6 overflow-y-auto backdrop-blur-sm">
+            <div className={`w-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl ${isDark ? "bg-gray-800" : "bg-white"} transform transition-all duration-300 scale-95 animate-scaleIn`}>
+              <div className={`flex items-center justify-between p-4 ${isDark ? "bg-gradient-to-r from-blue-900/60 to-purple-900/60 text-white" : "bg-gradient-to-r from-blue-500 to-purple-600 text-white"}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white">
+                    <FiFileText />
                   </div>
+                  <h3 className="text-lg font-semibold">OCR Record Details</h3>
                 </div>
-              </Section>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-white/80 mr-4">Created: {new Date(selectedOCR.createdAt).toLocaleString()}</div>
+                  <button
+                    onClick={() => setSelectedOCR(null)}
+                    className="text-white hover:opacity-90 transition-opacity duration-300"
+                  >
+                    <FiX size={20} />
+                  </button>
+                </div>
+              </div>
 
-              {/* Raw OCR text (collapsed style) */}
-              {selectedOCR.rawText && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-500 mb-2">Raw OCR Text</h4>
-                  <pre className={`p-4 rounded-xl text-sm transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 text-white" : "bg-gray-50 text-gray-800"}`}>
-                    {selectedOCR.rawText}
-                  </pre>
-                </div>
-              )}
+              <div className="p-6 space-y-6">
+                {/* Group: Vehicle Identification */}
+                <Section title="🚗 Vehicle Identification">
+                  <TwoCol label="Registration Number" value={selectedOCR.parsedData?.regNo} isDark={isDark} />
+                  <TwoCol label="Registration Date" value={selectedOCR.parsedData?.regDate} isDark={isDark} />
+                  <TwoCol label="Chassis Number" value={selectedOCR.parsedData?.chassisNo} isDark={isDark} />
+                  <TwoCol label="Engine Number" value={selectedOCR.parsedData?.engineNo} isDark={isDark} />
+                  <TwoCol label="Maker (Manufacturer)" value={selectedOCR.parsedData?.maker || selectedOCR.parsedData?.mfr} isDark={isDark} />
+                  <TwoCol label="Model / Variant" value={(selectedOCR.parsedData?.model || "") + (selectedOCR.parsedData?.variant ? ` / ${selectedOCR.parsedData.variant}` : "")} isDark={isDark} />
+                </Section>
+
+                {/* Group: Vehicle Specifications */}
+                <Section title="⚙️ Vehicle Specifications">
+                  <TwoCol label="Vehicle Class" value={selectedOCR.parsedData?.vehicleClass} isDark={isDark} />
+                  <TwoCol label="Body Type" value={selectedOCR.parsedData?.body || selectedOCR.parsedData?.bodyType} isDark={isDark} />
+                  <TwoCol label="Colour" value={selectedOCR.parsedData?.colour || selectedOCR.parsedData?.color} isDark={isDark} />
+                  <TwoCol label="Fuel Type" value={selectedOCR.parsedData?.fuel || selectedOCR.parsedData?.fuelType} isDark={isDark} />
+                  <TwoCol label="Wheel Base" value={selectedOCR.parsedData?.wheelBase} isDark={isDark} />
+                  <TwoCol label="MFG Date" value={selectedOCR.parsedData?.mfgDate} isDark={isDark} />
+                  <TwoCol label="Seating Capacity" value={selectedOCR.parsedData?.seating || selectedOCR.parsedData?.seatingCapacity} isDark={isDark} />
+                  <TwoCol label="No. of Cylinders" value={selectedOCR.parsedData?.noOfCyl} isDark={isDark} />
+                  <TwoCol label="Unladen Weight" value={selectedOCR.parsedData?.unladenWt} isDark={isDark} />
+                  <TwoCol label="CC" value={selectedOCR.parsedData?.cc} isDark={isDark} />
+                </Section>
+
+                {/* Group: Registration / Validity */}
+                <Section title="🧾 Registration / Validity">
+                  <TwoCol label="Reg/FC Valid Upto" value={selectedOCR.parsedData?.regFcUpto} isDark={isDark} />
+                  <TwoCol label="Fitness Valid Upto" value={selectedOCR.parsedData?.fitUpto || selectedOCR.parsedData?.fitnessUpto} isDark={isDark} />
+                  <TwoCol label="Insurance Valid Upto" value={selectedOCR.parsedData?.insuranceUpto} isDark={isDark} />
+                  <TwoCol label="Tax Valid Upto" value={selectedOCR.parsedData?.taxUpto} isDark={isDark} />
+                </Section>
+
+                {/* Group: Ownership */}
+                <Section title="👤 Ownership">
+                  <TwoCol label="Owner Name" value={selectedOCR.parsedData?.ownerName} isDark={isDark} />
+                  <TwoCol label="S/W/D Of" value={selectedOCR.parsedData?.swdOf} isDark={isDark} />
+                  <div className="col-span-full">
+                    <div className="text-xs font-semibold text-gray-400 mb-2">Address</div>
+                    <div className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 border-gray-600 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}>
+                      {selectedOCR.parsedData?.address || "—"}
+                    </div>
+                  </div>
+                </Section>
+
+                {/* Raw OCR text (collapsed style) */}
+                {selectedOCR.rawText && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-500 mb-2">Raw OCR Text</h4>
+                    <pre className={`p-4 rounded-xl text-sm transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 text-white" : "bg-gray-50 text-gray-800"}`}>
+                      {selectedOCR.rawText}
+                    </pre>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <style jsx>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        
-        @keyframes scaleIn {
-          from {
-            transform: scale(0.95);
-            opacity: 0;
+        <style jsx>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
           }
-          to {
-            transform: scale(1);
-            opacity: 1;
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
           }
-        }
-        
-        .animate-scaleIn {
-          animation: scaleIn 0.3s ease-out forwards;
-        }
-      `}</style>
+          
+          @keyframes scaleIn {
+            from {
+              transform: scale(0.95);
+              opacity: 0;
+            }
+            to {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+          
+          .animate-scaleIn {
+            animation: scaleIn 0.3s ease-out forwards;
+          }
+        `}</style>
+      </div>
     </div>
   );
 }
@@ -788,6 +785,7 @@ export default function ClientDetail() {
    - ContactCard
    - StatCard
    - Section, TwoCol (used in modal)
+   - SpecCard (new component for vehicle specs)
 ---------------------- */
 
 function ContactCard({ icon, label, value, isDark }) {
@@ -817,6 +815,22 @@ function StatCard({ title, value, icon, isDark }) {
       </div>
       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white transition-transform duration-300 hover:scale-110">
         {icon}
+      </div>
+    </div>
+  );
+}
+
+function SpecCard({ icon, label, value }) {
+  return (
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white">
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium text-white/80 uppercase">{label}</p>
+          <p className="text-white font-semibold">{value}</p>
+        </div>
       </div>
     </div>
   );

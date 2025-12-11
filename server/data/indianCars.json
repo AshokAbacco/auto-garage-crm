@@ -863,60 +863,72 @@
       {
         "name": "Seltos",
         "slug": "seltos",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/seltos/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/kia/seltos/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/84/a1/2b/84a12b0dcdde96bf5ce6b477b365e52d.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/84/a1/2b/84a12b0dcdde96bf5ce6b477b365e52d.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/kia/seltos/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/seltos/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/84/a1/2b/84a12b0dcdde96bf5ce6b477b365e52d.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/84/a1/2b/84a12b0dcdde96bf5ce6b477b365e52d.jpg"
           }
         }
       },
       {
         "name": "Sonet",
         "slug": "sonet",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/sonet/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/kia/sonet/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/01/ef/c7/01efc7ec4e64c12b43eeabf89df953c1.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/01/ef/c7/01efc7ec4e64c12b43eeabf89df953c1.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/kia/sonet/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/sonet/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/01/ef/c7/01efc7ec4e64c12b43eeabf89df953c1.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/01/ef/c7/01efc7ec4e64c12b43eeabf89df953c1.jpg"
           }
         }
       },
       {
         "name": "Carens",
         "slug": "carens",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carens/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/kia/carens/hero.jpg",
+        "thumbnailUrl": "https://images.timesdrive.in/photo/msid-151016131,thumbsize-440752/151016131.jpg",
+        "heroUrl": "https://images.timesdrive.in/photo/msid-151016131,thumbsize-440752/151016131.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/kia/carens/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carens/2024/thumb.jpg"
+            "heroUrl": "https://images.timesdrive.in/photo/msid-151016131,thumbsize-440752/151016131.jpg",
+            "thumbnailUrl": "https://images.timesdrive.in/photo/msid-151016131,thumbsize-440752/151016131.jpg"
           }
         }
       },
       {
         "name": "Carnival",
         "slug": "carnival",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carnival/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/kia/carnival/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/1200x/73/78/f5/7378f5f3c4422f98ab4fed33d681fb71.jpg",
+        "heroUrl": "https://i.pinimg.com/1200x/73/78/f5/7378f5f3c4422f98ab4fed33d681fb71.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/kia/carnival/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/carnival/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/1200x/73/78/f5/7378f5f3c4422f98ab4fed33d681fb71.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/1200x/73/78/f5/7378f5f3c4422f98ab4fed33d681fb71.jpg"
           }
         }
       },
       {
         "name": "EV6",
         "slug": "ev6",
-        "thumbnailUrl": "https://cdn.yoursite.com/images/kia/ev6/thumb.jpg",
-        "heroUrl": "https://cdn.yoursite.com/images/kia/ev6/hero.jpg",
+        "thumbnailUrl": "https://i.pinimg.com/736x/9d/05/a1/9d05a15afc9c48adac36ca1e8fd1e9af.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/9d/05/a1/9d05a15afc9c48adac36ca1e8fd1e9af.jpg",
         "yearVariants": {
           "2024": {
-            "heroUrl": "https://cdn.yoursite.com/images/kia/ev6/2024/hero.jpg",
-            "thumbnailUrl": "https://cdn.yoursite.com/images/kia/ev6/2024/thumb.jpg"
+            "heroUrl": "https://i.pinimg.com/736x/9d/05/a1/9d05a15afc9c48adac36ca1e8fd1e9af.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/9d/05/a1/9d05a15afc9c48adac36ca1e8fd1e9af.jpg"
+          }
+        }
+      },
+      {
+        "name": "EV6",
+        "slug": "ev6",
+        "thumbnailUrl": "https://i.pinimg.com/736x/02/30/79/0230796c74a1f8e523da245839122eb9.jpg",
+        "heroUrl": "https://i.pinimg.com/736x/02/30/79/0230796c74a1f8e523da245839122eb9.jpg",
+        "yearVariants": {
+          "2024": {
+            "heroUrl": "https://i.pinimg.com/736x/02/30/79/0230796c74a1f8e523da245839122eb9.jpg",
+            "thumbnailUrl": "https://i.pinimg.com/736x/02/30/79/0230796c74a1f8e523da245839122eb9.jpg"
           }
         }
       }

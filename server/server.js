@@ -121,16 +121,15 @@ app.use((req, res, next) => {
 
 app.use("/uploads", express.static("uploads"));
 
+
 // bike routes
 app.use("/api/bikes", bikeRoutes);
 app.use("/api/bike-services", bikeServiceRoutes);
 app.use("/api/bike-invoices", bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
 
-
 //car company names and models
 app.use("/api/cars", carRoutes);
-
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

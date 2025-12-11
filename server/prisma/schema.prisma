@@ -69,6 +69,8 @@ model Client {
   vehicleYear  Int
   regNumber    String
   vin          String?
+  fuel         String?
+  seats        Int?
   carImage     String?
   adImage      String?
   staffPerson  String?

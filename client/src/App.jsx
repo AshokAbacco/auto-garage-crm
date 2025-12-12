@@ -156,7 +156,7 @@ function App() {
           <Route path="bike-reference" element={<Reference />} />
           <Route path="bike-upgrade" element={<UpgradePlans />} />
         </Route>
-
+        <Route>
           <Route path="/editclient/:id" element={<AddClients />} />
           <Route path="/editclient/new" element={<AddClients />} />
           <Route path="/bikes/:id" element={<BikeDetail />} />
@@ -186,9 +186,6 @@ function App() {
           <Route path="/create-invoice" element={<NewInvoice />} />
           <Route path="/add-subservice" element={<NewSubService />} />
           <Route path="/washProfile" element={<WashingProfile />} />
-
-
-
         </Route>
 
         {/* Fallback */}

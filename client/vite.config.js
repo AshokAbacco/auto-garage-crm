@@ -7,6 +7,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+
+      // ADD THIS ↓↓↓ (important!)
+      workbox: {
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // increase limit
+      },
+
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'Auto Garage CRM',
@@ -36,3 +42,47 @@ export default defineConfig({
     outDir: 'dist'
   }
 })
+
+
+
+
+
+
+// import { defineConfig } from 'vite'
+// import react from '@vitejs/plugin-react'
+// import { VitePWA } from 'vite-plugin-pwa'
+
+// export default defineConfig({
+//   plugins: [
+//     react(),
+//     VitePWA({
+//       registerType: 'autoUpdate',
+//       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+//       manifest: {
+//         name: 'Auto Garage CRM',
+//         short_name: 'Garage CRM',
+//         description: 'Auto Garage CRM Mobile App',
+//         theme_color: '#ffffff',
+//         background_color: '#ffffff',
+//         display: 'standalone',
+//         orientation: 'portrait',
+//         start_url: '/',
+//         icons: [
+//           {
+//             src: 'pwa-192x192.png',
+//             sizes: '192x192',
+//             type: 'image/png'
+//           },
+//           {
+//             src: 'pwa-512x512.png',
+//             sizes: '512x512',
+//             type: 'image/png'
+//           }
+//         ]
+//       }
+//     })
+//   ],
+//   build: {
+//     outDir: 'dist'
+//   }
+// })

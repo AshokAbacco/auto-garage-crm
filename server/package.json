@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js"
   },
-   "prisma": {
+  "prisma": {
     "seed": "node prisma/seed.js"
   },
   "keywords": [],
@@ -26,6 +26,7 @@
     "express": "^5.1.0",
     "file-uri-to-path": "^2.0.0",
     "helmet": "^8.1.0",
+    "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",

@@ -46,6 +46,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 // Enable CORS (allow frontend connection)
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://auto-garage-crm-r7l4.onrender.com",
   "https://themotordesk.com",
   "https://www.themotordesk.com",

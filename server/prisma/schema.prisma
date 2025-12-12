@@ -20,6 +20,13 @@ enum PlanType {
   PREMIUM
 }
 
+enum ServiceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id          Int       @id @default(autoincrement())
   email       String    @unique
@@ -49,12 +56,12 @@ model User {
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
-  clients       Client[]
-  invoices      Invoice[]
-  reminders     Reminder[]
-  ocrs          OcrRecord[]
-  bikes         Bike[]
-  bikeReminders BikeReminder[]
+  clients        Client[]
+  invoices       Invoice[]
+  reminders      Reminder[]
+  ocrs           OcrRecord[]
+  bikes          Bike[]
+  bikeReminders  BikeReminder[]
   washingClients WashingClient[]
 }
 
@@ -352,6 +359,8 @@ model WashingServiceMedia {
   url      String
   mimeType String?
   fileName String?
+}
+
 //  Bike Tables
 
 model Bike {

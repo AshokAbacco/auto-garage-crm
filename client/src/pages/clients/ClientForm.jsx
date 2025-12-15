@@ -539,20 +539,12 @@ export default function ClientForm() {
         </div>
 
         {/* Personal Info */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+        <div >
           <PersonalInfoSection form={form} setForm={setForm} isDark={isDark} />
         </div>
 
         {/* Vehicle Info */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Vehicle Information</h2>
+        <div>
 
           <VehicleInfoSection
             form={form}
@@ -568,11 +560,7 @@ export default function ClientForm() {
         </div>
 
         {/* Vehicle Images */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Vehicle Images</h2>
+        <div>
 
           {/* Auto-filled image from local dataset */}
           {form.carImage && (

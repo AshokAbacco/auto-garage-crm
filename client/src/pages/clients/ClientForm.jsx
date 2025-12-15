@@ -549,7 +549,7 @@ export default function ClientForm() {
               }`}
           >
             <FiX className="inline-block mr-1" />
-            Cancel
+            Cancel 
           </button>
 
           <button

@@ -150,11 +150,24 @@ export default function AddService() {
         {
           method: isEditMode ? "PUT" : "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: formData,
+          body: JSON.stringify({
+            clientId: Number(form.client),
+            categoryId: Number(form.category),
+            subServiceId: Number(form.subService),
+            date: form.date,
+            notes: form.notes,
+            partsCost: Number(form.parts || 0),
+            partsGst: Number(form.partsGst || 0),
+            laborCost: Number(form.labor || 0),
+            laborGst: Number(form.laborGst || 0),
+            status: form.status,
+          }),
         }
       );
+
 
       if (!res.ok) throw new Error("Save failed");
 
@@ -522,7 +535,7 @@ export default function AddService() {
                 }`}
               >
                 <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
+                <option value="Paid">Completed</option>
               </select>
             </div>
 

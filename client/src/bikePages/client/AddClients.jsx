@@ -15,7 +15,7 @@ import {
   Upload,
   Trash2,
   Image as ImageIcon,
-  Car,
+  Bike,
   FileText,
   Droplet,
   Palette,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import { useTheme } from "../../contexts/ThemeContext";
+import { processImage as BikeprocessImage } from "/src/bikePages/OCRScanner/utils/BikeOCRProcessor.js";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -148,20 +149,75 @@ export default function AddClients() {
     else fileInputRef.current.click();
   };
 
-  const handleRCFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsProcessingRC(true);
-    try {
-      toast.success("RC scanned – auto-filled form!");
-    } catch (err) {
-      toast.error("Failed to scan RC. Try again.");
-    } finally {
-      setIsProcessingRC(false);
-      e.target.value = "";
-    }
+  // ---------- Normalization Helpers ----------
+  const cleanReg = (s = "") => String(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const extractYear = (s = "") => {
+    const m = String(s).match(/\b(19|20)\d{2}\b/);
+    return m ? m[0] : "";
   };
+
+  const extractFuel = (s = "") => {
+    const fuels = ["petrol", "diesel", "electric"];
+    const t = s.toLowerCase();
+    return fuels.find((f) => t.includes(f)) || "";
+  };
+
+  // ---------- Map OCR → AddClients form ----------
+
+const mapBikeOcrToForm = (p = {}) => {
+  return {
+    fullName: p.ownerName || "",
+    regNumber: p.regNo || "",
+    vehicleMake: p.maker || "",           // BRAND (Maker)
+    vehicleModel: p.vehicleModel || "",   // MODEL (Parsed correctly)
+    vehicleYear: p.regDate ? (p.regDate.match(/\b(19|20)\d{2}\b/)?.[0] || "") : "",
+    vin: p.chassisNo || "",
+    color: p.color || "",
+    fuel: p.fuel || "",
+    address: p.address || "",             // ⭐ NOW MAPPED (was missing)
+  };
+};
+
+
+
+
+ const handleRCFile = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setIsProcessingRC(true);
+
+  try {
+    const reader = new FileReader();
+
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result;
+
+      // Run OCR (Bike OCR Processor)
+      const result = await BikeprocessImage(base64);
+
+      const parsed = result?.parsed || {};
+      console.log("🔍 OCR RAW PARSED OUTPUT:", parsed);
+
+      const mapped = mapBikeOcrToForm(parsed);
+
+
+      // Apply to form
+      setForm((prev) => ({ ...prev, ...mapped }));
+
+      toast.success("RC scanned — details auto-filled!");
+    };
+
+    reader.readAsDataURL(file);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to scan RC");
+  } finally {
+    setIsProcessingRC(false);
+    e.target.value = "";
+  }
+};
+
 
   // ========== IMAGE UPLOAD FUNCTIONS ==========
   const toDataUrl = (file) =>
@@ -496,13 +552,13 @@ export default function AddClients() {
           <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${
             isDark ? "text-white" : "text-gray-900"
           }`}>
-            <Car size={24} className="text-orange-500" />
+            <Bike size={24} className="text-orange-500" />
             Vehicle Information
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <InputField
-              icon={<Car size={18} />}
+              icon={<Bike size={18} />}
               label="Vehicle Make"
               name="vehicleMake"
               value={form.vehicleMake}
@@ -514,7 +570,7 @@ export default function AddClients() {
             />
 
             <InputField
-              icon={<Car size={18} />}
+              icon={<Bike size={18} />}
               label="Vehicle Model"
               name="vehicleModel"
               value={form.vehicleModel}

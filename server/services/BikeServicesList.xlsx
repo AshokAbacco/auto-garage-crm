@@ -1,24 +1,127 @@
-General Service			
-	Oil Change	Regular oil change	
-	Chain Cleaning		
-	Air Filter Cleaning		
-	Brake Inspection		
-Engine Service			
-	Spark Plug Replacement		
-	Engine Tuning		
-	Clutch Plate Check		
-	Honda Service			Honda
-	HET Engine Check			Honda
-	CBS Brake Service			Honda
-	Yamaha Service			Yamaha
-	Blue Core Engine Check			Yamaha
-	Traction Control Check			Yamaha
-	Royal Enfield Service			Royal Enfield
-	Classic Engine Tuning			Royal Enfield
-	Suspension Check			Royal Enfield
-	Electrical Service			
-	Battery Check		
-	Headlight & Wiring Check		
-	Tyre & Wheel Service			
-	Tyre Replacement		
-	Wheel Alignment		
+Basic Service
+	Oil Change
+	Chain Lube
+	Brake Check
+	Wash
+Standard Service
+	General Service
+	Brake Service
+	Electrical Check
+	Wash
+Premium / Full Service
+	Complete Full Service
+	ECU Scan
+	Brake Oil Change
+	Full Wash & Polish
+General Service
+	Oil Filter Cleaning / Replacement
+	Chain Cleaning
+	Spark Plug Check / Replacement
+	Chain Cleaning & Lubrication
+	Throttle & Clutch Cable Lubrication
+	Brake Inspection
+	All Nut & Bolt Tightening
+	Basic Electrical Check
+	Road Test
+Engine Service
+	Spark Plug Replacement
+	Engine Tuning
+	Clutch Plate Check
+	Honda Service
+	HET Engine Check
+	CBS Brake Service
+	Yamaha Service
+	Blue Core Engine Check
+	Traction Control Check
+	Royal Enfield Service
+	Classic Engine Tuning
+	Suspension Check
+
+Electrical Service
+	Battery Check
+	Headlight & Wiring Check
+Tyre & Wheel Service
+	Tyre Replacement
+	Wheel Alignment
+Full Bike Service Package
+	Engine Oil Change
+	Oil + Air Filter Service
+	Spark Plug Replacement
+	Chain Clean & Lube
+	Brake Service Front & Rear
+	Clutch & Throttle Tuning
+	Coolant Top Up
+	Battery Check
+	Tyre Pressure & Condition Check
+	Electrical Inspection
+	ECU Scan
+	Final Wash & Road Test
+Brake Service
+	Front Brake Pad Replacement
+	Rear Brake Shoe Replacement
+	Disc Brake Service
+	Brake Oil Replacement
+	Brake Bleeding
+	Master Cylinder Repair
+Chain & Sprocket Service
+	Chain Lubrication
+	Chain Adjustment
+	Chain Sprocket Set Replacement
+	Front Sprocket Replacement
+	Rear Sprocket Replacement
+Clutch Service
+	Clutch Cable Replacement
+	Clutch Plate Replacement
+	Clutch Overhaul
+	Clutch Tuning
+Electrical Services
+	Battery Replacement
+	Battery Charging
+	Wiring Repair
+	Self Motor Repair
+	Starter Relay Replacement
+	Fuse Replacement
+	Horn Repair
+	Switch Replacement
+Lights & Indicator Service
+	Headlight Repair
+	Headlight Bulb Replacement
+	Tail Light Repair
+	Indicator Light Repair
+	Indicator Switch Replacement
+Suspension Service
+	Front Fork Oil Replacement
+	Front Fork Seal Replacement
+	Rear Shock Absorber Replacement
+	Suspension Tuning
+Fuel System Service
+	Carburetor Cleaning
+	Carburetor Tuning
+	Fuel Injector Cleaning
+	Fuel Pump Repair
+	Fuel Tank Cleaning
+Cooling System Service
+	Coolant Replacement
+	Radiator Cleaning
+	Radiator Hose Replacement
+	Water Pump Repair
+Body & Fitting Service
+	Fairing Fitting
+	Seat Repair
+	Handle Bar Replacement
+	Mirror Replacement
+	Footrest Replacement
+Paint & Polish Service
+	Full Bike Wash
+	Foam Wash
+	Chain Polish
+	Tank Polish
+	Full Body Polish
+	Scratch Removal
+	Painting Panel Wise / Full Bike
+Inspection & Diagnostic
+	Complete Bike Inspection
+	ECU Scan
+	Mileage Check
+	Noise Diagnosis
+	Accident Damage Inspection

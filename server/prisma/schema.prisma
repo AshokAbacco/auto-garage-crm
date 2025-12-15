@@ -49,12 +49,13 @@ model User {
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
-  clients       Client[]
-  invoices      Invoice[]
-  reminders     Reminder[]
-  ocrs          OcrRecord[]
-  bikes         Bike[]
-  bikeReminders BikeReminder[]
+  clients        Client[]
+  invoices       Invoice[]
+  reminders      Reminder[]
+  ocrs           OcrRecord[]
+  bikes          Bike[]
+  bikeReminders  BikeReminder[]
+  bikeOcrRecords BikeOcrRecord[]
 }
 
 model Client {
@@ -285,9 +286,10 @@ model Bike {
   userId       Int?
   user         User?         @relation(fields: [userId], references: [id])
 
-  createdAt     DateTime       @default(now())
-  bikeInvoices  BikeInvoice[]
-  bikeReminders BikeReminder[]
+  createdAt      DateTime        @default(now())
+  bikeInvoices   BikeInvoice[]
+  bikeReminders  BikeReminder[]
+  bikeOcrRecords BikeOcrRecord[]
 }
 
 model BikeService {
@@ -419,4 +421,26 @@ model BikeReminder {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BikeOcrRecord {
+  id Int @id @default(autoincrement())
+
+  // ✅ SAME PATTERN AS BikeReminder
+  bikeClientId Int
+  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rawText    String
+  parsedData Json
+  confidence Float?
+  imageUrl   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bikeClientId])
+  @@index([userId])
 }

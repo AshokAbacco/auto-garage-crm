@@ -19,6 +19,10 @@ import userRoutes from "./routes/userRoutes.js";
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import referralRoutes from "./routes/referral.js";
 
+
+
+//washing crm import statements
+import washingClientRoutes from "./routes/washingRoutes.js";
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
 import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
@@ -43,6 +47,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 // Enable CORS (allow frontend connection)
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://auto-garage-crm-r7l4.onrender.com",
   "https://themotordesk.com",
   "https://www.themotordesk.com",
@@ -146,6 +151,9 @@ app.use("/api/ocr", ocrRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/referral", referralRoutes);
 
+
+//washing crm related routes
+app.use("/api/washing-clients", washingClientRoutes);
 
 
 /* -----------------------------------------------------

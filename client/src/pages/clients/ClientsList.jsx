@@ -134,9 +134,9 @@ export default function ClientsList() {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} lg:ml-16 transition-colors duration-300`}>
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="p-4 mx-auto space-y-6 max-w-7xl sm:p-6 lg:p-8">
         {/* Toast Notifications */}
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed z-50 top-4 right-4">
           <Toaster
             position="top-right"
             toastOptions={{
@@ -168,12 +168,12 @@ export default function ClientsList() {
         {error && (
           <div className={`rounded-2xl p-4 shadow-lg border transition-all duration-300 ${isDark ? "bg-red-900/20 border-red-800" : "bg-red-50 border-red-200"}`}>
             <div className="flex items-center gap-3">
-              <FiAlertCircle className="text-red-500 flex-shrink-0" size={20} />
+              <FiAlertCircle className="flex-shrink-0 text-red-500" size={20} />
               <p className={`font-semibold ${isDark ? "text-red-400" : "text-red-700"}`}>Error: {error}</p>
               {(error.includes("Unauthorized") || error.includes("401") || error.includes("token")) && (
                 <button
                   onClick={() => navigate("/login")}
-                  className="ml-auto px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+                  className="px-3 py-1 ml-auto text-sm text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700"
                 >
                   Go to Login
                 </button>
@@ -184,13 +184,13 @@ export default function ClientsList() {
 
         {/* Header */}
         <div className={`rounded-2xl p-6 sm:p-8 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? 'bg-gradient-to-r from-blue-900/50 to-purple-900/50' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Client Management</h1>
+          <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl lg:text-4xl">Client Management</h1>
           <p className="text-blue-100">Manage your clients and their vehicles</p>
         </div>
 
         {/* Search & Add Button */}
         <div className={`rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col gap-4 lg:flex-row">
             <div className="flex-1">
               <input
                 type="text"
@@ -205,7 +205,7 @@ export default function ClientsList() {
             </div>
             <Link
               to="/clients/new"
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl px-6 py-3 font-semibold transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
+              className="flex items-center justify-center gap-2 px-6 py-3 font-semibold text-white transition-all shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl hover:shadow-xl whitespace-nowrap"
             >
               <FiUser size={18} />
               Add New Client
@@ -214,7 +214,7 @@ export default function ClientsList() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
           <StatCard
             title="Total Clients"
             value={total}
@@ -241,7 +241,7 @@ export default function ClientsList() {
         {/* Full Width Cards List */}
         {loading ? (
           <div className={`rounded-2xl p-16 text-center shadow-lg transition-all duration-300 ${isDark ? "bg-gray-800" : "bg-white"}`}>
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+            <div className="w-12 h-12 mx-auto border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
             <p className={`mt-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}>Loading clients...</p>
           </div>
         ) : data.length === 0 ? (
@@ -268,7 +268,7 @@ export default function ClientsList() {
 
         {/* Pagination */}
         <div className={`rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
               Showing {(page - 1) * limit + 1} - {Math.min(page * limit, total)} of {total}
             </div>
@@ -324,11 +324,11 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
     <div className={`rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-2xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
       <div className="flex flex-col md:flex-row">
         {/* Vehicle Image */}
-        <div className="md:w-64 h-48 md:h-auto flex-shrink-0 relative overflow-hidden cursor-pointer group" onClick={onQuickView}>
+        <div className="relative flex-shrink-0 h-48 overflow-hidden cursor-pointer md:w-64 md:h-auto group" onClick={onQuickView}>
           <img
             src={client.carImage || `https://via.placeholder.com/400x300?text=${encodeURIComponent(client.vehicleMake)}+${encodeURIComponent(client.vehicleModel)}`}
             alt="Vehicle"
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(client.vehicleMake)}+${encodeURIComponent(client.vehicleModel)}`;
@@ -338,15 +338,15 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-5 md:p-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+        <div className="flex flex-col flex-1 gap-4 p-5 md:p-6 md:flex-row md:items-center md:gap-6">
           {/* Left Section - Client & Vehicle Info */}
           <div className="flex-1 space-y-4">
             {/* Client Info */}
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg flex-shrink-0 transition-transform duration-300 hover:scale-105">
+              <div className="flex items-center justify-center flex-shrink-0 text-xl font-bold text-white transition-transform duration-300 shadow-lg w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 hover:scale-105">
                 {client.fullName?.charAt(0)?.toUpperCase() || "C"}
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className={`font-bold text-xl truncate ${isDark ? "text-white" : "text-gray-900"}`}>{client.fullName}</h3>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -356,10 +356,10 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
             </div>
 
             {/* Vehicle Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className={`flex items-center gap-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                 <FaCar size={16} className={isDark ? "text-blue-400" : "text-blue-600"} />
-                <span className="font-semibold text-sm">{client.vehicleMake} {client.vehicleModel}</span>
+                <span className="text-sm font-semibold">{client.vehicleMake} {client.vehicleModel}</span>
               </div>
               <div className={`flex items-center gap-2 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 <FaCar size={14} />
@@ -384,14 +384,14 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
           </div>
 
           {/* Right Section - Actions */}
-          <div className="flex md:flex-col gap-2 md:gap-3">
+          <div className="flex gap-2 md:flex-col md:gap-3">
             <button
               onClick={onView}
               className={`flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${isDark ? "hover:bg-blue-900/30 text-blue-400 border border-blue-800" : "hover:bg-blue-50 text-blue-600 border border-blue-200"}`}
               title="View Details"
             >
               <FiEye size={20} />
-              <span className="md:hidden text-sm font-medium">View</span>
+              <span className="text-sm font-medium md:hidden">View</span>
             </button>
             <button
               onClick={onEdit}
@@ -399,7 +399,7 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
               title="Edit Client"
             >
               <FiEdit size={20} />
-              <span className="md:hidden text-sm font-medium">Edit</span>
+              <span className="text-sm font-medium md:hidden">Edit</span>
             </button>
             <button
               onClick={() => {
@@ -411,7 +411,7 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
               title="Delete Client"
             >
               <FiTrash2 size={20} />
-              <span className="md:hidden text-sm font-medium">Delete</span>
+              <span className="text-sm font-medium md:hidden">Delete</span>
             </button>
           </div>
         </div>
@@ -438,12 +438,12 @@ function StatCard({ title, value, icon, gradient, isDark }) {
 
 function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className={`rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col ${isDark ? "bg-gray-800" : "bg-white"} transform transition-all duration-300 scale-95 animate-scaleIn`}>
         {/* Header */}
         <div className={`p-6 border-b flex items-center justify-between ${isDark ? "border-gray-700 bg-gradient-to-r from-blue-900/50 to-purple-900/50" : "border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600"}`}>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center transition-transform duration-300 hover:scale-110">
+            <div className="flex items-center justify-center w-12 h-12 transition-transform duration-300 bg-white/20 backdrop-blur-sm rounded-xl hover:scale-110">
               <FaCar className="text-white" size={24} />
             </div>
             <div>
@@ -451,26 +451,26 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
               <p className="text-sm text-white/80">Complete information</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-xl transition-all">
+          <button onClick={onClose} className="p-2 transition-all text-white/80 hover:text-white hover:bg-white/20 rounded-xl">
             <FiX size={24} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
             {/* Vehicle Image */}
             <div className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-700" : "bg-gray-100"}`}>
               <img
                 src={client.carImage || `https://via.placeholder.com/600x300?text=${encodeURIComponent(client.vehicleMake)}+${encodeURIComponent(client.vehicleModel)}`}
                 alt="Vehicle"
-                className="w-full h-48 object-contain"
+                className="object-contain w-full h-48"
               />
             </div>
 
             {/* Client Info */}
             <div className={`flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-50"}`}>
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg transition-transform duration-300 hover:scale-110">
+              <div className="flex items-center justify-center w-16 h-16 text-2xl font-bold text-white transition-transform duration-300 shadow-lg rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 hover:scale-110">
                 {client.fullName?.charAt(0)?.toUpperCase() || "C"}
               </div>
               <div>
@@ -483,7 +483,7 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
             </div>
 
             {/* Details Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoItem icon={<FiPhone />} label="Phone" value={client.phone} isDark={isDark} />
               <InfoItem icon={<FiMail />} label="Email" value={client.email} isDark={isDark} />
               <InfoItem icon={<FaCar />} label="Vehicle" value={`${client.vehicleMake} ${client.vehicleModel}`} isDark={isDark} />
@@ -502,7 +502,7 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
                 navigate(`/clients/${client.id}`);
                 onClose();
               }}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl font-semibold"
+              className="flex items-center justify-center gap-2 py-3 font-semibold text-white transition-all shadow-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl hover:shadow-xl"
             >
               <FiEye size={18} />
               View
@@ -559,10 +559,10 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
 function InfoItem({ icon, label, value, isDark }) {
   return (
     <div className={`flex items-start gap-3 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-white"}`}>
-      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow transition-transform duration-300 hover:scale-110">
+      <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white transition-transform duration-300 shadow rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 hover:scale-110">
         {icon}
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="flex-1 min-w-0">
         <p className={`text-xs font-medium mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>{label}</p>
         <p className={`font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{value}</p>
       </div>

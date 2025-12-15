@@ -37,7 +37,29 @@ try {
 // ------------------------------------
 export const getMetaData = (req, res) => {
     return res.json({
-        fuelTypes: ["Petrol", "Diesel", "CNG", "Electric", "Hybrid"],
+        fuelTypes: [
+            "Petrol",
+            "Diesel",
+            "CNG",
+            "LPG",
+            "Electric",
+
+            // Hybrid
+            "Petrol + Electric (Hybrid)",
+            "Diesel + Electric (Hybrid)",
+            "Petrol + Mild Hybrid",
+            "Diesel + Mild Hybrid",
+
+            // Dual Fuel
+            "Petrol + CNG",
+            "Petrol + LPG",
+            "Diesel + CNG",
+            "Diesel + LPG",
+
+            // Optional future types
+            "Petrol + Hydrogen",
+            "Hydrogen (Fuel Cell)"
+        ],
         seats: ["2", "4", "5", "6", "7", "8"],
     });
 };

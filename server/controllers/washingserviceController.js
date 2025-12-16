@@ -1,126 +1,276 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../models/prismaClient.js";
 
-const prisma = new PrismaClient();
+/* ================================
+   GET WASHING SERVICE TYPES
+   (Categories + Sub Services)
+================================ */
+const calculateTotalWithGst = (cost = 0, gst = 0) => {
+  const c = Number(cost);
+  const g = Number(gst);
 
-/**
- * GET /api/service-categories
- * Returns all categories with their sub-services
- */
-export const getServiceCategories = async (req, res) => {
+  if (Number.isNaN(c) || Number.isNaN(g)) {
+    return 0;
+  }
+
+  return c + (c * g) / 100;
+};
+
+export const getWashingServiceTypes = async (req, res) => {
   try {
-    const categories = await prisma.serviceCategory.findMany({
+    const categories = await prisma.washingServiceCategory.findMany({
+      include: {
+        subServices: true,
+      },
+    });
+    const calculateTotalWithGst = (cost = 0, gst = 0) => {
+  return Number(cost) + (Number(cost) * Number(gst)) / 100;
+};
+
+
+    res.json(categories);
+  } catch (err) {
+    console.error("GET TYPES ERROR:", err);
+    res.status(500).json({
+      message: "Failed to load washing service types",
+    });
+  }
+};
+
+/* ================================
+   GET WASHING CATEGORIES BY BIKE
+================================ */
+export const getWashingCategoriesByBike = async (req, res) => {
+  try {
+    const bikeId = Number(req.params.bikeId);
+
+    if (Number.isNaN(bikeId)) {
+      return res.status(400).json({ message: "Invalid bike ID" });
+    }
+
+    const bike = await prisma.bike.findUnique({
+      where: { id: bikeId },
+    });
+
+    if (!bike) {
+      return res.status(404).json({ message: "Bike not found" });
+    }
+
+    const categories = await prisma.washingServiceCategory.findMany({
+      where: {
+        OR: [{ bikeBrand: bike.brand }, { bikeBrand: null }],
+      },
       include: {
         subServices: true,
       },
     });
 
     res.json(categories);
-  } catch (error) {
-    console.error("getServiceCategories error:", error);
-    res.status(500).json({ message: "Failed to load service categories" });
+  } catch (err) {
+    console.error("GET BIKE CATEGORIES ERROR:", err);
+    res.status(500).json({
+      message: "Failed to load categories by bike",
+    });
   }
 };
 
-/**
- * GET /api/service-categories/:categoryId/sub-services
- */
-export const getSubServicesByCategory = async (req, res) => {
+/* ================================
+   GET ALL WASHING SERVICES (ADMIN)
+================================ */
+export const getWashingServices = async (req, res) => {
   try {
-    const categoryId = parseInt(req.params.categoryId, 10);
-
-    if (isNaN(categoryId)) {
-      return res.status(400).json({ message: "Invalid category id" });
-    }
-
-    const subServices = await prisma.subService.findMany({
-      where: { categoryId },
+    const services = await prisma.washingService.findMany({
+      include: {
+        client: true,
+        category: true,
+        subService: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
 
-    res.json(subServices);
-  } catch (error) {
-    console.error("getSubServicesByCategory error:", error);
-    res.status(500).json({ message: "Failed to load sub-services" });
+    res.json(services);
+  } catch (err) {
+    console.error("GET SERVICES ERROR:", err);
+    res.status(500).json({
+      message: "Failed to fetch washing services",
+    });
+  }
+};
+
+/* ================================
+   GET WASHING SERVICES BY CLIENT
+================================ */
+export const getWashingServicesByClient = async (req, res) => {
+  try {
+    const clientId = Number(req.params.clientId);
+
+    const services = await prisma.washingService.findMany({
+      where: {
+        clientId,
+        client: { userId: req.user.id },
+      },
+      include: {
+        category: true,
+        subService: true,
+      },
+    });
+
+    res.json(services);
+  } catch (err) {
+    console.error("GET CLIENT SERVICES ERROR:", err);
+    res.status(500).json({
+      message: "Failed to fetch client services",
+    });
+  }
+};
+
+/* ================================
+   GET SINGLE WASHING SERVICE
+================================ */
+export const getWashingServiceById = async (req, res) => {
+  try {
+    const service = await prisma.washingService.findUnique({
+      where: { id: Number(req.params.id) },
+      include: {
+        client: true,
+        category: true,
+        subService: true,
+        media: true,
+      },
+    });
+
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    res.json(service);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to load service" });
   }
 };
 
 
-export const createService = async (req, res) => {
+
+/* ================================
+   CREATE WASHING SERVICE
+================================ */
+export const createWashingService = async (req, res) => {
   try {
     const {
       clientId,
-      date,
       categoryId,
       subServiceId,
-      partsCost,
-      laborCost,
-      status,
+      date,
       notes,
+      partsCost,
+      partsGst,
+      status,
     } = req.body;
 
-    const parsedClientId = parseInt(clientId, 10);
-    const parsedCategoryId = parseInt(categoryId, 10);
-    const parsedSubServiceId = subServiceId ? parseInt(subServiceId, 10) : null;
-    const parsedPartsCost = partsCost ? parseFloat(partsCost) : 0;
-    const parsedLaborCost = laborCost ? parseFloat(laborCost) : 0;
+    const estimatedTotal = calculateTotalWithGst(partsCost, partsGst);
 
-    if (isNaN(parsedClientId) || isNaN(parsedCategoryId)) {
-      return res.status(400).json({ message: "Invalid client or category" });
-    }
-
-    const serviceDate = new Date(date);
-    if (isNaN(serviceDate.getTime())) {
-      return res.status(400).json({ message: "Invalid date" });
-    }
-
-    const estimatedTotal = parsedPartsCost + parsedLaborCost;
-
-    // Create the service and its media in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      const newService = await tx.service.create({
-        data: {
-          clientId: parsedClientId,
-          date: serviceDate,
-          categoryId: parsedCategoryId,
-          subServiceId: parsedSubServiceId,
-          partsCost: parsedPartsCost,
-          laborCost: parsedLaborCost,
-          estimatedTotal,
-          status: status || "PENDING",
-          notes: notes || null,
-        },
-      });
-
-      // If files were uploaded, attach them as ServiceMedia
-      if (req.files && req.files.length > 0) {
-        const mediaData = req.files.map((file) => ({
-          serviceId: newService.id,
-          url: `/uploads/${file.filename}`, // adjust based on static serving
-          mimeType: file.mimetype,
-          fileName: file.originalname,
-        }));
-
-        await tx.serviceMedia.createMany({
-          data: mediaData,
-        });
-      }
-
-      // Reload service with relations if you want to send full object
-      const created = await tx.service.findUnique({
-        where: { id: newService.id },
-        include: {
-          client: true,
-          category: true,
-          subService: true,
-          media: true,
-        },
-      });
-
-      return created;
+    const service = await prisma.washingService.create({
+      data: {
+        clientId: Number(clientId),
+        categoryId: Number(categoryId),
+        subServiceId: subServiceId ? Number(subServiceId) : null,
+        date: new Date(date),
+        notes,
+        partsCost: Number(partsCost || 0),
+        partsGst: Number(partsGst || 0),
+        estimatedTotal,
+        status: status || "PENDING",
+      },
     });
 
-    res.status(201).json(result);
-  } catch (error) {
-    console.error("createService error:", error);
-    res.status(500).json({ message: "Failed to create service" });
+    res.status(201).json(service);
+  } catch (err) {
+    console.error("CREATE ERROR:", err);
+    res.status(500).json({ message: "Failed to create washing service" });
+  }
+};
+
+
+/* ================================
+   UPDATE WASHING SERVICE
+================================ */
+export const updateWashingService = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+
+    const {
+      clientId,
+      categoryId,
+      subServiceId,
+      date,
+      notes,
+      partsCost,
+      partsGst,
+      status,
+    } = req.body;
+
+    const estimatedTotal =
+      partsCost !== undefined || partsGst !== undefined
+        ? calculateTotalWithGst(partsCost ?? 0, partsGst ?? 0)
+        : undefined;
+
+    const updatedService = await prisma.washingService.update({
+      where: { id: serviceId },
+      data: {
+        clientId: clientId ? Number(clientId) : undefined,
+        categoryId: categoryId ? Number(categoryId) : undefined,
+        subServiceId: subServiceId ? Number(subServiceId) : undefined,
+        date: date ? new Date(date) : undefined,
+        notes,
+        partsCost:
+          partsCost !== undefined ? Number(partsCost) : undefined,
+        partsGst:
+          partsGst !== undefined ? Number(partsGst) : undefined,
+        estimatedTotal,
+        status,
+      },
+    });
+
+    res.json(updatedService);
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+    res.status(500).json({
+      message: "Failed to update washing service",
+      error: err.message,
+    });
+  }
+};
+
+
+
+/* ================================
+   DELETE WASHING SERVICE
+================================ */
+export const deleteWashingService = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+
+    const service = await prisma.washingService.findFirst({
+      where:
+        req.user.role === "ADMIN"
+          ? { id: serviceId }
+          : { id: serviceId, client: { userId: req.user.id } },
+    });
+
+    if (!service) {
+      return res.status(404).json({
+        message: "Service not found or access denied",
+      });
+    }
+
+    await prisma.washingService.delete({
+      where: { id: serviceId },
+    });
+
+    res.json({ message: "Washing service deleted successfully" });
+  } catch (err) {
+    console.error("DELETE ERROR:", err);
+    res.status(500).json({
+      message: "Failed to delete washing service",
+    });
   }
 };

@@ -23,6 +23,7 @@ import referralRoutes from "./routes/referral.js";
 
 //washing crm import statements
 import washingClientRoutes from "./routes/washingRoutes.js";
+import washingServiceRoutes from "./routes/washingserviceRoutes.js";
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
 import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
@@ -154,6 +155,7 @@ app.use("/api/referral", referralRoutes);
 
 //washing crm related routes
 app.use("/api/washing-clients", washingClientRoutes);
+app.use("/api/washing-services", washingServiceRoutes);
 
 
 /* -----------------------------------------------------

@@ -1,647 +1,263 @@
-// src/washPages/client/Client.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import {
     Users,
-    FileText,
-    Layers,
-    XCircle,
-    X,
-    Upload,
+    Phone,
+    PlusCircle,
+    Search,
+    RefreshCw,
+    Car,
+    AlertCircle,
+    Eye,
+    Edit2,
     Trash2,
+    Hash
 } from "lucide-react";
+
 import { useTheme } from "../../contexts/ThemeContext";
+import { useNavigate } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-export default function Client() {
+export default function Clients() {
     const { isDark } = useTheme();
+    const navigate = useNavigate();
+
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingClient, setEditingClient] = useState(null);
-    const [formData, setFormData] = useState({
-        fullName: "",
-        phone: "",
-        address: "",
-        vehicleMake: "",
-        vehicleModel: "",
-        mainImage: "",
-        additionalImages: []
-    });
-    const token = localStorage.getItem("token");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const navigate = useNavigate();
-
+    // LOAD CLIENTS (Washing Clients API)
     useEffect(() => {
-        if (!token) {
-            navigate("/login");
-            return;
-        }
         loadClients();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    async function loadClients() {
+    const loadClients = async () => {
         try {
             setLoading(true);
+            const token = localStorage.getItem("token");
 
             const res = await fetch(`${API_BASE}/api/washing-clients`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` }
             });
 
-            if (!res.ok) throw new Error("Unauthorized");
+            if (!res.ok) throw new Error("Failed to fetch clients");
 
             const data = await res.json();
-            setClients(data);
+            setClients(data || []);
         } catch (err) {
-            console.error("Failed to load clients:", err);
-            setError(err.message);
+            toast.error("Failed to load clients");
+            setError("Failed to load clients");
         } finally {
             setLoading(false);
         }
-    }
+    };
 
-    async function handleDelete(id) {
+    // DELETE CLIENT
+    const handleDelete = async (id) => {
         if (!confirm("Delete this client?")) return;
 
-        await fetch(`${API_BASE}/api/washing-clients/${id}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        try {
+            const token = localStorage.getItem("token");
 
-        setClients((prev) => prev.filter((c) => c.id !== id));
-    }
-
-    function openEditModal(client) {
-        setEditingClient(client);
-        setFormData({
-            fullName: client.fullName || "",
-            phone: client.phone || "",
-            address: client.address || "",
-            vehicleMake: client.vehicleMake || "",
-            vehicleModel: client.vehicleModel || "",
-            mainImage: client.mainImage || "",
-            additionalImages: typeof client.additionalImages === "string"
-                ? JSON.parse(client.additionalImages || "[]")
-                : (Array.isArray(client.additionalImages) ? client.additionalImages : [])
-        });
-        setShowEditModal(true);
-    }
-
-    function closeEditModal() {
-        setShowEditModal(false);
-        setEditingClient(null);
-        setFormData({
-            fullName: "",
-            phone: "",
-            address: "",
-            vehicleMake: "",
-            vehicleModel: "",
-            mainImage: "",
-            additionalImages: []
-        });
-    }
-
-    function handleInputChange(e) {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    }
-
-    function handleMainImageUpload(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, mainImage: reader.result }));
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function handleAdditionalImagesUpload(e) {
-        const files = Array.from(e.target.files);
-        const readers = files.map(file => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(file);
+            const res = await fetch(`${API_BASE}/api/washing-clients/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` }
             });
-        });
 
-        Promise.all(readers).then(results => {
-            setFormData(prev => ({
-                ...prev,
-                additionalImages: [...prev.additionalImages, ...results]
-            }));
-        });
-    }
+            if (!res.ok) throw new Error("Delete failed");
 
-    function removeAdditionalImage(index) {
-        setFormData(prev => ({
-            ...prev,
-            additionalImages: prev.additionalImages.filter((_, i) => i !== index)
-        }));
-    }
+            toast.success("Client deleted");
+            loadClients();
+        } catch (err) {
+            toast.error("Delete failed");
+        }
+    };
 
-    async function handleSubmitEdit(e) {
-        e.preventDefault();
-
-        const payload = {
-            ...formData,
-            additionalImages: formData.additionalImages,
-        };
-
-        const res = await fetch(
-            `${API_BASE}/api/washing-clients/${editingClient.id}`,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-            }
-        );
-
-        if (!res.ok) throw new Error("Update failed");
-
-        const updated = await res.json();
-
-        setClients((prev) =>
-            prev.map((c) => (c.id === updated.id ? updated : c))
-        );
-
-        closeEditModal();
-    }
+    // SEARCH FILTER
+    const filteredClients = clients.filter((c) =>
+        [c.fullName, c.phone, c.vehicleMake, c.vehicleModel, c.regNumber]
+            .join(" ")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div
-            className={`min-h-screen p-6 transition-all duration-300 ${isDark
-                ? "bg-black text-white"
-                : "bg-[#f0fbff] text-slate-800"
+            className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
                 }`}
-            style={{
-                backgroundColor: isDark ? "#000000" : "#f0fbff",
-                color: isDark ? "#ffffff" : "#1e293b"
-            }}
         >
-            {/* HEADER */}
-            <div className="mb-6 overflow-hidden rounded-none shadow">
-                <div className="px-8 py-10 bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9]">
-                    <h1 className="text-4xl font-extrabold text-white">
-                        Client Management
+            <Toaster position="top-right" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 animate-fade-in">
+                <div>
+                    <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-500 to-sky-600 bg-clip-text">
+                        Washing Clients
                     </h1>
-                    <p className="mt-2 text-white/90">
-                        Manage your clients and their vehicles
+                    <p className={`${isDark ? "text-gray-400" : "text-gray-600"} text-sm`}>
+                        Manage your washing service clients
                     </p>
                 </div>
-            </div>
 
-            {/* SEARCH + BUTTON */}
-            <div className="flex gap-4 mb-6">
-                <input
-                    type="text"
-                    placeholder="Search by name, phone..."
-                    className={`flex-1 px-4 py-3 border shadow outline-none rounded-xl transition-all duration-300 ${isDark
-                        ? "bg-gray-900 border-gray-700 text-white placeholder:text-gray-400"
-                        : "bg-white border-gray-200 placeholder:text-slate-400"
-                        }`}
-                    style={{
-                        backgroundColor: isDark ? "#111827" : "#ffffff",
-                        borderColor: isDark ? "#374151" : "#e5e7eb",
-                        color: isDark ? "#ffffff" : "#1e293b"
-                    }}
-                />
                 <button
-                    onClick={() => navigate("/washing-newclient")}
-                    className="px-5 py-3 text-white font-medium rounded-lg shadow bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] hover:opacity-90"
+                    onClick={() => navigate("/addclient")}
+                    className="flex items-center gap-2 px-6 py-3 text-white transition-all shadow-lg bg-gradient-to-r from-blue-500 to-sky-600 rounded-xl hover:scale-105"
                 >
+                    <PlusCircle size={20} />
                     Add New Client
                 </button>
             </div>
 
-            {/* STATS */}
-            <div className="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-3">
-                <Stat title="Total Clients" value={clients.length} icon={Users} isDark={isDark} />
-                <Stat title="Current Page" value="1" icon={FileText} isDark={isDark} />
-                <Stat title="Page" value="1 / 1" icon={Layers} isDark={isDark} />
-            </div>
-
-            {/* CONTENT */}
-            <div
-                className={`p-6 border shadow rounded-xl transition-all duration-300 ${isDark
-                    ? "bg-gray-900 border-gray-700"
-                    : "bg-white border-gray-200"
-                    }`}
-                style={{
-                    backgroundColor: isDark ? "#111827" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb"
-                }}
-            >
-                {loading ? (
-                    <div
-                        className="py-10 text-center transition-all duration-300"
-                        style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                    >
-                        Loading clients...
-                    </div>
-                ) : error ? (
-                    <div
-                        className="py-10 text-center transition-all duration-300"
-                        style={{ color: "#ef4444" }}
-                    >
-                        {error}
-                    </div>
-                ) : clients.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-56 text-center">
-                        <div
-                            className="relative flex items-center justify-center w-16 h-16 mb-4 transition-all duration-300 rounded-full"
-                            style={{ backgroundColor: isDark ? "#1f2937" : "#eaf7ff" }}
-                        >
-                            <Users className="w-7 h-7 text-[#0ea5e9] z-10" />
-                            <XCircle
-                                className="absolute transition-all duration-300 w-9 h-9"
-                                style={{ color: isDark ? "#4b5563" : "#94a3b8" }}
-                            />
-                        </div>
-
-                        <h3
-                            className="mb-1 text-lg font-semibold transition-all duration-300"
-                            style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                        >
-                            No clients found
-                        </h3>
-                        <p
-                            className="mb-4 text-sm transition-all duration-300"
-                            style={{ color: isDark ? "#9ca3af" : "#64748b" }}
-                        >
-                            Try adding a new client
-                        </p>
-
-                        <button
-                            onClick={() => navigate("/washing-newclient")}
-                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] text-white shadow-md hover:opacity-90"
-                        >
-                            Add Client
-                        </button>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {clients.map((c) => (
-                            <div
-                                key={c.id}
-                                className={`flex items-center justify-between p-4 border rounded-lg transition-all duration-300 ${isDark
-                                    ? "border-gray-700 hover:bg-gray-800"
-                                    : "border-gray-200 hover:bg-gray-50"
-                                    }`}
-                                style={{
-                                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                                    backgroundColor: isDark ? "" : "",
-                                    color: isDark ? "#ffffff" : "#1e293b"
-                                }}
-                            >
-                                <div>
-                                    <div
-                                        className="font-semibold transition-all duration-300"
-                                        style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                                    >
-                                        {c.fullName}
-                                    </div>
-                                    <div
-                                        className="text-sm transition-all duration-300"
-                                        style={{ color: isDark ? "#9ca3af" : "#64748b" }}
-                                    >
-                                        {c.phone}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => openEditModal(c)}
-                                        className={`px-3 py-1 text-sm border rounded transition-all duration-300 ${isDark
-                                            ? "border-sky-500 text-sky-400 hover:bg-sky-500/10"
-                                            : "border-sky-500 text-sky-700 hover:bg-sky-50"
-                                            }`}
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(c.id)}
-                                        className={`px-3 py-1 text-sm border rounded transition-all duration-300 ${isDark
-                                            ? "border-red-500 text-red-400 hover:bg-red-500/10"
-                                            : "border-red-500 text-red-600 hover:bg-red-50"
-                                            }`}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Edit Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div
-                        className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl transition-all duration-300 ${isDark
-                            ? "bg-gray-900"
-                            : "bg-white"
+            {/* Search Bar */}
+            <div className="mb-8">
+                <div className="relative max-w-2xl">
+                    <Search
+                        className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? "text-gray-400" : "text-gray-500"
                             }`}
-                        style={{
-                            backgroundColor: isDark ? "#111827" : "#ffffff"
-                        }}
-                    >
-                        <div className="sticky top-0 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9]">
-                            <h2 className="text-xl font-bold text-white">Edit Client</h2>
-                            <button onClick={closeEditModal} className="p-1 text-white rounded-full hover:bg-white/20">
-                                <X className="w-6 h-6" />
-                            </button>
+                        size={20}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Search by name, phone, vehicle, or registration number..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 ${isDark
+                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                            : "bg-white border-gray-200 placeholder-gray-400 shadow-sm"
+                            }`}
+                    />
+                </div>
+            </div>
+
+            {/* Loading State */}
+            {loading && (
+                <div className="flex items-center justify-center py-20">
+                    <RefreshCw className="text-blue-500 animate-spin" size={40} />
+                </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+                <div
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 ${isDark
+                        ? "bg-red-900/20 border-red-800 text-red-400"
+                        : "bg-red-50 border-red-200 text-red-600"
+                        }`}
+                >
+                    <AlertCircle size={24} />
+                    <p className="font-medium">{error}</p>
+                </div>
+            )}
+
+            {/* CLIENT LIST */}
+            {!loading && !error && (
+                <div className="space-y-4 animate-fade-in">
+                    {filteredClients.length === 0 ? (
+                        <div
+                            className={`flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed ${isDark ? "border-gray-700 bg-gray-800/50" : "border-gray-300 bg-white"
+                                }`}
+                        >
+                            <Users size={64} className={isDark ? "text-gray-600" : "text-gray-400"} />
+                            <p className="mt-4 text-lg">No clients found</p>
+                            <p className="text-sm text-gray-500">Try searching again</p>
                         </div>
-
-                        <form onSubmit={handleSubmitEdit} className="p-6 space-y-4">
-                            {/* Full Name */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Full Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                        ? "bg-gray-800 border-gray-700 text-white"
-                                        : "bg-white border-gray-300"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#ffffff" : "#1e293b"
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            {/* Phone */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Phone <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                        ? "bg-gray-800 border-gray-700 text-white"
-                                        : "bg-white border-gray-300"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#ffffff" : "#1e293b"
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            {/* Address */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Address
-                                </label>
-                                <textarea
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    rows="2"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                        ? "bg-gray-800 border-gray-700 text-white"
-                                        : "bg-white border-gray-300"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#ffffff" : "#1e293b"
-                                    }}
-                                />
-                            </div>
-
-                            {/* Vehicle Info */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label
-                                        className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                        style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                    >
-                                        Vehicle Make
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="vehicleMake"
-                                        value={formData.vehicleMake}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., Honda"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                            ? "bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-                                            : "bg-white border-gray-300"
-                                            }`}
-                                        style={{
-                                            backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                            borderColor: isDark ? "#374151" : "#d1d5db",
-                                            color: isDark ? "#ffffff" : "#1e293b"
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                        style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                    >
-                                        Vehicle Model
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="vehicleModel"
-                                        value={formData.vehicleModel}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., City"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                            ? "bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-                                            : "bg-white border-gray-300"
-                                            }`}
-                                        style={{
-                                            backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                            borderColor: isDark ? "#374151" : "#d1d5db",
-                                            color: isDark ? "#ffffff" : "#1e293b"
-                                        }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Main Image */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Main Vehicle Image
-                                </label>
-                                <div className="flex items-center gap-4">
-                                    {formData.mainImage && (
-                                        <img src={formData.mainImage} alt="Main" className="object-cover w-24 h-24 border rounded-lg" />
-                                    )}
-                                    <label
-                                        className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg cursor-pointer transition-all duration-300 ${isDark
-                                            ? "border-gray-700 hover:bg-gray-800 text-gray-200"
-                                            : "border-gray-300 hover:bg-slate-50"
-                                            }`}
-                                        style={{
-                                            backgroundColor: isDark ? "" : "",
-                                            borderColor: isDark ? "#374151" : "#d1d5db",
-                                            color: isDark ? "#e5e7eb" : "#1e293b"
-                                        }}
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                        {formData.mainImage ? "Change Image" : "Upload Image"}
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleMainImageUpload}
-                                            className="hidden"
-                                        />
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Additional Images */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Additional Images
-                                </label>
-                                <div className="grid grid-cols-4 gap-2 mb-2">
-                                    {formData.additionalImages.map((img, idx) => (
-                                        <div key={idx} className="relative group">
-                                            <img src={img} alt={`Additional ${idx + 1}`} className="object-cover w-full h-20 border rounded-lg" />
-                                            <button
-                                                type="button"
-                                                onClick={() => removeAdditionalImage(idx)}
-                                                className="absolute p-1 text-white transition-opacity bg-red-500 rounded-full opacity-0 top-1 right-1 group-hover:opacity-100"
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                                <label
-                                    className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg cursor-pointer w-fit transition-all duration-300 ${isDark
-                                        ? "border-gray-700 hover:bg-gray-800 text-gray-200"
-                                        : "border-gray-300 hover:bg-slate-50"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "" : "",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#e5e7eb" : "#1e293b"
-                                    }}
-                                >
-                                    <Upload className="w-4 h-4" />
-                                    Add More Images
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={handleAdditionalImagesUpload}
-                                        className="hidden"
-                                    />
-                                </label>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex justify-end gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={closeEditModal}
-                                    className={`px-4 py-2 border rounded-lg transition-all duration-300 ${isDark
-                                        ? "border-gray-700 hover:bg-gray-800 text-gray-200"
-                                        : "border-gray-300 hover:bg-slate-50"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "" : "",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#e5e7eb" : "#1e293b"
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 text-white rounded-lg bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] hover:opacity-95"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    ) : (
+                        filteredClients.map((client, index) => (
+                            <ClientCard
+                                key={client.id}
+                                client={client}
+                                index={index}
+                                isDark={isDark}
+                                onView={() => navigate(`/client-details/${client.id}`)}
+                                onEdit={() => navigate(`/addclient/${client.id}`)}
+                                onDelete={() => handleDelete(client.id)}
+                            />
+                        ))
+                    )}
                 </div>
             )}
         </div>
     );
-
 }
 
-/* Reusable stat card */
-function Stat({ title, value, icon: Icon, isDark }) {
+function ClientCard({ client, onView, onEdit, onDelete, isDark, index }) {
+    const [imageError, setImageError] = useState(false);
+
     return (
         <div
-            className={`flex items-center justify-between p-5 border shadow rounded-xl transition-all duration-300 ${isDark
-                ? "bg-gray-900 border-gray-700"
-                : "bg-white border-gray-200"
+            className={`group flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border-2 transition-all duration-300 ${isDark
+                ? "bg-gray-800 border-gray-700 hover:border-blue-500/30"
+                : "bg-white border-gray-200 hover:border-blue-500/30"
                 }`}
-            style={{
-                backgroundColor: isDark ? "#111827" : "#ffffff",
-                borderColor: isDark ? "#374151" : "#e5e7eb"
-            }}
+            style={{ animationDelay: `${index * 50}ms` }}
         >
-            <div>
-                <div
-                    className="text-sm transition-all duration-300"
-                    style={{ color: isDark ? "#9ca3af" : "#64748b" }}
-                >
-                    {title}
+            {/* Vehicle Image */}
+            <div className="relative w-full h-40 overflow-hidden bg-gray-200 md:w-40 rounded-xl">
+                {!imageError ? (
+                    <img
+                        src={client.mainImage || "/no-image.png"}
+                        className="object-cover w-full h-full"
+                        onError={() => setImageError(true)}
+                    />
+                ) : (
+                    <div className="flex items-center justify-center w-full h-full">
+                        <Car size={48} className="text-gray-400" />
+                    </div>
+                )}
+            </div>
+
+            {/* Client Info */}
+            <div className="flex-1 space-y-3">
+                <h3 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                    {client.fullName}
+                </h3>
+
+                <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+                    <div className="flex items-center gap-2">
+                        <Car size={16} className="text-blue-500" />
+                        {client.vehicleMake} {client.vehicleModel}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Phone size={16} className="text-green-500" />
+                        {client.phone}
+                    </div>
                 </div>
-                <div
-                    className="mt-2 text-2xl font-bold transition-all duration-300"
-                    style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                >
-                    {value}
+
+                <div className="flex items-center gap-2">
+                    <Hash size={16} className="text-gray-500" />
+                    <span className="px-4 py-1.5 rounded-lg text-sm font-mono font-semibold bg-gray-100">
+                        {client.regNumber}
+                    </span>
                 </div>
             </div>
-            <div
-                className="flex items-center justify-center w-12 h-12 transition-all duration-300 rounded-lg"
-                style={{ backgroundColor: isDark ? "#1f2937" : "#f1f5f9" }}
-            >
-                <Icon className="w-6 h-6 text-sky-600" />
+
+            {/* Actions */}
+            <div className="flex gap-2 md:flex-col">
+                <ActionButton label="View" icon={<Eye size={18} />} color="blue" onClick={onView} />
+                <ActionButton label="Edit" icon={<Edit2 size={18} />} color="purple" onClick={onEdit} />
+                <ActionButton label="Delete" icon={<Trash2 size={18} />} color="red" onClick={onDelete} />
             </div>
         </div>
+    );
+}
+
+function ActionButton({ label, icon, color, onClick }) {
+    const colors = {
+        blue: "bg-blue-50 text-blue-600 hover:bg-blue-100",
+        purple: "bg-purple-50 text-purple-600 hover:bg-purple-100",
+        red: "bg-red-50 text-red-600 hover:bg-red-100"
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all hover:scale-105 ${colors[color]}`}
+        >
+            {icon}
+            <span className="text-sm">{label}</span>
+        </button>
     );
 }

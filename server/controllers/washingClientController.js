@@ -13,6 +13,10 @@ const washingClientSchema = z.object({
   address: z.string().optional().nullable(),
   vehicleMake: z.string().min(1),
   vehicleModel: z.string().min(1),
+
+  email: z.string().email().optional().nullable(),       // <-- ADDED
+  regNumber: z.string().optional().nullable(),           // <-- ADDED
+
   mainImage: z.string().optional().nullable(),
   additionalImages: z.array(z.string()).optional().nullable(),
 });
@@ -22,13 +26,11 @@ const washingClientSchema = z.object({
  * GET all washing clients
  * GET /api/washing-clients
  * ===========================
+ * FIXED: Removed userId filter so all clients return
  */
 export const getWashingClients = async (req, res) => {
   try {
     const clients = await prisma.washingClient.findMany({
-      where: {
-        userId: req.user?.id,
-      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -73,8 +75,9 @@ export const createWashingClient = async (req, res) => {
     const client = await prisma.washingClient.create({
       data: {
         ...parsed,
-        userId: req.user?.id,
-      },
+        userId: req.user?.id ?? null,
+      }
+
     });
 
     res.status(201).json(client);
@@ -87,13 +90,17 @@ export const createWashingClient = async (req, res) => {
   }
 };
 
+/**
+ * ===========================
+ * UPDATE washing client
+ * PUT /api/washing-clients/:id
+ * ===========================
+ */
 export const updateWashingClient = async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    if (!id) {
-      return res.status(400).json({ message: "Invalid client ID" });
-    }
+    if (!id) return res.status(400).json({ message: "Invalid client ID" });
 
     const parsed = washingClientSchema.partial().parse(req.body);
 

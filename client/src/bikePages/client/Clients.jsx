@@ -114,7 +114,7 @@ export default function Clients() {
 
           <button
             onClick={() => navigate("/editclient/new")}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <PlusCircle size={20} />
             Add New Client
@@ -122,43 +122,43 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* ✅ TOP 3 STAT CARDS */}
+      {/* ✅ TOP 3 STAT CARDS - FIXED DARK MODE */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between ${
+        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${
           isDark ? "bg-gray-800" : "bg-white"
         }`}>
           <div>
-            <p className="text-sm text-gray-500">Total Clients</p>
-            <h2 className="text-3xl font-bold">{filteredClients.length}</h2>
+            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Total Clients</p>
+            <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{filteredClients.length}</h2>
           </div>
           <Users className="text-blue-500" size={36} />
         </div>
 
-        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between ${
+        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${
           isDark ? "bg-gray-800" : "bg-white"
         }`}>
           <div>
-            <p className="text-sm text-gray-500">Current Page</p>
-            <h2 className="text-3xl font-bold">{currentPage}</h2>
+            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Current Page</p>
+            <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{currentPage}</h2>
           </div>
           <Bike className="text-purple-500" size={36} />
         </div>
 
-        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between ${
+        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${
           isDark ? "bg-gray-800" : "bg-white"
         }`}>
           <div>
-            <p className="text-sm text-gray-500">Page</p>
-            <h2 className="text-3xl font-bold">{currentPage}/{totalPages}</h2>
+            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Page</p>
+            <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{currentPage}/{totalPages}</h2>
           </div>
           <Hash className="text-green-500" size={36} />
         </div>
       </div>
 
-      {/* ✅ SEARCH BAR */}
+      {/* ✅ SEARCH BAR - FIXED DARK MODE */}
       <div className="mb-8">
         <div className="relative max-w-2xl">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? "text-gray-500" : "text-gray-400"}`} size={20} />
           <input
             type="text"
             placeholder="Search by name, phone, vehicle, or registration..."
@@ -167,7 +167,11 @@ export default function Clients() {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-12 pr-4 py-4 rounded-xl border"
+            className={`w-full pl-12 pr-4 py-4 rounded-xl border transition-colors duration-300 ${
+              isDark 
+                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" 
+                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+            } focus:outline-none focus:ring-2 focus:ring-orange-500`}
           />
         </div>
       </div>
@@ -179,9 +183,11 @@ export default function Clients() {
         </div>
       )}
 
-      {/* ✅ ERROR */}
+      {/* ✅ ERROR - FIXED DARK MODE */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 text-red-600">
+        <div className={`flex items-center gap-3 p-4 rounded-xl ${
+          isDark ? "bg-red-900/30 text-red-400 border border-red-800" : "bg-red-50 text-red-600"
+        }`}>
           <AlertCircle size={24} />
           {error}
         </div>
@@ -204,33 +210,43 @@ export default function Clients() {
         </div>
       )}
 
-      {/* ✅ PAGINATION FOOTER */}
-      <div className={`mt-10 flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-xl shadow ${
+      {/* ✅ PAGINATION FOOTER - FIXED DARK MODE */}
+      <div className={`mt-10 flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-xl shadow transition-colors duration-300 ${
         isDark ? "bg-gray-800" : "bg-white"
       }`}>
-        <p className="text-sm text-gray-500">
-          Showing {indexOfFirstClient + 1} –{" "}
-          {Math.min(indexOfLastClient, filteredClients.length)} of{" "}
-          {filteredClients.length}
+        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+          Showing {indexOfFirstClient + 1} – {Math.min(indexOfLastClient, filteredClients.length)} of {filteredClients.length}
         </p>
 
         <div className="flex items-center gap-3">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => p - 1)}
-            className="px-4 py-2 rounded-lg border disabled:opacity-40"
+            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+              isDark 
+                ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
+                : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            }`}
           >
             Previous
           </button>
 
-          <span className="px-4 py-2 rounded-lg border font-semibold">
+          <span className={`px-4 py-2 rounded-lg border font-semibold ${
+            isDark 
+              ? "border-gray-700 bg-gray-700 text-white" 
+              : "border-gray-300 bg-gray-50 text-gray-900"
+          }`}>
             {currentPage}/{totalPages}
           </span>
 
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-4 py-2 rounded-lg border disabled:opacity-40"
+            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+              isDark 
+                ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
+                : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            }`}
           >
             Next
           </button>
@@ -240,16 +256,18 @@ export default function Clients() {
   );
 }
 
-/* ✅ CLIENT CARD COMPONENT */
+/* ✅ CLIENT CARD COMPONENT - FIXED DARK MODE */
 function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
   return (
     <div
-      className={`flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border ${
+      className={`flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border transition-colors duration-300 ${
         isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
       }`}
     >
       {/* Bike Image */}
-      <div className="w-48 h-48 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
+      <div className={`w-48 h-48 rounded-xl overflow-hidden flex-shrink-0 ${
+        isDark ? "bg-gray-700" : "bg-gray-200"
+      }`}>
         <img
           src={client.bikeImage || "https://via.placeholder.com/300"}
           alt="bike"
@@ -317,7 +335,11 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
             </div>
 
             {/* Registration Number */}
-            <span className="px-4 py-2 rounded-lg bg-orange-100 text-orange-600 font-mono text-sm font-semibold">
+            <span className={`inline-block px-4 py-2 rounded-lg font-mono text-sm font-semibold ${
+              isDark 
+                ? "bg-orange-900/50 text-orange-300 border border-orange-700" 
+                : "bg-orange-100 text-orange-600"
+            }`}>
               {client.regNumber}
             </span>
           </div>
@@ -368,17 +390,38 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
         </div>
       </div>
 
-      {/* ACTION BUTTONS */}
+      {/* ACTION BUTTONS - FIXED DARK MODE */}
       <div className="flex md:flex-col gap-2 justify-center">
-        <button onClick={onView} className="p-3 rounded-xl border-2 hover:scale-105">
+        <button 
+          onClick={onView} 
+          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${
+            isDark 
+              ? "border-gray-700 hover:bg-gray-700" 
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
+        >
           <Eye size={20} className="text-blue-500" />
         </button>
 
-        <button onClick={onEdit} className="p-3 rounded-xl border-2 hover:scale-105">
+        <button 
+          onClick={onEdit} 
+          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${
+            isDark 
+              ? "border-gray-700 hover:bg-gray-700" 
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
+        >
           <Edit2 size={20} className="text-purple-500" />
         </button>
 
-        <button onClick={onDelete} className="p-3 rounded-xl border-2 hover:scale-105">
+        <button 
+          onClick={onDelete} 
+          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${
+            isDark 
+              ? "border-gray-700 hover:bg-gray-700" 
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
+        >
           <Trash2 size={20} className="text-red-500" />
         </button>
       </div>

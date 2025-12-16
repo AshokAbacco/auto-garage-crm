@@ -4,7 +4,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import {
   ArrowLeft,
   Calendar,
-  DollarSign,
+  IndianRupee,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -336,7 +336,7 @@ export default function AddService() {
               <h3 className={`flex items-center gap-2 font-semibold ${
                 isDark ? "text-green-400" : "text-green-700"
               }`}>
-                <DollarSign size={18} />
+                <IndianRupee size={18} />
                 Cost Breakdown
               </h3>
 

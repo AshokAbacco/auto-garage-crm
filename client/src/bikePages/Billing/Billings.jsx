@@ -7,7 +7,6 @@ import {
   FiEdit,
   FiSearch,
   FiFileText,
-  FiDollarSign,
   FiCheckCircle,
   FiClock,
   FiTrendingUp,
@@ -16,7 +15,7 @@ import {
 } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Toaster, toast } from "react-hot-toast";
-
+import { IndianRupee } from "lucide-react";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const getAuthToken = () =>
@@ -88,10 +87,21 @@ export default function BillingList() {
   const totalInvoices = invoices.length;
   const paidInvoices = invoices.filter(inv => inv.status === "Paid").length;
   const pendingInvoices = invoices.filter(inv => inv.status === "Pending").length;
-  const totalRevenue = invoices
-    .filter(inv => inv.status === "Paid")
-    .reduce((sum, inv) => sum + Number(inv.grandTotal || 0), 0)
+const totalRevenue = useMemo(() => {
+  return invoices
+    .filter(inv =>
+      ["paid", "Paid", "PAID", "Completed"].includes(inv.status)
+    )
+    .reduce((sum, inv) => {
+      const amount = String(inv.grandTotal || "0")
+        .replace(/,/g, "")   // remove commas
+        .replace(/₹/g, ""); // remove currency if any
+
+      return sum + Number(amount);
+    }, 0)
     .toFixed(2);
+}, [invoices]);
+
 
   return (
     <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
@@ -199,7 +209,7 @@ export default function BillingList() {
             <div className={`p-3 rounded-xl ${
               isDark ? "bg-blue-500/30" : "bg-blue-100"
             }`}>
-              <FiDollarSign size={24} className="text-blue-600" />
+              <IndianRupee size={24} className="text-blue-600" />
             </div>
             <FiTrendingUp size={20} className={`${isDark ? "text-blue-400" : "text-blue-500"} group-hover:scale-110 transition-transform`} />
           </div>

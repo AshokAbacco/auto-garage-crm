@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     Sun, Moon, Sparkles, Home, LogIn, Car, Phone,
-    Building2, Wrench, Store, ChevronDown, IndianRupee, Menu, X
+    Building2, Wrench, Store, ChevronDown, IndianRupee, Menu, X,Bike
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -53,7 +53,7 @@ export default function PublicNavbar() {
     const navItems = [
         { path: "/", label: "Home", icon: Home },
         { path: "/car-garage", label: "Car Garage", icon: Car },
-        { path: "/bike-garage", label: "Bike Garage", icon: Wrench },
+        { path: "/bike-garage", label: "Bike Garage", icon: Bike },
         { path: "/washing-center", label: "Washing Center CRM", icon: Building2 },
         { path: "/pricing", label: "Pricing", icon: IndianRupee },
     ];
@@ -201,7 +201,7 @@ export default function PublicNavbar() {
                                                 : "text-gray-700 hover:bg-gray-100"
                                             }`}
                                     >
-                                        <Wrench size={18} />
+                                        <Bike size={18} />
                                         <span>Bike Spare Parts</span>
                                     </Link>
                                     <Link

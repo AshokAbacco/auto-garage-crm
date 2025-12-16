@@ -13,9 +13,10 @@ import {
   BarChart,
   Bar,
   Legend,
+  
 } from "recharts";
-import { FiTrendingUp, FiDollarSign, FiCheckCircle, FiClock } from "react-icons/fi";
-
+import { FiTrendingUp,FiCheckCircle, FiClock } from "react-icons/fi";
+import { IndianRupee } from "lucide-react";
 export default function BikeAnalyticsView({
   invoices = [],
   services = [],
@@ -130,7 +131,7 @@ export default function BikeAnalyticsView({
         <StatCard
           title="Total Revenue"
           value={revenueSummary.totalRevenue}
-          icon={<FiDollarSign size={24} />}
+          icon={<IndianRupee size={24} />}
           gradient="from-green-500 to-emerald-600"
           isDark={isDark}
           showRupee
@@ -179,7 +180,7 @@ export default function BikeAnalyticsView({
         <StatCard
           title="Avg Service Cost"
           value={serviceSummary.averageServiceCost}
-          icon={<FiDollarSign size={20} />}
+          icon={<IndianRupee size={20} />}
           gradient="from-rose-500 to-pink-600"
           isDark={isDark}
           showRupee

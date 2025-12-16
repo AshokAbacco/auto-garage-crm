@@ -4,14 +4,14 @@ import { useTheme } from "../../contexts/ThemeContext";
 import {
   ArrowLeft,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Edit2,
   FileText,
   Printer,
   User,
   Phone,
   Mail,
-  Car,
+  Bike,
   Hash,
   Wrench,
   Tag,
@@ -247,7 +247,7 @@ const ServiceDetails = () => {
             <h3 className={`flex items-center gap-2 text-xl font-bold mb-6 ${
               isDark ? "text-green-400" : "text-green-700"
             }`}>
-              <DollarSign size={24} />
+              <IndianRupee size={24} />
               Cost Breakdown
             </h3>
 
@@ -336,7 +336,7 @@ const ServiceDetails = () => {
             />
 
             <InfoCard
-              icon={<Car size={20} className="text-orange-500" />}
+              icon={<Bike size={20} className="text-orange-500" />}
               label="Vehicle Model"
               value={service.client?.vehicleModel}
               isDark={isDark}

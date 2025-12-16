@@ -154,8 +154,7 @@ function App() {
           <Route path="bike-plan" element={<Plans />} />
           <Route path="bike-reference" element={<Reference />} />
           <Route path="bike-upgrade" element={<UpgradePlans />} />
-        </Route>
-        <Route>
+
           <Route path="/editclient/:id" element={<AddClients />} />
           <Route path="/editclient/new" element={<AddClients />} />
           <Route path="/bikes/:id" element={<BikeDetail />} />

@@ -18,6 +18,7 @@ import {
     Layers,
     ChevronDown,
     ChevronRight,
+    CogIcon,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate, Outlet } from "react-router-dom";
@@ -44,21 +45,18 @@ export default function WashingLayoutPage() {
             icon: Users,
         },
         {
+            to: "/washing-services",
             label: "Services",
             icon: Wrench,
-            children: [
-                { to: "/washing-services", label: "Services" },
-                { to: "/washing-services/sub-services", label: "Sub Services" },
-            ],
         },
+
         {
+            to: "/washing-alerts",
             label: "Alerts",
             icon: MessageSquare,
-            children: [
-                { to: "/washing-alerts", label: "SMS & WhatsApp Alerts" },
-
-            ],
         },
+
+
         {
             to: "/washing-Billing",
             label: "Billing",

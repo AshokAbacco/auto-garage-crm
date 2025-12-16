@@ -1,7 +1,12 @@
 // src/ServiceManagement.jsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wrench, Filter, IndianRupee, ClipboardX } from "lucide-react";
+import {
+    Wrench,
+    Filter,
+    IndianRupee,
+    ClipboardX
+} from "lucide-react";
 
 export default function ServiceManagement() {
     const navigate = useNavigate();
@@ -11,26 +16,130 @@ export default function ServiceManagement() {
     const [status, setStatus] = useState("All Status");
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
-    const services = [];
+    const [services, setServices] = useState([]);
 
-    const totalServices = services.length;
-    const filteredResults = services.length;
-    const totalRevenue = 0;
+    // ---------------- FETCH SERVICES ----------------
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                const token = localStorage.getItem("token");
 
-    const resetFilters = () => {
-        setQuery("");
-        setCategory("All Categories");
-        setStatus("All Status");
-        setFromDate("");
-        setToDate("");
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_BASE_URL}/api/washing-services`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                const data = await res.json();
+                setServices(data);
+            } catch (err) {
+                console.error("Failed to load services", err);
+            }
+        };
+
+        fetchServices();
+    }, []);
+
+    // ---------------- DELETE SERVICE ----------------
+    const handleDelete = async (id) => {
+        if (!confirm("Delete this service?")) return;
+
+        try {
+            const token = localStorage.getItem("token");
+
+            await fetch(
+                `${import.meta.env.VITE_API_BASE_URL}/api/washing-services/${id}`,
+                { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setServices((prev) => prev.filter((s) => s.id !== id));
+            alert("Service deleted");
+        } catch (err) {
+            console.error(err);
+            alert("Error deleting service");
+        }
     };
 
+    // ---------------- FILTER ----------------
     const filtered = useMemo(() => {
-        return services;
-    }, [services, query, category, status, fromDate, toDate]);
+        return services.filter((s) =>
+            `${s.client?.fullName} ${s.category?.name} ${s.subService?.name}`
+                .toLowerCase()
+                .includes(query.toLowerCase())
+        );
+    }, [services, query]);
 
+    // ---------------- TOP METRIC CALCULATIONS ----------------
+    const totalServices = services.length;
+    const filteredResults = filtered.length;
+    const totalRevenue = Number(
+        services.reduce((sum, s) => sum + (Number(s.estimatedTotal) || 0), 0)
+    );
+
+    // ------------------- SERVICE CARD (MATCHES SCREENSHOT) --------------------
+    const ServiceCard = ({ service }) => (
+        <div className="flex justify-between p-5 mb-4 transition-all bg-white border shadow-sm rounded-xl hover:shadow-md">
+
+            {/* LEFT SIDE */}
+            <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                    {service.subService?.name}
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-600">
+                    {service.category?.name}
+                </p>
+
+                <p className="mt-1 text-sm text-slate-500">
+                    {service.client?.fullName}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-400">
+                    {new Date(service.date).toLocaleDateString()}
+                </p>
+            </div>
+
+            {/* RIGHT SIDE */}
+            <div className="text-right">
+                {/* Status Pill */}
+                <span
+                    className={`px-3 py-1 text-xs rounded-full font-semibold ${service.status === "COMPLETED"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                        }`}
+                >
+                    {service.status === "COMPLETED" ? "Completed" : "Pending"}
+                </span>
+
+                {/* Amount */}
+                <p className="mt-3 text-lg font-bold text-emerald-600">
+                    ₹{service.estimatedTotal}
+                </p>
+
+                {/* Buttons */}
+                <div className="flex flex-col items-end gap-2 mt-2">
+                    <button
+                        onClick={() => navigate(`/wservices-details/${service.id}`)}
+                        className="text-sm text-sky-600 hover:underline"
+                    >
+                        View Details →
+                    </button>
+
+
+                    <button
+                        onClick={() => handleDelete(service.id)}
+                        className="text-sm text-red-500 hover:underline"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    // ---------------- UI ----------------
     return (
         <div className="min-h-screen p-8 bg-[#f0fbff]">
+
             {/* Header */}
             <div className="flex items-center justify-between p-6 mb-6 bg-white shadow-md rounded-xl">
                 <div>
@@ -40,124 +149,78 @@ export default function ServiceManagement() {
 
                 <button
                     onClick={() => navigate("/add-service")}
-                    className="inline-flex items-center gap-3 px-4 py-2 font-semibold text-white rounded-full shadow-lg bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] hover:opacity-95"
+                    className="inline-flex items-center gap-3 px-4 py-2 font-semibold text-white rounded-full shadow-lg bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9]"
                 >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    Add New Service
+                    + Add New Service
                 </button>
             </div>
 
-            {/* Search & Filters */}
-            <div className="grid items-center grid-cols-1 gap-4 mb-6 lg:grid-cols-12">
-                <div className="lg:col-span-9">
-                    <div className="p-4 bg-white border shadow-sm rounded-xl">
-                        <div className="flex items-center gap-3">
-                            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z" />
-                            </svg>
-                            <input
-                                type="text"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search by client, status, reg number..."
-                                className="w-full bg-transparent outline-none placeholder:text-slate-400"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex gap-3 lg:col-span-3">
-                    <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg">
-                        <option>All Categories</option>
-                        <option>Maintenance</option>
-                        <option>Repair</option>
-                        <option>Inspection</option>
-                    </select>
-
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg">
-                        <option>All Status</option>
-                        <option>Pending</option>
-                        <option>In Progress</option>
-                        <option>Completed</option>
-                    </select>
-                </div>
-
-                <div className="flex gap-3 mt-3 lg:col-span-12">
-                    <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="px-3 py-2 bg-white border rounded-lg" />
-                    <span className="self-center text-slate-400">-</span>
-                    <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="px-3 py-2 bg-white border rounded-lg" />
-                    <button onClick={resetFilters} className="px-3 py-2 ml-auto bg-white border rounded-lg">
-                        Reset
-                    </button>
-                </div>
+            {/* Search Box */}
+            <div className="p-4 mb-6 bg-white border shadow-sm rounded-xl">
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search by service, client, status..."
+                    className="w-full bg-transparent outline-none"
+                />
             </div>
 
-            {/* Metric Cards */}
-            <div className="grid grid-cols-1 gap-6 mb-12 md:grid-cols-3">
-                {/* Total Services */}
-                <div className="flex items-center justify-between p-6 bg-white border shadow-sm rounded-xl">
-                    <div>
-                        <div className="text-sm text-slate-500">Total Services</div>
-                        <div className="mt-3 text-3xl font-bold text-slate-900">{totalServices}</div>
-                    </div>
+            {/* Top Stats */}
+            <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3 lg:grid-cols-4">
 
-                    <div className="flex items-center justify-center w-12 h-12 rounded-lg shadow bg-slate-100">
-                        <Wrench className="w-6 h-6 text-sky-600" />
+                {/* Total Services */}
+                <div className="flex items-center justify-between p-5 bg-white border shadow-sm rounded-xl">
+                    <div>
+                        <p className="text-sm text-slate-500">Total Services</p>
+                        <h2 className="text-3xl font-bold text-slate-900">{totalServices}</h2>
                     </div>
+                    <Wrench className="w-8 h-8 text-sky-500" />
                 </div>
 
                 {/* Filtered Results */}
-                <div className="flex items-center justify-between p-6 bg-white border shadow-sm rounded-xl">
+                <div className="flex items-center justify-between p-5 bg-white border shadow-sm rounded-xl">
                     <div>
-                        <div className="text-sm text-slate-500">Filtered Results</div>
-                        <div className="mt-3 text-3xl font-bold text-slate-900">{filteredResults}</div>
+                        <p className="text-sm text-slate-500">Filtered Results</p>
+                        <h2 className="text-3xl font-bold text-slate-900">{filteredResults}</h2>
                     </div>
+                    <Filter className="w-8 h-8 text-green-500" />
+                </div>
 
-                    <div className="flex items-center justify-center w-12 h-12 rounded-lg shadow bg-slate-100">
-                        <Filter className="w-6 h-6 text-green-600" />
+                {/* Completed */}
+                <div className="flex items-center justify-between p-5 bg-white border shadow-sm rounded-xl">
+                    <div>
+                        <p className="text-sm text-slate-500">Completed</p>
+                        <h2 className="text-3xl font-bold text-slate-900">
+                            {services.filter((s) => s.status === "COMPLETED").length}
+                        </h2>
                     </div>
+                    <span className="text-xl text-green-500">✔</span>
                 </div>
 
                 {/* Total Revenue */}
-                <div className="flex items-center justify-between p-6 bg-white border shadow-sm rounded-xl">
+                <div className="flex items-center justify-between p-5 bg-white border shadow-sm rounded-xl">
                     <div>
-                        <div className="text-sm text-slate-500">Total Revenue</div>
-                        <div className="mt-3 text-3xl font-bold text-slate-900">₹{totalRevenue.toFixed(2)}</div>
+                        <p className="text-sm text-slate-500">Total Revenue</p>
+                        <h2 className="text-3xl font-bold text-emerald-600">
+                            ₹{totalRevenue.toFixed(2)}
+                        </h2>
                     </div>
-
-                    <div className="flex items-center justify-center w-12 h-12 rounded-lg shadow bg-slate-100">
-                        <IndianRupee className="w-6 h-6 text-emerald-600" />
-                    </div>
+                    <IndianRupee className="w-8 h-8 text-emerald-600" />
                 </div>
             </div>
 
-            {/* Empty state / service list */}
-            <div className="p-12 bg-white border shadow-sm rounded-xl">
-                {filtered.length === 0 ? (
-                    <div className="flex flex-col items-center gap-4 py-20 text-center">
-                        {/* Icon */}
-                        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-slate-100">
-                            <ClipboardX className="w-8 h-8 text-slate-500" />
-                        </div>
-
-                        {/* Title */}
-                        <div className="text-xl font-semibold text-slate-700">No services found</div>
-
-                        {/* Subtitle */}
-                        <div className="text-sm text-slate-500">
-                            Use the search or click{" "}
-                            <span className="font-semibold text-[#0ea5e9] cursor-pointer" onClick={() => navigate("/add-service")}>
-                                Add New Service
-                            </span>{" "}
-                            to create one.
-                        </div>
-                    </div>
-                ) : (
-                    <div>{/* service list */}</div>
-                )}
-            </div>
+            {/* Service Cards */}
+            {filtered.length === 0 ? (
+                <div className="py-20 text-center">
+                    <ClipboardX className="w-10 h-10 mx-auto text-slate-400" />
+                    <p className="mt-4 text-slate-500">No services found</p>
+                </div>
+            ) : (
+                filtered.map((service) => (
+                    <ServiceCard key={service.id} service={service} />
+                ))
+            )}
         </div>
     );
 }

@@ -47,14 +47,7 @@ function Upgrade() {
 
             {/* Tabs */}
             <div className="flex items-center justify-center gap-3 mb-10">
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0ea5e9] rounded-full">
-                    <Car className="w-4 h-4" />
-                    <span>Car Plans</span>
-                </button>
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white rounded-full shadow text-slate-700">
-                    <Bike className="w-4 h-4" />
-                    <span>Bike Plans</span>
-                </button>
+
                 <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white rounded-full shadow text-slate-700">
                     <ShowerHead className="w-4 h-4" />
                     <span>Washing Plans</span>

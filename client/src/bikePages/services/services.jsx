@@ -7,7 +7,7 @@ import {
   RefreshCw, 
   AlertCircle,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Wrench,
   CheckCircle,
   Clock,
@@ -156,7 +156,7 @@ const Services = () => {
             <CheckCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-green-500 transition-colors`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Paid Services
+            Completed Services
           </p>
           <h2 className="text-3xl font-bold text-green-500">
             {paidServices}
@@ -173,7 +173,7 @@ const Services = () => {
             <div className={`p-3 rounded-xl ${
               isDark ? "bg-green-500/30" : "bg-green-100"
             }`}>
-              <DollarSign size={24} className="text-green-600" />
+              <IndianRupee size={24} className="text-green-600" />
             </div>
             <TrendingUp size={20} className={`${isDark ? "text-green-400" : "text-green-500"} group-hover:scale-110 transition-transform`} />
           </div>
@@ -359,7 +359,7 @@ function ServiceCard({ service, isDark, index, onClick }) {
               : "bg-orange-100 text-orange-700 group-hover:bg-orange-200"
           }`}
         >
-          {service.status}
+          {service.status === "Paid" ? "Completed" : "Pending"}
         </span>
 
         <div className="text-right">

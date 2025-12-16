@@ -54,7 +54,7 @@ function SelectField({ label, value, onChange, options, isDark }) {
     return (
         <div>
             <label
-                className={`block text-sm font-medium mb-1.5 ${isDark ? "text-gray-200" : "text-gray-700"
+                className={`block text-sm font-medium mb-1.5 ${isDark ? "text-black" : "text-gray-700"
                     }`}
             >
                 {label}
@@ -64,14 +64,14 @@ function SelectField({ label, value, onChange, options, isDark }) {
                 value={value}
                 onChange={onChange}
                 className={`w-full px-4 py-2.5 rounded-lg border text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-emerald-500 transition duration-150 ${isDark
-                    ? "bg-gray-800 border-gray-700 text-white"
+                    ? "bg-gray-800 border-gray-700 text-black"
                     : "bg-white border-gray-300 text-gray-900 focus:border-emerald-500"
                     }`}
             >
                 <option value="">Select {label}</option>
 
                 {(options || []).map((opt) => (
-                    <option key={opt} value={opt}>
+                    <option key={opt} value={opt} className="text-black" >
                         {opt}
                     </option>
                 ))}
@@ -317,6 +317,7 @@ export default function VehicleInfoSection({
                         }
                         options={fuelTypes}
                         isDark={isDark}
+                        
                     />
 
                     {/* SEATS */}

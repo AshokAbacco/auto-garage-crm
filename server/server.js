@@ -29,6 +29,7 @@ import bikeRoutes from "./routes/bikeRoutes.js";
 import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
 import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
+import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
 
 import carRoutes from "./routes/carRoutes.js";
 
@@ -47,6 +48,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 // Enable CORS (allow frontend connection)
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://auto-garage-crm-r7l4.onrender.com",
   "https://themotordesk.com",
   "https://www.themotordesk.com",
@@ -122,16 +124,16 @@ app.use((req, res, next) => {
 
 app.use("/uploads", express.static("uploads"));
 
+
 // bike routes
 app.use("/api/bikes", bikeRoutes);
 app.use("/api/bike-services", bikeServiceRoutes);
 app.use("/api/bike-invoices", bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
-
+app.use("/api/bike-ocr", bikeOCRRoutes);
 
 //car company names and models
 app.use("/api/cars", carRoutes);
-
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

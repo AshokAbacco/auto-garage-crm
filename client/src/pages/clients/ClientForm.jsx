@@ -134,7 +134,7 @@ export default function ClientForm() {
       .split(/\/|,| |-|\(|\)/)
       .map((p) => p.trim().toLowerCase())
       .filter(Boolean);
-    const fuels = ["petrol", "diesel", "cng", "electric", "hybrid"];
+    const fuels = ["petrol", "diesel", "cng", "electric", "hyb"];
     const found = parts.find((p) => fuels.includes(p));
     return found ? found.charAt(0).toUpperCase() + found.slice(1) : "";
   };
@@ -280,6 +280,62 @@ export default function ClientForm() {
 
     loadMeta();
   }, []);
+
+
+  // -------------------------------
+  // LOAD EXISTING CLIENT (EDIT MODE)
+  // -------------------------------
+  useEffect(() => {
+    if (!id) return; // Not editing
+
+    const loadClient = async () => {
+      try {
+        setLoadingClient(true);
+
+        // 1. Try reading React Router passed state
+        if (location.state?.clientData) {
+          setForm(prev => ({
+            ...prev,
+            ...location.state.clientData
+          }));
+
+          // Load models for correct make
+          if (location.state.clientData.vehicleMake) {
+            await fetchCarModels(location.state.clientData.vehicleMake);
+          }
+
+          setLoadingClient(false);
+          return; // STOP — skip backend fetch
+        }
+
+        // 2. If page refreshed OR state missing → fetch from backend
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`${API_BASE}/api/clients/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+
+        setForm(prev => ({
+          ...prev,
+          ...data
+        }));
+
+        if (data.vehicleMake) {
+          await fetchCarModels(data.vehicleMake);
+        }
+      } catch (err) {
+        console.error("Edit load failed:", err);
+        toast.error("Failed to load client for editing");
+      } finally {
+        setLoadingClient(false);
+      }
+    };
+
+    loadClient();
+  }, [id, location.state]);
+
 
   // -------------------------------
   // LOAD MAKES (local)
@@ -483,20 +539,12 @@ export default function ClientForm() {
         </div>
 
         {/* Personal Info */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+        <div >
           <PersonalInfoSection form={form} setForm={setForm} isDark={isDark} />
         </div>
 
         {/* Vehicle Info */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Vehicle Information</h2>
+        <div>
 
           <VehicleInfoSection
             form={form}
@@ -512,11 +560,7 @@ export default function ClientForm() {
         </div>
 
         {/* Vehicle Images */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Vehicle Images</h2>
+        <div>
 
           {/* Auto-filled image from local dataset */}
           {form.carImage && (
@@ -549,7 +593,7 @@ export default function ClientForm() {
               }`}
           >
             <FiX className="inline-block mr-1" />
-            Cancel
+            Cancel 
           </button>
 
           <button

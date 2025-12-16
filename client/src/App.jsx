@@ -118,7 +118,7 @@ function App() {
         <Route path="bike-register" element={<BikeRegister />} />
         <Route path="washing-register" element={<WashRegister />} />
 
-        {/* ================= CAR CRM ================= */}
+        {/* Car routes */}
         <Route
           element={
             <ProtectedRoute>
@@ -161,10 +161,11 @@ function App() {
           <Route path="bike-billing" element={<Billings />} />
           <Route path="bike-reminders" element={<Reminders />} />
           <Route path="bike-reports" element={<Report />} />
-          <Route path="bike-ocr-scanner" element={<OCRScanner />} />
           <Route path="bike-plan" element={<Plans />} />
           <Route path="bike-reference" element={<Reference />} />
           <Route path="bike-upgrade" element={<UpgradePlans />} />
+        </Route>
+        <Route>
           <Route path="/editclient/:id" element={<AddClients />} />
           <Route path="/editclient/new" element={<AddClients />} />
           <Route path="/bikes/:id" element={<BikeDetail />} />

@@ -295,7 +295,7 @@ const DetailsPage = () => {
 
 
   return (
-    <div className={`min-h-screen p-4 sm:p-6 ${isDark ? "bg-gray-900" : "bg-gray-50"} transition-colors duration-300`}>
+    <div className={`min-h-screen p-4 sm:p-1 ${isDark ? "" : "bg-gray-50"} transition-colors duration-300`}>
       {/* Toast Notifications */}
       <div className="fixed top-4 right-4 z-50">
         <Toaster

@@ -1,4 +1,3 @@
-// client/src/pages/services/ServicesList.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -44,7 +43,8 @@ export default function ServicesList() {
       try {
         const res = await apiRequest("/api/services");
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch services");
+        if (!res.ok)
+          throw new Error(data.message || "Failed to fetch services");
         setServices(data);
       } catch (err) {
         setError(err.message);
@@ -98,39 +98,48 @@ export default function ServicesList() {
   const totalRevenue = services.reduce(
     (sum, s) =>
       sum +
-      (Number(s.cost) ||
-        Number(s.partsCost || 0) + Number(s.laborCost || 0)),
+      (Number(s.cost) || Number(s.partsCost || 0) + Number(s.laborCost || 0)),
     0
   );
 
   if (error)
     return (
-      <div className="p-6 text-center text-red-500 font-semibold">
+      <div
+        className={`p-6 text-center ${
+          isDark ? "text-red-400" : "text-red-600"
+        } font-semibold`}
+      >
         {error}
       </div>
     );
 
   return (
-    <div
-      className={`min-h-screen p-6 lg:ml-16 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
-        }`}
-    >
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className={`min-h-screen ${isDark ? "" : "bg-white"}`}>
+      <div className="lg: max-w-6xl  mx-auto px-4 sm:px-1 lg:px-8 py-6 space-y-6">
         {/* Header */}
         <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
+          className={`rounded-2xl shadow-lg border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+          } p-4 sm:p-6`}
         >
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Service Management</h1>
-              <p className={`${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <h1
+                className={`text-xl sm:text-2xl font-bold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Service Management
+              </h1>
+              <p
+                className={`mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}
+              >
                 Track and manage all service records
               </p>
             </div>
             <Link
               to="/services/new"
-              className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg"
+              className="flex items-center justify-center gap-2 bg-blue-900 text-white px-4 sm:px-5 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm sm:text-base whitespace-nowrap"
             >
               <FiPlus /> Add New Service
             </Link>
@@ -139,82 +148,96 @@ export default function ServicesList() {
 
         {/* Search & Filter Bar */}
         <div
-          className={`p-4 rounded-2xl flex flex-col md:flex-row md:items-center gap-3 shadow ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
+          className={`rounded-2xl shadow-lg border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+          } p-3 sm:p-4`}
         >
-          <div className="flex items-center gap-3 w-full md:w-2/5">
-            <FiSearch className="text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by client, status, reg number..."
-              className={`w-full bg-transparent outline-none ${isDark ? "text-white" : "text-gray-900"
-                }`}
-            />
-          </div>
-
-          <div className="flex gap-3 flex-wrap justify-end w-full md:w-3/5">
-            <div className="flex items-center gap-2">
-              <FiFilter />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className={`rounded-lg border p-2 text-sm ${isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-gray-50 border-gray-300"
-                  }`}
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-3 w-full">
+              <FiSearch
+                className={isDark ? "text-gray-400" : "text-gray-400"}
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by client, status, reg number..."
+                className={`w-full bg-transparent outline-none ${
+                  isDark ? "text-white" : "text-gray-900"
+                } text-sm sm:text-base`}
+              />
             </div>
 
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className={`rounded-lg border p-2 text-sm ${isDark
-                ? "bg-gray-700 border-gray-600 text-white"
-                : "bg-gray-50 border-gray-300"
-                }`}
-            >
-              <option value="">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-            </select>
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end w-full mt-3 sm:mt-0">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <FiFilter />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className={`rounded-lg border p-2 text-sm ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-gray-50 border-gray-300 text-gray-900"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Date Filters */}
-            <div className="flex items-center gap-2">
-              <FiCalendar className="text-gray-400" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className={`rounded-lg border p-2 text-sm ${isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-gray-50 border-gray-300"
-                  }`}
-              />
-              <span className="text-gray-400">-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className={`rounded-lg border p-2 text-sm ${isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-gray-50 border-gray-300"
-                  }`}
-              />
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className={`rounded-lg border p-2 text-sm ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600 text-white"
+                    : "bg-gray-50 border-gray-300 text-gray-900"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
+              >
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+              </select>
+
+              {/* Date Filters */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <FiCalendar
+                  className={isDark ? "text-gray-400" : "text-gray-400"}
+                />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={`rounded-lg border p-2 text-sm ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-gray-50 border-gray-300 text-gray-900"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
+                />
+                <span className={isDark ? "text-gray-400" : "text-gray-400"}>
+                  -
+                </span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={`rounded-lg border p-2 text-sm ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-gray-50 border-gray-300 text-gray-900"
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <StatCard
             icon={<FiTool />}
             title="Total Services"
@@ -237,62 +260,91 @@ export default function ServicesList() {
 
         {/* Services List */}
         {loading ? (
-          <div className="text-center py-20 text-gray-500">Loading...</div>
+          <div
+            className={`text-center py-20 ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            Loading...
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
+          <div
+            className={`text-center py-20 ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
             <FiAlertCircle className="mx-auto mb-2 text-3xl" />
             No services found.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filtered.map((s) => {
               const estimatedTotal =
                 Number(s.cost) ||
                 Number(s.partsCost || 0) + Number(s.laborCost || 0);
 
               const statusColor =
-              s.status === "Pending"
-                ? "bg-red-500 text-white"
-                : s.status === "Paid"
-                ? "bg-green-600 text-white"
-                : "bg-gray-400 text-white";
-
+                s.status === "Pending"
+                  ? "bg-red-600 text-white"
+                  : s.status === "Paid"
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-600 text-white";
 
               return (
                 <div
                   key={s.id}
-                  className={`w-full rounded-2xl p-6 shadow-md hover:shadow-xl transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isDark ? "bg-gray-800" : "bg-white"
-                    }`}
+                  className={`rounded-2xl shadow-lg border hover:shadow-xl transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-5 ${
+                    isDark
+                      ? "bg-gray-800 border-gray-700"
+                      : "bg-white border-gray-200"
+                  }`}
                 >
                   {/* Left Section */}
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
+                  <div className="space-y-1 flex-1">
+                    <h3
+                      className={`text-base sm:text-lg font-bold flex items-center gap-2 ${
+                        isDark ? "text-white" : "text-gray-900"
+                      }`}
+                    >
                       <FiTool /> {s.subService?.name || s.type || "Service"}
                     </h3>
-                    <p className="text-sm text-gray-400 flex items-center gap-2">
+                    <p
+                      className={`text-sm flex items-center gap-2 ${
+                        isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
                       <FiTag /> {s.category?.name || "No Category"}
                     </p>
-                    <p className="text-sm text-gray-400 flex items-center gap-2">
-                      <FiUser /> {s.client?.fullName || "No Client"} ({s.client?.regNumber || "N/A"})
+                    <p
+                      className={`text-sm flex items-center gap-2 ${
+                        isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      <FiUser /> {s.client?.fullName || "No Client"} (
+                      {s.client?.regNumber || "N/A"})
                     </p>
-                    <p className="text-sm text-gray-400 flex items-center gap-2">
+                    <p
+                      className={`text-sm flex items-center gap-2 ${
+                        isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
                       <FiCalendar /> {new Date(s.date).toLocaleDateString()}
                     </p>
                   </div>
 
                   {/* Right Section */}
-                  <div className="flex flex-col items-end space-y-2 text-right">
+                  <div className="flex flex-col items-end space-y-2 text-right w-full sm:w-auto mt-3 sm:mt-0">
                     <span
                       className={`px-3 py-1 rounded-lg text-sm font-semibold text-white ${statusColor}`}
                     >
                       {s.status}
                     </span>
-                    <span className="text-green-500 font-bold text-lg">
+                    <span className="text-blue-900 font-bold text-base sm:text-lg">
                       ₹{estimatedTotal.toFixed(2)}
                     </span>
                     <button
                       onClick={() => navigate(`/services/${s.id}`)}
-                      className="text-green-600 hover:underline text-sm font-semibold"
+                      className="text-blue-600 hover:underline text-sm font-semibold"
                     >
                       View Details →
                     </button>
@@ -310,14 +362,23 @@ export default function ServicesList() {
 function StatCard({ icon, title, value, isDark }) {
   return (
     <div
-      className={`rounded-2xl p-6 shadow-lg flex items-center justify-between ${isDark ? "bg-gray-800" : "bg-white"
-        }`}
+      className={`rounded-2xl shadow-lg border ${
+        isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+      } p-4 sm:p-6 flex items-center justify-between`}
     >
       <div>
-        <p className="text-gray-400 text-sm">{title}</p>
-        <p className="text-3xl font-bold">{value}</p>
+        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+          {title}
+        </p>
+        <p
+          className={`text-xl sm:text-2xl font-bold ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
+          {value}
+        </p>
       </div>
-      <div className="text-green-500 text-3xl">{icon}</div>
+      <div className="text-blue-900 text-xl sm:text-2xl">{icon}</div>
     </div>
   );
 }

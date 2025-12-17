@@ -16,10 +16,8 @@ import ocrRoutes from "./routes/OCRRoutes.js";
 import paymentRoutes from "./routes/payments.js";
 import userRoutes from "./routes/userRoutes.js";
 
-import dashboardRoutes from './routes/dashboardRoutes.js';
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import referralRoutes from "./routes/referral.js";
-
-
 
 //washing crm import statements
 import washingClientRoutes from "./routes/washingRoutes.js";
@@ -33,11 +31,8 @@ import carRoutes from "./routes/carRoutes.js";
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
-
 // Load environment variables
 dotenv.config();
-
-
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,7 +46,7 @@ const allowedOrigins = [
   "https://themotordesk.com",
   "https://www.themotordesk.com",
 
-  "https://tm04xn0p-5173.inc1.devtunnels.ms"
+  "https://l82ldgwl-5173.inc1.devtunnels.ms",
 ];
 
 app.use(
@@ -69,14 +64,11 @@ app.use(
   })
 );
 
-
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
   express.raw({ type: "application/json" })
 );
-
-
 
 /* -----------------------------------------------------
    🧩 Middleware Configuration
@@ -84,9 +76,6 @@ app.post(
 
 // Security HTTP headers
 app.use(helmet());
-
-
- 
 
 // Logging (Morgan)
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
@@ -118,10 +107,7 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 app.use("/uploads", express.static("uploads"));
-
 
 // bike routes
 app.use("/api/bikes", bikeRoutes);
@@ -140,19 +126,16 @@ app.use("/api/auth", authRoutes); // 🔑 Auth routes (login/register/profile)
 app.use("/api/clients", clientRoutes); // 👥 Client routes
 app.use("/api/services", serviceRoutes); // 🧰 Service routes
 
-
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
 
 app.use("/api/ocr", ocrRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/referral", referralRoutes);
-
 
 //washing crm related routes
 app.use("/api/washing-clients", washingClientRoutes);
-
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

@@ -1,13 +1,14 @@
 // server/routes/reportRoutes.js
 import express from "express";
 import {
-    getRevenueSummary,
-    getTopClients,
-    getServiceStats,
-    getInvoiceStatusSummary,
-    getFullInvoiceDetails,
-    getReportsSummary,
-    getServicesList,
+  getRevenueSummary,
+  getTopClients,
+  getServiceStats,
+  getInvoiceStatusSummary,
+  getFullInvoiceDetails,
+  getReportsSummary,
+  getServicesList,
+  getClientsDetails,
 } from "../controllers/reportController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -36,5 +37,8 @@ router.get("/all-services", protect, getServicesList); // for general frontend u
    📊 Combined Reports Summary
 ================================ */
 router.get("/summary", protect, getReportsSummary);
+
+// server/routes/reportRoutes.js
+router.get("/clients-details", protect, getClientsDetails);
 
 export default router;

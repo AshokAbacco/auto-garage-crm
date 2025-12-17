@@ -1,5 +1,5 @@
-// Layout.js (redesigned)
-import React, { useState, useContext, useEffect } from "react";
+// Layout.js
+import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   Car,
@@ -18,6 +18,7 @@ import {
   IndianRupee,
   Network,
   Crown,
+  UserRoundCog,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -39,6 +40,7 @@ export default function Layout() {
     { to: "/reference", label: "Reference", icon: Network },
     { to: "/upgrade", label: "Upgrade", icon: Crown },
   ];
+
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [user, setUser] = useState(
@@ -63,16 +65,37 @@ export default function Layout() {
     navigate("/login", { replace: true });
   };
 
+  // Color Configuration
+  const colors = {
+    // Backgrounds
+    layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
+    mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
+    elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
+
+    // Text
+    textPrimary: isDark ? "#E5E7EB" : "#0F172A",
+    textSecondary: isDark ? "#94A3B8" : "#475569",
+
+    // Brand & Accents
+    brand: isDark ? "#1E3A8A" : "#0B1D51",
+    primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
+
+    // Borders & Hover
+    border: isDark ? "#1E293B" : "#E5E7EB",
+    hoverBg: isDark ? "#1E293B" : "#F8FAFC",
+  };
+
   return (
     <div
-      className={`min-h-screen flex ${isDark ? "dark bg-gray-900" : "bg-gray-50"
-        }`}
+      className="min-h-screen flex transition-colors duration-300"
+      style={{ backgroundColor: colors.mainBg }}
     >
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
         />
       )}
 
@@ -80,44 +103,48 @@ export default function Layout() {
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
+          border-r
           ${sidebarExpanded ? "w-64" : "w-16"}
           lg:translate-x-0
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }
-          ${isDark ? "bg-gray-800" : "bg-white"}
-          shadow-xl
         `}
+        style={{
+          backgroundColor: colors.layoutBg,
+          borderColor: colors.border,
+        }}
         onMouseEnter={() => setSidebarExpanded(true)}
         onMouseLeave={() => setSidebarExpanded(false)}
       >
         <div className="flex flex-col h-screen">
           {/* Logo */}
           <div
-            className={`flex items-center justify-between h-16 px-4 border-b ${isDark ? "border-gray-700" : "border-gray-200"
-              }`}
+            className="flex items-center justify-between h-16 px-4 border-b"
+            style={{ borderColor: colors.border }}
           >
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg shadow-lg bg-gradient-to-br from-blue-500 to-purple-600">
+              <div
+                className="flex items-center justify-center w-10 h-10 rounded-lg shadow-lg"
+                style={{ backgroundColor: colors.primaryButton }}
+              >
                 <Car className="w-6 h-6 text-white" />
               </div>
               {sidebarExpanded && (
                 <div
-                  className={`font-poppins font-bold ${isDark ? "text-white" : "text-gray-800"
-                    } text-xl transition-opacity duration-300`}
+                  className="font-poppins font-bold text-xl transition-opacity duration-300"
+                  style={{ color: isDark ? "#FFFFFF" : colors.brand }}
                 >
                   {user?.companyName || "Motor Desk"}
-
                 </div>
               )}
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1 transition-colors rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-1 transition-colors rounded-lg lg:hidden"
+              style={{ color: colors.textSecondary }}
             >
-              <X
-                className={`w-5 h-5 ${isDark ? "text-gray-400" : "text-gray-500"
-                  }`}
-              />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -128,35 +155,28 @@ export default function Layout() {
                 key={item.to}
                 to={item.to}
                 onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `
-                  flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-                  ${isActive
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                    : isDark
-                      ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }
-                  `
-                }
+                className={({ isActive }) => `
+    flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
+    ${isActive ? "shadow-lg" : ""}
+  `}
+                style={({ isActive }) => ({
+                  backgroundColor: isActive
+                    ? colors.primaryButton // ✅ BLUE ALWAYS
+                    : "transparent",
+                  color: isActive ? "#FFFFFF" : colors.textSecondary,
+                })}
               >
                 {({ isActive }) => {
                   const Icon = item.icon;
                   return (
                     <>
                       <Icon
-                        className={`w-5 h-5 flex-shrink-0 ${isActive
-                            ? "text-white"
-                            : isDark
-                              ? "text-gray-400"
-                              : "text-gray-500"
-                          }`}
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{
+                          color: isActive ? "#FFFFFF" : colors.textSecondary,
+                        }}
                       />
-                      {sidebarExpanded && (
-                        <span className="transition-opacity duration-300">
-                          {item.label}
-                        </span>
-                      )}
+                      {sidebarExpanded && <span>{item.label}</span>}
                     </>
                   );
                 }}
@@ -164,26 +184,33 @@ export default function Layout() {
             ))}
           </nav>
 
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            className={`
-            w-full flex items-center justify-center
-            ${sidebarExpanded ? "gap-2 px-4" : "px-3"}
-            py-3
-            rounded-xl font-medium
-            transition-all duration-200
-            ${isDark
-                ? "text-red-400 bg-red-900/20 hover:bg-red-900/30 border border-red-800/30"
-                : "text-red-600 bg-red-50 hover:bg-red-100 border border-red-200"
-              }
-          `}
-          >
-            <LogOut
-              className={`w-5 h-5 flex-shrink-0 ${sidebarExpanded ? "mr-1" : ""
+          {/* Logout Button */}
+          <div className="p-2">
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className={`
+                w-full flex items-center justify-center
+                ${sidebarExpanded ? "gap-2 px-4" : "px-3"}
+                py-3
+                rounded-xl font-medium
+                transition-all duration-200
+                border
+                hover:bg-opacity-80
+              `}
+              style={{
+                backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
+                borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FECACA",
+                color: "#DC2626",
+              }}
+            >
+              <LogOut
+                className={`w-5 h-5 flex-shrink-0 ${
+                  sidebarExpanded ? "mr-1" : ""
                 }`}
-            />
-            {sidebarExpanded && <span>Logout</span>}
-          </button>
+              />
+              {sidebarExpanded && <span>Logout</span>}
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -191,30 +218,38 @@ export default function Layout() {
       <div className="flex flex-col w-full min-h-screen lg:ml-0">
         {/* Header */}
         <header
-          className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-            } shadow-sm border-b`}
+          className="shadow-sm border-b transition-colors duration-300"
+          style={{
+            backgroundColor: colors.layoutBg,
+            borderColor: colors.border,
+          }}
         >
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 transition-colors rounded-lg lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-2 transition-colors rounded-lg lg:hidden"
+                style={{ color: colors.textSecondary }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = colors.hoverBg)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
-                <Menu
-                  className={`w-5 h-5 ${isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
-                />
+                <Menu className="w-5 h-5" />
               </button>
+
+              {/* Mobile Logo View */}
               <div className="flex items-center gap-3 lg:hidden">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+                <div
+                  className="flex items-center justify-center w-8 h-8 rounded-lg"
+                  style={{ backgroundColor: colors.primaryButton }}
+                >
                   <Car className="w-5 h-5 text-white" />
                 </div>
-                <div
-                  className={`font-bold ${isDark ? "text-white" : "text-gray-800"
-                    }`}
-                >
+                <div className="font-bold" style={{ color: colors.brand }}>
                   {user?.companyName || "Motor Desk"}
-
                 </div>
               </div>
             </div>
@@ -223,10 +258,17 @@ export default function Layout() {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className={`p-2 rounded-lg transition-colors ${isDark
-                    ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                className="p-2 rounded-lg transition-colors"
+                style={{
+                  color: isDark ? "#FCD34D" : "#475569",
+                  border: `1px solid ${colors.border}`,
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = colors.hoverBg)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
                 {isDark ? (
                   <Sun className="w-5 h-5" />
@@ -236,14 +278,15 @@ export default function Layout() {
               </button>
 
               {/* User Profile */}
-              {/* User Profile */}
               <div className="relative">
                 <button
                   onClick={() => setOpenProfileMenu(!openProfileMenu)}
                   className="flex items-center gap-3"
                 >
-                  {/* Avatar */}
-                  <div className="w-10 h-10 overflow-hidden border border-gray-300 rounded-full dark:border-gray-600">
+                  <div
+                    className="w-10 h-10 overflow-hidden border rounded-full"
+                    style={{ borderColor: colors.border }}
+                  >
                     {user?.profileImage ? (
                       <img
                         src={user.profileImage}
@@ -252,11 +295,8 @@ export default function Layout() {
                       />
                     ) : (
                       <div
-                        className={`w-full h-full flex items-center justify-center 
-                      ${isDark
-                            ? "bg-gradient-to-br from-blue-600 to-purple-600"
-                            : "bg-gradient-to-br from-blue-500 to-purple-500"
-                          }`}
+                        className="w-full h-full flex items-center justify-center"
+                        style={{ backgroundColor: colors.primaryButton }}
                       >
                         <span className="font-medium text-white">
                           {user.username
@@ -267,15 +307,16 @@ export default function Layout() {
                     )}
                   </div>
 
-                  {/* Username & Email */}
-                  <div
-                    className={`hidden sm:block ${isDark ? "text-white" : "text-gray-800"
-                      }`}
-                  >
-                    <div className="font-medium">{user.username || "User"}</div>
+                  <div className="hidden sm:block text-left">
                     <div
-                      className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"
-                        }`}
+                      className="font-medium"
+                      style={{ color: colors.textPrimary }}
+                    >
+                      {user.username || "User"}
+                    </div>
+                    <div
+                      className="text-xs"
+                      style={{ color: colors.textSecondary }}
                     >
                       {user.email || "no-email@example.com"}
                     </div>
@@ -285,27 +326,27 @@ export default function Layout() {
                 {/* Dropdown Menu */}
                 {openProfileMenu && (
                   <div
-                    className={`
-                    absolute right-0 mt-3 w-48 rounded-xl shadow-lg border p-3 z-50
-                    ${isDark
-                        ? "bg-gray-800 border-gray-700"
-                        : "bg-white border-gray-200"
-                      }
-                  `}
+                    className="absolute right-0 mt-5 w-40 rounded-xl shadow-lg border p-1 z-50"
+                    style={{
+                      backgroundColor: colors.elementBg,
+                      borderColor: colors.border,
+                    }}
                   >
                     <button
                       onClick={() => {
                         navigate("/profile");
                         setOpenProfileMenu(false);
                       }}
-                      className={`
-                        w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
-                        ${isDark
-                          ? "text-gray-200 hover:bg-gray-700"
-                          : "text-gray-800 hover:bg-gray-100"
-                        }
-                      `}
+                      className="w-full flex items-center justify-center gap-2 text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300"
+                      style={{ color: colors.textPrimary }}
+                      onMouseEnter={(e) =>
+                        (e.target.style.backgroundColor = colors.hoverBg)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.target.style.backgroundColor = "transparent")
+                      }
                     >
+                      <UserRoundCog height={25} />
                       Profile
                     </button>
                   </div>
@@ -317,34 +358,44 @@ export default function Layout() {
 
         {/* Page content */}
         <main
-          className={`flex-1 p-6 pt-8 ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
+          className="flex-1 p-6 pt-8 transition-colors duration-300"
+          style={{ backgroundColor: colors.mainBg }}
         >
           <Outlet />
         </main>
       </div>
+
+      {/* Logout Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+        >
           <div
-            className={`w-full max-w-sm rounded-2xl p-6 shadow-xl 
-        ${isDark ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
+            className="w-full max-w-sm rounded-2xl p-6 shadow-xl border"
+            style={{
+              backgroundColor: colors.elementBg,
+              borderColor: colors.border,
+            }}
           >
-            {/* Title */}
-            <h2 className="mb-2 text-xl font-bold">Confirm Logout</h2>
-            <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+            <h2
+              className="mb-2 text-xl font-bold"
+              style={{ color: colors.textPrimary }}
+            >
+              Confirm Logout
+            </h2>
+            <p style={{ color: colors.textSecondary }}>
               Are you sure you want to logout?
             </p>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className={`
-              px-4 py-2 rounded-lg font-medium
-              ${isDark
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-200 hover:bg-gray-300"
-                  }
-            `}
+                className="px-4 py-2 rounded-lg font-medium transition-colors"
+                style={{
+                  backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
+                  color: colors.textPrimary,
+                }}
               >
                 Cancel
               </button>
@@ -354,7 +405,8 @@ export default function Layout() {
                   setShowLogoutModal(false);
                   logout();
                 }}
-                className="px-4 py-2 font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                className="px-4 py-2 font-medium text-white rounded-lg hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "#DC2626" }}
               >
                 Logout
               </button>

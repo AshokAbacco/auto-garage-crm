@@ -129,6 +129,7 @@ model Service {
   washingSubService        WashingSubService?      @relation(fields: [washingSubServiceId], references: [id])
   washingSubServiceId      Int?
   washingServiceMedias     WashingServiceMedia[]
+  serviceCostItems         ServiceCostItem[]
 }
 
 model ServiceMedia {
@@ -185,10 +186,25 @@ model Invoice {
   services        Service[]
   washingClient   WashingClient? @relation(fields: [washingClientId], references: [id])
   washingClientId Int?
-
+invoiceCostItems InvoiceCostItem[]
   @@index([status])
   @@index([paymentMode])
 }
+
+model InvoiceCostItem {
+  id        Int @id @default(autoincrement())
+  invoiceId Int
+
+  partName  String
+  partCost  Float
+  partGst   Float
+  laborCost Float?
+  laborGst  Float?
+  totalCost Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
 
 model Reminder {
   id        Int      @id @default(autoincrement())
@@ -201,6 +217,19 @@ model Reminder {
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model ServiceCostItem {
+  id        Int    @id @default(autoincrement())
+  serviceId Int
+  partName  String
+  partCost  Float
+  partGst   Float
+  laborCost Float?
+  laborGst  Float?
+  totalCost Float
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 model ServiceCategory {

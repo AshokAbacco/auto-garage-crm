@@ -228,13 +228,11 @@ export default function UpgradePlans() {
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
-        isDark
-          ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white"
-          : "bg-gradient-to-b from-white via-gray-50 to-white text-gray-900"
+        isDark ? " text-white" : " text-gray-900"
       }`}
     >
       {/* Header Section */}
-      <section className="relative z-10 px-4 sm:px-6 py-12">
+      <section className="relative z-10 px-4 sm:px-6  py-12">
         <div className="max-w-7xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 backdrop-blur-sm">
             <Sparkles className="w-4 h-4 text-violet-400" />
@@ -371,7 +369,7 @@ export default function UpgradePlans() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="relative z-10 px-4 sm:px-6 pb-20 pt-12">
+      <section className="relative z-10 px-4 sm:px-1 pb-20 pt-12">
         <div
           className={`max-w-7xl mx-auto gap-8 ${
             activePlans.length === 1
@@ -544,43 +542,85 @@ export default function UpgradePlans() {
 
       {/* Trust Indicators */}
       <section
-        className={`relative z-10 px-4 sm:px-6 py-12 ${
-          isDark ? "bg-gray-900/50" : "bg-gray-50"
+        className={`relative z-10 px-4 sm:px-1 py-12 ${
+          isDark ? "" : "bg-gray-50"
         }`}
       >
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { icon: Shield, label: "Secure Payment", desc: "Bank-level encryption" },
-              { icon: Clock, label: "Instant Access", desc: "Start immediately" },
-              { icon: TrendingUp, label: "Cancel Anytime", desc: "No commitments" },
-              { icon: Star, label: "24/7 Support", desc: "Always here to help" },
+              {
+                icon: Shield,
+                label: "Secure Payment",
+                desc: "Bank-level encryption",
+              },
+              {
+                icon: Clock,
+                label: "Instant Access",
+                desc: "Start immediately",
+              },
+              {
+                icon: TrendingUp,
+                label: "Cancel Anytime",
+                desc: "No commitments",
+              },
+              {
+                icon: Star,
+                label: "24/7 Support",
+                desc: "Always here to help",
+              },
             ].map((item, index) => {
               const Icon = item.icon;
               return (
-                <div key={index} className="text-center space-y-3">
+                <div
+                  key={index}
+                  className="relative group rounded-2xl p-[1px] transition-all duration-300 hover:shadow-lg"
+                  style={{
+                    // Shiny Gradient Border
+                    background: isDark
+                      ? "linear-gradient(135deg, #1E3A8A, #3B82F6, #8B5CF6)" // Dark: Deep Blue -> Purple
+                      : "linear-gradient(135deg, #E0E7FF, #6366F1, #E0E7FF)", // Light: Soft Violet Shine
+                  }}
+                >
+                  {/* Inner Card Content */}
                   <div
-                    className={`inline-flex p-4 rounded-2xl ${
-                      isDark ? "bg-violet-500/10" : "bg-violet-50"
-                    }`}
+                    className="relative h-full w-full rounded-2xl p-6 text-center space-y-3"
+                    style={{
+                      backgroundColor: isDark ? "#020D36" : "#FFFFFF", // Card Background
+                    }}
                   >
-                    <Icon className="w-8 h-8 text-violet-500" />
-                  </div>
-                  <div>
-                    <p
-                      className={`font-semibold mb-1 ${
-                        isDark ? "text-white" : "text-gray-900"
-                      }`}
+                    {/* Icon Container */}
+                    <div
+                      className="inline-flex p-4 rounded-2xl transition-transform duration-300 group-hover:scale-110"
+                      style={{
+                        backgroundColor: isDark
+                          ? "rgba(139, 92, 246, 0.1)" // Dark Mode Icon BG
+                          : "#F5F3FF", // Light Mode Icon BG
+                      }}
                     >
-                      {item.label}
-                    </p>
-                    <p
-                      className={`text-sm ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      {item.desc}
-                    </p>
+                      <Icon
+                        className="w-8 h-8"
+                        style={{
+                          color: isDark ? "#8B5CF6" : "#7C3AED", // Violet Icon Color
+                        }}
+                      />
+                    </div>
+
+                    {/* Text Content */}
+                    <div>
+                      <p
+                        className="font-semibold mb-1"
+                        style={{ color: isDark ? "#E5E7EB" : "#0F172A" }}
+                      >
+                        {item.label}
+                      </p>
+                      <p
+                        className="text-sm"
+                        style={{ color: isDark ? "#94A3B8" : "#475569" }}
+                      >
+                        {item.desc}
+                      </p>
+                    </div>
                   </div>
                 </div>
               );
@@ -598,10 +638,9 @@ export default function UpgradePlans() {
         planType={planType}
         onClose={() => setShowModal(false)}
         onComplete={handlePaymentComplete}
-        userData={user}            // <-- added
-        isUpgradePage={true}       // <-- added flag
+        userData={user} // <-- added
+        isUpgradePage={true} // <-- added flag
       />
-
     </div>
   );
 }

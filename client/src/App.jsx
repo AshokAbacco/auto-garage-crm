@@ -79,6 +79,7 @@ import ServiceDetails from "./bikePages/services/ServiceDetails.jsx";
 import AddBilling from "./bikePages/Billing/AddBilling.jsx";
 import InvoiceBill from "./bikePages/Billing/InvoiceBill.jsx";
 import BikeProfile from "./components/BikeProfile.jsx";
+import ProformaInvoice from "./pages/billing/ProformaInvoice.jsx";
 
 function App() {
   return (
@@ -106,7 +107,6 @@ function App() {
         <Route path="/bike-register" element={<BikeRegister />} />
         <Route path="/washing-register" element={<WashRegister />} />
 
-
         {/* Protected routes */}
         <Route
           element={
@@ -129,7 +129,8 @@ function App() {
           <Route path="/services/:id/edit" element={<ServiceForm />} />
           <Route path="/billing" element={<BillingList />} />
           <Route path="/billing/new" element={<BillingForm />} />
-          <Route path="/billing/:id/edit" element={<BillingForm />} />// Edit billing
+          <Route path="/billing/:id/edit" element={<BillingForm />} />
+          // Edit billing
           <Route path="/billing/:id" element={<Invoice />} />
           <Route path="/reminders" element={<RemindersList />} />
           <Route path="/reports" element={<Reports />} />
@@ -139,8 +140,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/reference" element={<Reference />} />
           <Route path="/upgrade" element={<UpgradePlans />} />
+          <Route path="/billing/preview" element={<ProformaInvoice />} />
         </Route>
-
 
         {/* Bike Garage CRM Routes */}
         <Route path="/" element={<BikeLayoutPage />}>
@@ -166,8 +167,7 @@ function App() {
           <Route path="/bill/new" element={<AddBilling />} />
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
-      </Route>
-       
+        </Route>
 
         {/* Washing CRM Routes */}
         <Route path="/" element={<WashingLayout />}>
@@ -178,7 +178,10 @@ function App() {
           <Route path="/washing-reports" element={<Repor />} />
           <Route path="/washing-reference" element={<Referenc />} />
           <Route path="/washing-upgrade" element={<Upgra />} />
-          <Route path="/washing-services/sub-services" element={<Subservice />} />
+          <Route
+            path="/washing-services/sub-services"
+            element={<Subservice />}
+          />
           <Route path="/washing-alerts" element={<SMSalert />} />
           <Route path="/addclient" element={<Newclient />} />
           <Route path="/add-service" element={<NewService />} />

@@ -28,27 +28,30 @@ enum ServiceStatus {
 }
 
 model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  username    String?   @unique
-  password    String
-  role        String    @default("user")
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  username String? @unique
+  password String
+
+  // OWNER only
+  role String @default("user")
+
   allowedCrms CrmType[] @default([])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   profileImage String?
   phone        String?
   companyName  String?
 
-  //⭐⭐ Subscription fields
+  // Subscription (OWNER only)
   plan       PlanType  @default(BASIC)
   planExpiry DateTime?
 
-  //⭐⭐ Link to Payment (subscriptions)
   payments Payment[]
 
-  // Referral System
+  // Referral System (OWNER only)
   myReferralCode   String  @unique
   referredByCode   String?
   referredByUserId Int?
@@ -56,6 +59,7 @@ model User {
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
+  // Business relations
   clients        Client[]
   invoices       Invoice[]
   reminders      Reminder[]
@@ -63,6 +67,9 @@ model User {
   bikes          Bike[]
   bikeReminders  BikeReminder[]
   washingClients WashingClient[]
+
+  // ✅ Staff
+  staffMembers CarStaff[]
 }
 
 model Client {
@@ -181,12 +188,13 @@ model Invoice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  services        Service[]
-  washingClient   WashingClient? @relation(fields: [washingClientId], references: [id])
-  washingClientId Int?
-invoiceCostItems InvoiceCostItem[]
+  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  services         Service[]
+  washingClient    WashingClient?    @relation(fields: [washingClientId], references: [id])
+  washingClientId  Int?
+  invoiceCostItems InvoiceCostItem[]
+
   @@index([status])
   @@index([paymentMode])
 }
@@ -204,7 +212,6 @@ model InvoiceCostItem {
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
-
 
 model Reminder {
   id        Int      @id @default(autoincrement())
@@ -550,6 +557,26 @@ model BikeReminder {
   remindTime String?
 
   isDone Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CarStaff {
+  id Int @id @default(autoincrement())
+
+  email    String @unique
+  password String
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  name     String?
+  phone    String?
+  isActive Boolean @default(true)
+
+  baseSalary Float?
+  joinDate   DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

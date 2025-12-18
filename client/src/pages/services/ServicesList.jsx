@@ -114,8 +114,8 @@ export default function ServicesList() {
     );
 
   return (
-    <div className={`min-h-screen ${isDark ? "" : "bg-white"}`}>
-      <div className="lg: max-w-6xl  mx-auto px-4 sm:px-1 lg:px-8 py-6 space-y-6">
+    <div className={`min-h-screen ${isDark ? "" : ""}`}>
+      <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
         {/* Header */}
         <div
           className={`rounded-2xl shadow-lg border ${

@@ -174,7 +174,7 @@ export default function BillingList() {
 
   return (
     <div className={`min-h-screen`}>
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
         {/* Compact Header */}
         <div
           className={`rounded-2xl shadow-lg border ${

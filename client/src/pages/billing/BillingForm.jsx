@@ -151,15 +151,24 @@ export default function BillingForm() {
   const preSelectedClientId = location.state?.clientId || "";
   const serviceData = location.state?.serviceData || null;
   const [invoiceData, setInvoiceData] = useState(null);
+  const restoreDraft = location.state?.restoreForm;
+  const restoredInvoiceDraft = location.state?.invoiceDraft;
+  const autoSubmit = location.state?.autoSubmit;
 
-  const [form, setForm] = useState(() =>
-    getInitialFormState(
+
+  const [form, setForm] = useState(() => {
+    if (restoreDraft && restoredInvoiceDraft) {
+      return restoredInvoiceDraft;
+    }
+
+    return getInitialFormState(
       isEditMode,
       preSelectedClientId,
       serviceData,
       invoiceData
-    )
-  );
+    );
+  });
+
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -734,7 +743,9 @@ export default function BillingForm() {
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span>Items Total:</span>
-                    <span>₹{calculateTotalFromItems().toFixed(2)}</span>
+                    <span className="ml-2">
+                      ₹{calculateTotalFromItems().toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Discount:</span>
@@ -780,22 +791,58 @@ export default function BillingForm() {
             >
               Cancel
             </button>
+
+            {/* 🔍 PREVIEW BUTTON */}
+            <button
+              type="button"
+              onClick={() => {
+                const selectedClient = clients.find(
+                  (c) => String(c.id) === String(form.customerId)
+                );
+
+                const user = JSON.parse(localStorage.getItem("user"));
+
+                navigate("/billing/preview", {
+                  state: {
+                    invoiceDraft: {
+                      ...form,
+
+                      // totals
+                      grandTotal: Number(form.total),
+                      discount: Number(form.discounts),
+
+                      // client
+                      client: selectedClient,
+
+                      // ✅ GARAGE OWNER (USER)
+                      userProfile: {
+                        companyName: user?.companyName,
+                        username: user?.username,
+                        email: user?.email,
+                        phone: user?.phone,
+                      },
+
+                      costItems: form.costItems || [],
+                    },
+                  },
+                });
+              }}
+              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              Preview Invoice
+            </button>
+
+            {/* ✅ FINAL SUBMIT */}
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <FiSave />
-                  {isEditMode ? "Update Invoice" : "Create Invoice"}
-                </>
-              )}
+              {loading
+                ? "Processing..."
+                : isEditMode
+                ? "Update Invoice"
+                : "Create Invoice"}
             </button>
           </div>
         </form>

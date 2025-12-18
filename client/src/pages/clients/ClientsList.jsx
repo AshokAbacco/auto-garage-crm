@@ -189,7 +189,7 @@ export default function ClientsList() {
       className="min-h-screen lg:ml-16 transition-colors duration-300"
       style={{ backgroundColor: colors.mainBg }}
     >
-      <div className="p-4 mx-auto space-y-6 max-w-7xl sm:p-1 lg:p-8">
+      <div className="p-4 mx-auto space-y-6 max-w-7xl sm:p-1 lg:p-2">
         {/* Toast Notifications */}
         <div className="fixed z-50 top-4 right-4">
           <Toaster

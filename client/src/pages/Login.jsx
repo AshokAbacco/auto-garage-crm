@@ -1,3 +1,4 @@
+//login.jsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   Car,
@@ -195,55 +196,84 @@ export default function ModernLogin() {
     if (error) setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+ const handleSubmit = async (e) => {
+   e.preventDefault();
+   setIsLoading(true);
+   setError("");
 
-    if (!formData.identifier || !formData.password) {
-      setError("Please fill in all fields");
-      setIsLoading(false);
-      return;
-    }
+   if (!formData.identifier || !formData.password) {
+     setError("Please fill in all fields");
+     setIsLoading(false);
+     return;
+   }
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            identifier: formData.identifier, // email or username
-            password: formData.password,
-            crmType: crmType,
-          }),
-        }
-      );
+   try {
+     /**
+      * =========================================
+      * STAFF vs OWNER LOGIN DETECTION
+      * =========================================
+      * Rule:
+      * - Staff → email only (CarStaff table)
+      * - Owner → email OR username (User table)
+      */
+     const isStaffLogin = formData.identifier.includes("@");
 
-      const data = await response.json();
+     const loginUrl = isStaffLogin
+       ? `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`
+       : `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
 
-      if (!response.ok) {
-        setError(data.message || "Invalid login");
-        setIsLoading(false);
-        return;
-      }
+     const payload = isStaffLogin
+       ? {
+           email: formData.identifier,
+           password: formData.password,
+         }
+       : {
+           identifier: formData.identifier,
+           password: formData.password,
+           crmType: crmType,
+         };
 
-      // SAVE TOKEN + USER
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("crmType", crmType);
+     const response = await fetch(loginUrl, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+       },
+       body: JSON.stringify(payload),
+     });
 
-      // REDIRECT TO DASHBOARD
-      window.location.href = `/${crmType}-dashboard`;
-    } catch (err) {
-      console.error(err);
-      setError("Server error. Try again later.");
-    }
+     const data = await response.json();
 
-    setIsLoading(false);
-  };
+     if (!response.ok) {
+       setError(data.message || "Invalid login");
+       setIsLoading(false);
+       return;
+     }
+
+     /**
+      * =========================================
+      * SAVE TOKEN + USER (SINGLE SOURCE OF TRUTH)
+      * =========================================
+      */
+     localStorage.setItem("token", data.token);
+     localStorage.setItem("user", JSON.stringify(data.user));
+     localStorage.setItem("crmType", crmType);
+
+     /**
+      * =========================================
+      * REDIRECT
+      * =========================================
+      * Staff and Owner use same dashboard,
+      * backend restricts data automatically
+      */
+     window.location.href = `/${crmType}-dashboard`;
+   } catch (err) {
+     console.error("Login error:", err);
+     setError("Server error. Try again later.");
+   }
+
+   setIsLoading(false);
+ };
+
 
   const IconComponent = currentConfig.icon;
 

@@ -16,7 +16,9 @@ import ocrRoutes from "./routes/OCRRoutes.js";
 import paymentRoutes from "./routes/payments.js";
 import userRoutes from "./routes/userRoutes.js";
 
-import dashboardRoutes from "./routes/dashboardRoutes.js";
+// import dashboardRoutes from "./routes/dashboardRoutes.js";
+import carDashboardRoutes from "./routes/carDashboardRoutes.js";
+
 import referralRoutes from "./routes/referral.js";
 
 //washing crm import statements
@@ -26,8 +28,10 @@ import bikeRoutes from "./routes/bikeRoutes.js";
 import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
 import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
+import carStaffRoutes from "./routes/carStaffRoutes.js";
 
 import carRoutes from "./routes/carRoutes.js";
+import staffAuthRoutes from "./routes/staffAuthRoutes.js"
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -118,6 +122,9 @@ app.use("/api/bike-reminders", bikeReminderRoutes);
 //car company names and models
 app.use("/api/cars", carRoutes);
 
+app.use("/api/staff", carStaffRoutes);
+app.use("/api/staff-auth", staffAuthRoutes);
+
 /* -----------------------------------------------------
    🚀 Mount API Routes
 ----------------------------------------------------- */
@@ -131,7 +138,8 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
 
 app.use("/api/ocr", ocrRoutes);
-app.use("/api/dashboard", dashboardRoutes);
+// app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/dashboard", carDashboardRoutes);
 app.use("/api/referral", referralRoutes);
 
 //washing crm related routes

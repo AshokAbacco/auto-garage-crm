@@ -24,11 +24,11 @@ router.get("/", getWashingServices);
 router.get("/client/:clientId", getWashingServicesByClient);
 router.get("/:id", getWashingServiceById);
 
-// JSON ONLY — no multer
-router.post("/create", createWashingService);
 router.post("/", createWashingService);
+router.post("/create", createWashingService);
 
 router.put("/:id", updateWashingService);
- 
+router.delete("/:id", deleteWashingService); // ✅ THIS FIXES DELETE
+
 
 export default router;

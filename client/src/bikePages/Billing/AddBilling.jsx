@@ -462,14 +462,7 @@ export default function AddBilling() {
                 isDark={isDark}
                 placeholder="0"
               />
-              <Input
-                label="Extra Tax"
-                type="number"
-                value={form.tax}
-                onChange={(e) => setForm({ ...form, tax: e.target.value })}
-                isDark={isDark}
-                placeholder="0.00"
-              />
+              
               <Input
                 label="Discount"
                 type="number"

@@ -434,6 +434,75 @@ model BikeReminder {
   updatedAt DateTime @updatedAt
 }
 
+model BikeOcrRecord {
+  id Int @id @default(autoincrement())
+
+  /**
+   * ================= RELATIONS =================
+   */
+  bikeClientId Int
+  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /**
+   * ================= OCR DATA =================
+   */
+  rawText    String // PostgreSQL TEXT (unlimited)
+  parsedData Json
+  confidence Float?
+  imageUrl   String?
+
+  /**
+   * ================= META =================
+   */
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bikeClientId])
+  @@index([userId])
+}
+
+model BikeStaff {
+  id Int @id @default(autoincrement())
+
+  userId Int
+
+  name        String
+  role        String
+  baseSalary  Int
+  bonus       Int
+  deductions  Int
+  leaves      Int
+  joiningDate DateTime
+
+  status   String    @default("pending") // paid | pending
+  lastPaid DateTime?
+
+  salaryHistory BikeSalaryHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BikeSalaryHistory {
+  id Int @id @default(autoincrement())
+
+  bikeStaffId Int
+  staff       BikeStaff @relation(fields: [bikeStaffId], references: [id], onDelete: Cascade)
+
+  month      String // "Dec 2025"
+  baseSalary Int
+  bonus      Int
+  deductions Int
+  netSalary  Int
+
+  paidDate DateTime
+
+  createdAt DateTime @default(now())
+}
+
 // Washing CRM client schema
 model WashingClient {
   id               Int      @id @default(autoincrement())

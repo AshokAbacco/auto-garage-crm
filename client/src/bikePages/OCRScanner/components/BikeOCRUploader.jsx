@@ -70,11 +70,16 @@ const OCRUploader = ({
             <FiUpload className="text-white" size={32} />
           </div>
 
-          <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">
+          <h3
+            className={`text-xl font-bold mb-2 ${
+              isDark ? "text-gray-100" : "text-gray-800"
+            }`}
+          >
             Upload RC Document
           </h3>
 
-          <p className="text-gray-500 mb-4">(JPG / PNG)</p>
+
+          <p className="text-gray-400 mb-4">(JPG / PNG)</p>
 
           {/* Upload Button */}
           <button

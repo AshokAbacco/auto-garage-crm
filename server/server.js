@@ -30,6 +30,9 @@ import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
 import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
+import bikeStaffSalaryRoutes from "./routes/BikestaffSalaryRoutes.js";
+import { protect } from "./middleware/authMiddleware.js";
+
 
 import carRoutes from "./routes/carRoutes.js";
 
@@ -131,7 +134,7 @@ app.use("/api/bike-services", bikeServiceRoutes);
 app.use("/api/bike-invoices", bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
 app.use("/api/bike-ocr", bikeOCRRoutes);
-
+app.use("/api/bike-staff-salary", protect, bikeStaffSalaryRoutes);
 //car company names and models
 app.use("/api/cars", carRoutes);
 

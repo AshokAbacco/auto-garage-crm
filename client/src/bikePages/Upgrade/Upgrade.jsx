@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
-import PaymentModal from "../PaymentModal";
+import PaymentModal from "../../payment/PaymentModal.jsx";
 import {
   Zap,
   Star,
@@ -178,6 +178,7 @@ export default function UpgradePlans() {
       badge: "POPULAR",
       features: [
         "Unlimited uploads",
+        "High-accuracy OCR",
         "Priority support",
         "Export CSV, PDF",
         "SMS/WhatsApp Alerts",
@@ -187,9 +188,8 @@ export default function UpgradePlans() {
   ];
 
   // Get active plans based on selected type
-  let activePlans = carPlans;
-  if (planType === "bike") activePlans = bikePlans;
-  if (planType === "washing") activePlans = washingPlans;
+  let activePlans = bikePlans;
+ 
 
   const handlePlanSelect = (plan) => {
     // Check if trying to select current plan
@@ -329,18 +329,7 @@ export default function UpgradePlans() {
 
           {/* Plan Type Selector */}
           <div className="flex justify-center gap-4 mt-6">
-            <button
-              onClick={() => setPlanType("car")}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                planType === "car"
-                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg"
-                  : isDark
-                  ? "bg-gray-800 text-gray-300 border border-gray-700"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Car Plans
-            </button>
+            
             <button
               onClick={() => setPlanType("bike")}
               className={`px-6 py-3 rounded-xl font-semibold transition-all ${
@@ -353,18 +342,7 @@ export default function UpgradePlans() {
             >
               Bike Plans
             </button>
-            <button
-              onClick={() => setPlanType("washing")}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                planType === "washing"
-                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg"
-                  : isDark
-                  ? "bg-gray-800 text-gray-300 border border-gray-700"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Washing Plans
-            </button>
+           
           </div>
         </div>
       </section>

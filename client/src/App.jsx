@@ -83,14 +83,11 @@ import ClientsDetails from "./washPages/client/ClientsDetails.jsx";
 import WServiceDetails from "./washPages/services/WServiceDetails.jsx";
 import BillingInvoice from "./washPages/billing/BillingInvoice.jsx"
 import Billing from "./washPages/billing/Billing.jsx";
-
-
-
-
-
-
-
-
+import Upgrade from "./bikePages/Upgrade/Upgrade.jsx";
+import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
+import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
+import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
+import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
 function App() {
   return (
     <ThemeProvider>
@@ -164,8 +161,8 @@ function App() {
           <Route path="bike-reports" element={<Report />} />
           <Route path="bike-plan" element={<Plans />} />
           <Route path="bike-reference" element={<Reference />} />
-          <Route path="bike-upgrade" element={<UpgradePlans />} />
-
+          {/* <Route path="bike-upgrade" element={<UpgradePlans />} /> */}
+          <Route path="/bike-ocr-scanner" element={<OCRScanner />} />
           <Route path="/editclient/:id" element={<AddClients />} />
           <Route path="/editclient/new" element={<AddClients />} />
           <Route path="/bikes/:id" element={<BikeDetail />} />
@@ -175,7 +172,19 @@ function App() {
           <Route path="/bill/new" element={<AddBilling />} />
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
+          <Route path="/bike-plans" element={<Upgrade />} />
+          {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
+          {/* ================= SALARY MODULE ================= */}
+        <Route path="/salary-login" element={<SalaryLogin />} />
+        <Route path="/salary-register" element={<SalaryRegister />} />
+
+        <Route element={<SalaryProtectedRoute />}>
+          <Route path="/salary-manage" element={<SalaryPage />} />
         </Route>
+        </Route>
+
+          
+
 
 
         {/* ================= WASHING CRM ================= */}
@@ -189,14 +198,9 @@ function App() {
           <Route path="washing-upgrade" element={<Upgra />} />
           <Route path="washing-alerts" element={<SMSalert />} />
           <Route path="washing-plan" element={<Plan />} />
-
-
           <Route path="/wservices-details/:id" element={<WServiceDetails />} />
           <Route path="/add-service" element={<AddNewServiceForm />} />
           <Route path="/add-service/:id" element={<AddNewServiceForm />} />
-
-
-
           <Route path="washProfile" element={<WashingProfile />} />
           <Route path="/client-details/:id" element={<ClientsDetails />} />
           <Route path="addclient" element={<Newclient />} />

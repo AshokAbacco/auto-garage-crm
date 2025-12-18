@@ -56,21 +56,9 @@ export const protect = async (req, res, next) => {
 
         const token = authHeader.split(" ")[1];
 
-        // ✅ 2. Catch empty / invalid token early (prevents jwt malformed)
-        if (!token || token === "null" || token === "undefined") {
-            return res.status(401).json({ message: "Token missing or invalid" });
-        }
-
-        // ✅ 3. Verify JWT secret exists (VERY important)
-        if (!process.env.JWT_SECRET) {
-            console.error("❌ JWT_SECRET is not defined");
-            return res.status(500).json({ message: "Server configuration error" });
-        }
-
-        // ✅ 4. Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // ✅ 5. Verify user still exists
+        // ✅ Ensure user still exists
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
             select: {
@@ -83,24 +71,25 @@ export const protect = async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(401).json({ message: "User no longer exists" });
+            return res.status(401).json({
+                message: "User not found or deleted",
+            });
         }
 
-        // ✅ 6. Attach user to request
         req.user = user;
         next();
     } catch (error) {
-        console.error("❌ Auth Middleware Error:", error.message);
-
-        // ✅ Cleaner JWT-specific errors
-        if (error.name === "JsonWebTokenError") {
-            return res.status(401).json({ message: "Invalid token" });
-        }
+        console.error("❌ Auth Middleware Error:", error);
 
         if (error.name === "TokenExpiredError") {
-            return res.status(401).json({ message: "Token expired" });
+            return res.status(401).json({
+                message: "Token expired, please login again",
+                expiredAt: error.expiredAt,
+            });
         }
 
-        res.status(401).json({ message: "Not authorized" });
+        return res.status(401).json({
+            message: "Invalid token",
+        });
     }
 };

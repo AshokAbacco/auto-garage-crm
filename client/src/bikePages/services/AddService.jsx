@@ -47,6 +47,11 @@ export default function AddService() {
     laborGst: "",
     status: "Pending",
   });
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [subServiceQuery, setSubServiceQuery] = useState("");
+
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showSubServiceDropdown, setShowSubServiceDropdown] = useState(false);
 
   /* FETCH BIKES */
   useEffect(() => {
@@ -268,64 +273,162 @@ export default function AddService() {
               />
             </div>
 
-            {/* Category & Sub Service */}
-            <div className="grid md:grid-cols-2 gap-6 animate-slide-down" style={{ animationDelay: "150ms" }}>
-              <div className="space-y-2">
-                <label className={`flex items-center gap-2 text-sm font-semibold ${
-                  isDark ? "text-gray-300" : "text-gray-700"
-                }`}>
-                  <Tag size={16} className="text-purple-500" />
-                  Category *
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm({ ...form, category: e.target.value, subService: "" })
-                  }
-                  disabled={!form.client || categoryLoading}
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    isDark
-                      ? "bg-gray-700 border-gray-600 text-white disabled:bg-gray-800 disabled:text-gray-500"
-                      : "bg-gray-50 border-gray-200 text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
-                  }`}
-                >
-                  <option value="">
-                    {categoryLoading ? "Loading..." : "Select category..."}
-                  </option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {/* Category & Sub Service */}
+<div
+  className="grid md:grid-cols-2 gap-6 animate-slide-down"
+  style={{ animationDelay: "150ms" }}
+>
+  {/* ================= CATEGORY ================= */}
+  <div className="space-y-2 relative">
+    <label
+      className={`flex items-center gap-2 text-sm font-semibold ${
+        isDark ? "text-gray-300" : "text-gray-700"
+      }`}
+    >
+      <Tag size={16} className="text-purple-500" />
+      Category *
+    </label>
 
-              <div className="space-y-2">
-                <label className={`flex items-center gap-2 text-sm font-semibold ${
-                  isDark ? "text-gray-300" : "text-gray-700"
-                }`}>
-                  <Wrench size={16} className="text-orange-500" />
-                  Sub Service *
-                </label>
-                <select
-                  value={form.subService}
-                  onChange={(e) => setForm({ ...form, subService: e.target.value })}
-                  disabled={!form.category}
-                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    isDark
-                      ? "bg-gray-700 border-gray-600 text-white disabled:bg-gray-800 disabled:text-gray-500"
-                      : "bg-gray-50 border-gray-200 text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
-                  }`}
-                >
-                  <option value="">Select sub service...</option>
-                  {subServices.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+    <input
+      type="text"
+      value={categoryQuery}
+      disabled={!form.client || categoryLoading}
+      placeholder="Type category (eg: Brake)"
+      onFocus={() => setShowCategoryDropdown(true)}
+      onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 150)}
+      onChange={(e) => {
+        setCategoryQuery(e.target.value);
+        setForm({
+          ...form,
+          category: "",
+          subService: "",
+        });
+        setShowCategoryDropdown(true);
+      }}
+      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+        isDark
+          ? "bg-gray-700 border-gray-600 text-white disabled:bg-gray-800"
+          : "bg-gray-50 border-gray-200 text-gray-900 disabled:bg-gray-100"
+      }`}
+    />
+
+    {/* Category Dropdown */}
+    {showCategoryDropdown && categoryQuery && (
+      <div
+        className={`absolute z-20 w-full mt-1 rounded-xl border max-h-48 overflow-auto ${
+          isDark
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
+        {categories
+          .filter((c) =>
+            c.name.toLowerCase().includes(categoryQuery.toLowerCase())
+          )
+          .map((c) => (
+            <div
+              key={c.id}
+              onClick={() => {
+                setCategoryQuery(c.name);
+                setForm({
+                  ...form,
+                  category: c.id,
+                  subService: "",
+                });
+                setShowCategoryDropdown(false);
+              }}
+              className="px-4 py-2 cursor-pointer hover:bg-green-500 hover:text-white"
+            >
+              {c.name}
             </div>
+          ))}
+
+        {/* Custom Category */}
+        <div
+          onClick={() => {
+            setForm({ ...form, category: categoryQuery });
+            setShowCategoryDropdown(false);
+          }}
+          className="px-4 py-2 text-sm text-green-600 cursor-pointer hover:bg-green-50"
+        >
+          ➕ Use “{categoryQuery}”
+        </div>
+      </div>
+    )}
+  </div>
+
+  {/* ================= SUB SERVICE ================= */}
+  <div className="space-y-2 relative">
+    <label
+      className={`flex items-center gap-2 text-sm font-semibold ${
+        isDark ? "text-gray-300" : "text-gray-700"
+      }`}
+    >
+      <Wrench size={16} className="text-orange-500" />
+      Sub Service *
+    </label>
+
+    <input
+      type="text"
+      value={subServiceQuery}
+      disabled={!form.category}
+      placeholder="Type sub service (eg: Oil Change)"
+      onFocus={() => setShowSubServiceDropdown(true)}
+      onBlur={() => setTimeout(() => setShowSubServiceDropdown(false), 150)}
+      onChange={(e) => {
+        setSubServiceQuery(e.target.value);
+        setForm({ ...form, subService: "" });
+        setShowSubServiceDropdown(true);
+      }}
+      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+        isDark
+          ? "bg-gray-700 border-gray-600 text-white disabled:bg-gray-800"
+          : "bg-gray-50 border-gray-200 text-gray-900 disabled:bg-gray-100"
+      }`}
+    />
+
+    {/* Sub Service Dropdown */}
+    {showSubServiceDropdown && subServiceQuery && (
+      <div
+        className={`absolute z-20 w-full mt-1 rounded-xl border max-h-48 overflow-auto ${
+          isDark
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
+        {subServices
+          .filter((s) =>
+            s.name.toLowerCase().includes(subServiceQuery.toLowerCase())
+          )
+          .map((s) => (
+            <div
+              key={s.id}
+              onClick={() => {
+                setSubServiceQuery(s.name);
+                setForm({ ...form, subService: s.id });
+                setShowSubServiceDropdown(false);
+              }}
+              className="px-4 py-2 cursor-pointer hover:bg-green-500 hover:text-white"
+            >
+              {s.name}
+            </div>
+          ))}
+
+        {/* Custom Sub Service */}
+        <div
+          onClick={() => {
+            setForm({ ...form, subService: subServiceQuery });
+            setShowSubServiceDropdown(false);
+          }}
+          className="px-4 py-2 text-sm text-green-600 cursor-pointer hover:bg-green-50"
+        >
+          ➕ Use “{subServiceQuery}”
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
 
             {/* Cost Breakdown */}
             <div className={`p-6 rounded-xl border-2 space-y-4 animate-slide-down ${

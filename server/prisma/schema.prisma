@@ -61,8 +61,8 @@ model User {
   ocrs           OcrRecord[]
   bikes          Bike[]
   bikeReminders  BikeReminder[]
-  bikeOcrRecords BikeOcrRecord[]
   washingClients WashingClient[]
+  bikeOcrRecords BikeOcrRecord[]
 }
 
 model Client {
@@ -76,8 +76,6 @@ model Client {
   vehicleYear  Int
   regNumber    String
   vin          String?
-  fuel         String?
-  seats        Int?
   carImage     String?
   adImage      String?
   staffPerson  String?
@@ -434,6 +432,23 @@ model BikeReminder {
   updatedAt DateTime @updatedAt
 }
 
+model BikeOcrRecord {
+  id           Int      @id @default(autoincrement())
+  bikeClientId Int
+  bike         Bike     @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawText      String // PostgreSQL TEXT (unlimited)
+  parsedData   Json
+  confidence   Float?
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([bikeClientId])
+  @@index([userId])
+}
+
 // Washing CRM client schema
 model WashingClient {
   id               Int      @id @default(autoincrement())
@@ -451,6 +466,7 @@ model WashingClient {
 
   user            User?            @relation(fields: [userId], references: [id])
   washingServices WashingService[]
+  washBillings    WashBilling[]
   invoices        Invoice[]
 }
 
@@ -501,7 +517,7 @@ model WashingService {
   status ServiceStatus @default(PENDING)
 
   clientId Int
-  client   WashingClient @relation(fields: [clientId], references: [id])
+  client   WashingClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   categoryId Int
   category   WashingServiceCategory @relation(fields: [categoryId], references: [id])
@@ -517,8 +533,54 @@ model WashingService {
 
   media WashingServiceMedia[]
 
+  /**
+   * 🔗 Invoice link via JOIN table
+   */
+  billings WashBillingService[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("washing_services")
+}
+
+model WashBilling {
+  id            Int    @id @default(autoincrement())
+  invoiceNumber String @unique
+
+  washingClientId Int
+  userId          Int
+
+  partsCost Decimal @default(0) @db.Decimal(10, 2)
+  partsGst  Decimal @default(0) @db.Decimal(10, 2)
+
+  grandTotal Decimal @db.Decimal(10, 2)
+
+  paymentMode String?
+  status      String    @default("PENDING")
+  paidAt      DateTime?
+  dueDate     DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  washingClient WashingClient        @relation(fields: [washingClientId], references: [id])
+  services      WashBillingService[]
+
+  @@index([washingClientId])
+  @@map("wash_billings")
+}
+
+model WashBillingService {
+  id Int @id @default(autoincrement())
+
+  washBillingId    Int
+  washingServiceId Int
+
+  washBilling    WashBilling    @relation(fields: [washBillingId], references: [id], onDelete: Cascade)
+  washingService WashingService @relation(fields: [washingServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([washBillingId, washingServiceId])
+  @@map("wash_billing_services")
 }

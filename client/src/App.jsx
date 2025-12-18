@@ -13,6 +13,7 @@ import Login from "./pages/Login.jsx";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
+
 /* App pages */
 import Dashboard from "./pages/Dashboard.jsx";
 import ClientsList from "./pages/clients/ClientsList.jsx";
@@ -216,10 +217,8 @@ function App() {
             element={<NewInvoice />}
           />
 
-          <Route
-            path="/billing/create-invoice/:serviceId"
-            element={<NewInvoice />}
-          />
+          <Route path="/billing/create-invoice/:serviceId" element={<NewInvoice />} />
+
         </Route>
 
         {/* ================= FALLBACK ================= */}

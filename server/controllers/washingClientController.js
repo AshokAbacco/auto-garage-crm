@@ -128,12 +128,31 @@ export const deleteWashingClient = async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    await prisma.washingClient.delete({
-      where: { id },
-    });
+    if (!id) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+
+    await prisma.$transaction([
+      // 🔹 WashingService uses clientId
+      prisma.washingService.deleteMany({
+        where: { clientId: id },
+      }),
+
+      // 🔹 WashBilling uses washingClientId
+      prisma.washBilling.deleteMany({
+        where: { washingClientId: id },
+      }),
+
+      // 🔹 Finally delete client
+      prisma.washingClient.delete({
+        where: { id },
+      }),
+    ]);
 
     res.json({ message: "Washing client deleted" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete client" });
+    console.error("DELETE ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
 };
+

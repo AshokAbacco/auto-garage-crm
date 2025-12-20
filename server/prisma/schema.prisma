@@ -609,9 +609,9 @@ model BikeServiceMedia {
   serviceId Int
   service   BikeService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
-  fileName String?
-  mimeType String?
-  data     Bytes
+  fileName  String?
+  mimeType  String?
+  data      Bytes
   createdAt DateTime @default(now())
 }
 

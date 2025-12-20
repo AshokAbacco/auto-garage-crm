@@ -50,8 +50,8 @@ export default function Layout() {
         const isStaffToken = payload.type === "staff";
 
         const url = isStaffToken
-          ? "http://localhost:5000/api/staff-auth/profile"
-          : "http://localhost:5000/api/user/profile";
+          ? `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/profile`
+          : `${import.meta.env.VITE_API_BASE_URL}/api/user/profile`;
 
         const res = await fetch(url, {
           headers: {

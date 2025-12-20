@@ -41,7 +41,8 @@ export default function BikeLayoutPage() {
     { to: "/bike-ocr-scanner", label: "OCR Scanner", icon: FileText },
     { to: "/bike-plan", label: "Your Plan", icon: IndianRupee },
     { to: "/bike-reference", label: "Reference", icon: Network },
-    { to: "/bike-upgrade", label: "Upgrade", icon: Crown },
+    { to: "/salary-manage", label: "salary manage", icon: Network },
+    { to: "/bike-plans", label: "Upgrade", icon: Crown },
   ];
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);

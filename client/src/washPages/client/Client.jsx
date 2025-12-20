@@ -1,647 +1,472 @@
-// src/washPages/client/Client.jsx
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import {
     Users,
-    FileText,
-    Layers,
-    XCircle,
-    X,
-    Upload,
+    Phone,
+    PlusCircle,
+    Search,
+    RefreshCw,
+    Car,
+    AlertCircle,
+    Eye,
+    Edit2,
     Trash2,
+    Hash,
+    Mail,
+    Calendar
 } from "lucide-react";
+
 import { useTheme } from "../../contexts/ThemeContext";
+import { useNavigate } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-export default function Client() {
+export default function Clients() {
     const { isDark } = useTheme();
+    const navigate = useNavigate();
+
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingClient, setEditingClient] = useState(null);
-    const [formData, setFormData] = useState({
-        fullName: "",
-        phone: "",
-        address: "",
-        vehicleMake: "",
-        vehicleModel: "",
-        mainImage: "",
-        additionalImages: []
-    });
-    const token = localStorage.getItem("token");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const navigate = useNavigate();
-
+    // LOAD CLIENTS (Washing Clients API) - NO CHANGES TO BACKEND
     useEffect(() => {
-        if (!token) {
-            navigate("/login");
-            return;
-        }
         loadClients();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    async function loadClients() {
+    const loadClients = async () => {
         try {
             setLoading(true);
 
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                toast.error("You are not logged in. Please login again.");
+                setLoading(false);
+                return;
+            }
+
             const res = await fetch(`${API_BASE}/api/washing-clients`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!res.ok) throw new Error("Unauthorized");
-
-            const data = await res.json();
-            setClients(data);
-        } catch (err) {
-            console.error("Failed to load clients:", err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleDelete(id) {
-        if (!confirm("Delete this client?")) return;
-
-        await fetch(`${API_BASE}/api/washing-clients/${id}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        setClients((prev) => prev.filter((c) => c.id !== id));
-    }
-
-    function openEditModal(client) {
-        setEditingClient(client);
-        setFormData({
-            fullName: client.fullName || "",
-            phone: client.phone || "",
-            address: client.address || "",
-            vehicleMake: client.vehicleMake || "",
-            vehicleModel: client.vehicleModel || "",
-            mainImage: client.mainImage || "",
-            additionalImages: typeof client.additionalImages === "string"
-                ? JSON.parse(client.additionalImages || "[]")
-                : (Array.isArray(client.additionalImages) ? client.additionalImages : [])
-        });
-        setShowEditModal(true);
-    }
-
-    function closeEditModal() {
-        setShowEditModal(false);
-        setEditingClient(null);
-        setFormData({
-            fullName: "",
-            phone: "",
-            address: "",
-            vehicleMake: "",
-            vehicleModel: "",
-            mainImage: "",
-            additionalImages: []
-        });
-    }
-
-    function handleInputChange(e) {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    }
-
-    function handleMainImageUpload(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, mainImage: reader.result }));
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function handleAdditionalImagesUpload(e) {
-        const files = Array.from(e.target.files);
-        const readers = files.map(file => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(file);
-            });
-        });
-
-        Promise.all(readers).then(results => {
-            setFormData(prev => ({
-                ...prev,
-                additionalImages: [...prev.additionalImages, ...results]
-            }));
-        });
-    }
-
-    function removeAdditionalImage(index) {
-        setFormData(prev => ({
-            ...prev,
-            additionalImages: prev.additionalImages.filter((_, i) => i !== index)
-        }));
-    }
-
-    async function handleSubmitEdit(e) {
-        e.preventDefault();
-
-        const payload = {
-            ...formData,
-            additionalImages: formData.additionalImages,
-        };
-
-        const res = await fetch(
-            `${API_BASE}/api/washing-clients/${editingClient.id}`,
-            {
-                method: "PUT",
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(payload),
+            });
+
+            if (res.status === 401) {
+                toast.error("Session expired. Please login again.");
+                localStorage.removeItem("token");
+                return;
             }
-        );
 
-        if (!res.ok) throw new Error("Update failed");
+            if (!res.ok) {
+                throw new Error("Failed to fetch clients");
+            }
 
-        const updated = await res.json();
+            const data = await res.json();
+            setClients(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Load clients error:", err);
+            toast.error("Failed to load clients");
+            setError("Failed to load clients");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        setClients((prev) =>
-            prev.map((c) => (c.id === updated.id ? updated : c))
-        );
+    // DELETE CLIENT - NO CHANGES TO BACKEND
+    const handleDelete = async (id) => {
+        if (!confirm("Delete this client?")) return;
 
-        closeEditModal();
-    }
+        try {
+            const token = localStorage.getItem("token");
+
+            const res = await fetch(`${API_BASE}/api/washing-clients/${id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error("Delete failed");
+
+            toast.success("Client deleted");
+            loadClients();
+        } catch (err) {
+            toast.error("Delete failed");
+        }
+    };
+
+    // SEARCH FILTER - NO CHANGES
+    const filteredClients = clients.filter((c) =>
+        [c.fullName, c.phone, c.vehicleMake, c.vehicleModel, c.regNumber]
+            .join(" ")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
+    );
+
+    const totalClients = clients.length;
+    const currentPage = 1;
+    const totalPages = 1;
 
     return (
-        <div
-            className={`min-h-screen p-6 transition-all duration-300 ${isDark
-                ? "bg-black text-white"
-                : "bg-[#f0fbff] text-slate-800"
-                }`}
-            style={{
-                backgroundColor: isDark ? "#000000" : "#f0fbff",
-                color: isDark ? "#ffffff" : "#1e293b"
-            }}
-        >
-            {/* HEADER */}
-            <div className="mb-6 overflow-hidden rounded-none shadow">
-                <div className="px-8 py-10 bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9]">
-                    <h1 className="text-4xl font-extrabold text-white">
-                        Client Management
-                    </h1>
-                    <p className="mt-2 text-white/90">
-                        Manage your clients and their vehicles
-                    </p>
+        <div className={`min-h-screen lg:ml-16 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
+            <Toaster position="top-right" />
+
+            {/* Modern Header with Light Blue/White Theme */}
+            <div className={`${isDark ? "bg-gray-800 shadow-xl" : "bg-white shadow-md"} border-b ${isDark ? "border-gray-700" : "border-gray-100"} px-6 py-6 transition-all duration-300`}>
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <h1 className="text-5xl font-bold text-[#1BB6E9]">
+                            Clients List
+                        </h1>
+
+
+
+                        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                            Manage all customer details & service history
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate("/addclient")}
+                        className="group flex items-center gap-2 px-6 py-3 
+             bg-gradient-to-r from-[#1BB6E9] to-[#0EA5E9] 
+             text-white rounded-xl font-medium shadow-lg 
+             hover:shadow-xl hover:-translate-y-0.5 
+             transition-all duration-300"
+                    >
+                        <PlusCircle
+                            size={18}
+                            className="transition-transform duration-300 group-hover:rotate-90"
+                        />
+                        Add New Client
+                    </button>
+
                 </div>
             </div>
 
-            {/* SEARCH + BUTTON */}
-            <div className="flex gap-4 mb-6">
-                <input
-                    type="text"
-                    placeholder="Search by name, phone..."
-                    className={`flex-1 px-4 py-3 border shadow outline-none rounded-xl transition-all duration-300 ${isDark
-                        ? "bg-gray-900 border-gray-700 text-white placeholder:text-gray-400"
-                        : "bg-white border-gray-200 placeholder:text-slate-400"
-                        }`}
-                    style={{
-                        backgroundColor: isDark ? "#111827" : "#ffffff",
-                        borderColor: isDark ? "#374151" : "#e5e7eb",
-                        color: isDark ? "#ffffff" : "#1e293b"
-                    }}
-                />
-                <button
-                    onClick={() => navigate("/washing-newclient")}
-                    className="px-5 py-3 text-white font-medium rounded-lg shadow bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] hover:opacity-90"
-                >
-                    Add New Client
-                </button>
-            </div>
+            <div className="p-6">
+                {/* Stats Cards with Animations */}
+                <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+                    <StatCard
+                        title="Total Clients"
+                        value={totalClients}
+                        icon={<Users size={24} />}
+                        gradient="from-blue-400 to-blue-600"
+                        isDark={isDark}
+                        delay="0"
+                    />
+                    <StatCard
+                        title="Current Page"
+                        value={currentPage}
+                        icon={<Car size={24} />}
+                        gradient="from-purple-400 to-purple-600"
+                        isDark={isDark}
+                        delay="100"
+                    />
+                    <StatCard
+                        title="Page"
+                        value={`${currentPage}/${totalPages}`}
+                        icon={<Hash size={24} />}
+                        gradient="from-green-400 to-green-600"
+                        isDark={isDark}
+                        delay="200"
+                    />
+                </div>
 
-            {/* STATS */}
-            <div className="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-3">
-                <Stat title="Total Clients" value={clients.length} icon={Users} isDark={isDark} />
-                <Stat title="Current Page" value="1" icon={FileText} isDark={isDark} />
-                <Stat title="Page" value="1 / 1" icon={Layers} isDark={isDark} />
-            </div>
-
-            {/* CONTENT */}
-            <div
-                className={`p-6 border shadow rounded-xl transition-all duration-300 ${isDark
-                    ? "bg-gray-900 border-gray-700"
-                    : "bg-white border-gray-200"
-                    }`}
-                style={{
-                    backgroundColor: isDark ? "#111827" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb"
-                }}
-            >
-                {loading ? (
-                    <div
-                        className="py-10 text-center transition-all duration-300"
-                        style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                    >
-                        Loading clients...
+                {/* Modern Search Bar */}
+                <div className="mb-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
+                    <div className="relative group">
+                        <Search
+                            className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isDark ? "text-gray-400 group-focus-within:text-blue-400" : "text-gray-400 group-focus-within:text-blue-500"
+                                }`}
+                            size={20}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search by name, phone, vehicle, or registration..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 ${isDark
+                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-750"
+                                : "bg-white border-gray-200 placeholder-gray-400 focus:border-blue-400 shadow-sm hover:shadow-md focus:shadow-lg"
+                                } outline-none`}
+                        />
                     </div>
-                ) : error ? (
-                    <div
-                        className="py-10 text-center transition-all duration-300"
-                        style={{ color: "#ef4444" }}
-                    >
-                        {error}
-                    </div>
-                ) : clients.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-56 text-center">
-                        <div
-                            className="relative flex items-center justify-center w-16 h-16 mb-4 transition-all duration-300 rounded-full"
-                            style={{ backgroundColor: isDark ? "#1f2937" : "#eaf7ff" }}
-                        >
-                            <Users className="w-7 h-7 text-[#0ea5e9] z-10" />
-                            <XCircle
-                                className="absolute transition-all duration-300 w-9 h-9"
-                                style={{ color: isDark ? "#4b5563" : "#94a3b8" }}
-                            />
-                        </div>
+                </div>
 
-                        <h3
-                            className="mb-1 text-lg font-semibold transition-all duration-300"
-                            style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                        >
-                            No clients found
-                        </h3>
-                        <p
-                            className="mb-4 text-sm transition-all duration-300"
-                            style={{ color: isDark ? "#9ca3af" : "#64748b" }}
-                        >
-                            Try adding a new client
-                        </p>
-
-                        <button
-                            onClick={() => navigate("/washing-newclient")}
-                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] text-white shadow-md hover:opacity-90"
-                        >
-                            Add Client
-                        </button>
+                {/* Loading State */}
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <RefreshCw className="mb-4 text-blue-500 animate-spin" size={48} />
+                        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>Loading clients...</p>
                     </div>
-                ) : (
+                )}
+
+                {/* Error State */}
+                {error && (
+                    <div className={`flex items-center gap-3 p-5 rounded-xl border-2 animate-shake ${isDark
+                        ? "bg-red-900/20 border-red-800 text-red-400"
+                        : "bg-red-50 border-red-200 text-red-600"
+                        }`}>
+                        <AlertCircle size={24} />
+                        <p className="font-medium">{error}</p>
+                    </div>
+                )}
+
+                {/* CLIENT LIST */}
+                {!loading && !error && (
                     <div className="space-y-4">
-                        {clients.map((c) => (
-                            <div
-                                key={c.id}
-                                className={`flex items-center justify-between p-4 border rounded-lg transition-all duration-300 ${isDark
-                                    ? "border-gray-700 hover:bg-gray-800"
-                                    : "border-gray-200 hover:bg-gray-50"
-                                    }`}
-                                style={{
-                                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                                    backgroundColor: isDark ? "" : "",
-                                    color: isDark ? "#ffffff" : "#1e293b"
-                                }}
-                            >
-                                <div>
-                                    <div
-                                        className="font-semibold transition-all duration-300"
-                                        style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                                    >
-                                        {c.fullName}
-                                    </div>
-                                    <div
-                                        className="text-sm transition-all duration-300"
-                                        style={{ color: isDark ? "#9ca3af" : "#64748b" }}
-                                    >
-                                        {c.phone}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => openEditModal(c)}
-                                        className={`px-3 py-1 text-sm border rounded transition-all duration-300 ${isDark
-                                            ? "border-sky-500 text-sky-400 hover:bg-sky-500/10"
-                                            : "border-sky-500 text-sky-700 hover:bg-sky-50"
-                                            }`}
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(c.id)}
-                                        className={`px-3 py-1 text-sm border rounded transition-all duration-300 ${isDark
-                                            ? "border-red-500 text-red-400 hover:bg-red-500/10"
-                                            : "border-red-500 text-red-600 hover:bg-red-50"
-                                            }`}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
+                        {filteredClients.length === 0 ? (
+                            <div className={`flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed transition-all duration-300 ${isDark ? "border-gray-700 bg-gray-800/50 hover:bg-gray-800/70" : "border-gray-300 bg-white hover:shadow-lg"
+                                }`}>
+                                <Users size={64} className={`${isDark ? "text-gray-600" : "text-gray-400"} mb-4`} />
+                                <p className={`text-lg font-semibold ${isDark ? "text-gray-300" : "text-gray-700"}`}>No clients found</p>
+                                <p className="mt-1 text-sm text-gray-500">Try searching again or add a new client</p>
                             </div>
-                        ))}
+                        ) : (
+                            <>
+                                {filteredClients.map((client, index) => (
+                                    <ClientCard
+                                        key={client.id}
+                                        client={client}
+                                        index={index}
+                                        isDark={isDark}
+                                        onView={() => navigate(`/client-details/${client.id}`)}
+                                        onEdit={() => navigate(`/addclient/${client.id}`)}
+                                        onDelete={() => handleDelete(client.id)}
+                                    />
+                                ))}
+
+                                {/* Modern Pagination */}
+                                <div className={`flex items-center justify-between mt-8 pt-6 border-t-2 ${isDark ? "border-gray-700" : "border-gray-200"
+                                    }`}>
+                                    <p className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                                        Showing 1 - {filteredClients.length} of {totalClients}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <PaginationButton label="Previous" isDark={isDark} disabled />
+                                        <span className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold shadow-md">
+                                            1/1
+                                        </span>
+                                        <PaginationButton label="Next" isDark={isDark} disabled />
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
 
-            {/* Edit Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div
-                        className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl transition-all duration-300 ${isDark
-                            ? "bg-gray-900"
-                            : "bg-white"
-                            }`}
-                        style={{
-                            backgroundColor: isDark ? "#111827" : "#ffffff"
-                        }}
-                    >
-                        <div className="sticky top-0 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9]">
-                            <h2 className="text-xl font-bold text-white">Edit Client</h2>
-                            <button onClick={closeEditModal} className="p-1 text-white rounded-full hover:bg-white/20">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmitEdit} className="p-6 space-y-4">
-                            {/* Full Name */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Full Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                        ? "bg-gray-800 border-gray-700 text-white"
-                                        : "bg-white border-gray-300"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#ffffff" : "#1e293b"
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            {/* Phone */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Phone <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                        ? "bg-gray-800 border-gray-700 text-white"
-                                        : "bg-white border-gray-300"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#ffffff" : "#1e293b"
-                                    }}
-                                    required
-                                />
-                            </div>
-
-                            {/* Address */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Address
-                                </label>
-                                <textarea
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    rows="2"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                        ? "bg-gray-800 border-gray-700 text-white"
-                                        : "bg-white border-gray-300"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#ffffff" : "#1e293b"
-                                    }}
-                                />
-                            </div>
-
-                            {/* Vehicle Info */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label
-                                        className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                        style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                    >
-                                        Vehicle Make
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="vehicleMake"
-                                        value={formData.vehicleMake}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., Honda"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                            ? "bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-                                            : "bg-white border-gray-300"
-                                            }`}
-                                        style={{
-                                            backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                            borderColor: isDark ? "#374151" : "#d1d5db",
-                                            color: isDark ? "#ffffff" : "#1e293b"
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                        style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                    >
-                                        Vehicle Model
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="vehicleModel"
-                                        value={formData.vehicleModel}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., City"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all duration-300 ${isDark
-                                            ? "bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-                                            : "bg-white border-gray-300"
-                                            }`}
-                                        style={{
-                                            backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                                            borderColor: isDark ? "#374151" : "#d1d5db",
-                                            color: isDark ? "#ffffff" : "#1e293b"
-                                        }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Main Image */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Main Vehicle Image
-                                </label>
-                                <div className="flex items-center gap-4">
-                                    {formData.mainImage && (
-                                        <img src={formData.mainImage} alt="Main" className="object-cover w-24 h-24 border rounded-lg" />
-                                    )}
-                                    <label
-                                        className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg cursor-pointer transition-all duration-300 ${isDark
-                                            ? "border-gray-700 hover:bg-gray-800 text-gray-200"
-                                            : "border-gray-300 hover:bg-slate-50"
-                                            }`}
-                                        style={{
-                                            backgroundColor: isDark ? "" : "",
-                                            borderColor: isDark ? "#374151" : "#d1d5db",
-                                            color: isDark ? "#e5e7eb" : "#1e293b"
-                                        }}
-                                    >
-                                        <Upload className="w-4 h-4" />
-                                        {formData.mainImage ? "Change Image" : "Upload Image"}
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleMainImageUpload}
-                                            className="hidden"
-                                        />
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Additional Images */}
-                            <div>
-                                <label
-                                    className={`block mb-1 text-sm font-medium transition-all duration-300`}
-                                    style={{ color: isDark ? "#e5e7eb" : "#334155" }}
-                                >
-                                    Additional Images
-                                </label>
-                                <div className="grid grid-cols-4 gap-2 mb-2">
-                                    {formData.additionalImages.map((img, idx) => (
-                                        <div key={idx} className="relative group">
-                                            <img src={img} alt={`Additional ${idx + 1}`} className="object-cover w-full h-20 border rounded-lg" />
-                                            <button
-                                                type="button"
-                                                onClick={() => removeAdditionalImage(idx)}
-                                                className="absolute p-1 text-white transition-opacity bg-red-500 rounded-full opacity-0 top-1 right-1 group-hover:opacity-100"
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                                <label
-                                    className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg cursor-pointer w-fit transition-all duration-300 ${isDark
-                                        ? "border-gray-700 hover:bg-gray-800 text-gray-200"
-                                        : "border-gray-300 hover:bg-slate-50"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "" : "",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#e5e7eb" : "#1e293b"
-                                    }}
-                                >
-                                    <Upload className="w-4 h-4" />
-                                    Add More Images
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={handleAdditionalImagesUpload}
-                                        className="hidden"
-                                    />
-                                </label>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex justify-end gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={closeEditModal}
-                                    className={`px-4 py-2 border rounded-lg transition-all duration-300 ${isDark
-                                        ? "border-gray-700 hover:bg-gray-800 text-gray-200"
-                                        : "border-gray-300 hover:bg-slate-50"
-                                        }`}
-                                    style={{
-                                        backgroundColor: isDark ? "" : "",
-                                        borderColor: isDark ? "#374151" : "#d1d5db",
-                                        color: isDark ? "#e5e7eb" : "#1e293b"
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 text-white rounded-lg bg-gradient-to-r from-[#22c1f1] to-[#0ea5e9] hover:opacity-95"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <style jsx>{`
+                @keyframes fade-in {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.5s ease-out forwards;
+                }
+                .animate-shake {
+                    animation: shake 0.5s ease-out;
+                }
+            `}</style>
         </div>
     );
-
 }
 
-/* Reusable stat card */
-function Stat({ title, value, icon: Icon, isDark }) {
+// Stat Card Component with Hover Animations
+function StatCard({ title, value, icon, gradient, isDark, delay }) {
     return (
         <div
-            className={`flex items-center justify-between p-5 border shadow rounded-xl transition-all duration-300 ${isDark
-                ? "bg-gray-900 border-gray-700"
-                : "bg-white border-gray-200"
-                }`}
-            style={{
-                backgroundColor: isDark ? "#111827" : "#ffffff",
-                borderColor: isDark ? "#374151" : "#e5e7eb"
-            }}
+            className={`${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+                } border-2 rounded-xl p-6 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer group animate-fade-in`}
+            style={{ animationDelay: `${delay}ms` }}
         >
-            <div>
-                <div
-                    className="text-sm transition-all duration-300"
-                    style={{ color: isDark ? "#9ca3af" : "#64748b" }}
-                >
-                    {title}
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className={`text-sm font-semibold mb-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                        {title}
+                    </p>
+                    <p className={`text-4xl font-bold ${isDark ? "text-white" : "text-gray-900"} transition-transform duration-300 group-hover:scale-110`}>
+                        {value}
+                    </p>
                 </div>
-                <div
-                    className="mt-2 text-2xl font-bold transition-all duration-300"
-                    style={{ color: isDark ? "#ffffff" : "#1e293b" }}
-                >
-                    {value}
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg transition-all duration-500 group-hover:scale-125 group-hover:rotate-12`}>
+                    {icon}
                 </div>
-            </div>
-            <div
-                className="flex items-center justify-center w-12 h-12 transition-all duration-300 rounded-lg"
-                style={{ backgroundColor: isDark ? "#1f2937" : "#f1f5f9" }}
-            >
-                <Icon className="w-6 h-6 text-sky-600" />
             </div>
         </div>
+    );
+}
+
+// Client Card with Modern Design
+function ClientCard({ client, onView, onEdit, onDelete, isDark, index }) {
+    const [imageError, setImageError] = useState(false);
+
+    return (
+        <div
+            className={`group rounded-2xl border-2 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 animate-fade-in ${isDark
+                ? "bg-gray-800 border-gray-700 hover:border-blue-500/60"
+                : "bg-white border-gray-100 hover:border-blue-400/60"
+                }`}
+            style={{ animationDelay: `${index * 50}ms` }}
+        >
+            <div className="flex flex-col gap-5 p-6 md:flex-row">
+                {/* Image & Avatar Section */}
+                <div className="flex items-start gap-4">
+                    {/* Vehicle Image */}
+                    <div className="relative flex-shrink-0 overflow-hidden transition-all duration-500 shadow-lg w-36 h-36 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 group-hover:shadow-2xl">
+                        {!imageError ? (
+                            <img
+                                src={client.mainImage || "/no-image.png"}
+                                alt={client.fullName}
+                                className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-125 group-hover:rotate-2"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center w-full h-full">
+                                <Car size={56} className="text-gray-400 transition-transform duration-500 group-hover:scale-110" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Client Avatar & Status */}
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center justify-center text-xl font-bold text-white transition-all duration-500 shadow-lg w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 group-hover:scale-110 group-hover:rotate-6">
+                            {client.fullName?.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="px-3 py-1 text-xs font-bold text-white transition-transform duration-300 rounded-full shadow-md bg-gradient-to-r from-green-400 to-green-500 group-hover:scale-110">
+                            Active
+                        </span>
+                    </div>
+                </div>
+
+                {/* Client Information */}
+                <div className="flex-1 space-y-4">
+                    <h3 className={`text-2xl font-bold transition-colors duration-300 ${isDark ? "text-white group-hover:text-blue-400" : "text-gray-900 group-hover:text-blue-600"
+                        }`}>
+                        {client.fullName}
+                    </h3>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <InfoItem
+                            icon={<Car size={18} className="text-blue-500" />}
+                            label={client.vehicleMake || 'N/A'}
+                            isDark={isDark}
+                        />
+                        <InfoItem
+                            icon={<Calendar size={18} className="text-blue-500" />}
+                            label={`Year: ${client.year || 'N/A'}`}
+                            isDark={isDark}
+                        />
+                        <InfoItem
+                            icon={<Phone size={18} className="text-green-500" />}
+                            label={client.phone || 'N/A'}
+                            isDark={isDark}
+                        />
+                        <InfoItem
+                            icon={<Mail size={18} className="text-purple-500" />}
+                            label={client.email || 'N/A'}
+                            isDark={isDark}
+                        />
+                    </div>
+
+                    <div className="pt-2">
+                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 ${isDark ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30" : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                            }`}>
+                            <Hash size={16} />
+                            {client.regNumber || 'N/A'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-center gap-2 md:flex-col">
+                    <ActionButton
+                        icon={<Eye size={20} />}
+                        onClick={onView}
+                        isDark={isDark}
+                        color="blue"
+                        tooltip="View"
+                    />
+                    <ActionButton
+                        icon={<Edit2 size={20} />}
+                        onClick={onEdit}
+                        isDark={isDark}
+                        color="purple"
+                        tooltip="Edit"
+                    />
+                    <ActionButton
+                        icon={<Trash2 size={20} />}
+                        onClick={onDelete}
+                        isDark={isDark}
+                        color="red"
+                        tooltip="Delete"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Info Item Component
+function InfoItem({ icon, label, isDark }) {
+    return (
+        <div className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-300 hover:scale-105 ${isDark ? "bg-gray-700/50 hover:bg-gray-700" : "bg-gray-50 hover:bg-gray-100"
+            }`}>
+            {icon}
+            <span className={`text-sm font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+                {label}
+            </span>
+        </div>
+    );
+}
+
+// Action Button with Hover Effects
+function ActionButton({ icon, onClick, isDark, color, tooltip }) {
+    const colors = {
+        blue: isDark
+            ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/40 hover:text-blue-300"
+            : "bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700",
+        purple: isDark
+            ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 hover:text-purple-300"
+            : "bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700",
+        red: isDark
+            ? "bg-red-500/20 text-red-400 hover:bg-red-500/40 hover:text-red-300"
+            : "bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+    };
+
+    return (
+        <button
+            onClick={onClick}
+            title={tooltip}
+            className={`relative p-3 rounded-xl transition-all duration-300 hover:scale-125 hover:shadow-xl hover:-translate-y-1 ${colors[color]}`}
+        >
+            {icon}
+        </button>
+    );
+}
+
+// Pagination Button
+function PaginationButton({ label, isDark, disabled }) {
+    return (
+        <button
+            disabled={disabled}
+            className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-300 ${disabled
+                ? isDark
+                    ? "bg-gray-800 text-gray-600 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : isDark
+                    ? "bg-gray-700 text-gray-200 hover:bg-gray-600 hover:shadow-lg hover:-translate-y-0.5"
+                    : "bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg hover:-translate-y-0.5"
+                }`}
+        >
+            {label}
+        </button>
     );
 }

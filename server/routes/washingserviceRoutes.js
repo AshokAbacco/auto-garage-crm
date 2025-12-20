@@ -1,37 +1,34 @@
 import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
 import {
-  getServiceCategories,
-  getSubServicesByCategory,
-  createService,
-} from "../controllers/serviceController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
-
-// If using multer or similar for uploads:
-import multer from "multer";
-const upload = multer({ dest: "uploads/" });
+  getWashingServices,
+  getWashingServiceById,
+  getWashingServicesByClient,
+  createWashingService,
+  updateWashingService,
+  deleteWashingService,
+  getWashingServiceTypes,
+  getWashingCategoriesByBike,
+} from "../controllers/washingserviceController.js";
 
 const router = express.Router();
 
-// GET /api/service-categories
-router.get(
-  "/service-categories",
-  authMiddleware,
-  getServiceCategories
-);
+router.use(protect);
 
-// GET /api/service-categories/:categoryId/sub-services
-router.get(
-  "/service-categories/:categoryId/sub-services",
-  authMiddleware,
-  getSubServicesByCategory
-);
+// Categories
+router.get("/types/list", getWashingServiceTypes);
+router.get("/types/by-bike/:bikeId", getWashingCategoriesByBike);
 
-// POST /api/services
-router.post(
-  "/services",
-  authMiddleware,
-  upload.array("files"),
-  createService
-);
+// Services
+router.get("/", getWashingServices);
+router.get("/client/:clientId", getWashingServicesByClient);
+router.get("/:id", getWashingServiceById);
+
+router.post("/", createWashingService);
+router.post("/create", createWashingService);
+
+router.put("/:id", updateWashingService);
+router.delete("/:id", deleteWashingService); // ✅ THIS FIXES DELETE
+
 
 export default router;

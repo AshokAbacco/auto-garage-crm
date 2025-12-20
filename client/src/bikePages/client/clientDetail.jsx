@@ -1,6 +1,6 @@
 // client/src/bikePages/client/clientDetail.jsx
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useRef, } from "react";
+import { useParams, useNavigate, useLocation,Link  } from "react-router-dom";
 import {
   Edit,
   Phone,
@@ -15,7 +15,7 @@ import {
   Eye,
   User,
   Users,
-  Car,
+  Bike,
   Palette,
   Droplet,
   RotateCw,
@@ -23,9 +23,14 @@ import {
   AlertCircle,
   Save,
   CreditCard,
+  IndianRupee,
+   
 } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Toaster, toast } from "react-hot-toast";
+import { FiCalendar, FiTool,FiPlus, FiFileText,FiEye,FiTrash2 } from "react-icons/fi";
+import { deleteRecord as BikedeleteRecord } from
+  "/src/bikePages/OCRScanner/utils/BikestorageUtils.js";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -47,6 +52,12 @@ export default function ClientDetail() {
   );
 
   const [formData, setFormData] = useState({});
+  // OCR State
+  const [ocrParsed, setOcrParsed] = useState(null);
+  const [ocrRaw, setOcrRaw] = useState("");
+  const [ocrRecords, setOcrRecords] = useState([]);
+  const [isLoadingOCR, setIsLoadingOCR] = useState(false);
+  const [selectedOCR, setSelectedOCR] = useState(null);
 
   // 3D Viewer State
   const [rotation, setRotation] = useState({ x: -20, y: 0 });
@@ -54,9 +65,54 @@ export default function ClientDetail() {
   const [isDragging, setIsDragging] = useState(false);
   const [currentView, setCurrentView] = useState("Front");
   const [activeImage, setActiveImage] = useState("");
+  const [clientServices, setClientServices] = useState([]);
 
   const startPos = useRef({ x: 0, y: 0 });
   const startRot = useRef({ x: 0, y: 0 });
+ 
+  const [clientInvoices, setClientInvoices] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [serviceForm, setServiceForm] = useState({});
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+
+const lastService = clientServices.length > 0 && clientServices[0]?.date
+  ? new Date(clientServices[0].date).toLocaleDateString()
+  : "N/A";
+
+const totalServices = clientServices.length;
+
+const totalBilled = clientInvoices.reduce(
+  (sum, inv) => sum + Number(inv.grandTotal || inv.totalAmount || 0),
+  0
+);
+
+
+  
+
+    useEffect(() => {
+      const loadInvoices = async () => {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE}/api/bike-invoices`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+
+        const filtered = data.filter(inv => inv.bike?.id === Number(id));
+        setClientInvoices(filtered);
+      };
+
+      loadInvoices();
+    }, [id]);
+
+    useEffect(() => {
+      const loadOCR = async () => {
+        const records = await BikeloadHistory(id);
+        setOcrRecords(records);
+      };
+      loadOCR();
+    }, [id]);
 
   // FORM CHANGE HANDLER
   const handleChange = (e) => {
@@ -106,6 +162,55 @@ export default function ClientDetail() {
     fetchData();
   }, [id, navigate]);
 
+  const fetchClientServices = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/bike-services`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Failed to load services");
+
+      const allServices = await res.json();
+      const servicesArray = allServices.services || allServices || [];
+
+      // Filter by this client ID
+      const filtered = servicesArray.filter(
+        (s) => s.client?.id === Number(id)
+      );
+
+      setClientServices(filtered);
+    } catch (err) {
+      console.error("service fetch failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchClientServices();
+    }
+  }, [id]);
+
+  // loadServices
+  useEffect(() => {
+    const loadServices = async () => {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${API_BASE}/api/bike-services`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      const filtered = (data.services || data).filter(
+        (s) => s.client?.id === Number(id)
+      );
+
+      setClientServices(filtered);
+    };
+
+    if (id) loadServices();
+  }, [id]);
+
   // Delete client
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this client?")) return;
@@ -134,27 +239,37 @@ export default function ClientDetail() {
       const res = await fetch(`${API_BASE}/api/bikes/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
-      if (!res.ok) throw new Error("Update failed");
+      if (!res.ok) throw new Error("Failed to update client");
 
       const updated = await res.json();
       setClient(updated);
       setIsEditMode(false);
-
-      toast.success("Updated successfully");
-      navigate("/bike-clients");
-
+      toast.success("Client updated successfully!");
     } catch (err) {
       toast.error(err.message);
     }
   };
 
-  // 3D Viewer Functions
+  // Delete OCR
+  const handleDeleteOCR = async (ocrId) => {
+    if (!window.confirm("Delete this OCR record?")) return;
+    try {
+      await BikedeleteRecord(id, ocrId);
+      const updated = await BikeloadHistory(id);
+      setOcrRecords(updated);
+      toast.success("OCR record deleted");
+    } catch (err) {
+      toast.error("Failed to delete OCR");
+    }
+  };
+
+  // Mouse down for rotation
   const handleMouseDown = (e) => {
     setIsDragging(true);
     startPos.current = { x: e.clientX, y: e.clientY };
@@ -166,109 +281,113 @@ export default function ClientDetail() {
     const dx = e.clientX - startPos.current.x;
     const dy = e.clientY - startPos.current.y;
     setRotation({
-      x: Math.max(-90, Math.min(90, startRot.current.x - dy * 0.4)),
-      y: startRot.current.y + dx * 0.4,
+      x: startRot.current.x + dy * 0.5,
+      y: startRot.current.y + dx * 0.5,
     });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
-
-  const handleTouchStart = (e) => {
-    if (e.touches.length === 1) {
-      startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      startRot.current = { ...rotation };
-      setIsDragging(true);
-    }
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
-  const handleTouchMove = (e) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    const dx = e.touches[0].clientX - startPos.current.x;
-    const dy = e.touches[0].clientY - startPos.current.y;
-    setRotation({
-      x: Math.max(-90, Math.min(90, startRot.current.x - dy * 0.4)),
-      y: startRot.current.y + dx * 0.4,
-    });
-  };
-
-  const handleTouchEnd = () => setIsDragging(false);
-
-  const setPreset = (view) => {
-    if (view === "Front") setRotation({ x: -20, y: 0 });
-    if (view === "Side") setRotation({ x: -10, y: 90 });
-    if (view === "Rear") setRotation({ x: -20, y: 180 });
-    if (view === "Top") setRotation({ x: -80, y: 0 });
-    setCurrentView(view);
-  };
-
-  const resetView = () => {
-    setRotation({ x: -20, y: 0 });
-    setScale(1);
-    setCurrentView("Front");
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    setScale((prev) => Math.max(0.5, Math.min(prev + delta, 2)));
   };
 
   useEffect(() => {
-    const viewer = document.getElementById("viewer-3d");
-    if (!viewer) return;
+    const container = document.getElementById("viewer-3d");
+    if (!container) return;
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, []);
 
-    viewer.addEventListener("mousedown", handleMouseDown);
-    viewer.addEventListener("mousemove", handleMouseMove);
-    viewer.addEventListener("mouseup", handleMouseUp);
-    viewer.addEventListener("mouseleave", handleMouseUp);
-    viewer.addEventListener("touchstart", handleTouchStart);
-    viewer.addEventListener("touchmove", handleTouchMove);
-    viewer.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      viewer.removeEventListener("mousedown", handleMouseDown);
-      viewer.removeEventListener("mousemove", handleMouseMove);
-      viewer.removeEventListener("mouseup", handleMouseUp);
-      viewer.removeEventListener("mouseleave", handleMouseUp);
-      viewer.removeEventListener("touchstart", handleTouchStart);
-      viewer.removeEventListener("touchmove", handleTouchMove);
-      viewer.removeEventListener("touchend", handleTouchEnd);
+  const handleViewSelect = (viewName) => {
+    setCurrentView(viewName);
+    const rotations = {
+      Front: { x: -20, y: 0 },
+      Back: { x: -20, y: 180 },
+      Left: { x: -20, y: -90 },
+      Right: { x: -20, y: 90 },
+      Top: { x: -90, y: 0 },
+      Bottom: { x: 90, y: 0 },
     };
-  }, [isDragging, rotation]);
+    setRotation(rotations[viewName] || { x: -20, y: 0 });
+  };
 
-  // Loading State
+  const handleSaveOCR = async () => {
+    if (!ocrParsed) {
+      toast.error("No OCR data to save");
+      return;
+    }
+    try {
+      setIsLoadingOCR(true);
+
+      const ocrPayload = {
+        bikeId: Number(id),
+        parsedData: ocrParsed,
+        rawOcrText: ocrRaw || "",
+      };
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/bike-ocr`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(ocrPayload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to save OCR");
+      }
+
+      await res.json();
+      toast.success("OCR data saved successfully!");
+
+      const updated = await BikeloadHistory(id);
+      setOcrRecords(updated);
+
+      setOcrParsed(null);
+      setOcrRaw("");
+    } catch (error) {
+      console.error("Error saving OCR data:", error);
+      toast.error(error.message || "Failed to save OCR data");
+    } finally {
+      setIsLoadingOCR(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${
-        isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+        isDark ? "bg-gray-900" : "bg-gray-50"
       }`}>
         <div className="text-center">
-          <RotateCw className="w-16 h-16 text-orange-500 animate-spin mx-auto mb-4" />
-          <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-            Loading client details...
-          </p>
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className={isDark ? "text-gray-300" : "text-gray-600"}>Loading client details...</p>
         </div>
       </div>
     );
   }
 
-  // Error State
   if (error || !client) {
     return (
-      <div className={`min-h-screen flex items-center justify-center p-6 ${
-        isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+      <div className={`min-h-screen flex items-center justify-center ${
+        isDark ? "bg-gray-900" : "bg-gray-50"
       }`}>
-        <div className={`max-w-md w-full rounded-2xl p-8 text-center shadow-2xl ${
-          isDark ? "bg-gray-800" : "bg-white"
-        }`}>
-          <AlertCircle className={`w-16 h-16 mx-auto mb-4 ${
-            isDark ? "text-red-400" : "text-red-500"
-          }`} />
-          <h2 className={`text-2xl font-bold mb-2 ${
-            isDark ? "text-white" : "text-gray-900"
-          }`}>
-            Error Loading Client
-          </h2>
-          <p className={`mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+        <div className="text-center p-8 rounded-2xl bg-red-500/10 border border-red-500/20">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-red-500 mb-2">Error</h2>
+          <p className={isDark ? "text-gray-300" : "text-gray-600"}>
             {error || "Client not found"}
           </p>
           <button
             onClick={() => navigate("/bike-clients")}
-            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-medium hover:scale-105 transition-all duration-300"
+            className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-300"
           >
             Back to Clients
           </button>
@@ -277,164 +396,170 @@ export default function ClientDetail() {
     );
   }
 
+  const recentServices = clientServices.slice(0, 5);
+  const recentInvoices = clientInvoices.slice(0, 5);
+
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
-      isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
-    }`}>
+    <div
+      className={`min-h-screen transition-colors duration-500 ${
+        isDark ? "bg-gray-900" : "bg-gray-50"
+      }`}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
       <Toaster position="top-right" />
 
-      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className={`rounded-2xl shadow-lg border p-6 animate-fade-in ${
+          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <button
               onClick={() => navigate("/bike-clients")}
-              className={`p-3 rounded-xl transition-all duration-300 hover:scale-105 ${
-                isDark
-                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                isDark ? "bg-gray-700 text-gray-200 hover:bg-gray-600" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               <ArrowLeft size={20} />
+              <span className="font-medium">Back</span>
             </button>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                {client.fullName}
-              </h1>
-              <p className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                Client Details & Information
-              </p>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            {!isEditMode ? (
-              <>
-                <button
-                  onClick={() => setIsEditMode(true)}
-                  className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium"
-                >
-                  <Edit size={18} />
-                  Edit
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium"
-                >
-                  <Trash2 size={18} />
-                  Delete
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    setIsEditMode(false);
-                    setFormData(client);
-                  }}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 ${
-                    isDark
-                      ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                  }`}
-                >
-                  <X size={18} />
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdate}
-                  className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium"
-                >
-                  <Save size={18} />
-                  Save Changes
-                </button>
-              </>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {!isEditMode ? (
+                <>
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    <Edit size={18} />
+                    <span className="font-medium">Edit</span>
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    <Trash2 size={18} />
+                    <span className="font-medium">Delete</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleUpdate}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    <Save size={18} />
+                    <span className="font-medium">Save</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditMode(false);
+                      setFormData(client);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-600 text-white hover:bg-gray-700 transition-all duration-300 hover:scale-105"
+                  >
+                    <X size={18} />
+                    <span className="font-medium">Cancel</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Contact Information */}
-        <div className={`rounded-2xl shadow-lg border p-6 animate-slide-up ${
+        <div className={`rounded-2xl shadow-xl border p-6 animate-slide-up ${
           isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
         }`}>
-          <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${
-            isDark ? "text-white" : "text-gray-900"
-          }`}>
-            <User size={24} className="text-blue-500" />
-            Contact Information
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {isEditMode ? (
-              <>
-                <InputField
-                  icon={<User size={18} />}
-                  label="Full Name"
-                  name="fullName"
-                  value={formData.fullName || ""}
-                  onChange={handleChange}
-                  isDark={isDark}
-                  iconColor="text-blue-500"
-                />
-                <InputField
-                  icon={<Phone size={18} />}
-                  label="Phone"
-                  name="phone"
-                  value={formData.phone || ""}
-                  onChange={handleChange}
-                  isDark={isDark}
-                  iconColor="text-green-500"
-                />
-                <InputField
-                  icon={<Mail size={18} />}
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email || ""}
-                  onChange={handleChange}
-                  isDark={isDark}
-                  iconColor="text-purple-500"
-                />
-                <InputField
-                  icon={<MapPin size={18} />}
-                  label="Address"
-                  name="address"
-                  value={formData.address || ""}
-                  onChange={handleChange}
-                  isDark={isDark}
-                  iconColor="text-red-500"
-                />
-                <InputField
-                  icon={<Users size={18} />}
-                  label="Receiver Name"
-                  name="receiverName"
-                  value={formData.receiverName || ""}
-                  onChange={handleChange}
-                  isDark={isDark}
-                  iconColor="text-orange-500"
-                />
-              </>
-            ) : (
-              <>
-                <ContactCard icon={<User size={20} />} label="Full Name" value={client.fullName} isDark={isDark} />
-                <ContactCard icon={<Phone size={20} />} label="Phone" value={client.phone} isDark={isDark} />
-                <ContactCard icon={<Mail size={20} />} label="Email" value={client.email} isDark={isDark} />
-                <ContactCard icon={<MapPin size={20} />} label="Address" value={client.address} isDark={isDark} />
-                <ContactCard icon={<Users size={20} />} label="Receiver" value={client.receiverName} isDark={isDark} />
-              </>
-            )}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-lg">
+              <User size={32} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className={`text-3xl font-bold truncate ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}>
+                {client.fullName || "Unknown Client"}
+              </h1>
+              <p className={`text-sm mt-1 ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}>
+                Client ID: #{client.id}
+              </p>
+            </div>
           </div>
+
+          {/* Contact & Basic Info Grid */}
+          {isEditMode ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField
+                icon={<User size={18} />}
+                label="Full Name"
+                name="fullName"
+                value={formData.fullName || ""}
+                onChange={handleChange}
+                isDark={isDark}
+                iconColor="text-blue-500"
+              />
+              <InputField
+                icon={<Phone size={18} />}
+                label="Phone"
+                name="phone"
+                value={formData.phone || ""}
+                onChange={handleChange}
+                isDark={isDark}
+                iconColor="text-green-500"
+              />
+              <InputField
+                icon={<Mail size={18} />}
+                label="Email"
+                name="email"
+                value={formData.email || ""}
+                onChange={handleChange}
+                isDark={isDark}
+                type="email"
+                iconColor="text-purple-500"
+              />
+              <InputField
+                icon={<MapPin size={18} />}
+                label="Address"
+                name="address"
+                value={formData.address || ""}
+                onChange={handleChange}
+                isDark={isDark}
+                iconColor="text-red-500"
+              />
+              <InputField
+                icon={<Users size={18} />}
+                label="Receiver Name"
+                name="receiverName"
+                value={formData.receiverName || ""}
+                onChange={handleChange}
+                isDark={isDark}
+                iconColor="text-orange-500"
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ContactCard icon={<User size={20} />} label="Full Name" value={client.fullName} isDark={isDark} />
+              <ContactCard icon={<Phone size={20} />} label="Phone" value={client.phone} isDark={isDark} />
+              <ContactCard icon={<Mail size={20} />} label="Email" value={client.email} isDark={isDark} />
+              <ContactCard icon={<MapPin size={20} />} label="Address" value={client.address} isDark={isDark} />
+              <ContactCard icon={<Users size={20} />} label="Receiver" value={client.receiverName} isDark={isDark} />
+              <ContactCard icon={<Hash size={20} />} label="Client ID" value={`#${client.id}`} isDark={isDark} />
+            </div>
+          )}
         </div>
 
         {/* Vehicle Information */}
-        <div className={`rounded-2xl shadow-lg border p-6 animate-slide-up ${
+        <div className={`rounded-2xl shadow-xl border p-6 animate-slide-up ${
           isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
-        }`} style={{ animationDelay: "100ms" }}>
-          <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${
+        }`} style={{ animationDelay: "150ms" }}>
+          <h2 className={`text-2xl font-bold mb-6 flex items-center gap-2 ${
             isDark ? "text-white" : "text-gray-900"
           }`}>
-            <Car size={24} className="text-orange-500" />
+            <Bike size={28} className="text-orange-500" />
             Vehicle Information
           </h2>
 
@@ -442,7 +567,7 @@ export default function ClientDetail() {
             {isEditMode ? (
               <>
                 <InputField
-                  icon={<Car size={18} />}
+                  icon={<Bike size={18} />}
                   label="Make"
                   name="vehicleMake"
                   value={formData.vehicleMake || ""}
@@ -451,7 +576,7 @@ export default function ClientDetail() {
                   iconColor="text-orange-500"
                 />
                 <InputField
-                  icon={<Car size={18} />}
+                  icon={<Bike size={18} />}
                   label="Model"
                   name="vehicleModel"
                   value={formData.vehicleModel || ""}
@@ -508,8 +633,8 @@ export default function ClientDetail() {
               </>
             ) : (
               <>
-                <InfoCard icon={<Car size={20} />} label="Make" value={client.vehicleMake} isDark={isDark} color="orange" />
-                <InfoCard icon={<Car size={20} />} label="Model" value={client.vehicleModel} isDark={isDark} color="orange" />
+                <InfoCard icon={<Bike size={20} />} label="Make" value={client.vehicleMake} isDark={isDark} color="orange" />
+                <InfoCard icon={<Bike size={20} />} label="Model" value={client.vehicleModel} isDark={isDark} color="orange" />
                 <InfoCard icon={<Calendar size={20} />} label="Year" value={client.vehicleYear} isDark={isDark} color="blue" />
                 <InfoCard icon={<Hash size={20} />} label="Registration" value={client.regNumber} isDark={isDark} color="purple" />
                 <InfoCard icon={<CreditCard size={20} />} label="VIN" value={client.vin} isDark={isDark} color="gray" />
@@ -522,70 +647,30 @@ export default function ClientDetail() {
 
         {/* 3D Viewer */}
         {(client.carImage || client.adImage) && (
-          <div className={`rounded-2xl shadow-lg border p-6 animate-slide-up ${
+          <div className={`rounded-2xl shadow-xl border p-6 animate-slide-up ${
             isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
           }`} style={{ animationDelay: "200ms" }}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <h3 className={`text-lg font-bold flex items-center gap-2 ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}>
-                <Move className={isDark ? "text-purple-400" : "text-purple-600"} size={18} />
-                3D Interactive View
-              </h3>
+            <h2 className={`text-2xl font-bold mb-4 flex items-center gap-2 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}>
+              <Move className="text-purple-500" size={28} />
+              Vehicle Image View
+            </h2>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                  isDark ? "bg-gray-700 text-purple-400" : "bg-purple-100 text-purple-700"
-                }`}>
-                  {currentView}
-                </span>
-
-                <div className="hidden sm:flex items-center gap-1">
-                  {["Front", "Side", "Rear", "Top"].map((view) => (
-                    <button
-                      key={view}
-                      type="button"
-                      onClick={() => setPreset(view)}
-                      className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
-                        currentView === view
-                          ? "bg-purple-600 text-white"
-                          : isDark
-                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {view}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={resetView}
-                  className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                    isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                  }`}
-                  title="Reset view"
-                >
-                  <RotateCw size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile view buttons */}
-            <div className="sm:hidden flex items-center gap-1 mb-3 overflow-x-auto pb-2">
-              {["Front", "Side", "Rear", "Top"].map((view) => (
+            {/* View Preset Buttons */}
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {["Front", "Back", "Left", "Right", "Top", "Bottom"].map((view) => (
                 <button
                   key={view}
-                  type="button"
-                  onClick={() => setPreset(view)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  onClick={() => handleViewSelect(view)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     currentView === view
-                      ? "bg-purple-600 text-white"
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md transform scale-105"
                       : isDark
-                      ? "bg-gray-700 text-gray-300"
-                      : "bg-gray-100 text-gray-700"
+                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
+                  onMouseDown={(e) => e.preventDefault()}
                 >
                   {view}
                 </button>
@@ -682,6 +767,368 @@ export default function ClientDetail() {
             </div>
           </div>
         )}
+
+        {/* Tabs Section */}
+        <div className={`rounded-2xl shadow-xl overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'} transition-all duration-300 hover:shadow-2xl`}>
+          {/* Tab Header */}
+          <div className={`p-4 sm:p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Tab Buttons */}
+              <div className="flex flex-wrap gap-2">
+                {["overview", "services", "invoices", "ocr"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md transform scale-105"
+                      : isDark
+                        ? "text-gray-300 hover:bg-gray-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                  >
+                    {tab === "ocr" ? "OCR Records" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Action Buttons (contextual) */}
+              {activeTab === "services" && (
+                <Link
+                  to="/bike-services/add"
+                  state={{ customerId: client.id }}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap"
+                >
+                  <FiPlus className="w-4 h-4" />
+                  <span className="font-medium">Add Service</span>
+                </Link>
+              )}
+              {activeTab === "invoices" && (
+                <Link
+                  to="/bill/new"
+                  state={{ customerId: client.id }}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-600 to-teal-500 text-white hover:shadow-lg transition-all duration-300 hover:scale-105 whitespace-nowrap"
+                >
+                  <FiPlus className="w-4 h-4" />
+                  <span className="font-medium">Create Invoice</span>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Overview Tab */}
+            {activeTab === "overview" && (
+              <div className="space-y-6">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <StatCard title="Last Service" value={lastService} icon={<FiCalendar />} isDark={isDark} />
+                  <StatCard title="Total Services" value={totalServices} icon={<FiTool />} isDark={isDark} />
+                  <StatCard title="Total Billed" value={`₹${totalBilled.toFixed(2)}`} icon={<IndianRupee />} isDark={isDark} />
+                </div>
+
+                {/* Recent Activity Tables */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recent Services Table */}
+                  <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-gray-700 bg-gray-700/30' : 'border-gray-200 bg-gray-50/50'}`}>
+                    <div className={`px-6 py-4 border-b ${isDark ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200 bg-white'}`}>
+                      <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <FiTool className="text-blue-500" />
+                        Recent Services
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {recentServices.length > 0 ? (
+                        <table className="w-full">
+                          <thead className={isDark ? 'bg-gray-800/50' : 'bg-gray-100'}>
+                            <tr>
+                              <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Service Type
+                              </th>
+                              <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Date
+                              </th>
+                              <th className={`px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Cost
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                            {recentServices.map((service, index) => (
+                              <tr 
+                                key={service.id}
+                                className={`transition-colors duration-200 ${
+                                  isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'
+                                }`}
+                              >
+                                <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-900'}`}>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                      service.status === 'Paid' ? 'bg-green-500' : 
+                                      service.status === 'In Progress' ? 'bg-yellow-500' : 
+                                      'bg-red-500'
+                                    }`}></div>
+                                    <span className="font-medium">{service.type || "Service"}</span>
+                                  </div>
+                                </td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  {new Date(service.date).toLocaleDateString()}
+                                </td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-right font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                  ₹{(service.cost || 0).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="text-center py-12">
+                          <FiTool className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>No services yet</p>
+                        </div>
+                      )}
+                    </div>
+                    {recentServices.length > 0 && (
+                      <div className={`px-6 py-3 border-t ${isDark ? 'border-gray-700 bg-gray-800/30' : 'border-gray-200 bg-gray-50'}`}>
+                        <button
+                          onClick={() => setActiveTab('services')}
+                          className={`text-sm font-medium transition-colors ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}
+                        >
+                          View all services →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recent Invoices Table */}
+                  <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-gray-700 bg-gray-700/30' : 'border-gray-200 bg-gray-50/50'}`}>
+                    <div className={`px-6 py-4 border-b ${isDark ? 'border-gray-700 bg-gray-700/50' : 'border-gray-200 bg-white'}`}>
+                      <h3 className={`text-lg font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <CreditCard className="text-green-500" />
+                        Recent Invoices
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {recentInvoices.length > 0 ? (
+                        <table className="w-full">
+                          <thead className={isDark ? 'bg-gray-800/50' : 'bg-gray-100'}>
+                            <tr>
+                              <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Invoice ID
+                              </th>
+                              <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Date
+                              </th>
+                              <th className={`px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Amount
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                            {recentInvoices.map((invoice, index) => (
+                              <tr 
+                                key={invoice.id}
+                                className={`transition-colors duration-200 ${
+                                  isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'
+                                }`}
+                              >
+                                <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-900'}`}>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                      invoice.status === 'Paid' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                      {invoice.status}
+                                    </span>
+                                    <span className="font-medium">#{invoice.id}</span>
+                                  </div>
+                                </td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className={`px-6 py-4 whitespace-nowrap text-right font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                                  ₹{((invoice.grandTotal || invoice.totalAmount) || 0).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="text-center py-12">
+                          <CreditCard className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>No invoices yet</p>
+                        </div>
+                      )}
+                    </div>
+                    {recentInvoices.length > 0 && (
+                      <div className={`px-6 py-3 border-t ${isDark ? 'border-gray-700 bg-gray-800/30' : 'border-gray-200 bg-gray-50'}`}>
+                        <button
+                          onClick={() => setActiveTab('invoices')}
+                          className={`text-sm font-medium transition-colors ${isDark ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-700'}`}
+                        >
+                          View all invoices →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Services Tab */}
+            {activeTab === "services" && (
+              <div className="space-y-4">
+                {clientServices.length ? (
+                  clientServices.map((s) => (
+                    <div
+                      key={s.id}
+                      onClick={() => {
+                        setSelectedService(s);
+                        setServiceForm(s);
+                      }}
+                      className={`p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 ${isDark ? "bg-gray-700 hover:bg-gray-650" : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-bold text-lg truncate ${isDark ? "text-white" : "text-gray-800"}`}>
+                            {s.type || "Service"}
+                          </h3>
+                          <p className={`text-sm mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                            {new Date(s.date).toLocaleDateString()} • ₹{(s.cost || 0).toFixed(2)}
+                          </p>
+                          {s.notes && (
+                            <p className={`text-xs mt-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                              {s.notes}
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${s.status === "Paid"
+                            ? "bg-green-500/20 text-green-400"
+                            : s.status === "In Progress"
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : "bg-red-500/20 text-red-400"
+                            }`}
+                        >
+                          {s.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <FiTool className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                    <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>No service records yet.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Invoices Tab */}
+            {activeTab === "invoices" && (
+              <div className="space-y-4">
+                {clientInvoices.length ? (
+                  clientInvoices.map(inv => (
+
+                    <div
+                      key={inv.id}
+                      onClick={() => setSelectedInvoice(inv)}
+                      className={`p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 ${isDark ? "bg-gray-700 hover:bg-gray-650" : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-800"}`}>
+                            Invoice #{inv.id}
+                          </h3>
+                          <p className={`text-sm mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                            {new Date(inv.createdAt).toLocaleDateString()} • ₹{((inv.grandTotal || inv.totalAmount) || 0).toFixed(2)}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${inv.status === "Paid"
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-yellow-500/20 text-yellow-400"
+                            }`}
+                        >
+                          {inv.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <IndianRupee className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                    <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>No invoices found.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* OCR Tab */}
+            {activeTab === "ocr" && (
+              <div className="space-y-4">
+                {/* If there's a parsed buffer (from local camera/upload), show results + save */}
+                {ocrParsed && (
+                  <div className={`p-4 rounded-xl ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'} transition-all duration-300 hover:shadow-md`}>
+                    <OCRResults
+                      isDark={isDark}
+                      parsedData={ocrParsed}
+                      rawOcrText={ocrRaw}
+                      onSave={handleSaveOCR}
+                    />
+                  </div>
+                )}
+
+                {/* OCR history list */}
+                {isLoadingOCR ? (
+                  <p className="text-center text-gray-500">Loading OCR records...</p>
+                ) : ocrRecords.length ? (
+                  ocrRecords.map((r) => (
+                    <div
+                      key={r.id}
+                      className={`p-4 rounded-xl flex justify-between items-center border transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 ${isDark ? "border-gray-700 bg-gray-700/50" : "border-gray-200 bg-gray-50"}`}
+                    >
+                      <div>
+                        <h4 className={`font-semibold ${isDark ? "text-white" : "text-gray-800"}`}>
+                          {r.parsedData?.ownerName || "Unknown Owner"}
+                        </h4>
+                        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                          Reg: {r.parsedData?.regNo || "N/A"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(r.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedOCR(r)}
+                          className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-300"
+                          title="View Details"
+                        >
+                          <FiEye />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOCR(r.id)}
+                          className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-300"
+                          title="Delete"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 text-gray-500">
+                    <FiFileText className="mx-auto mb-2" size={32} />
+                    <p>No OCR records found for this client.</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
 
         {/* Notes Section */}
         {(client.notes || isEditMode) && (
@@ -807,6 +1254,20 @@ function InputField({
             : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400"
         }`}
       />
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon, isDark }) {
+  return (
+    <div className={`p-5 rounded-xl flex items-center justify-between transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-50"}`}>
+      <div>
+        <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
+        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+      </div>
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white transition-transform duration-300 hover:scale-110">
+        {icon}
+      </div>
     </div>
   );
 }

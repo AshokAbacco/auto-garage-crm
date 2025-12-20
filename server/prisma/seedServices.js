@@ -1,10 +1,4 @@
-/**
- * FINAL VERSION — For Excel with columns:
- * A = Category name (repeats only when new category starts)
- * B = Sub-Service
- * C = Description (ignored)
- * D = Applicable Vehicle Type (ignored)
- */
+
 
 import XLSX from "xlsx";
 import prisma from "../models/prismaClient.js";

@@ -15,12 +15,11 @@ import {
   FiAlertCircle,
   FiCreditCard,
   FiCheckCircle,
-  FiDollarSign,
   FiTrendingUp,
   FiLoader
 } from "react-icons/fi";
 import { Toaster, toast } from "react-hot-toast";
-
+import { IndianRupee } from "lucide-react";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Auth Helpers
@@ -424,7 +423,7 @@ export default function AddBilling() {
             <h2 className={`flex items-center gap-2 text-lg font-bold mb-6 ${
               isDark ? "text-blue-400" : "text-blue-700"
             }`}>
-              <FiDollarSign size={20} />
+              <IndianRupee size={20} />
               Cost Breakdown
             </h2>
 
@@ -463,14 +462,7 @@ export default function AddBilling() {
                 isDark={isDark}
                 placeholder="0"
               />
-              <Input
-                label="Extra Tax"
-                type="number"
-                value={form.tax}
-                onChange={(e) => setForm({ ...form, tax: e.target.value })}
-                isDark={isDark}
-                placeholder="0.00"
-              />
+              
               <Input
                 label="Discount"
                 type="number"

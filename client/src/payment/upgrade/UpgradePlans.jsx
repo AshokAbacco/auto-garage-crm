@@ -178,7 +178,6 @@ export default function UpgradePlans() {
       badge: "POPULAR",
       features: [
         "Unlimited uploads",
-        "High-accuracy OCR",
         "Priority support",
         "Export CSV, PDF",
         "SMS/WhatsApp Alerts",

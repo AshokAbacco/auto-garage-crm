@@ -158,9 +158,9 @@ function App() {
           <Route path="/staff-management" element={<StaffManagement />} />
           <Route path="/salary-management" element={<SalaryManagement />} />
         </Route>
-
+{/* 
         <Route>
-          {/* Bike Garage CRM Routes */}
+         
           <Route index element={<Navigate to="car-dashboard" />} />
           <Route path="car-dashboard" element={<Dashboard />} />
 
@@ -185,7 +185,7 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="reference" element={<Reference />} />
           <Route path="upgrade" element={<UpgradePlans />} />
-        </Route>
+        </Route> */}
 
         {/* ================= BIKE CRM ================= */}
         <Route path="/" element={<BikeLayoutPage />}>

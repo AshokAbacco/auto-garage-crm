@@ -67,8 +67,8 @@ import SMSalert from "./washPages//sms/sms.jsx";
 import Plan from "./washPages/plans/Plans.jsx";
 import Newclient from "./washPages/client/AddClient.jsx";
 import AddNewServiceForm from "./washPages/services/AddService.jsx";
+import NewService from "./washPages/services/AddService.jsx";
 import NewInvoice from "./washPages/billing/NewInvoice.jsx";
-
 import WashingProfile from "./components/WashingProfile.jsx";
 import AddClients from "./bikePages/client/AddClients.jsx";
 import BikeDetail from "./bikePages/client/clientDetail.jsx";
@@ -85,12 +85,14 @@ import WashDashboard from "./washPages/WashDashboard.jsx";
 import ClientsDetails from "./washPages/client/ClientsDetails.jsx";
 import WServiceDetails from "./washPages/services/WServiceDetails.jsx";
 import BillingInvoice from "./washPages/billing/BillingInvoice.jsx";
+import NewSubService from "./washPages/services/AddService.jsx";
 import Billing from "./washPages/billing/Billing.jsx";
 import Upgrade from "./bikePages/Upgrade/Upgrade.jsx";
 import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
 import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
 import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
 import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
+
 function App() {
   return (
     <ThemeProvider>
@@ -156,7 +158,7 @@ function App() {
           <Route path="/staff-management" element={<StaffManagement />} />
           <Route path="/salary-management" element={<SalaryManagement />} />
         </Route>
-        
+
         <Route>
           {/* Bike Garage CRM Routes */}
           <Route index element={<Navigate to="car-dashboard" />} />
@@ -218,10 +220,6 @@ function App() {
           <Route path="/washing-reports" element={<Repor />} />
           <Route path="/washing-reference" element={<Referenc />} />
           <Route path="/washing-upgrade" element={<Upgra />} />
-          <Route
-            path="/washing-services/sub-services"
-            element={<Subservice />}
-          />
           <Route path="/washing-alerts" element={<SMSalert />} />
           <Route path="/addclient" element={<Newclient />} />
           <Route path="/add-service" element={<NewService />} />

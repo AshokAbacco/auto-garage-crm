@@ -80,6 +80,8 @@ import AddBilling from "./bikePages/Billing/AddBilling.jsx";
 import InvoiceBill from "./bikePages/Billing/InvoiceBill.jsx";
 import BikeProfile from "./components/BikeProfile.jsx";
 import ProformaInvoice from "./pages/billing/ProformaInvoice.jsx";
+import StaffManagement  from "./pages/CarStaffManagement.jsx"
+import SalaryManagement from "./pages/CarSalaryManagement.jsx";
 
 function App() {
   return (
@@ -141,6 +143,8 @@ function App() {
           <Route path="/reference" element={<Reference />} />
           <Route path="/upgrade" element={<UpgradePlans />} />
           <Route path="/billing/preview" element={<ProformaInvoice />} />
+          <Route path="/staff-management" element={<StaffManagement />} />
+          <Route path="/salary-management" element={<SalaryManagement />} />
         </Route>
 
         {/* Bike Garage CRM Routes */}

@@ -5,6 +5,7 @@ import prisma from "../models/prismaClient.js";
 dotenv.config();
 
 export const protect = async (req, res, next) => {
+  console.log("AUTH USER:", req.user);
   try {
     const authHeader = req.headers.authorization;
 
@@ -20,26 +21,30 @@ export const protect = async (req, res, next) => {
      * STAFF AUTH (CarStaff table)
      * =====================================
      */
-    if (decoded.type === "staff") {
-      const staff = await prisma.carStaff.findUnique({
-        where: { id: decoded.id },
-      });
+   if (decoded.type === "staff") {
+     const login = await prisma.carStaffLogin.findUnique({
+       where: { id: decoded.id }, // 🔑 MATCH JWT ID
+       include: {
+         staff: true,
+       },
+     });
 
-      if (!staff || !staff.isActive) {
-        return res.status(401).json({
-          message: "Staff not found or inactive",
-        });
-      }
+     if (!login || !login.isActive || !login.staff) {
+       return res.status(401).json({
+         message: "Staff not found or inactive",
+       });
+     }
 
-      req.user = {
-        id: staff.id,
-        type: "staff",
-        role: "staff",
-        ownerId: staff.ownerId,
-      };
+     req.user = {
+       id: login.staff.id, // actual staff id
+       type: "staff",
+       role: login.staff.role,
+       ownerId: login.ownerId,
+     };
 
-      return next();
-    }
+     return next();
+   }
+
 
     /**
      * =====================================

@@ -1,4 +1,3 @@
-// Layout.js
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -18,6 +17,8 @@ import {
   IndianRupee,
   Network,
   Crown,
+  UserRoundPlus,
+  Wallet,
   UserRoundCog,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
@@ -28,6 +29,73 @@ export default function Layout() {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
 
+  const [user, setUser] = useState({});
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  const isStaff = user?.type === "staff";
+
+  /* ================================
+      LOAD PROFILE (OWNER / STAFF)
+   ================================= */
+  useEffect(() => {
+    const loadProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLoadingUser(false);
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const isStaffToken = payload.type === "staff";
+
+        const url = isStaffToken
+          ? "http://localhost:5000/api/staff-auth/profile"
+          : "http://localhost:5000/api/user/profile";
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error("Profile fetch failed");
+
+        const profile = await res.json();
+
+        const normalizedUser = {
+          ...profile,
+          type: isStaffToken ? "staff" : "owner",
+        };
+
+        localStorage.setItem("user", JSON.stringify(normalizedUser));
+        setUser(normalizedUser);
+
+        window.dispatchEvent(new Event("user-updated"));
+      } catch (err) {
+        console.error("Profile load error:", err);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login", { replace: true });
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    loadProfile();
+
+    const handleUserUpdate = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) setUser(JSON.parse(storedUser));
+    };
+
+    window.addEventListener("user-updated", handleUserUpdate);
+    return () => window.removeEventListener("user-updated", handleUserUpdate);
+  }, [navigate]);
+
+  /* ================================
+      MENU CONFIG
+   ================================= */
   const menu = [
     { to: "/car-dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/clients", label: "Clients", icon: Users },
@@ -36,54 +104,50 @@ export default function Layout() {
     { to: "/reminders", label: "Reminders", icon: Bell },
     { to: "/reports", label: "Reports", icon: BarChart2 },
     { to: "/ocr-scanner", label: "OCR Scanner", icon: FileText },
+    { to: "/staff-management", label: "Staff Management", icon: UserRoundPlus },
+    { to: "/salary-management", label: "Salary Management", icon: Wallet },
     { to: "/plan", label: "Your Plan", icon: IndianRupee },
     { to: "/reference", label: "Reference", icon: Network },
     { to: "/upgrade", label: "Upgrade", icon: Crown },
   ];
 
+  const filteredMenu = menu.filter((item) => {
+    if (!isStaff) return true;
+    return [
+      "/car-dashboard",
+      "/clients",
+      "/services",
+      "/billing",
+      "/reminders",
+      "/reports",
+      "/ocr-scanner",
+    ].includes(item.to);
+  });
+
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || {}
-  );
-
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) setUser(storedUser);
-
-    const handleUserUpdate = () => {
-      const updatedUser = JSON.parse(localStorage.getItem("user"));
-      setUser(updatedUser);
-    };
-
-    window.addEventListener("user-updated", handleUserUpdate);
-    return () => window.removeEventListener("user-updated", handleUserUpdate);
-  }, []);
 
   const logout = () => {
-    localStorage.removeItem("auth");
+    localStorage.clear();
     navigate("/login", { replace: true });
   };
 
-  // Color Configuration
+  /* ================================
+      THEME COLORS
+   ================================= */
   const colors = {
-    // Backgrounds
-    layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-    mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-    elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
-
-    // Text
+    layoutBg: isDark ? "#020617" : "#FFFFFF",
+    mainBg: isDark ? "#020617" : "#F8FAFC",
+    elementBg: isDark ? "#020D36" : "#FFFFFF",
     textPrimary: isDark ? "#E5E7EB" : "#0F172A",
     textSecondary: isDark ? "#94A3B8" : "#475569",
-
-    // Brand & Accents
     brand: isDark ? "#1E3A8A" : "#0B1D51",
-    primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-    // Borders & Hover
+    primaryButton: isDark ? "#3B82F6" : "#0046FF",
     border: isDark ? "#1E293B" : "#E5E7EB",
     hoverBg: isDark ? "#1E293B" : "#F8FAFC",
   };
+
+  if (loadingUser) return null;
 
   return (
     <div
@@ -103,8 +167,8 @@ export default function Layout() {
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
-          border-r
-          ${sidebarExpanded ? "w-64" : "w-16"}
+          border-r flex flex-col
+          ${sidebarExpanded ? "w-64" : "w-20"} 
           lg:translate-x-0
           ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -117,28 +181,33 @@ export default function Layout() {
         onMouseEnter={() => setSidebarExpanded(true)}
         onMouseLeave={() => setSidebarExpanded(false)}
       >
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Logo */}
           <div
-            className="flex items-center justify-between h-16 px-4 border-b"
+            className="flex items-center justify-between h-16 px-4 border-b flex-shrink-0"
             style={{ borderColor: colors.border }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 overflow-hidden">
               <div
-                className="flex items-center justify-center w-10 h-10 rounded-lg shadow-lg"
+                className="flex items-center justify-center w-10 h-10 rounded-lg shadow-lg flex-shrink-0"
                 style={{ backgroundColor: colors.primaryButton }}
               >
                 <Car className="w-6 h-6 text-white" />
               </div>
-              {sidebarExpanded && (
-                <div
-                  className="font-poppins font-bold text-xl transition-opacity duration-300"
-                  style={{ color: isDark ? "#FFFFFF" : colors.brand }}
-                >
-                  {user?.companyName || "Motor Desk"}
-                </div>
-              )}
+
+              {/* ANIMATED LOGO TEXT */}
+              <div
+                className={`font-poppins font-bold text-xl whitespace-nowrap transition-all duration-300 ease-in-out ${
+                  sidebarExpanded
+                    ? "opacity-100 max-w-[200px]"
+                    : "opacity-0 max-w-0"
+                }`}
+                style={{ color: isDark ? "#FFFFFF" : colors.brand }}
+              >
+                {user?.companyName || user?.company || "Motor Desk"}
+              </div>
             </div>
+
             <button
               onClick={() => setSidebarOpen(false)}
               className="p-1 transition-colors rounded-lg lg:hidden"
@@ -149,19 +218,19 @@ export default function Layout() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
-            {menu.map((item) => (
+          <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
+            {filteredMenu.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) => `
-    flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-    ${isActive ? "shadow-lg" : ""}
-  `}
+                  flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group
+                  ${isActive ? "shadow-lg" : ""}
+                `}
                 style={({ isActive }) => ({
                   backgroundColor: isActive
-                    ? colors.primaryButton // ✅ BLUE ALWAYS
+                    ? colors.primaryButton
                     : "transparent",
                   color: isActive ? "#FFFFFF" : colors.textSecondary,
                 })}
@@ -171,12 +240,22 @@ export default function Layout() {
                   return (
                     <>
                       <Icon
-                        className="w-5 h-5 flex-shrink-0"
+                        className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
                         style={{
                           color: isActive ? "#FFFFFF" : colors.textSecondary,
                         }}
                       />
-                      {sidebarExpanded && <span>{item.label}</span>}
+
+                      {/* ANIMATED MENU LABEL */}
+                      <span
+                        className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                          sidebarExpanded
+                            ? "opacity-100 w-auto ml-3"
+                            : "opacity-0 w-0 ml-0"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
                     </>
                   );
                 }}
@@ -185,40 +264,38 @@ export default function Layout() {
           </nav>
 
           {/* Logout Button */}
-          <div className="p-2">
+          <div className="p-3 flex-shrink-0">
             <button
               onClick={() => setShowLogoutModal(true)}
-              className={`
-                w-full flex items-center justify-center
-                ${sidebarExpanded ? "gap-2 px-4" : "px-3"}
-                py-3
-                rounded-xl font-medium
-                transition-all duration-200
-                border
-                hover:bg-opacity-80
-              `}
+              className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 border hover:bg-opacity-80 overflow-hidden"
               style={{
                 backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
                 borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FECACA",
                 color: "#DC2626",
               }}
             >
-              <LogOut
-                className={`w-5 h-5 flex-shrink-0 ${
-                  sidebarExpanded ? "mr-1" : ""
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+
+              {/* ANIMATED LOGOUT TEXT */}
+              <span
+                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+                  sidebarExpanded
+                    ? "opacity-100 w-auto ml-3"
+                    : "opacity-0 w-0 ml-0"
                 }`}
-              />
-              {sidebarExpanded && <span>Logout</span>}
+              >
+                Logout
+              </span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-col w-full min-h-screen lg:ml-0">
+      <div className="flex flex-col w-full min-h-screen lg:pl-2 transition-all duration-300">
         {/* Header */}
         <header
-          className="shadow-sm border-b transition-colors duration-300"
+          className="shadow-sm border-b transition-colors duration-300 sticky top-0 z-30"
           style={{
             backgroundColor: colors.layoutBg,
             borderColor: colors.border,
@@ -249,7 +326,7 @@ export default function Layout() {
                   <Car className="w-5 h-5 text-white" />
                 </div>
                 <div className="font-bold" style={{ color: colors.brand }}>
-                  {user?.companyName || "Motor Desk"}
+                  {user?.companyName || user?.company || "Motor Desk"}
                 </div>
               </div>
             </div>
@@ -292,6 +369,10 @@ export default function Layout() {
                         src={user.profileImage}
                         alt="Profile"
                         className="object-cover w-full h-full"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextSibling.style.display = "flex";
+                        }}
                       />
                     ) : (
                       <div
@@ -299,9 +380,9 @@ export default function Layout() {
                         style={{ backgroundColor: colors.primaryButton }}
                       >
                         <span className="font-medium text-white">
-                          {user.username
-                            ? user.username.charAt(0).toUpperCase()
-                            : "U"}
+                          {user?.username?.charAt(0)?.toUpperCase() ||
+                            user?.name?.charAt(0)?.toUpperCase() ||
+                            "U"}
                         </span>
                       </div>
                     )}
@@ -312,13 +393,13 @@ export default function Layout() {
                       className="font-medium"
                       style={{ color: colors.textPrimary }}
                     >
-                      {user.username || "User"}
+                      {user?.username || user?.name || "User"}
                     </div>
                     <div
                       className="text-xs"
                       style={{ color: colors.textSecondary }}
                     >
-                      {user.email || "no-email@example.com"}
+                      {user?.email || "no-email@example.com"}
                     </div>
                   </div>
                 </button>
@@ -334,7 +415,11 @@ export default function Layout() {
                   >
                     <button
                       onClick={() => {
-                        navigate("/profile");
+                        if (isStaff) {
+                          navigate("/car-dashboard");
+                        } else {
+                          navigate("/profile");
+                        }
                         setOpenProfileMenu(false);
                       }}
                       className="w-full flex items-center justify-center gap-2 text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300"

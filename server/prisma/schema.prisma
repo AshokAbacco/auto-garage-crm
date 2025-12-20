@@ -20,6 +20,11 @@ enum PlanType {
   PREMIUM
 }
 
+enum SalaryStatus {
+  PAID
+  UNPAID
+}
+
 enum ServiceStatus {
   PENDING
   IN_PROGRESS
@@ -69,7 +74,9 @@ model User {
   washingClients WashingClient[]
 
   // ✅ Staff
-  staffMembers CarStaff[]
+  staffMembers     CarStaff[]
+  carStaffLogins   CarStaffLogin[]
+  carStaffSalaries CarStaffSalary[]
 }
 
 model Client {
@@ -565,19 +572,80 @@ model BikeReminder {
 model CarStaff {
   id Int @id @default(autoincrement())
 
-  email    String @unique
-  password String
+  // Owner relationship
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Basic staff info
+  name     String
+  role     String? // Mechanic, Manager, Helper
+  phone    String?
+  joinDate DateTime @default(now())
+
+  // Salary configuration
+  baseSalary        Float @default(0)
+  bonus             Float @default(0)
+  leaves            Int   @default(0)
+  deductionPerLeave Float @default(0)
+  extraDeductions   Float @default(0)
+
+  // Relations
+  login CarStaffLogin?
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  carStaffSalaries CarStaffSalary[]
+
+  @@index([ownerId])
+}
+
+model CarStaffLogin {
+  id Int @id @default(autoincrement())
+
+  // Relations
+  staffId Int      @unique
+  staff   CarStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   ownerId Int
   owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  name     String?
-  phone    String?
+  // Login credentials
+  email    String  @unique
+  password String
   isActive Boolean @default(true)
-
-  baseSalary Float?
-  joinDate   DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model CarStaffSalary {
+  id Int @id @default(autoincrement())
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  staffId Int
+  staff   CarStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  month Int // 1 - 12
+  year  Int
+
+  // 🔒 Snapshot of salary configuration
+  baseSalary        Float
+  bonus             Float
+  leaves            Int
+  deductionPerLeave Float
+  extraDeductions   Float
+
+  // 💵 Final computed values (stored, never recalculated)
+  netSalary Float
+
+  status SalaryStatus @default(UNPAID)
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([staffId, month, year]) // prevent duplicate payroll
 }

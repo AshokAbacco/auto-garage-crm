@@ -108,11 +108,11 @@ export const registerUser = async (req, res) => {
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
         profileImage: null,
-        referredByCode: referralCodeUsed, 
-        referredByUserId, 
-        plan: userPlan, 
-        companyName, 
-        phone, 
+        referredByCode: referralCodeUsed,
+        referredByUserId,
+        plan: userPlan,
+        companyName,
+        phone,
       },
     });
 
@@ -247,7 +247,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-
 /**
  * =============================================
  * GET PROFILE
@@ -280,11 +279,6 @@ export const getProfile = async (req, res) => {
 
 /**
  * =============================================
- * VERIFY TOKEN
- * =============================================
- */
-/**
- * =============================================
  * VERIFY TOKEN (OWNER + STAFF)
  * =============================================
  */
@@ -305,21 +299,26 @@ export const verifyToken = async (req, res) => {
      * ===============================
      */
     if (decoded.type === "staff") {
-      const staff = await prisma.carStaff.findUnique({
+      const login = await prisma.carStaffLogin.findUnique({
         where: { id: decoded.id },
+        include: {
+          staff: true,
+        },
       });
 
-      if (!staff || !staff.isActive) {
+      if (!login || !login.isActive || !login.staff) {
         return res.status(401).json({ valid: false });
       }
 
       return res.status(200).json({
         valid: true,
         user: {
-          id: staff.id,
+          id: login.id, // staff id
+          loginId: login.id, // login id
           type: "staff",
           role: "staff",
-          ownerId: staff.ownerId,
+          ownerId: login.ownerId,
+          name: login.staff.name,
         },
       });
     }
@@ -359,7 +358,6 @@ export const verifyToken = async (req, res) => {
     return res.status(401).json({ valid: false });
   }
 };
-
 
 /**
  * =============================================

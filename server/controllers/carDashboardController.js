@@ -13,46 +13,49 @@ export const getDashboardData = async (req, res) => {
      * STAFF DASHBOARD (LIMITED DATA)
      * ===============================
      */
-    if (req.user.type === "staff") {
-      const ownerId = req.user.ownerId;
+   if (req.user.type === "staff") {
+     const ownerId = req.user.ownerId;
 
-      const totalClients = await prisma.client.count({
-        where: { userId: ownerId },
-      });
+     const totalClients = await prisma.client.count({
+       where: { userId: ownerId },
+     });
 
-      const totalServices = await prisma.service.count({
-        where: {
-          client: { userId: ownerId },
-        },
-      });
+     const totalServices = await prisma.service.count({
+       where: {
+         client: { userId: ownerId },
+       },
+     });
 
-      const upcomingReminders = await prisma.reminder.count({
-        where: {
-          userId: ownerId,
-          remindAt: { gte: new Date() },
-        },
-      });
+     const upcomingReminders = await prisma.reminder.count({
+       where: {
+         userId: ownerId,
+         remindAt: { gte: new Date() },
+       },
+     });
 
-      return res.status(200).json({
-        stats: {
-          totalClients,
-          totalServices,
-          upcomingReminders,
-          totalRevenue: 0,
-          avgServiceTime: 0,
-          customerRating: 0,
-          overdueRevenue: 0,
-        },
-        charts: {
-          monthlyRevenue: [],
-          serviceTypes: [],
-          weeklyAppointments: [],
-        },
-        data: {
-          todayAppointments: [],
-        },
-      });
-    }
+     return res.status(200).json({
+       stats: {
+         totalClients,
+         totalServices,
+         upcomingReminders,
+
+         // 🔑 MUST EXIST
+         totalRevenue: 0,
+         avgServiceTime: 0,
+         customerRating: 0,
+         overdueRevenue: 0,
+       },
+       charts: {
+         monthlyRevenue: [],
+         serviceTypes: [],
+         weeklyAppointments: [],
+       },
+       data: {
+         todayAppointments: [],
+       },
+     });
+   }
+
 
     /**
      * ===============================
@@ -88,7 +91,7 @@ export const getDashboardData = async (req, res) => {
         totalClients,
         totalServices,
         upcomingReminders,
-        totalRevenue: totalRevenueAgg._sum.grandTotal || 0,
+        totalRevenue: Number(totalRevenueAgg._sum.grandTotal) || 0,
         avgServiceTime: 0,
         customerRating: 4.5,
         overdueRevenue: 0,

@@ -32,6 +32,7 @@ import carStaffRoutes from "./routes/carStaffRoutes.js";
 
 import carRoutes from "./routes/carRoutes.js";
 import staffAuthRoutes from "./routes/staffAuthRoutes.js"
+import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js"
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -122,8 +123,9 @@ app.use("/api/bike-reminders", bikeReminderRoutes);
 //car company names and models
 app.use("/api/cars", carRoutes);
 
-app.use("/api/staff", carStaffRoutes);
+app.use("/api/car-staff", carStaffRoutes);
 app.use("/api/staff-auth", staffAuthRoutes);
+app.use("/api/carstaff-salary", carstaffSalaryRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

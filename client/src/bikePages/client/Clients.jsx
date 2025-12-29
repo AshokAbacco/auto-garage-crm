@@ -88,15 +88,16 @@ export default function Clients() {
   );
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
-      }`}>
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
+      isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+    }`}>
       <Toaster position="top-right" />
 
       {/* ✅ HEADER */}
       <div className="mb-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
               Clients List
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -106,7 +107,7 @@ export default function Clients() {
 
           <button
             onClick={() => navigate("/editclient/new")}
-            className="flex items-center gap-2 px-6 py-3 text-white transition-all duration-200 shadow-lg bg-gradient-to-r from-orange-500 to-red-600 rounded-xl hover:shadow-xl"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
           >
             <PlusCircle size={20} />
             Add New Client
@@ -114,10 +115,11 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* ✅ TOP 3 STAT CARDS - FIXED DARK MODE */}
-      <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">
-        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${isDark ? "bg-gray-800" : "bg-white"
-          }`}>
+      {/* ✅ TOP 3 STAT CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${
+          isDark ? "bg-gray-800" : "bg-white"
+        }`}>
           <div>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Total Clients</p>
             <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{filteredClients.length}</h2>
@@ -156,10 +158,11 @@ export default function Clients() {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            className={`w-full pl-12 pr-4 py-4 rounded-xl border transition-colors duration-300 ${isDark
-              ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-              } focus:outline-none focus:ring-2 focus:ring-orange-500`}
+            className={`w-full pl-12 pr-4 py-4 rounded-xl border transition-colors duration-300 ${
+              isDark 
+                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" 
+                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
           />
         </div>
       </div>
@@ -167,14 +170,15 @@ export default function Clients() {
       {/* ✅ LOADING */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <RefreshCw className="text-orange-500 animate-spin" size={40} />
+          <RefreshCw className="animate-spin text-blue-500" size={40} />
         </div>
       )}
 
-      {/* ✅ ERROR - FIXED DARK MODE */}
-      {error && (
-        <div className={`flex items-center gap-3 p-4 rounded-xl ${isDark ? "bg-red-900/30 text-red-400 border border-red-800" : "bg-red-50 text-red-600"
-          }`}>
+      {/* ✅ ERROR */}
+      {error && !loading && (
+        <div className={`flex items-center gap-3 p-4 rounded-xl ${
+          isDark ? "bg-red-900/30 text-red-400 border border-red-800" : "bg-red-50 text-red-600"
+        }`}>
           <AlertCircle size={24} />
           {error}
         </div>
@@ -204,42 +208,48 @@ export default function Clients() {
         </div>
       )}
 
-      {/* ✅ PAGINATION FOOTER - FIXED DARK MODE */}
-      <div className={`mt-10 flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-xl shadow transition-colors duration-300 ${isDark ? "bg-gray-800" : "bg-white"
+      {/* ✅ PAGINATION FOOTER */}
+      {!loading && !error && filteredClients.length > 0 && (
+        <div className={`mt-10 flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-xl shadow transition-colors duration-300 ${
+          isDark ? "bg-gray-800" : "bg-white"
         }`}>
-        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-          Showing {indexOfFirstClient + 1} – {Math.min(indexOfLastClient, filteredClients.length)} of {filteredClients.length}
-        </p>
+          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            Showing {indexOfFirstClient + 1} – {Math.min(indexOfLastClient, filteredClients.length)} of {filteredClients.length}
+          </p>
 
-        <div className="flex items-center gap-3">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${isDark
-              ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          <div className="flex items-center gap-3">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                isDark 
+                  ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
+                  : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               }`}
-          >
-            Previous
-          </button>
+            >
+              Previous
+            </button>
 
-          <span className={`px-4 py-2 rounded-lg border font-semibold ${isDark
-            ? "border-gray-700 bg-gray-700 text-white"
-            : "border-gray-300 bg-gray-50 text-gray-900"
+            <span className={`px-4 py-2 rounded-lg border font-semibold ${
+              isDark 
+                ? "border-gray-700 bg-gray-700 text-white" 
+                : "border-gray-300 bg-gray-50 text-gray-900"
             }`}>
-            {currentPage}/{totalPages}
-          </span>
+              {currentPage}/{totalPages}
+            </span>
 
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${isDark
-              ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                isDark 
+                  ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
+                  : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               }`}
-          >
-            Next
-          </button>
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -255,17 +265,28 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
 
   return (
     <div
-      className={`flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border transition-colors duration-300 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
+      className={`flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border transition-all duration-300 hover:shadow-lg ${
+        isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+      }`}
     >
       {/* Bike Image */}
-      <div className={`w-48 h-48 rounded-xl overflow-hidden flex-shrink-0 ${isDark ? "bg-gray-700" : "bg-gray-200"
-        }`}>
-        <img
-          src={client.bikeImage || "https://via.placeholder.com/300"}
-          alt="bike"
-          className="object-cover w-full h-full"
-        />
+      <div
+        className={`w-48 h-48 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          isDark ? "bg-gray-700" : "bg-gray-200"
+        }`}
+      >
+        {bikeImage ? (
+          <img
+            src={bikeImage}
+            alt="bike"
+            className="w-full h-full object-cover rounded-xl"
+          />
+        ) : (
+          <Bike
+            size={64}
+            className={`${isDark ? "text-gray-400" : "text-gray-500"}`}
+          />
+        )}
       </div>
 
       {/* Client Details */}
@@ -286,7 +307,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
               {fullName}
             </h3>
 
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+            <span className="inline-flex items-center gap-1 px-2 rounded-full bg-green-100 text-green-700 text-xs font-medium">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Active
             </span>
@@ -307,7 +328,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
               </div>
 
               <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                {client.bikeBrand}
+                {vehicleMake} {vehicleModel}
               </span>
             </div>
 
@@ -325,11 +346,12 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
             </div>
 
             {/* Registration Number */}
-            <span className={`inline-block px-4 py-2 rounded-lg font-mono text-sm font-semibold ${isDark
-              ? "bg-orange-900/50 text-orange-300 border border-orange-700"
-              : "bg-orange-100 text-orange-600"
-              }`}>
-              {client.regNumber}
+            <span className={`inline-block px-4 py-2 rounded-lg font-mono text-sm font-semibold ${
+              isDark 
+                ? "bg-blue-900/50 text-blue-300 border border-blue-700" 
+                : "bg-blue-100 text-blue-600"
+            }`}>
+              {client.regNumber || "N/A"}
             </span>
           </div>
 
@@ -377,34 +399,40 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
         </div>
       </div>
 
-      {/* ACTION BUTTONS - FIXED DARK MODE */}
-      <div className="flex justify-center gap-2 md:flex-col">
-        <button
-          onClick={onView}
-          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${isDark
-            ? "border-gray-700 hover:bg-gray-700"
-            : "border-gray-200 hover:bg-gray-50"
-            }`}
+      {/* ACTION BUTTONS */}
+      <div className="flex md:flex-col gap-2 justify-center">
+        <button 
+          onClick={onView} 
+          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${
+            isDark 
+              ? "border-gray-700 hover:bg-gray-700" 
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
+          title="View Details"
         >
           <Eye size={20} className="text-blue-500" />
         </button>
 
-        <button
-          onClick={onEdit}
-          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${isDark
-            ? "border-gray-700 hover:bg-gray-700"
-            : "border-gray-200 hover:bg-gray-50"
-            }`}
+        <button 
+          onClick={onEdit} 
+          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${
+            isDark 
+              ? "border-gray-700 hover:bg-gray-700" 
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
+          title="Edit Client"
         >
           <Edit2 size={20} className="text-purple-500" />
         </button>
 
-        <button
-          onClick={onDelete}
-          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${isDark
-            ? "border-gray-700 hover:bg-gray-700"
-            : "border-gray-200 hover:bg-gray-50"
-            }`}
+        <button 
+          onClick={onDelete} 
+          className={`p-3 rounded-xl border-2 hover:scale-105 transition-all duration-200 ${
+            isDark 
+              ? "border-gray-700 hover:bg-gray-700" 
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
+          title="Delete Client"
         >
           <Trash2 size={20} className="text-red-500" />
         </button>

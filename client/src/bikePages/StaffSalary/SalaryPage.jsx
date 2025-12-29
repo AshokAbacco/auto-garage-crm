@@ -4,7 +4,7 @@ import { Search, Plus, Edit2, DollarSign, Users, TrendingUp, Calendar, ChevronDo
 import api from "../../utils/axiosInstance";
 import AddEditStaffModal from './AddStaff';
 import SalaryHistoryModal from './SalaryHistory';
-
+import { useNavigate } from "react-router-dom";
 const MONTHS = [
   { value: 1, label: 'January' }, { value: 2, label: 'February' }, { value: 3, label: 'March' },
   { value: 4, label: 'April' }, { value: 5, label: 'May' }, { value: 6, label: 'June' },
@@ -27,7 +27,7 @@ const StaffSalaryManagement = () => {
   const [loading, setLoading] = useState(true);
   const [availableYears, setAvailableYears] = useState([]);
   const [availableMonths, setAvailableMonths] = useState([]);
-
+  const navigate = useNavigate();
   useEffect(() => { fetchStaffData(); }, []);
   useEffect(() => { if (selectedYear === 'all') setSelectedMonth('all'); }, [selectedYear]);
 
@@ -214,21 +214,20 @@ const StaffSalaryManagement = () => {
       alert("Payment failed");
     }
   };
-
-  const StatCard = ({ icon: Icon, emoji, color, label, value }) => (
-    <div className={`bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-${color}-500 transition-all`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 rounded-xl bg-${color}-100 flex items-center justify-center`}>
-          <Icon className={`w-6 h-6 text-${color}-600`} />
-        </div>
-        <div className="text-2xl">{emoji}</div>
-      </div>
-      <div className="space-y-1">
-        <p className="text-gray-600 text-sm">{label}</p>
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+const StatCard = ({ icon: Icon, color, label, value }) => (
+  <div className={`bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-${color}-500 transition-all`}>
+    <div className="flex items-center justify-between mb-4">
+      <div className={`w-12 h-12 rounded-xl bg-${color}-100 flex items-center justify-center`}>
+        <Icon className={`w-6 h-6 text-${color}-600`} />
       </div>
     </div>
-  );
+    <div className="space-y-1">
+      <p className="text-gray-600 text-sm">{label}</p>
+      <p className="text-3xl font-bold text-gray-900">{value}</p>
+    </div>
+  </div>
+);
+
 
 const PaymentModal = ({ staff, onClose, onPay }) => {
   if (!staff) return null;
@@ -243,7 +242,7 @@ const PaymentModal = ({ staff, onClose, onPay }) => {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-2xl">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <DollarSign className="w-6 h-6" />
               Process Salary Payment
@@ -251,9 +250,9 @@ const PaymentModal = ({ staff, onClose, onPay }) => {
           </div>
 
           <div className="p-6 space-y-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-xl font-bold">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold">
                   {staff.name.charAt(0)}
                 </div>
                 <div>
@@ -289,7 +288,7 @@ const PaymentModal = ({ staff, onClose, onPay }) => {
               <button onClick={onClose} className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                 Cancel
               </button>
-              <button onClick={onPay} className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium flex items-center justify-center gap-2">
+              <button onClick={onPay} className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all font-medium flex items-center justify-center gap-2">
                 <Check className="w-5 h-5" />
                 Confirm Payment
               </button>
@@ -331,11 +330,12 @@ const PaymentModal = ({ staff, onClose, onPay }) => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <StatCard icon={Users} emoji="👥" color="blue" label="Total Staff" value={staffData.length} />
-        <StatCard icon={DollarSign} emoji="💰" color="green" label="Total Salary Expense" value={`₹${totalSalaryExpense.toLocaleString()}`} />
-        <StatCard icon={TrendingUp} emoji="⏳" color="orange" label="Pending Payments" value={pendingPayments} />
-        <StatCard icon={AlertCircle} emoji="⚠️" color="red" label="On Hold" value={holdPayments} />
+        <StatCard icon={Users} color="blue" label="Total Staff" value={staffData.length} />
+        <StatCard icon={DollarSign} color="blue" label="Total Salary Expense" value={`₹${totalSalaryExpense.toLocaleString()}`} />
+        <StatCard icon={TrendingUp} color="blue" label="Pending Payments" value={pendingPayments} />
+        <StatCard icon={AlertCircle} color="blue" label="On Hold" value={holdPayments} />
       </div>
+
 
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6 shadow-sm">
@@ -432,8 +432,8 @@ const PaymentModal = ({ staff, onClose, onPay }) => {
                         On Hold
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                        <div className="w-1.5 h-1.5 bg-orange-600 rounded-full animate-pulse"></div>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
                         Pending
                       </span>
                     )}
@@ -442,7 +442,7 @@ const PaymentModal = ({ staff, onClose, onPay }) => {
                     <div className="flex items-center gap-2">
                       {[
                         { icon: History, color: 'blue', action: () => { setSelectedStaff(staff); setShowHistoryModal(true); }, title: 'View History' },
-                        { icon: DollarSign, color: 'orange', action: () => { setSelectedStaff(staff); setShowPaymentModal(true); }, title: 'Process Payment', disabled: staff.status === 'hold' },
+                        { icon: DollarSign, color: 'blue', action: () => { setSelectedStaff(staff); setShowPaymentModal(true); }, title: 'Process Payment', disabled: staff.status === 'hold' },
                         { icon: Edit2, color: 'blue', action: () => { setSelectedStaff(staff); setShowAddModal(true); }, title: 'Edit' }
                       ].map(({ icon: Icon, color, action, title, disabled }, i) => (
                         <button 

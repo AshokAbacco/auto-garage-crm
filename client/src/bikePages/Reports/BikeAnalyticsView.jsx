@@ -115,7 +115,7 @@ export default function BikeAnalyticsView({
           <p className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
             {label}
           </p>
-          <p className="text-indigo-600 font-bold">
+          <p className="text-blue-600 font-bold">
             ₹{Number(payload[0].value).toFixed(2)}
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function BikeAnalyticsView({
           title="Total Revenue"
           value={revenueSummary.totalRevenue}
           icon={<IndianRupee size={24} />}
-          gradient="from-green-500 to-emerald-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
           showRupee
         />
@@ -140,7 +140,7 @@ export default function BikeAnalyticsView({
           title="Paid Revenue"
           value={revenueSummary.paidRevenue}
           icon={<FiCheckCircle size={24} />}
-          gradient="from-blue-500 to-indigo-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
           showRupee
         />
@@ -148,7 +148,7 @@ export default function BikeAnalyticsView({
           title="Pending Revenue"
           value={revenueSummary.pendingRevenue}
           icon={<FiClock size={24} />}
-          gradient="from-orange-500 to-red-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
           showRupee
         />
@@ -160,28 +160,28 @@ export default function BikeAnalyticsView({
           title="Total Services"
           value={serviceSummary.totalServices}
           icon={<FiTrendingUp size={20} />}
-          gradient="from-emerald-500 to-teal-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
         />
         <StatCard
           title="Completed"
           value={serviceSummary.completedServices}
           icon={<FiCheckCircle size={20} />}
-          gradient="from-sky-500 to-blue-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
         />
         <StatCard
           title="Pending"
           value={serviceSummary.pendingServices}
           icon={<FiClock size={20} />}
-          gradient="from-amber-500 to-orange-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
         />
         <StatCard
           title="Avg Service Cost"
           value={serviceSummary.averageServiceCost}
           icon={<IndianRupee size={20} />}
-          gradient="from-rose-500 to-pink-600"
+          gradient="from-blue-500 to-blue-600"
           isDark={isDark}
           showRupee
         />

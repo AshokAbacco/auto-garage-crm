@@ -87,6 +87,8 @@ import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
 import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
 import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
 import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
+import TeamLogin from "./bikePages/TeamAccounts/TeamLogin.jsx";
+import TeamRegister from "./bikePages/TeamAccounts/TeamRegister.jsx";
 function App() {
   return (
     <ThemeProvider>
@@ -172,15 +174,19 @@ function App() {
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
           <Route path="/bike-plans" element={<Upgrade />} />
+          <Route path="/team-register" element={<TeamRegister />} />
+        
+          
           {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
           {/* ================= SALARY MODULE ================= */}
-        <Route path="/salary-login" element={<SalaryLogin />} />
-        <Route path="/salary-register" element={<SalaryRegister />} />
+          <Route path="/salary-login" element={<SalaryLogin />} />
+          <Route path="/salary-register" element={<SalaryRegister />} />
 
-        <Route element={<SalaryProtectedRoute />}>
-          <Route path="/salary-manage" element={<SalaryPage />} />
+          <Route element={<SalaryProtectedRoute />}>
+            <Route path="/salary-manage" element={<SalaryPage />} />
+          </Route>
         </Route>
-        </Route>
+          <Route path="/team-login" element={<TeamLogin />} />
 
           
 

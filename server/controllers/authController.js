@@ -18,33 +18,31 @@ export const registerUser = async (req, res) => {
     }
 
     const emailLower = email.toLowerCase().trim();
-
-    // Check duplicates
-    const [existingUserByEmail, existingUserByUsername] = await Promise.all([
-      prisma.user.findUnique({ where: { email: emailLower } }),
-      prisma.user.findUnique({ where: { username } }),
-    ]);
-
-    if (
-      existingUserByUsername &&
-      (!existingUserByEmail || existingUserByUsername.id !== existingUserByEmail.id)
-    ) {
-      return res.status(400).json({
-        message: "This username is already taken.",
-      });
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // CASE 1 — User exists by email (temporary user previously created)
-    if (existingUserByEmail) {
+    // 🔍 Fetch latest payment FIRST
+    const latestPayment = await prisma.payment.findFirst({
+      where: { email: emailLower },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const plan = latestPayment?.plan || "BASIC";
+    const planExpiry = latestPayment?.expiryDate || null;
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: emailLower },
+    });
+
+    // 🟡 EXISTING USER (after payment)
+    if (existingUser) {
       const updatedUser = await prisma.user.update({
         where: { email: emailLower },
         data: {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-          plan: "BASIC", // ⭐ Default plan on registration
+          plan,
+          planExpiry,
         },
       });
 
@@ -57,7 +55,7 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // CASE 2 — New user
+    // 🟢 NEW USER
     const myReferralCode =
       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -69,10 +67,8 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
-        profileImage: null,
-        referredByCode: null,
-        referredByUserId: null,
-        plan: "BASIC", // ⭐ Default plan
+        plan,
+        planExpiry,
       },
     });
 
@@ -85,18 +81,10 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Registration Error:", error);
-
-    if (error.code === "P2002") {
-      const target = error.meta?.target || [];
-      if (target.includes("username"))
-        return res.status(400).json({ message: "Username already taken" });
-      if (target.includes("email"))
-        return res.status(400).json({ message: "Email already registered" });
-    }
-
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 /**
  * =============================================
@@ -116,7 +104,9 @@ export const loginUser = async (req, res) => {
     const isEmail = identifier.includes("@");
 
     const user = await prisma.user.findFirst({
-      where: isEmail ? { email: identifier.toLowerCase() } : { username: identifier },
+      where: isEmail
+        ? { email: identifier.toLowerCase() }
+        : { username: identifier },
     });
 
     if (!user) {
@@ -128,22 +118,69 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // CRM permission check
-    if (!user.allowedCrms.includes(crmType.toUpperCase())) {
+   /* ================================
+   🔐 SALARY ACCESS RULES
+   ================================ */
+    if (crmType.toUpperCase() === "SALARY") {
+      if (user.role !== "user") {
+        return res
+          .status(403)
+          .json({ message: "Only ADMIN can access Salary module" });
+      }
+
+      if (user.plan !== "PREMIUM") {
+        return res
+          .status(403)
+          .json({ message: "Premium plan required to access Salary module" });
+      }
+    }
+
+    /* ================================
+      CRM ACCESS CHECK (SKIP SALARY)
+      ================================ */
+    if (
+      crmType.toUpperCase() !== "SALARY" &&
+      !user.allowedCrms.includes(crmType.toUpperCase())
+    ) {
       return res.status(403).json({
         message: `You do not have access to the ${crmType} CRM`,
       });
     }
 
-    // Fetch extra fields from payment table (optional)
+
+    // 🔄 SAFETY PLAN SYNC (READ ONLY)
+    const latestPayment = await prisma.payment.findFirst({
+      where: { email: user.email, status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    let finalPlan = user.plan;
+    let finalExpiry = user.planExpiry;
+
+    if (latestPayment && latestPayment.plan !== user.plan) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          plan: latestPayment.plan,
+          planExpiry: latestPayment.expiryDate,
+        },
+      });
+
+      finalPlan = latestPayment.plan;
+      finalExpiry = latestPayment.expiryDate;
+    }
+
     const userPayment = await prisma.payment.findFirst({
       where: { email: user.email },
       orderBy: { createdAt: "desc" },
       select: { companyName: true, phone: true },
     });
 
-    // ⭐ Token now includes plan
-    const token = generateToken(user);
+    const token = generateToken({
+      ...user,
+      plan: finalPlan,
+      planExpiry: finalExpiry,
+    });
 
     return res.status(200).json({
       message: "Login successful",
@@ -151,10 +188,10 @@ export const loginUser = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email.toLowerCase(),
+        email: user.email,
         role: user.role,
-        plan: user.plan, // ⭐ RETURN PLAN
-        profileImage: user.profileImage || null,
+        plan: finalPlan,
+        planExpiry: finalExpiry,
         allowedCrms: user.allowedCrms,
         crmType,
         companyName: userPayment?.companyName || null,
@@ -168,6 +205,7 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
 
 /**
  * =============================================

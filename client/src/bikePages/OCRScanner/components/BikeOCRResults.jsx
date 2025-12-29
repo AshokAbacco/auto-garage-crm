@@ -169,7 +169,7 @@ const OCRResults = ({
                 <div className="flex gap-2 flex-wrap">
                     <button
                         onClick={handleAutoFill}
-                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg"
+                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg"
                     >
                         <FiZap /> Auto-Fill Missing Fields
                     </button>

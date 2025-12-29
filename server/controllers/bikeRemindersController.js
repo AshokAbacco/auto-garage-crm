@@ -1,17 +1,23 @@
 import prisma from "../models/prismaClient.js";
+import { getOwnerUserId } from "../utils/getAdminId.js";
 
-/**
- * ✅ GET ALL BIKE REMINDERS
- * GET /api/bike-reminders
- */
+/* =====================================================
+   GET ALL BIKE REMINDERS
+   GET /api/bike-reminders
+===================================================== */
 export const getBikeReminders = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const ownerUserId = getOwnerUserId(req.user);
+
+    const whereCondition =
+      req.user.role === "user"
+        ? { ownerUserId }
+        : { ownerUserId, createdById: req.user.id };
 
     const reminders = await prisma.bikeReminder.findMany({
-      where: userId ? { userId } : {},
+      where: whereCondition,
       include: {
-        bike: {   // ✅ MUST MATCH PRISMA FIELD NAME
+        bike: {
           select: {
             id: true,
             ownerName: true,
@@ -23,13 +29,13 @@ export const getBikeReminders = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    res.status(200).json({
+    res.json({
       success: true,
       total: reminders.length,
       data: reminders,
     });
   } catch (error) {
-    console.error("❌ Error fetching bike reminders:", error);
+    console.error("getBikeReminders error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching bike reminders",
@@ -37,17 +43,20 @@ export const getBikeReminders = async (req, res) => {
   }
 };
 
-
-/**
- * ✅ GET SINGLE BIKE REMINDER
- * GET /api/bike-reminders/:id
- */
+/* =====================================================
+   GET SINGLE BIKE REMINDER
+   GET /api/bike-reminders/:id
+===================================================== */
 export const getBikeReminderById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    const ownerUserId = getOwnerUserId(req.user);
 
-    const reminder = await prisma.bikeReminder.findUnique({
-      where: { id: Number(id) },
+    const reminder = await prisma.bikeReminder.findFirst({
+      where:
+        req.user.role === "user"
+          ? { id, ownerUserId }
+          : { id, ownerUserId, createdById: req.user.id },
       include: {
         bike: {
           select: {
@@ -72,7 +81,7 @@ export const getBikeReminderById = async (req, res) => {
       data: reminder,
     });
   } catch (error) {
-    console.error("❌ Error fetching bike reminder:", error);
+    console.error("getBikeReminderById error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching bike reminder",
@@ -80,18 +89,17 @@ export const getBikeReminderById = async (req, res) => {
   }
 };
 
-
-/**
- * ✅ CREATE BIKE REMINDER
- * POST /api/bike-reminders
- */
+/* =====================================================
+   CREATE BIKE REMINDER
+   POST /api/bike-reminders
+===================================================== */
 export const createBikeReminder = async (req, res) => {
   try {
-    console.log("📩 BIKE REMINDER BODY:", req.body);
+    const ownerUserId = getOwnerUserId(req.user);
 
     const {
       bikeClientId,
-      bikeId,        // ✅ fallback support
+      bikeId, // fallback
       message,
       remindDate,
       remindTime,
@@ -99,22 +107,41 @@ export const createBikeReminder = async (req, res) => {
 
     const finalBikeId = bikeClientId || bikeId;
 
-    // ✅ STRONG VALIDATION
     if (!finalBikeId || !message || !remindDate) {
       return res.status(400).json({
         success: false,
         message: "bikeClientId, message and remindDate are required",
-        received: req.body,
+      });
+    }
+
+    // 🔐 Bike ownership check
+    const bike = await prisma.bike.findFirst({
+      where:
+        req.user.role === "user"
+          ? { id: Number(finalBikeId), ownerUserId }
+          : {
+              id: Number(finalBikeId),
+              ownerUserId,
+              createdById: req.user.id,
+            },
+    });
+
+    if (!bike) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized bike access",
       });
     }
 
     const reminder = await prisma.bikeReminder.create({
       data: {
         bikeClientId: Number(finalBikeId),
-        userId: req.user?.id || null,
         message: message.trim(),
         remindDate: new Date(remindDate),
         remindTime: remindTime || null,
+
+        ownerUserId,
+        createdById: req.user.id,
       },
     });
 
@@ -123,7 +150,7 @@ export const createBikeReminder = async (req, res) => {
       data: reminder,
     });
   } catch (error) {
-    console.error("❌ BIKE REMINDER CREATE ERROR:", error);
+    console.error("createBikeReminder error:", error);
     res.status(500).json({
       success: false,
       message: "Error creating bike reminder",
@@ -131,35 +158,42 @@ export const createBikeReminder = async (req, res) => {
   }
 };
 
-
-/**
- * ✅ UPDATE BIKE REMINDER
- * PUT /api/bike-reminders/:id
- */
+/* =====================================================
+   UPDATE BIKE REMINDER
+   PUT /api/bike-reminders/:id
+===================================================== */
 export const updateBikeReminder = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    const ownerUserId = getOwnerUserId(req.user);
 
-    const exists = await prisma.bikeReminder.findUnique({
-      where: { id: Number(id) },
+    const exists = await prisma.bikeReminder.findFirst({
+      where:
+        req.user.role === "user"
+          ? { id, ownerUserId }
+          : { id, ownerUserId, createdById: req.user.id },
     });
 
     if (!exists) {
-      return res.status(404).json({ success: false, message: "Bike reminder not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Bike reminder not found",
+      });
     }
 
     const updated = await prisma.bikeReminder.update({
-      where: { id: Number(id) },
+      where: { id },
       data: {
-        ...req.body,
-        bikeId: req.body.bikeId
-          ? Number(req.body.bikeId)
-          : undefined,
+        message: req.body.message,
         remindDate: req.body.remindDate
           ? new Date(req.body.remindDate)
           : undefined,
+        remindTime: req.body.remindTime,
+        isDone: req.body.isDone,
       },
-      include: { bike: true },
+      include: {
+        bike: true,
+      },
     });
 
     res.json({
@@ -168,34 +202,50 @@ export const updateBikeReminder = async (req, res) => {
       data: updated,
     });
   } catch (error) {
-    console.error("❌ Error updating bike reminder:", error);
-    res.status(500).json({ success: false, message: "Error updating bike reminder" });
+    console.error("updateBikeReminder error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating bike reminder",
+    });
   }
 };
 
-/**
- * ✅ DELETE BIKE REMINDER
- * DELETE /api/bike-reminders/:id
- */
+/* =====================================================
+   DELETE BIKE REMINDER
+   DELETE /api/bike-reminders/:id
+===================================================== */
 export const deleteBikeReminder = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    const ownerUserId = getOwnerUserId(req.user);
 
-    const reminder = await prisma.bikeReminder.findUnique({
-      where: { id: Number(id) },
+    const reminder = await prisma.bikeReminder.findFirst({
+      where:
+        req.user.role === "user"
+          ? { id, ownerUserId }
+          : { id, ownerUserId, createdById: req.user.id },
     });
 
     if (!reminder) {
-      return res.status(404).json({ success: false, message: "Bike reminder not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Bike reminder not found",
+      });
     }
 
     await prisma.bikeReminder.delete({
-      where: { id: Number(id) },
+      where: { id: reminder.id },
     });
 
-    res.json({ success: true, message: "Bike reminder deleted successfully" });
+    res.json({
+      success: true,
+      message: "Bike reminder deleted successfully",
+    });
   } catch (error) {
-    console.error("❌ Error deleting bike reminder:", error);
-    res.status(500).json({ success: false, message: "Error deleting bike reminder" });
+    console.error("deleteBikeReminder error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting bike reminder",
+    });
   }
 };

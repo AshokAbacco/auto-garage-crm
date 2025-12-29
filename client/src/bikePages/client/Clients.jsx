@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Users, 
   Phone, 
   PlusCircle, 
   Search, 
   RefreshCw, 
-  Car, 
   Bike,
   AlertCircle,
   Eye,
@@ -16,8 +15,7 @@ import {
 import { useTheme } from "../../contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import api from "../../utils/axiosInstance";
 
 export default function Clients() {
   const { isDark } = useTheme();
@@ -39,51 +37,45 @@ export default function Clients() {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(`${API_BASE}/api/bikes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Fetch failed");
-
-      const data = await res.json();
-      setClients(data.data || []);
+      setError(null);
+      const res = await api.get("/api/bikes");
+      setClients(Array.isArray(res.data) ? res.data : res.data.data || []);
     } catch (err) {
-      toast.error("Failed to load clients");
-      setError("Failed to load");
+      console.error("Fetch clients error:", err);
+      toast.error(err.response?.data?.message || "Failed to load clients");
+      setError("Failed to load clients");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this client?")) return;
+    if (!window.confirm("Are you sure you want to delete this client?")) return;
 
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await fetch(`${API_BASE}/api/bikes/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Delete failed");
-
-      toast.success("Deleted successfully");
+      await api.delete(`/api/bikes/${id}`);
+      toast.success("Client deleted successfully");
       fetchClients();
-    } catch {
-      toast.error("Delete failed");
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error(err.response?.data?.message || "Failed to delete client");
     }
   };
 
   // ✅ SEARCH FILTER
-  const filteredClients = clients.filter((c) =>
-    [c.fullName, c.phone, c.vehicleMake, c.vehicleModel, c.regNumber]
-      .join(" ")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+  const filteredClients = useMemo(() => {
+    return clients.filter((c) => {
+      const searchableText = [
+        c.ownerName || c.fullName || "",
+        c.phone || "",
+        c.bikeBrand || c.vehicleMake || "",
+        c.bikeModel || c.vehicleModel || "",
+        c.regNumber || ""
+      ].join(" ").toLowerCase();
+      
+      return searchableText.includes(searchQuery.toLowerCase());
+    });
+  }, [clients, searchQuery]);
 
   // ✅ PAGINATION LOGIC
   const totalPages = Math.ceil(filteredClients.length / clientsPerPage) || 1;
@@ -95,7 +87,7 @@ export default function Clients() {
   );
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
       isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
     }`}>
       <Toaster position="top-right" />
@@ -104,7 +96,7 @@ export default function Clients() {
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
               Clients List
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -114,7 +106,7 @@ export default function Clients() {
 
           <button
             onClick={() => navigate("/editclient/new")}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
           >
             <PlusCircle size={20} />
             Add New Client
@@ -122,7 +114,7 @@ export default function Clients() {
         </div>
       </div>
 
-      {/* ✅ TOP 3 STAT CARDS - FIXED DARK MODE */}
+      {/* ✅ TOP 3 STAT CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${
           isDark ? "bg-gray-800" : "bg-white"
@@ -141,7 +133,7 @@ export default function Clients() {
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Current Page</p>
             <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{currentPage}</h2>
           </div>
-          <Bike className="text-purple-500" size={36} />
+          <Bike className="text-blue-500" size={36} />
         </div>
 
         <div className={`p-6 rounded-xl shadow-md flex items-center justify-between transition-colors duration-300 ${
@@ -151,11 +143,11 @@ export default function Clients() {
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>Page</p>
             <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{currentPage}/{totalPages}</h2>
           </div>
-          <Hash className="text-green-500" size={36} />
+          <Hash className="text-blue-500" size={36} />
         </div>
       </div>
 
-      {/* ✅ SEARCH BAR - FIXED DARK MODE */}
+      {/* ✅ SEARCH BAR */}
       <div className="mb-8">
         <div className="relative max-w-2xl">
           <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDark ? "text-gray-500" : "text-gray-400"}`} size={20} />
@@ -171,7 +163,7 @@ export default function Clients() {
               isDark 
                 ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" 
                 : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-            } focus:outline-none focus:ring-2 focus:ring-orange-500`}
+            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
           />
         </div>
       </div>
@@ -179,12 +171,12 @@ export default function Clients() {
       {/* ✅ LOADING */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <RefreshCw className="animate-spin text-orange-500" size={40} />
+          <RefreshCw className="animate-spin text-blue-500" size={40} />
         </div>
       )}
 
-      {/* ✅ ERROR - FIXED DARK MODE */}
-      {error && (
+      {/* ✅ ERROR */}
+      {error && !loading && (
         <div className={`flex items-center gap-3 p-4 rounded-xl ${
           isDark ? "bg-red-900/30 text-red-400 border border-red-800" : "bg-red-50 text-red-600"
         }`}>
@@ -196,83 +188,106 @@ export default function Clients() {
       {/* ✅ CLIENT LIST */}
       {!loading && !error && (
         <div className="space-y-4">
-          {currentClients.map((client, index) => (
-            <ClientListCard
-              key={client.id}
-              client={client}
-              isDark={isDark}
-              index={index}
-              onView={() => navigate(`/bikes/${client.id}`)}
-              onEdit={() => navigate(`/bikes/${client.id}`, { state: { edit: true } })}
-              onDelete={() => handleDelete(client.id)}
-            />
-          ))}
+          {currentClients.length > 0 ? (
+            currentClients.map((client) => (
+              <ClientListCard
+                key={client.id}
+                client={client}
+                isDark={isDark}
+                onView={() => navigate(`/bikes/${client.id}`)}
+                onEdit={() => navigate(`/bikes/${client.id}`, { state: { edit: true } })}
+                onDelete={() => handleDelete(client.id)}
+              />
+            ))
+          ) : (
+            <div className={`text-center py-20 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <Users size={48} className="mx-auto mb-4 opacity-50" />
+              <p className="text-lg">No clients found</p>
+              <p className="text-sm mt-2">Try adjusting your search or add a new client</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ✅ PAGINATION FOOTER - FIXED DARK MODE */}
-      <div className={`mt-10 flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-xl shadow transition-colors duration-300 ${
-        isDark ? "bg-gray-800" : "bg-white"
-      }`}>
-        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-          Showing {indexOfFirstClient + 1} – {Math.min(indexOfLastClient, filteredClients.length)} of {filteredClients.length}
-        </p>
+      {/* ✅ PAGINATION FOOTER */}
+      {!loading && !error && filteredClients.length > 0 && (
+        <div className={`mt-10 flex flex-col md:flex-row items-center justify-between gap-4 p-5 rounded-xl shadow transition-colors duration-300 ${
+          isDark ? "bg-gray-800" : "bg-white"
+        }`}>
+          <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            Showing {indexOfFirstClient + 1} – {Math.min(indexOfLastClient, filteredClients.length)} of {filteredClients.length}
+          </p>
 
-        <div className="flex items-center gap-3">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+          <div className="flex items-center gap-3">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                isDark 
+                  ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
+                  : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              }`}
+            >
+              Previous
+            </button>
+
+            <span className={`px-4 py-2 rounded-lg border font-semibold ${
               isDark 
-                ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
-                : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            }`}
-          >
-            Previous
-          </button>
+                ? "border-gray-700 bg-gray-700 text-white" 
+                : "border-gray-300 bg-gray-50 text-gray-900"
+            }`}>
+              {currentPage}/{totalPages}
+            </span>
 
-          <span className={`px-4 py-2 rounded-lg border font-semibold ${
-            isDark 
-              ? "border-gray-700 bg-gray-700 text-white" 
-              : "border-gray-300 bg-gray-50 text-gray-900"
-          }`}>
-            {currentPage}/{totalPages}
-          </span>
-
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
-              isDark 
-                ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
-                : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            }`}
-          >
-            Next
-          </button>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                isDark 
+                  ? "border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed" 
+                  : "border-gray-300 text-gray-900 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              }`}
+            >
+              Next
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-/* ✅ CLIENT CARD COMPONENT - FIXED DARK MODE */
+/* ✅ CLIENT CARD COMPONENT */
 function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
+  const fullName = client.ownerName || client.fullName || "Unknown";
+  const vehicleMake = client.bikeBrand || client.vehicleMake || "N/A";
+  const vehicleModel = client.bikeModel || client.vehicleModel || "";
+  const bikeImage = client.bikeImage || client.carImage;
+
   return (
     <div
-      className={`flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border transition-colors duration-300 ${
+      className={`flex flex-col md:flex-row gap-6 rounded-2xl shadow-md p-6 border transition-all duration-300 hover:shadow-lg ${
         isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
       }`}
     >
       {/* Bike Image */}
-      <div className={`w-48 h-48 rounded-xl overflow-hidden flex-shrink-0 ${
-        isDark ? "bg-gray-700" : "bg-gray-200"
-      }`}>
-        <img
-          src={client.bikeImage || "https://via.placeholder.com/300"}
-          alt="bike"
-          className="w-full h-full object-cover"
-        />
+      <div
+        className={`w-48 h-48 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          isDark ? "bg-gray-700" : "bg-gray-200"
+        }`}
+      >
+        {bikeImage ? (
+          <img
+            src={bikeImage}
+            alt="bike"
+            className="w-full h-full object-cover rounded-xl"
+          />
+        ) : (
+          <Bike
+            size={64}
+            className={`${isDark ? "text-gray-400" : "text-gray-500"}`}
+          />
+        )}
       </div>
 
       {/* Client Details */}
@@ -286,15 +301,15 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
                 : "bg-gradient-to-br from-blue-500 to-indigo-600"
             }`}
           >
-            {client.ownerName?.charAt(0).toUpperCase() || "C"}
+            {fullName.charAt(0).toUpperCase()}
           </div>
 
           <div>
             <h3 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-              {client.ownerName}
+              {fullName}
             </h3>
 
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+            <span className="inline-flex items-center gap-1 px-2 rounded-full bg-green-100 text-green-700 text-xs font-medium">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Active
             </span>
@@ -316,7 +331,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
               </div>
 
               <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                {client.bikeBrand}  
+                {vehicleMake} {vehicleModel}
               </span>
             </div>
 
@@ -330,24 +345,24 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
                 <Phone size={20} className="text-blue-500" />
               </div>
               <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                {client.phone}
+                {client.phone || "N/A"}
               </span>
             </div>
 
             {/* Registration Number */}
             <span className={`inline-block px-4 py-2 rounded-lg font-mono text-sm font-semibold ${
               isDark 
-                ? "bg-orange-900/50 text-orange-300 border border-orange-700" 
-                : "bg-orange-100 text-orange-600"
+                ? "bg-blue-900/50 text-blue-300 border border-blue-700" 
+                : "bg-blue-100 text-blue-600"
             }`}>
-              {client.regNumber}
+              {client.regNumber || "N/A"}
             </span>
           </div>
 
           {/* RIGHT */}
           <div className="space-y-3">
             {/* Year */}
-            {client.bikeYear && (
+            {(client.bikeYear || client.vehicleYear) && (
               <div className="flex items-center gap-3">
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -358,7 +373,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
                 </div>
 
                 <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                  Year: {client.bikeYear}
+                  Year: {client.bikeYear || client.vehicleYear}
                 </span>
               </div>
             )}
@@ -390,7 +405,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
         </div>
       </div>
 
-      {/* ACTION BUTTONS - FIXED DARK MODE */}
+      {/* ACTION BUTTONS */}
       <div className="flex md:flex-col gap-2 justify-center">
         <button 
           onClick={onView} 
@@ -399,6 +414,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
               ? "border-gray-700 hover:bg-gray-700" 
               : "border-gray-200 hover:bg-gray-50"
           }`}
+          title="View Details"
         >
           <Eye size={20} className="text-blue-500" />
         </button>
@@ -410,6 +426,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
               ? "border-gray-700 hover:bg-gray-700" 
               : "border-gray-200 hover:bg-gray-50"
           }`}
+          title="Edit Client"
         >
           <Edit2 size={20} className="text-purple-500" />
         </button>
@@ -421,6 +438,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
               ? "border-gray-700 hover:bg-gray-700" 
               : "border-gray-200 hover:bg-gray-50"
           }`}
+          title="Delete Client"
         >
           <Trash2 size={20} className="text-red-500" />
         </button>

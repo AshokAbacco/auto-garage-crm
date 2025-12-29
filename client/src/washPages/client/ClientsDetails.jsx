@@ -1,4 +1,3 @@
-// src/washPages/client/WashingClientDetails.jsx
 import React, { useEffect, useState } from "react";
 import {
     ArrowLeft,
@@ -126,19 +125,19 @@ export default function WashingClientDetails() {
     if (loading) {
         return (
             <div
-                className={`min-h-screen flex items-center justify-center ${isDark ? "bg-gray-900" : "bg-gray-100"
+                className={`min-h-screen flex items-center justify-center transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-100"
                     }`}
             >
                 <RotateCw className="w-16 h-16 text-blue-500 animate-spin" />
-                <p className="ml-3 text-lg">Loading client details...</p>
+                <p className={`ml-3 text-lg ${isDark ? "text-gray-300" : ""}`}>Loading client details...</p>
             </div>
         );
     }
 
     if (!client) {
         return (
-            <div className="p-10 text-center">
-                <h2 className="text-xl">Client not found</h2>
+            <div className={`p-10 text-center transition-all duration-300 ${isDark ? "bg-gray-900" : ""}`}>
+                <h2 className={`text-xl ${isDark ? "text-white" : ""}`}>Client not found</h2>
             </div>
         );
     }
@@ -146,7 +145,7 @@ export default function WashingClientDetails() {
     // UI START
     return (
         <div
-            className={`min-h-screen p-6 transition ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
+            className={`min-h-screen p-6 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
                 }`}
         >
             <Toaster />
@@ -158,7 +157,7 @@ export default function WashingClientDetails() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => navigate("/washing-clients")}
-                            className={`p-3 rounded-xl shadow hover:scale-105 transition ${isDark ? "bg-gray-800 text-gray-300" : "bg-white text-gray-700"
+                            className={`p-3 rounded-xl shadow hover:scale-105 transition-all duration-300 ${isDark ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700"
                                 }`}
                         >
                             <ArrowLeft size={20} />
@@ -188,7 +187,7 @@ export default function WashingClientDetails() {
                                         setIsEditMode(false);
                                         setForm(client);
                                     }}
-                                    className={`px-5 py-3 rounded-xl transition hover:scale-105 ${isDark ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-800"
+                                    className={`px-5 py-3 rounded-xl transition-all duration-300 hover:scale-105 ${isDark ? "bg-gray-700 text-gray-300 hover:bg-gray-600" : "bg-gray-200 text-gray-800"
                                         }`}
                                 >
                                     Cancel
@@ -244,7 +243,7 @@ export default function WashingClientDetails() {
                 <Section title="Vehicle Images" icon={<ImageIcon />} isDark={isDark}>
                     {/* MAIN IMAGE */}
                     <div className="mb-6">
-                        <h3 className="mb-3 font-semibold">Main Image</h3>
+                        <h3 className={`mb-3 font-semibold ${isDark ? "text-white" : ""}`}>Main Image</h3>
 
                         {client.mainImage ? (
                             <img
@@ -252,13 +251,13 @@ export default function WashingClientDetails() {
                                 className="mx-auto shadow rounded-xl max-h-80"
                             />
                         ) : (
-                            <p>No main image uploaded</p>
+                            <p className={isDark ? "text-gray-400" : ""}>No main image uploaded</p>
                         )}
                     </div>
 
                     {client.additionalImages.length > 0 && (
                         <>
-                            <h3 className="mb-3 font-semibold">Additional Images</h3>
+                            <h3 className={`mb-3 font-semibold ${isDark ? "text-white" : ""}`}>Additional Images</h3>
                             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                                 {client.additionalImages.map((img, i) => (
                                     <img
@@ -281,10 +280,10 @@ export default function WashingClientDetails() {
 function Section({ title, icon, isDark, children }) {
     return (
         <div
-            className={`p-6 rounded-2xl shadow-lg border ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+            className={`p-6 rounded-2xl shadow-lg border transition-all duration-300 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
                 }`}
         >
-            <h2 className="flex items-center gap-2 mb-6 text-xl font-bold">
+            <h2 className={`flex items-center gap-2 mb-6 text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
                 <span className="text-blue-500">{icon}</span>
                 {title}
             </h2>
@@ -297,7 +296,7 @@ function Section({ title, icon, isDark, children }) {
 function InfoCard({ icon, label, value, isDark }) {
     return (
         <div
-            className={`p-4 rounded-xl flex items-center gap-3 shadow transition hover:scale-105 ${isDark ? "bg-gray-700/50" : "bg-gray-50"
+            className={`p-4 rounded-xl flex items-center gap-3 shadow transition-all duration-300 hover:scale-105 ${isDark ? "bg-gray-700/50" : "bg-gray-50"
                 }`}
         >
             <div className="flex items-center justify-center w-10 h-10 text-white rounded-lg bg-gradient-to-br from-blue-500 to-sky-600">
@@ -319,7 +318,7 @@ function InfoCard({ icon, label, value, isDark }) {
 function EditInput({ icon, label, name, value, onChange, isDark }) {
     return (
         <div>
-            <label className="flex items-center block gap-2 mb-2 font-semibold">
+            <label className={`flex items-center block gap-2 mb-2 font-semibold ${isDark ? "text-gray-300" : ""}`}>
                 <span className="text-blue-500">{icon}</span>
                 {label}
             </label>
@@ -328,8 +327,8 @@ function EditInput({ icon, label, name, value, onChange, isDark }) {
                 name={name}
                 value={value}
                 onChange={onChange}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition ${isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 ${isDark
+                    ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500"
                     : "bg-gray-50 border-gray-300"
                     }`}
             />
@@ -347,7 +346,7 @@ function ButtonGradient({ label, icon, onClick, color }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-white shadow-lg bg-gradient-to-r ${colors[color]} hover:scale-105 transition`}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-white shadow-lg bg-gradient-to-r ${colors[color]} hover:scale-105 transition-all duration-300`}
         >
             {icon}
             {label}

@@ -2,9 +2,9 @@ import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import prisma from "../models/prismaClient.js";
-
+ 
 const router = express.Router();
-
+ 
 /* ----------------------------------------------
    🔹 RAZORPAY INSTANCE
 ---------------------------------------------- */
@@ -127,7 +127,7 @@ router.post("/create-subscription", async (req, res) => {
         customerPhone: customer.phone,
       },
     };
-
+ 
     if (startAt) subscriptionPayload.start_at = startAt;
 
     let subscription;
@@ -163,7 +163,7 @@ router.post("/create-subscription", async (req, res) => {
         nextBillingDate: startAt ? new Date(startAt * 1000) : null,
       },
     });
-
+ 
     return res.json({
       success: true,
       subscription,
@@ -201,7 +201,7 @@ router.post("/verify-payment-localhost", async (req, res) => {
       const record = await prisma.payment.findUnique({
         where: { subscriptionId },
       });
-
+ 
       if (!record) {
         return res.status(404).json({
           success: false,
@@ -253,7 +253,7 @@ router.post("/verify-payment-localhost", async (req, res) => {
     });
   }
 });
-
+ 
 /* ----------------------------------------------
    3️⃣ RAZORPAY WEBHOOK
 ---------------------------------------------- */
@@ -264,50 +264,50 @@ router.post("/razorpay-webhook", async (req, res) => {
   console.log("\n================ WEBHOOK RAW BODY ================");
   console.log("RAW BODY RECEIVED >>>", req.body);
   console.log("=================================================\n");
-
-
+ 
+ 
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
       return res.status(500).json({ success: false, error: "Webhook secret missing" });
     }
-
+ 
     // 🔥 Always raw buffer
     const payloadBuffer = req.body;
-
+ 
     const signature = req.headers["x-razorpay-signature"];
     if (!signature) {
       console.error("Missing signature");
       return res.status(400).json({ success: false, error: "Missing signature" });
     }
-
+ 
     // Verify signature
     const expected = crypto
       .createHmac("sha256", secret)
       .update(payloadBuffer)
       .digest("hex");
-
+ 
     if (expected !== signature) {
       console.error("❌ Invalid signature");
       return res.status(400).json({ success: false, error: "Invalid signature" });
     }
-
+ 
     // Parse raw payload
     const body = JSON.parse(payloadBuffer.toString());
     const event = body.event;
     console.log("📥 Event:", event);
-
+ 
     /* ---------------------------------------------------
        EVENT: subscription.authenticated (UPI Mandate Approved)
     --------------------------------------------------- */
     if (event === "subscription.authenticated") {
       const sub = body.payload.subscription.entity;
       console.log("subscription.authenticated:", sub.id);
-
+ 
       const record = await prisma.payment.findUnique({
         where: { subscriptionId: sub.id },
       });
-
+ 
       if (record) {
         await prisma.payment.update({
           where: { subscriptionId: sub.id },
@@ -317,35 +317,35 @@ router.post("/razorpay-webhook", async (req, res) => {
             trialEndDate: record.trialEndDate,
           },
         });
-
+ 
         console.log("DB updated to TRIAL for:", sub.id);
       } else {
         console.warn("No record found for:", sub.id);
       }
-
+ 
       return res.json({ success: true });
     }
-
+ 
     /* ---------------------------------------------------
        EVENT: subscription.charged (Auto-debit successful)
     --------------------------------------------------- */
     if (event === "subscription.charged") {
       const sub = body.payload.subscription.entity;
       const paymentEntity = body.payload.payment.entity;
-
+ 
       console.log("subscription.charged:", sub.id);
-
+ 
       const record = await prisma.payment.findUnique({
         where: { subscriptionId: sub.id },
       });
-
+ 
       if (record) {
         const paidAt = paymentEntity.created_at
           ? new Date(paymentEntity.created_at * 1000)
           : new Date();
-
+ 
         const nextBillingDate = addInterval(paidAt, record.billingPeriod);
-
+ 
         await prisma.payment.update({
           where: { subscriptionId: sub.id },
           data: {
@@ -357,15 +357,15 @@ router.post("/razorpay-webhook", async (req, res) => {
             expiryDate: nextBillingDate,
           },
         });
-
+ 
         console.log("DB updated to ACTIVE for:", sub.id);
       } else {
         console.warn("No DB record found for subscription.charged:", sub.id);
       }
-
+ 
       return res.json({ success: true });
     }
-
+ 
     /* ---------------------------------------------------
        subscription.cancelled
     --------------------------------------------------- */
@@ -377,7 +377,7 @@ router.post("/razorpay-webhook", async (req, res) => {
       });
       return res.json({ success: true });
     }
-
+ 
     /* ---------------------------------------------------
        subscription.paused
     --------------------------------------------------- */
@@ -389,7 +389,7 @@ router.post("/razorpay-webhook", async (req, res) => {
       });
       return res.json({ success: true });
     }
-
+ 
     return res.json({ success: true });
   } catch (err) {
     console.error("Webhook handler error:", err);
@@ -435,5 +435,5 @@ router.get("/user-plan/:email", async (req, res) => {
     });
   }
 });
-
+ 
 export default router;

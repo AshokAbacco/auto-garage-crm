@@ -1,8 +1,7 @@
 import prisma from "../models/prismaClient.js";
 
 /* ================================
-   GET WASHING SERVICE TYPES
-   (Categories + Sub Services)
+   HELPER FUNCTION
 ================================ */
 const calculateTotalWithGst = (cost = 0, gst = 0) => {
   const c = Number(cost);
@@ -15,6 +14,9 @@ const calculateTotalWithGst = (cost = 0, gst = 0) => {
   return c + (c * g) / 100;
 };
 
+/* ================================
+   GET WASHING SERVICE TYPES
+================================ */
 export const getWashingServiceTypes = async (req, res) => {
   try {
     const categories = await prisma.washingServiceCategory.findMany({
@@ -22,10 +24,6 @@ export const getWashingServiceTypes = async (req, res) => {
         subServices: true,
       },
     });
-    const calculateTotalWithGst = (cost = 0, gst = 0) => {
-  return Number(cost) + (Number(cost) * Number(gst)) / 100;
-};
-
 
     res.json(categories);
   } catch (err) {
@@ -74,7 +72,7 @@ export const getWashingCategoriesByBike = async (req, res) => {
 };
 
 /* ================================
-   GET ALL WASHING SERVICES (ADMIN)
+   GET ALL WASHING SERVICES
 ================================ */
 export const getWashingServices = async (req, res) => {
   try {
@@ -148,8 +146,6 @@ export const getWashingServiceById = async (req, res) => {
   }
 };
 
-
-
 /* ================================
    CREATE WASHING SERVICE
 ================================ */
@@ -188,7 +184,6 @@ export const createWashingService = async (req, res) => {
     res.status(500).json({ message: "Failed to create washing service" });
   }
 };
-
 
 /* ================================
    UPDATE WASHING SERVICE
@@ -240,37 +235,126 @@ export const updateWashingService = async (req, res) => {
   }
 };
 
-
-
 /* ================================
    DELETE WASHING SERVICE
+   Using Prisma Transaction
 ================================ */
 export const deleteWashingService = async (req, res) => {
+  const serviceId = Number(req.params.id);
+
   try {
-    const serviceId = Number(req.params.id);
+    console.log("=".repeat(50));
+    console.log("🗑️  DELETE REQUEST RECEIVED");
+    console.log("Service ID:", serviceId);
+    console.log("Type:", typeof serviceId);
+    console.log("=".repeat(50));
 
-    const service = await prisma.washingService.findFirst({
-      where:
-        req.user.role === "ADMIN"
-          ? { id: serviceId }
-          : { id: serviceId, client: { userId: req.user.id } },
-    });
-
-    if (!service) {
-      return res.status(404).json({
-        message: "Service not found or access denied",
+    // Validate ID
+    if (Number.isNaN(serviceId) || serviceId <= 0) {
+      console.error("❌ Invalid service ID");
+      return res.status(400).json({ 
+        message: "Invalid service ID",
+        receivedId: req.params.id 
       });
     }
 
-    await prisma.washingService.delete({
-      where: { id: serviceId },
+    // Use Prisma transaction to delete everything atomically
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Check if service exists
+      const service = await tx.washingService.findUnique({
+        where: { id: serviceId },
+        include: {
+          billings: true,
+          media: true,
+        },
+      });
+
+      if (!service) {
+        throw new Error("SERVICE_NOT_FOUND");
+      }
+
+      console.log("📋 Service found:", {
+        id: service.id,
+        clientId: service.clientId,
+        billings: service.billings.length,
+        media: service.media.length,
+      });
+
+      // 2. Delete billing service links
+      if (service.billings.length > 0) {
+        const deletedBillings = await tx.washBillingService.deleteMany({
+          where: { washingServiceId: serviceId },
+        });
+        console.log("✅ Deleted billing links:", deletedBillings.count);
+      }
+
+      // 3. Delete media files
+      if (service.media.length > 0) {
+        const deletedMedia = await tx.washingServiceMedia.deleteMany({
+          where: { washingServiceId: serviceId },
+        });
+        console.log("✅ Deleted media files:", deletedMedia.count);
+      }
+
+      // 4. Delete the service
+      const deletedService = await tx.washingService.delete({
+        where: { id: serviceId },
+      });
+      console.log("✅ Service deleted successfully");
+
+      return {
+        deletedService,
+        clientId: service.clientId,
+      };
     });
 
-    res.json({ message: "Washing service deleted successfully" });
+    console.log("=".repeat(50));
+    console.log("✅ DELETE COMPLETED SUCCESSFULLY");
+    console.log("=".repeat(50));
+
+    return res.status(200).json({
+      success: true,
+      message: "Service deleted successfully",
+      deletedServiceId: serviceId,
+    });
+
   } catch (err) {
-    console.error("DELETE ERROR:", err);
-    res.status(500).json({
-      message: "Failed to delete washing service",
+    console.log("=".repeat(50));
+    console.error("❌ DELETE FAILED");
+    console.error("Error name:", err.name);
+    console.error("Error message:", err.message);
+    console.error("Error code:", err.code);
+    console.error("Full error:", err);
+    console.log("=".repeat(50));
+
+    // Handle specific errors
+    if (err.message === "SERVICE_NOT_FOUND") {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found",
+      });
+    }
+
+    if (err.code === "P2003") {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete: Service has dependent records",
+        details: err.meta?.field_name,
+      });
+    }
+
+    if (err.code === "P2025") {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found or already deleted",
+      });
+    }
+
+    // Generic error
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete service",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };

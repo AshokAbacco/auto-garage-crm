@@ -1,280 +1,210 @@
-// src/washPages/billing/Billing.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { FiEye, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { FileText, Phone, Mail, Calendar, User, FileCheck, Eye, Edit, Trash2 } from "lucide-react";
+import {
+    FiPlus,
+    FiSearch,
+    FiFileText,
+    FiCheckCircle,
+    FiClock,
+    FiTrendingUp,
+} from "react-icons/fi";
+import { IndianRupee } from "lucide-react";
+import { useTheme } from "../../contexts/ThemeContext"; // Import theme context
 
-export default function Billing() {
-    const [invoices, setInvoices] = useState([]);
+const API = import.meta.env.VITE_API_BASE_URL;
+
+export default function WashBillingList() {
+    const { isDark } = useTheme(); // Get theme state
+    const [billings, setBillings] = useState([]);
     const [query, setQuery] = useState("");
-    const [status, setStatus] = useState("All");
     const navigate = useNavigate();
+    const token = localStorage.getItem("token");
 
-    /* ---------------- LOAD INVOICES FROM SERVICES ---------------- */
     useEffect(() => {
-        const fetchServicesAndCreateInvoices = async () => {
-            try {
-                const token = localStorage.getItem("token");
-
-                const res = await fetch(
-                    `${import.meta.env.VITE_API_BASE_URL}/api/washing-services`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-
-                const services = await res.json();
-
-                // Transform services into invoice format
-                const transformedInvoices = services.map((service) => ({
-                    id: service.id,
-                    invoiceNumber: `INV-${service.id}${Date.now()}`.substring(0, 20),
-                    clientName: service.client?.fullName || "N/A",
-                    phone: service.client?.phone || "",
-                    email: service.client?.email || "",
-                    invoiceDate: new Date(service.date).toLocaleDateString('en-GB'),
-                    dueDate: service.dueDate
-                        ? new Date(service.dueDate).toLocaleDateString('en-GB')
-                        : "No Due Date",
-                    amount: service.estimatedTotal || 0,
-                    status: service.status === "COMPLETED" ? "Paid" : "Pending",
-                    serviceNotes: `${service.category?.name} - ${service.subService?.name}`,
-                    createdAt: new Date(service.createdAt || service.date).toLocaleDateString('en-GB'),
-                    serviceDetails: {
-                        category: service.category?.name,
-                        subService: service.subService?.name,
-                        originalServiceId: service.id
-                    }
-                }));
-
-                setInvoices(transformedInvoices);
-            } catch (err) {
-                console.error("Failed to load services", err);
-            }
-        };
-
-        fetchServicesAndCreateInvoices();
+        fetch(`${API}/api/wash-billing`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(res => res.json())
+            .then(setBillings);
     }, []);
 
-    /* ---------------- FILTER LOGIC ---------------- */
-    const filteredInvoices = useMemo(() => {
-        return invoices.filter((inv) => {
-            const q = query.toLowerCase();
+    const filtered = useMemo(() => {
+        return billings.filter(b =>
+            b.invoiceNumber?.toLowerCase().includes(query.toLowerCase()) ||
+            b.washingClient?.fullName?.toLowerCase().includes(query.toLowerCase())
+        );
+    }, [billings, query]);
 
-            const matchesQuery =
-                inv.invoiceNumber?.toLowerCase().includes(q) ||
-                inv.clientName?.toLowerCase().includes(q) ||
-                inv.email?.toLowerCase().includes(q);
+    const totalInvoices = billings.length;
+    const paidInvoices = billings.filter(b => b.status === "PAID").length;
+    const pendingInvoices = billings.filter(b => b.status === "PENDING").length;
+    const totalRevenue = billings
+        .filter(b => b.status === "PAID")
+        .reduce((s, b) => s + Number(b.grandTotal || 0), 0)
+        .toFixed(2);
 
-            const matchesStatus =
-                status === "All" || inv.status === status;
-
-            return matchesQuery && matchesStatus;
-        });
-    }, [query, status, invoices]);
-
-    /* ---------------- DELETE ---------------- */
-    const deleteInvoice = async (id) => {
-        if (!confirm("Delete this invoice?")) return;
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this invoice?")) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const res = await fetch(`${API}/api/wash-billing/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-            await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/api/washing-services/${id}`,
-                { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
-            );
+            if (!res.ok) throw new Error("Delete failed");
 
-            setInvoices((prev) => prev.filter((inv) => inv.id !== id));
-            alert("Invoice deleted");
+            setBillings(prev => prev.filter(b => b.id !== id));
         } catch (err) {
+            alert("Failed to delete invoice");
             console.error(err);
-            alert("Error deleting invoice");
         }
     };
 
-    /* ---------------- UI ---------------- */
+    // Button styling function
+    const getActionButtonStyles = (type) => {
+        const baseStyles = "flex items-center gap-1 px-3 py-2 text-sm rounded-lg transition-all duration-300 hover:shadow-md hover:-translate-y-0.5";
+
+        switch (type) {
+            case 'view':
+                return `${baseStyles} ${isDark
+                    ? "text-blue-400 bg-blue-900/30 hover:bg-blue-900/50"
+                    : "text-blue-600 bg-blue-50 hover:bg-blue-100"}`;
+            case 'edit':
+                return `${baseStyles} ${isDark
+                    ? "text-yellow-400 bg-yellow-900/30 hover:bg-yellow-900/50"
+                    : "text-yellow-600 bg-yellow-50 hover:bg-yellow-100"}`;
+            case 'delete':
+                return `${baseStyles} ${isDark
+                    ? "text-red-400 bg-red-900/30 hover:bg-red-900/50"
+                    : "text-red-600 bg-red-50 hover:bg-red-100"}`;
+            default:
+                return baseStyles;
+        }
+    };
+
     return (
-        <div className="min-h-screen p-6 bg-[#f0fbff]">
-
-            {/* HEADER */}
-            <div className="mb-6">
-                <div className="px-8 py-8 shadow rounded-xl bg-gradient-to-r from-sky-400 to-cyan-500">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-4xl font-extrabold text-white">
-                                Billing & Invoices
-                            </h1>
-
-                            <p className="mt-1 text-white/90">
-                                Manage invoices and track payments
-                            </p>
-                        </div>
-
-                        {/* CREATE INVOICE */}
-                        <button
-                            onClick={() => navigate("/billing/create-invoice")}
-                            className="px-5 py-2 text-sm font-semibold bg-white rounded-lg shadow text-sky-600 hover:bg-sky-50"
-                        >
-                            + New Invoice
-                        </button>
-                    </div>
+        <div className={`min-h-screen p-6 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-100"} lg:ml-16`}>
+            {/* Header */}
+            <div className="flex justify-between mb-8">
+                <div>
+                    <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text">
+                        Wash Billing
+                    </h1>
+                    <p className={isDark ? "text-gray-400" : "text-gray-600"}>Manage all washing invoices</p>
                 </div>
+
+                <button
+                    onClick={() => navigate("/billing/create-invoice")}
+                    className={`flex items-center gap-2 px-6 py-3 text-white rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${isDark
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-700"
+                        : "bg-gradient-to-r from-blue-500 to-indigo-600"
+                        }`}
+                >
+                    <FiPlus /> New Invoice
+                </button>
             </div>
 
-            {/* SEARCH & FILTER */}
-            <div className="p-4 mb-6 bg-white shadow rounded-xl">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <input
-                        type="search"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search invoice number or client..."
-                        className="px-4 py-3 border rounded-lg"
-                    />
-
-                    <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="px-4 py-3 border rounded-lg"
-                    >
-                        <option>All</option>
-                        <option>Pending</option>
-                        <option>Paid</option>
-                        <option>Partially Paid</option>
-                    </select>
-                </div>
+            {/* Stats */}
+            <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
+                <Stat title="Total Invoices" value={totalInvoices} icon={<FiFileText />} isDark={isDark} />
+                <Stat title="Pending" value={pendingInvoices} icon={<FiClock />} isDark={isDark} />
+                <Stat title="Paid" value={paidInvoices} icon={<FiCheckCircle />} isDark={isDark} />
+                <Stat title="Revenue" value={`₹ ${totalRevenue}`} icon={<IndianRupee />} isDark={isDark} />
             </div>
 
-            {/* INVOICE LIST */}
+            {/* Search */}
+            <div className="relative max-w-xl mb-6">
+                <FiSearch className={`absolute top-4 left-4 ${isDark ? "text-gray-400" : "text-gray-400"}`} />
+                <input
+                    className={`w-full py-4 pl-12 pr-4 rounded-xl transition-all duration-300 outline-none ${isDark
+                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        }`}
+                    placeholder="Search invoice or client..."
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                />
+            </div>
+
+            {/* List */}
             <div className="space-y-4">
-                {filteredInvoices.length === 0 ? (
-                    <div className="py-20 text-center text-slate-500">
-                        No invoices found
-                    </div>
-                ) : (
-                    filteredInvoices.map((inv) => (
-                        <div
-                            key={inv.id}
-                            className="p-6 bg-white border shadow-sm rounded-xl"
-                        >
-                            {/* HEADER ROW */}
-                            <div className="flex items-center justify-between mb-4">
-                                {/* Left: Icon + Invoice Info */}
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center justify-center w-12 h-12 text-white rounded-xl bg-gradient-to-br from-sky-500 to-cyan-500">
-                                        <FileText size={24} />
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-lg font-bold text-slate-900">
-                                            Invoice #{inv.invoiceNumber}
-                                        </h3>
-                                        <p className="text-sm text-slate-500">
-                                            Created on {inv.createdAt}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Right: Status Badge */}
-                                <span
-                                    className={`px-4 py-1.5 text-sm font-semibold rounded-full
-                                        ${inv.status === "Paid"
-                                            ? "bg-green-100 text-green-700"
-                                            : inv.status === "Pending"
-                                                ? "bg-yellow-100 text-yellow-700"
-                                                : "bg-blue-100 text-blue-700"
-                                        }`}
-                                >
-                                    {inv.status}
-                                </span>
-                            </div>
-
-                            {/* DETAILS ROW */}
-                            <div className="flex items-center justify-between py-4 border-t border-b">
-                                {/* Client Name */}
-                                <div className="flex items-center gap-2">
-                                    <User size={16} className="text-sky-500" />
-                                    <span className="font-medium text-slate-900">
-                                        {inv.clientName}
-                                    </span>
-                                </div>
-
-                                {/* Invoice Date */}
-                                <div className="flex items-center gap-2">
-                                    <FileCheck size={16} className="text-pink-500" />
-                                    <span className="text-sm text-slate-600">—</span>
-                                </div>
-
-                                {/* Due Date */}
-                                <div className="flex items-center gap-2">
-                                    <Calendar size={16} className="text-emerald-500" />
-                                    <span className="text-sm font-medium text-slate-700">
-                                        {inv.dueDate}
-                                    </span>
-                                </div>
-
-                                {/* Amount */}
-                                <div className="text-right">
-                                    <span className="text-xl font-bold text-emerald-600">
-                                        ₹ {Number(inv.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* SERVICE NOTES */}
-                            {inv.serviceNotes && (
-                                <div className="py-3">
-                                    <p className="text-sm text-slate-600">
-                                        {inv.serviceNotes}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* FOOTER ROW */}
-                            <div className="flex items-center justify-between pt-4">
-                                {/* Contact Info */}
-                                <div className="flex gap-4 text-sm text-slate-600">
-                                    {inv.phone && (
-                                        <span className="flex items-center gap-1">
-                                            <Phone size={14} /> {inv.phone}
-                                        </span>
-                                    )}
-                                    {inv.email && (
-                                        <span className="flex items-center gap-1">
-                                            <Mail size={14} /> {inv.email}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() =>
-                                            navigate("/billing/invoice/:id")
-                                        }
-                                        className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                                    >
-                                        <Eye size={16} /> View
-                                    </button>
-
-                                    <button
-                                        onClick={() =>
-                                            navigate(`/billing/edit-invoice/${inv.id}`)
-                                        }
-                                        className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600"
-                                    >
-                                        <Edit size={16} /> Edit
-                                    </button>
-
-                                    <button
-                                        onClick={() => deleteInvoice(inv.id)}
-                                        className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
-                                    >
-                                        <Trash2 size={16} /> Delete
-                                    </button>
-                                </div>
-                            </div>
+                {filtered.map(b => (
+                    <div
+                        key={b.id}
+                        className={`flex items-center justify-between p-6 rounded-2xl transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${isDark
+                            ? "bg-gray-800 border border-gray-700"
+                            : "bg-white shadow"
+                            }`}
+                    >
+                        <div>
+                            <h2 className={`text-xl font-bold ${isDark ? "text-white" : ""}`}>#{b.invoiceNumber}</h2>
+                            <p className={isDark ? "text-gray-400" : "text-gray-600"}>{b.washingClient?.fullName}</p>
+                            <span className={`text-sm font-semibold ${b.status === "PAID"
+                                ? isDark ? "text-green-400" : "text-green-600"
+                                : isDark ? "text-orange-400" : "text-orange-500"
+                                }`}>
+                                {b.status}
+                            </span>
                         </div>
-                    ))
-                )}
+                        <div className="flex justify-end gap-2 mt-3">
+                            {/* View */}
+                            <button
+                                onClick={() => navigate(`/billing/invoice/${b.id}`)}
+                                className={getActionButtonStyles('view')}
+                                title="View"
+                            >
+                                <FiEye />
+                                View
+                            </button>
+
+                            {/* Edit */}
+                            <button
+                                onClick={() =>
+                                    navigate("/billing/create-invoice", {
+                                        state: {
+                                            isEdit: true,
+                                            billing: b, // FULL billing object
+                                        },
+                                    })
+                                }
+                                className={getActionButtonStyles('edit')}
+                            >
+                                <FiEdit2 /> Edit
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                                onClick={() => handleDelete(b.id)}
+                                className={getActionButtonStyles('delete')}
+                                title="Delete"
+                            >
+                                <FiTrash2 />
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function Stat({ title, value, icon, isDark }) {
+    return (
+        <div className={`p-6 rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${isDark
+            ? "bg-gray-800 border border-gray-700"
+            : "bg-white shadow"
+            }`}>
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className={isDark ? "text-gray-400" : "text-gray-500"}>{title}</p>
+                    <h2 className={`text-3xl font-bold ${isDark ? "text-white" : ""}`}>{value}</h2>
+                </div>
+                <div className={`text-2xl ${isDark ? "text-blue-400" : "text-blue-500"}`}>{icon}</div>
             </div>
         </div>
     );

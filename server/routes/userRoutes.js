@@ -8,6 +8,8 @@ import {
   changePassword,
   uploadProfileImage,
   checkEmail,
+  getTeamInfo,
+  createTeamUser
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -37,5 +39,7 @@ router.post("/upload-image", protect, uploadProfileImage);
 
 router.post("/check-email", checkEmail);
 
-
+// Teams
+router.get("/team/info", protect, getTeamInfo);
+router.post("/team/create", protect, createTeamUser);
 export default router;

@@ -4,7 +4,6 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 import BikeReminderForm from "./BikeReminderForm";
 import BikeReminderCard from "./BikeReminderCard";
-import axios from "axios";
 
 export default function BikeReminders() {
   const { isDark } = useTheme();
@@ -27,13 +26,26 @@ export default function BikeReminders() {
 
   const fetchBikeReminders = async () => {
     try {
-      const res = await axios.get(
+      const res = await fetch(
         `${API_URL}/api/bike-reminders`,
         getAuth()
       );
-      setReminders(res.data.data || []);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch reminders");
+      }
+
+      const data = await res.json();
+      
+      if (data.success) {
+        setReminders(data.data || []);
+      } else {
+        console.error("API returned success: false");
+        setReminders([]);
+      }
     } catch (err) {
       console.error("Error:", err);
+      alert("Failed to load reminders");
     } finally {
       setLoading(false);
     }
@@ -124,7 +136,7 @@ export default function BikeReminders() {
       <div className="mb-8 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
               Reminders & Notifications
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -162,8 +174,8 @@ export default function BikeReminders() {
         {/* Today */}
         <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
           isDark 
-            ? "bg-gray-800 border-gray-700 hover:border-orange-500/50" 
-            : "bg-white border-gray-100 hover:border-orange-500/30"
+            ? "bg-gray-800 border-gray-700 hover:border-blue-600/50" 
+            : "bg-white border-gray-100 hover:border-blue-600/30"
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -176,7 +188,7 @@ export default function BikeReminders() {
                 isDark ? "text-white" : "text-gray-900"
               }`}>{stats.today}</h3>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <FiAlertCircle size={24} className="text-white" />
             </div>
           </div>
@@ -185,8 +197,8 @@ export default function BikeReminders() {
         {/* Tomorrow */}
         <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
           isDark 
-            ? "bg-gray-800 border-gray-700 hover:border-purple-500/50" 
-            : "bg-white border-gray-100 hover:border-purple-500/30"
+            ? "bg-gray-800 border-gray-700 hover:border-blue-600/50" 
+            : "bg-white border-gray-100 hover:border-blue-600/30"
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -199,7 +211,7 @@ export default function BikeReminders() {
                 isDark ? "text-white" : "text-gray-900"
               }`}>{stats.tomorrow}</h3>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <FiCalendar size={24} className="text-white" />
             </div>
           </div>
@@ -209,7 +221,7 @@ export default function BikeReminders() {
         <div className={`p-6 rounded-2xl shadow-md hover:shadow-xl border-2 transition-all duration-300 ${
           isDark 
             ? "bg-gray-800 border-gray-700 hover:border-green-500/50" 
-            : "bg-white border-gray-100 hover:border-green-500/30"
+            : "bg-white border-gray-100 hover:border-blue-500/30"
         }`}>
           <div className="flex items-center justify-between">
             <div>
@@ -222,7 +234,7 @@ export default function BikeReminders() {
                 isDark ? "text-white" : "text-gray-900"
               }`}>{stats.upcoming}</h3>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
               <FiTrendingUp size={24} className="text-white" />
             </div>
           </div>
@@ -243,7 +255,7 @@ export default function BikeReminders() {
             placeholder="Search reminders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full px-4 py-4 pl-12 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+            className={`w-full px-4 py-4 pl-12 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               isDark
                 ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                 : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 shadow-sm"
@@ -255,7 +267,7 @@ export default function BikeReminders() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className={`px-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+          className={`px-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
             isDark
               ? "bg-gray-800 border-gray-700 text-white"
               : "bg-white border-gray-200 text-gray-900 shadow-sm"
@@ -270,7 +282,7 @@ export default function BikeReminders() {
         {/* Add Button */}
         <button
           onClick={() => setShowForm(!showForm)}
-          className="group flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium whitespace-nowrap"
+          className="group flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium whitespace-nowrap"
         >
           {showForm ? (
             <>

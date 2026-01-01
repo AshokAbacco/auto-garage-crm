@@ -1,4 +1,5 @@
 import prisma from "../models/prismaClient.js";
+import { getOwnerUserId } from "../utils/getAdminId.js";
 
 /* =====================================================
    SERVICE TYPES (GLOBAL)
@@ -9,26 +10,31 @@ export const getBikeServiceTypes = async (req, res) => {
       include: { subServices: true },
       orderBy: { id: "asc" },
     });
+
     res.json(data);
   } catch (err) {
+    console.error("getBikeServiceTypes error:", err);
     res.status(500).json({
       message: "Failed to load service types",
-      error: err.message,
     });
   }
 };
 
 /* =====================================================
-   ALL BIKE SERVICES (USER-SCOPED) ✅ FIXED
+   GET ALL BIKE SERVICES
+   GET /api/bike-services
 ===================================================== */
 export const getBikeServices = async (req, res) => {
   try {
+    const ownerUserId = getOwnerUserId(req.user);
+
+    const whereCondition =
+      req.user.role === "user"
+        ? { ownerUserId }
+        : { ownerUserId, createdById: req.user.id };
+
     const services = await prisma.bikeService.findMany({
-      where: {
-        client: {
-          userId: req.user.id, // ✅ CORRECT RELATION FILTER
-        },
-      },
+      where: whereCondition,
       include: {
         client: true,
         category: true,
@@ -37,56 +43,78 @@ export const getBikeServices = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    res.json(services);
+    // ✅ Ensure cost is always calculated
+    const fixedServices = services.map((s) => {
+      const total =
+        Number(s.partsCost || 0) +
+        (Number(s.partsCost || 0) * Number(s.partsGst || 0)) / 100 +
+        Number(s.laborCost || 0) +
+        (Number(s.laborCost || 0) * Number(s.laborGst || 0)) / 100;
+
+      return {
+        ...s,
+        cost:
+          s.cost && Number(s.cost) > 0
+            ? Number(s.cost)
+            : Number(total.toFixed(2)),
+      };
+    });
+
+    res.json(fixedServices);
   } catch (err) {
-    console.error("❌ getBikeServices error:", err);
+    console.error("getBikeServices error:", err);
     res.status(500).json({
       message: "Failed to fetch bike services",
-      error: err.message,
     });
   }
 };
 
 /* =====================================================
-   SERVICES BY CLIENT
+   GET SERVICES BY CLIENT
+   GET /api/bike-services/client/:clientId
 ===================================================== */
 export const getBikeServicesByClient = async (req, res) => {
   try {
+    const ownerUserId = getOwnerUserId(req.user);
+    const clientId = Number(req.params.clientId);
+
+    const whereCondition =
+      req.user.role === "user"
+        ? { clientId, ownerUserId }
+        : { clientId, ownerUserId, createdById: req.user.id };
+
     const services = await prisma.bikeService.findMany({
-      where: {
-        clientId: Number(req.params.clientId),
-        client: {
-          userId: req.user.id,
-        },
-      },
+      where: whereCondition,
       include: {
         category: true,
         subService: true,
       },
+      orderBy: { createdAt: "desc" },
     });
 
     res.json(services);
   } catch (err) {
+    console.error("getBikeServicesByClient error:", err);
     res.status(500).json({
-      message: "Failed to fetch client services",
-      error: err.message,
+      message: "Failed to fetch services",
     });
   }
 };
 
-
 /* =====================================================
-   SINGLE SERVICE (DETAILS PAGE) ✅ FIXED
+   GET SINGLE SERVICE
+   GET /api/bike-services/:id
 ===================================================== */
 export const getBikeServiceById = async (req, res) => {
   try {
+    const ownerUserId = getOwnerUserId(req.user);
+    const id = Number(req.params.id);
+
     const service = await prisma.bikeService.findFirst({
-      where: {
-        id: Number(req.params.id),
-        client: {
-          userId: req.user.id, // ✅ IMPORTANT
-        },
-      },
+      where:
+        req.user.role === "user"
+          ? { id, ownerUserId }
+          : { id, ownerUserId, createdById: req.user.id },
       include: {
         client: true,
         category: true,
@@ -98,18 +126,31 @@ export const getBikeServiceById = async (req, res) => {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    res.json(service);
+    // 🔥 Always calculate correct total
+    const calculatedTotal =
+      Number(service.partsCost || 0) +
+      (Number(service.partsCost || 0) * Number(service.partsGst || 0)) / 100 +
+      Number(service.laborCost || 0) +
+      (Number(service.laborCost || 0) * Number(service.laborGst || 0)) / 100;
+
+    res.json({
+      ...service,
+      cost:
+        service.cost && Number(service.cost) > 0
+          ? Number(service.cost)
+          : Number(calculatedTotal.toFixed(2)),
+    });
   } catch (err) {
+    console.error("getBikeServiceById error:", err);
     res.status(500).json({
       message: "Failed to load service",
-      error: err.message,
     });
   }
 };
 
-
 /* =====================================================
-   CREATE SERVICE ✅ FIXED (userId ADDED)
+   CREATE SERVICE
+   POST /api/bike-services
 ===================================================== */
 export const createBikeService = async (req, res) => {
   try {
@@ -136,6 +177,8 @@ export const createBikeService = async (req, res) => {
       Number(laborCost || 0) +
       (Number(laborCost || 0) * Number(laborGst || 0)) / 100;
 
+    const ownerUserId = getOwnerUserId(req.user);
+
     const service = await prisma.bikeService.create({
       data: {
         clientId: Number(clientId),
@@ -143,31 +186,37 @@ export const createBikeService = async (req, res) => {
         subServiceId: Number(subServiceId),
         date: new Date(date),
         notes,
+
         partsCost: Number(partsCost || 0),
         partsGst: Number(partsGst || 0),
         laborCost: Number(laborCost || 0),
         laborGst: Number(laborGst || 0),
         cost: Number(total.toFixed(2)),
         status: status || "Pending",
+
+        ownerUserId,
+        createdById: req.user.id,
       },
     });
 
     res.status(201).json(service);
   } catch (err) {
-    console.error("❌ createBikeService error:", err);
+    console.error("createBikeService error:", err);
     res.status(500).json({
       message: "Service creation failed",
-      error: err.message,
     });
   }
 };
 
-
 /* =====================================================
    UPDATE SERVICE
+   PUT /api/bike-services/:id
 ===================================================== */
 export const updateBikeService = async (req, res) => {
   try {
+    const ownerUserId = getOwnerUserId(req.user);
+    const id = Number(req.params.id);
+
     const {
       clientId,
       categoryId,
@@ -191,10 +240,11 @@ export const updateBikeService = async (req, res) => {
       Number(laborCost || 0) +
       (Number(laborCost || 0) * Number(laborGst || 0)) / 100;
 
-    const updated = await prisma.bikeService.update({
-      where: {
-        id: Number(req.params.id), // ✅ ONLY ID
-      },
+    const updated = await prisma.bikeService.updateMany({
+      where:
+        req.user.role === "user"
+          ? { id, ownerUserId }
+          : { id, ownerUserId, createdById: req.user.id },
       data: {
         clientId: Number(clientId),
         categoryId: Number(categoryId),
@@ -210,19 +260,50 @@ export const updateBikeService = async (req, res) => {
       },
     });
 
-    res.json(updated);
+    if (updated.count === 0) {
+      return res.status(403).json({ message: "Unauthorized update" });
+    }
+
+    res.json({ message: "Service updated successfully" });
   } catch (err) {
-    console.error("❌ updateBikeService error:", err);
+    console.error("updateBikeService error:", err);
     res.status(500).json({
       message: "Failed to update bike service",
-      error: err.message,
     });
   }
 };
 
 /* =====================================================
-   BIKE-BASED CATEGORIES
+   DELETE SERVICE
+   DELETE /api/bike-services/:id
 ===================================================== */
+export const deleteBikeService = async (req, res) => {
+  try {
+    const ownerUserId = getOwnerUserId(req.user);
+    const id = Number(req.params.id);
+
+    const result = await prisma.bikeService.deleteMany({
+      where:
+        req.user.role === "user"
+          ? { id, ownerUserId }
+          : { id, ownerUserId, createdById: req.user.id },
+    });
+
+    if (result.count === 0) {
+      return res.status(403).json({
+        message: "Unauthorized or service not found",
+      });
+    }
+
+    res.json({ message: "Service deleted successfully" });
+  } catch (err) {
+    console.error("deleteBikeService error:", err);
+    res.status(500).json({
+      message: "Failed to delete service",
+    });
+  }
+};
+
 export const getCategoriesByBike = async (req, res) => {
   try {
     const { bikeId } = req.params;
@@ -237,39 +318,22 @@ export const getCategoriesByBike = async (req, res) => {
 
     const categories = await prisma.bikeServiceCategory.findMany({
       where: {
-        OR: [{ bikeBrand: bike.brand }, { bikeBrand: null }],
+        OR: [
+          { bikeBrand: bike.bikeBrand },
+          { bikeBrand: null },
+        ],
       },
       include: {
         subServices: true,
       },
+      orderBy: { id: "asc" },
     });
 
     res.json(categories);
   } catch (error) {
-    console.error("❌ Fetch categories error:", error);
+    console.error("getCategoriesByBike error:", error);
     res.status(500).json({
       message: "Failed to load categories",
-    });
-  }
-};
-
-/* =====================================================
-   DELETE SERVICE
-===================================================== */
-export const deleteBikeService = async (req, res) => {
-  try {
-    await prisma.bikeService.delete({
-      where: {
-        id: Number(req.params.id),
-        userId: req.user.id,
-      },
-    });
-
-    res.json({ message: "Service Deleted" });
-  } catch (err) {
-    res.status(500).json({
-      message: "Failed to delete service",
-      error: err.message,
     });
   }
 };

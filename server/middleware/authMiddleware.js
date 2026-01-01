@@ -57,21 +57,42 @@ export const protect = async (req, res, next) => {
       where: { id: decoded.id },
       select: {
         id: true,
+        username: true,
         email: true,
         username: true,
         role: true, // always "user"
         plan: true,
+        parentUserId: true,
+        allowedCrms: true,
       },
     });
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({
+        message: "User not found or deleted",
+      });
     }
 
-    req.user = user; // ✅ ONLY USER
+    // 🔐 Normalize role (important)
+    req.user = {
+      ...user,
+      role: user.role?.toUpperCase(),
+    };
+
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.error("❌ Auth Middleware Error:", error);
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Token expired, please login again",
+        expiredAt: error.expiredAt,
+      });
+    }
+
+    return res.status(401).json({
+      message: "Invalid token",
+    });
   }
 };
 

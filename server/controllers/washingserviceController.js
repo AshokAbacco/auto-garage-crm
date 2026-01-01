@@ -234,6 +234,68 @@ export const updateWashingService = async (req, res) => {
     });
   }
 };
+/* ================================
+   CREATE WASHING CATEGORY
+================================ */
+export const createWashingCategory = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+
+    const category = await prisma.washingServiceCategory.create({
+      data: {
+        name: name.trim(),
+        description: description || null,
+      },
+    });
+
+    res.status(201).json(category);
+  } catch (err) {
+    console.error("CREATE CATEGORY ERROR:", err);
+
+    if (err.code === "P2002") {
+      return res.status(409).json({ message: "Category already exists" });
+    }
+
+    res.status(500).json({ message: "Failed to create category" });
+  }
+};
+
+/* ================================
+   CREATE WASHING SUB SERVICE
+================================ */
+export const createWashingSubService = async (req, res) => {
+  try {
+    const { name, categoryId, description } = req.body;
+
+    if (!name?.trim() || !categoryId) {
+      return res.status(400).json({
+        message: "Sub-service name and categoryId are required",
+      });
+    }
+
+    const subService = await prisma.washingSubService.create({
+      data: {
+        name: name.trim(),
+        description: description || null,
+        categoryId: Number(categoryId),
+      },
+    });
+
+    res.status(201).json(subService);
+  } catch (err) {
+    console.error("CREATE SUB SERVICE ERROR:", err);
+
+    if (err.code === "P2002") {
+      return res.status(409).json({ message: "Sub-service already exists" });
+    }
+
+    res.status(500).json({ message: "Failed to create sub-service" });
+  }
+};
 
 /* ================================
    DELETE WASHING SERVICE

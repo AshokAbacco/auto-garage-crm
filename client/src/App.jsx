@@ -92,6 +92,7 @@ import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
 import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
 import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
 import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
+import Teams from "./washPages/teams/Teams.jsx";
 import TeamLogin from "./bikePages/TeamAccounts/TeamLogin.jsx";
 import TeamRegister from "./bikePages/TeamAccounts/TeamRegister.jsx";
 function App() {
@@ -159,7 +160,7 @@ function App() {
           <Route path="/staff-management" element={<StaffManagement />} />
           <Route path="/salary-management" element={<SalaryManagement />} />
         </Route>
-{/* 
+        {/* 
         <Route>
          
           <Route index element={<Navigate to="car-dashboard" />} />
@@ -210,6 +211,14 @@ function App() {
           <Route path="/bill/new" element={<AddBilling />} />
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
+          {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
+          {/* ================= SALARY MODULE ================= */}
+          <Route path="/salary-login" element={<SalaryLogin />} />
+          <Route path="/salary-register" element={<SalaryRegister />} />
+
+          <Route element={<SalaryProtectedRoute />}>
+            <Route path="/salary-manage" element={<SalaryPage />} />
+          </Route>
         </Route>
 
         {/* Washing CRM Routes */}
@@ -230,18 +239,11 @@ function App() {
           <Route path="/washProfile" element={<WashingProfile />} />
           <Route path="/bike-plans" element={<Upgrade />} />
           <Route path="/team-register" element={<TeamRegister />} />
-        
-          
-          {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
-          {/* ================= SALARY MODULE ================= */}
-          <Route path="/salary-login" element={<SalaryLogin />} />
-          <Route path="/salary-register" element={<SalaryRegister />} />
 
-          <Route element={<SalaryProtectedRoute />}>
-            <Route path="/salary-manage" element={<SalaryPage />} />
-          </Route>
+
+
         </Route>
-          <Route path="/team-login" element={<TeamLogin />} />
+        <Route path="/team-login" element={<TeamLogin />} />
 
         {/* ================= WASHING CRM ================= */}
         <Route element={<WashingLayout />}>
@@ -262,6 +264,8 @@ function App() {
           <Route path="addclient" element={<Newclient />} />
           <Route path="/addclient/:id" element={<Newclient />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/teams" element={<Teams />} />
+
 
           <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
 
@@ -276,6 +280,7 @@ function App() {
         {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
     </ThemeProvider>
   );
 }

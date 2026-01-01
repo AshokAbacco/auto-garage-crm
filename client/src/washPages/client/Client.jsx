@@ -110,14 +110,15 @@ export default function Clients() {
     const totalPages = 1;
 
     return (
-        <div className={`min-h-screen lg:ml-16 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
+        <div className={`min-h-screen transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-50"}`}>
             <Toaster position="top-right" />
 
             {/* Modern Header with Light Blue/White Theme */}
-            <div className={`${isDark ? "bg-gray-800 shadow-xl" : "bg-white shadow-md"} border-b ${isDark ? "border-gray-700" : "border-gray-100"} px-6 py-6 transition-all duration-300`}>
+            <div className={`${isDark ? "bg-gray-800 " : "bg-white "} border-b ${isDark ? "border-gray-700" : "border-gray-100"} px-6 py-6 transition-all duration-300`}>
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <h1 className="text-5xl font-bold text-[#1BB6E9]">
+                        <h1 className="text-5xl font-bold text-[#0356a3]
+ ]">
                             Clients List
                         </h1>
 
@@ -130,7 +131,7 @@ export default function Clients() {
                     <button
                         onClick={() => navigate("/addclient")}
                         className="group flex items-center gap-2 px-6 py-3 
-             bg-gradient-to-r from-[#1BB6E9] to-[#0EA5E9] 
+             bg-gradient-to-r from-[#0356a3] to-[#0356a3] 
              text-white rounded-xl font-medium shadow-lg 
              hover:shadow-xl hover:-translate-y-0.5 
              transition-all duration-300"
@@ -160,7 +161,7 @@ export default function Clients() {
                         title="Current Page"
                         value={currentPage}
                         icon={<Car size={24} />}
-                        gradient="from-purple-400 to-purple-600"
+                        gradient="from-blue-400 to-blue-600"
                         isDark={isDark}
                         delay="100"
                     />
@@ -168,7 +169,7 @@ export default function Clients() {
                         title="Page"
                         value={`${currentPage}/${totalPages}`}
                         icon={<Hash size={24} />}
-                        gradient="from-green-400 to-green-600"
+                        gradient="from-blue-400 to-blue-600"
                         isDark={isDark}
                         delay="200"
                     />

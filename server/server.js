@@ -25,6 +25,7 @@ import referralRoutes from "./routes/referral.js";
 import washingClientRoutes from "./routes/washingRoutes.js";
 import washingServiceRoutes from "./routes/washingserviceRoutes.js";
 import washBillingRoutes from "./routes/washInvoiceRoutes.js";
+import teamsRoutes from "./routes/teamsRoutes.js"; // adjust path if needed
 
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
@@ -162,7 +163,7 @@ app.use("/api/referral", referralRoutes);
 app.use("/api/washing-clients", washingClientRoutes);
 app.use("/api/washing-services", washingServiceRoutes);
 app.use("/api/wash-billing", washBillingRoutes);
-
+app.use("/api/teams", teamsRoutes);
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

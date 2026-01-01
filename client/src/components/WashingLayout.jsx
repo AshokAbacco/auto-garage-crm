@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate, Outlet } from "react-router-dom";
+import { UsersRound } from "lucide-react";
+
 
 export default function WashingLayoutPage() {
     const { isDark, toggleTheme } = useTheme();
@@ -77,6 +79,13 @@ export default function WashingLayoutPage() {
             label: "Reference",
             icon: Network,
         },
+        {
+            to: "/teams",
+            label: "Teams",
+            icon: UsersRound,
+        },
+
+
         {
             to: "/washing-upgrade",
             label: "Upgrade",

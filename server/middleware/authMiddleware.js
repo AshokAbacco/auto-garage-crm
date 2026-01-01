@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import prisma from "../models/prismaClient.js";
 
 dotenv.config();
+ 
+dotenv.config();
 
 export const protect = async (req, res, next) => {
   console.log("AUTH USER:", req.user);
@@ -57,7 +59,8 @@ export const protect = async (req, res, next) => {
         id: true,
         username: true,
         email: true,
-        role: true,
+        username: true,
+        role: true, // always "user"
         plan: true,
         parentUserId: true,
         allowedCrms: true,
@@ -92,3 +95,4 @@ export const protect = async (req, res, next) => {
     });
   }
 };
+

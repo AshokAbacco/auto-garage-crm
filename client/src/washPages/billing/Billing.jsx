@@ -87,11 +87,11 @@ export default function WashBillingList() {
     };
 
     return (
-        <div className={`min-h-screen p-6 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-100"} lg:ml-16`}>
+        <div className={`min-h-screen p-6 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-100"}`}>
             {/* Header */}
             <div className="flex justify-between mb-8">
                 <div>
-                    <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text">
+                    <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text">
                         Wash Billing
                     </h1>
                     <p className={isDark ? "text-gray-400" : "text-gray-600"}>Manage all washing invoices</p>
@@ -100,8 +100,8 @@ export default function WashBillingList() {
                 <button
                     onClick={() => navigate("/billing/create-invoice")}
                     className={`flex items-center gap-2 px-6 py-3 text-white rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${isDark
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-700"
-                        : "bg-gradient-to-r from-blue-500 to-indigo-600"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700"
+                        : "bg-gradient-to-r from-blue-500 to-blue-600"
                         }`}
                 >
                     <FiPlus /> New Invoice

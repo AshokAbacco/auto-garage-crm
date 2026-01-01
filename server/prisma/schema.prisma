@@ -88,8 +88,12 @@ model User {
   ownedBikeOcrRecords   BikeOcrRecord[] @relation("OwnerBikeOcrRecords")
   createdBikeOcrRecords BikeOcrRecord[] @relation("CreatedBikeOcrRecords")
 
-  // ✅ Washing 
+   // washing 
   washingClients WashingClient[]
+  washTeamsOwned WashTeam[]      @relation("AdminWashTeams")
+  // Team member → belongs to one team
+  washTeamId     Int?
+  washTeamMember WashTeam? @relation("TeamMember", fields: [washTeamId], references: [id])
 }
 
 //car db schemas
@@ -842,4 +846,21 @@ model WashBillingService {
 
   @@unique([washBillingId, washingServiceId])
   @@map("wash_billing_services")
+}
+
+model WashTeam {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Display / contact email only
+  email String @unique
+
+  // Admin who created the team
+  createdBy Int
+  admin     User @relation("AdminWashTeams", fields: [createdBy], references: [id])
+
+  // Team members
+  members User[] @relation("TeamMember")
+
+  createdAt DateTime @default(now())
 }

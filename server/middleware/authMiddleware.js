@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import prisma from "../models/prismaClient.js";
 
 dotenv.config();
+ 
+dotenv.config();
 
 export const protect = async (req, res, next) => {
   console.log("AUTH USER:", req.user);
@@ -55,29 +57,42 @@ export const protect = async (req, res, next) => {
       where: { id: decoded.id },
       select: {
         id: true,
+        username: true,
         email: true,
-        role: true,
+        username: true,
+        role: true, // always "user"
         plan: true,
+        parentUserId: true,
         allowedCrms: true,
       },
     });
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({
+        message: "User not found or deleted",
+      });
     }
 
+    // 🔐 Normalize role (important)
     req.user = {
-      id: user.id,
-      type: "owner",
-      role: user.role,
-      plan: user.plan,
-      allowedCrms: user.allowedCrms,
-      email: user.email,
+      ...user,
+      role: user.role?.toUpperCase(),
     };
 
     next();
   } catch (error) {
     console.error("❌ Auth Middleware Error:", error);
-    return res.status(401).json({ message: "Invalid or expired token" });
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Token expired, please login again",
+        expiredAt: error.expiredAt,
+      });
+    }
+
+    return res.status(401).json({
+      message: "Invalid token",
+    });
   }
 };
+

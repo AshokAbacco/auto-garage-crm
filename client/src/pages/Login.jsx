@@ -60,28 +60,36 @@ export default function ModernLogin() {
       ],
     },
     bike: {
-        label: "Bike Workshop",
-        icon: Bike,
-        gradient: "from-orange-500 via-orange-600 to-red-500",
-        bgGradient: "from-orange-950 via-zinc-950 to-orange-950",
-        lightBgGradient: "from-orange-50 via-orange-100 to-slate-50",
-        accentColor: "#f97316", // orange-500
-        lightAccent: "rgba(249, 115, 22, 0.25)",
-        particleColor: "#fb923c", // orange-400
-        title: "Rev Up Your Workshop",
-        subtitle: "Expert CRM for Two-Wheeler Service Centers",
-        features: [
-            { icon: Wrench, text: "Repair Tracking", color: "text-orange-500" },
-            { icon: Users, text: "Customer Profiles", color: "text-orange-400" },
-            { icon: Calendar, text: "Service Reminders", color: "text-orange-300" },
-            { icon: Settings, text: "Parts Management", color: "text-red-400" },
-        ],
-        stats: [
-            { icon: Users, value: "30K+", label: "Active Users" },
-            { icon: Star, value: "4.8", label: "Rating" },
-            { icon: Server, value: "99.8%", label: "Uptime" },
-            { icon: TrendingUp, value: "2.5x", label: "Growth" },
-        ],
+      label: "Bike Workshop",
+      icon: Bike,
+      gradient: "from-blue-600 via-blue-500 to-cyan-500",
+      bgGradient: "from-blue-900 via-blue-800 to-cyan-900",
+      lightBgGradient: "from-blue-50 via-cyan-50 to-white",
+      accentColor: "#2563EB", // blue-600
+      lightAccent: "#3B82F6", // blue-500
+      particleColor: "#06B6D4", // cyan-500
+      glowColor: "rgba(37, 99, 235, 0.3)", // blue glow
+      borderColor: "#60A5FA", // blue-400
+      title: "Rev Up Your Workshop",
+      subtitle: "Expert CRM for Two-Wheeler Service Centers",
+      features: [
+          { icon: Wrench, text: "Repair Tracking", color: "text-white" },
+          { icon: Users, text: "Customer Profiles", color: "text-blue-100" },
+          { icon: Calendar, text: "Service Reminders", color: "text-cyan-100" },
+          { icon: Settings, text: "Parts Management", color: "text-blue-200" },
+      ],
+      stats: [
+          { icon: Users, value: "30K+", label: "Active Users", color: "text-blue-400" },
+          { icon: Star, value: "4.8", label: "Rating", color: "text-cyan-400" },
+          { icon: Server, value: "99.8%", label: "Uptime", color: "text-blue-300" },
+          { icon: TrendingUp, value: "2.5x", label: "Growth", color: "text-cyan-300" },
+      ],
+      // Blur effects
+      blurEffects: {
+          backdrop: "backdrop-blur-xl",
+          glassEffect: "bg-white/10 backdrop-blur-lg",
+          cardBlur: "backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
+      }
     },
 
     wash: {

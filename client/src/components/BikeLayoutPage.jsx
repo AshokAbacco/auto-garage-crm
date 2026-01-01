@@ -31,19 +31,83 @@ export default function BikeLayoutPage() {
 
   const routerNavigate = useNavigate();
 
-  const menu = [
-    { to: "/bike-dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/bike-clients", label: "Clients", icon: Users },
-    { to: "/bike-services", label: "Services", icon: Wrench },
-    { to: "/bike-billing", label: "Billing", icon: Receipt },
-    { to: "/bike-reminders", label: "Reminders", icon: Bell },
-    { to: "/bike-reports", label: "Reports", icon: BarChart2 },
-    { to: "/bike-ocr-scanner", label: "OCR Scanner", icon: FileText },
-    { to: "/bike-plan", label: "Your Plan", icon: IndianRupee },
-    { to: "/bike-reference", label: "Reference", icon: Network },
-    { to: "/salary-manage", label: "salary manage", icon: Network },
-    { to: "/bike-plans", label: "Upgrade", icon: Crown },
-  ];
+const menu = [
+  {
+    to: "/bike-dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+  {
+    to: "/bike-clients",
+    label: "Clients",
+    icon: Users,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+  {
+    to: "/bike-services",
+    label: "Services",
+    icon: Wrench,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+  {
+    to: "/bike-billing",
+    label: "Billing",
+    icon: Receipt,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+  {
+    to: "/bike-reminders",
+    label: "Reminders",
+    icon: Bell,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+  {
+    to: "/bike-reports",
+    label: "Reports",
+    icon: BarChart2,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+  {
+    to: "/bike-ocr-scanner",
+    label: "OCR Scanner",
+    icon: FileText,
+    roles: ["user", "TEAM_MEMBER"],
+  },
+
+  // 🔒 OWNER/USER ONLY
+  {
+    to: "/bike-plan",
+    label: "Your Plan",
+    icon: IndianRupee,
+    roles: ["user"],
+  },
+  {
+    to: "/bike-reference",
+    label: "Reference",
+    icon: Network,
+    roles: ["user"],
+  },
+  {
+    to: "/salary-manage",
+    label: "Salary Management",
+    icon: Package,
+    roles: ["user"],
+  },
+  {
+    to: "/team-register",
+    label: "Team Accounts",
+    icon: Users,
+    roles: ["user"],
+  },
+  {
+    to: "/bike-plans",
+    label: "Upgrade",
+    icon: Crown,
+    roles: ["user"],
+  },
+];
+
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -63,6 +127,8 @@ export default function BikeLayoutPage() {
 
 
 const logout = () => {
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
   localStorage.removeItem("auth");
   routerNavigate("/login", { replace: true });
 };
@@ -71,7 +137,7 @@ const logout = () => {
   return (
     <div
       className={`min-h-screen flex ${
-        isDark ? "dark bg-gray-900" : "bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100"
+        isDark ? "dark bg-gray-900" : "bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100"
       }`}
     >
       {/* Overlay for mobile */}
@@ -105,7 +171,7 @@ const logout = () => {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
                 <Bike className="w-6 h-6 text-white" />
               </div>
               {sidebarExpanded && (
@@ -132,48 +198,51 @@ const logout = () => {
 
           {/* Navigation */}
           <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
-            {menu.map((item) => {
-              const isActive = activeRoute === item.to;
-              const Icon = item.icon;
-              
-              return (
-                <button
-                  key={item.to}
-                  onClick={() => {
-                    setActiveRoute(item.to);
-                    setSidebarOpen(false);
-                    routerNavigate(item.to);
-                  }}
+            {menu
+              // ✅ FILTER BASED ON ROLE
+              .filter(item => item.roles.includes(user?.role))
+              .map((item) => {
+                const isActive = activeRoute === item.to;
+                const Icon = item.icon;
 
-                  className={`
-                    w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg"
-                        : isDark
-                        ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                        : "text-gray-700 hover:bg-orange-50 hover:text-orange-600"
-                    }
-                  `}
-                >
-                  <Icon
-                    className={`w-5 h-5 flex-shrink-0 ${
-                      isActive
-                        ? "text-white"
-                        : isDark
-                        ? "text-gray-400"
-                        : "text-gray-500"
-                    }`}
-                  />
-                  {sidebarExpanded && (
-                    <span className="transition-opacity duration-300">
-                      {item.label}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={item.to}
+                    onClick={() => {
+                      setActiveRoute(item.to);
+                      setSidebarOpen(false);
+                      routerNavigate(item.to);
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+                          : isDark
+                          ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                          : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      }
+                    `}
+                  >
+                    <Icon
+                      className={`w-5 h-5 flex-shrink-0 ${
+                        isActive
+                          ? "text-white"
+                          : isDark
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                      }`}
+                    />
+                    {sidebarExpanded && (
+                      <span className="transition-opacity duration-300">
+                        {item.label}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
           </nav>
+
 
           {/* Logout Button */}
           <div className="p-2">
@@ -224,7 +293,7 @@ const logout = () => {
                 />
               </button>
               <div className="lg:hidden flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <Bike className="w-5 h-5 text-white" />
                 </div>
                 <div
@@ -244,7 +313,7 @@ const logout = () => {
                 className={`p-2 rounded-lg transition-colors ${
                   isDark
                     ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
-                    : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                    : "bg-blue-100 text-blue-700 hover:bg-blue-200"
                 }`}
               >
                 {isDark ? (
@@ -273,15 +342,14 @@ const logout = () => {
                         className={`w-full h-full flex items-center justify-center 
                           ${
                             isDark
-                              ? "bg-gradient-to-br from-orange-600 to-red-600"
-                              : "bg-gradient-to-br from-orange-500 to-red-500"
+                              ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                              : "bg-gradient-to-br from-blue-500 to-blue-600"
                           }`}
                       >
                         <span className="text-white font-medium">
                           {user?.username
                             ? user.username.charAt(0).toUpperCase()
                             : "U"}
-
                         </span>
                       </div>
                     )}
@@ -293,10 +361,10 @@ const logout = () => {
                       isDark ? "text-white" : "text-gray-800"
                     }`}
                   >
-                   <div className="font-medium">{user?.username || "User"}</div>
-
-                    <div className="text-xs">{user?.email || "no-email@example.com"}</div>
-
+                    <div className="font-medium">{user?.username || "user"}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {user?.role === "user" ? "Owner" : "Team Member"}
+                    </div>
                   </div>
                 </button>
 
@@ -317,13 +385,12 @@ const logout = () => {
                         routerNavigate("/bike-profile");
                         setOpenProfileMenu(false);
                       }}
-
                       className={`
                         w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
                         ${
                           isDark
                             ? "text-gray-200 hover:bg-gray-700"
-                            : "text-gray-800 hover:bg-orange-50"
+                            : "text-gray-800 hover:bg-blue-50"
                         }
                       `}
                     >
@@ -339,60 +406,59 @@ const logout = () => {
         {/* Page content */}
         <main
           className={`flex-1 ${
-            isDark ? "bg-gray-900" : "bg-gradient-to-br from-slate-50 via-orange-50 to-slate-100"
+            isDark ? "bg-gray-900" : "bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100"
           }`}
         >
-           
           {/* Page Content - Dynamic */}
           <Outlet />
-
         </main>
-          {showLogoutModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div
-            className={`w-full max-w-sm rounded-2xl p-6 shadow-xl 
-        ${isDark ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
-          >
-            {/* Title */}
-            <h2 className="text-xl font-bold mb-2">Confirm Logout</h2>
-            <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
-              Are you sure you want to logout?
-            </p>
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className={`
-              px-4 py-2 rounded-lg font-medium
-              ${
-                isDark
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }
-            `}
-              >
-                Cancel
-              </button>
+        {/* Logout Modal */}
+        {showLogoutModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div
+              className={`w-full max-w-sm rounded-2xl p-6 shadow-xl 
+                ${isDark ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
+            >
+              {/* Title */}
+              <h2 className="text-xl font-bold mb-2">Confirm Logout</h2>
+              <p className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                Are you sure you want to logout?
+              </p>
 
-              <button
-                onClick={() => {
-                  setShowLogoutModal(false);
-                  logout();
-                }}
-                className="
-              px-4 py-2 rounded-lg font-medium text-white 
-              bg-red-600 hover:bg-red-700
-            "
-              >
-                Logout
-              </button>
+              {/* Buttons */}
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className={`
+                    px-4 py-2 rounded-lg font-medium
+                    ${
+                      isDark
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    }
+                  `}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    logout();
+                  }}
+                  className="
+                    px-4 py-2 rounded-lg font-medium text-white 
+                    bg-red-600 hover:bg-red-700
+                  "
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
-  
     </div>
   );
 }

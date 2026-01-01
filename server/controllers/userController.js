@@ -193,3 +193,129 @@ export const checkEmail = async (req, res) => {
   }
 };
 
+/**
+ * @desc Create team member (ADMIN only)
+ * @route POST /api/user/team/create
+ * @access Private
+ */
+
+export const getTeamInfo = async (req, res) => {
+  try {
+    const user = req.user;
+
+    // 🔒 Normalize role (THIS IS THE KEY FIX)
+    const role = String(user.role).toLowerCase();
+
+    // ❌ Only OWNER can access team info
+    if (role !== "user") {
+      return res.status(403).json({
+        message: "Only owner can access team info",
+      });
+    }
+
+    // ❌ Block BASIC plan
+    if (user.plan === "BASIC") {
+      return res.status(403).json({
+        message: "Team not allowed for this plan",
+      });
+    }
+
+    // ✅ Count owner + team members
+    const used = await prisma.user.count({
+      where: {
+        OR: [
+          { id: user.id },
+          { parentUserId: user.id },
+        ],
+      },
+    });
+
+    const limit =
+      user.plan === "STANDARD" ? 3 :
+      user.plan === "PREMIUM" ? 10 : 1;
+
+    return res.json({
+      adminEmail: user.email,
+      plan: user.plan,
+      used,
+      limit,
+    });
+
+  } catch (error) {
+    console.error("getTeamInfo error:", error);
+    return res.status(500).json({ message: "Failed to fetch team info" });
+  }
+};
+
+
+
+export const createTeamUser = async (req, res) => {
+  try {
+    const admin = req.user;
+
+    // 🔒 Normalize role
+    const role = String(admin.role).toLowerCase();
+
+    // ❌ Only OWNER can add team
+    if (role !== "user") {
+      return res.status(403).json({
+        message: "Only owner can add team",
+      });
+    }
+
+    // ❌ Block BASIC plan
+    if (admin.plan === "BASIC") {
+      return res.status(403).json({
+        message: "Upgrade plan to add team",
+      });
+    }
+
+    const limit =
+      admin.plan === "STANDARD" ? 3 :
+      admin.plan === "PREMIUM" ? 10 : 1;
+
+    const used = await prisma.user.count({
+      where: {
+        OR: [{ id: admin.id }, { parentUserId: admin.id }],
+      },
+    });
+
+    if (used >= limit) {
+      return res.status(403).json({ message: "Team limit reached" });
+    }
+
+    const { email, username, password } = req.body;
+
+    const exists = await prisma.user.findUnique({ where: { email } });
+    if (exists) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const myReferralCode =
+      "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    await prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword,
+        role: "TEAM_MEMBER",
+        parentUserId: admin.id,
+        plan: admin.plan,
+        allowedCrms: admin.allowedCrms?.length
+          ? admin.allowedCrms
+          : ["BIKE"],
+        myReferralCode,
+      },
+    });
+
+    res.json({ success: true, message: "Team user created" });
+
+  } catch (error) {
+    console.error("createTeamUser error:", error);
+    res.status(500).json({ message: "Failed to create team user" });
+  }
+};
+

@@ -18,6 +18,7 @@ export const registerUser = async (req, res) => {
     }
 
     const emailLower = email.toLowerCase().trim();
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // 🔥 FETCH LATEST PAYMENT (SOURCE OF TRUTH)
     const latestPayment = await prisma.payment.findFirst({
@@ -60,7 +61,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const existingUser = await prisma.user.findUnique({
+      where: { email: emailLower },
+    });
 
     /**
      * =============================================
@@ -74,11 +77,8 @@ export const registerUser = async (req, res) => {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-          plan: userPlan,
-          companyName,
-          phone,
-          referredByCode: referralCodeUsed, // ✅
-          referredByUserId, // ✅
+          plan,
+          planExpiry,
         },
       });
 
@@ -107,12 +107,8 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
-        profileImage: null,
-        referredByCode: referralCodeUsed,
-        referredByUserId,
-        plan: userPlan,
-        companyName,
-        phone,
+        plan,
+        planExpiry,
       },
     });
 
@@ -125,18 +121,10 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Registration Error:", error);
-
-    if (error.code === "P2002") {
-      const target = error.meta?.target || [];
-      if (target.includes("username"))
-        return res.status(400).json({ message: "Username already taken" });
-      if (target.includes("email"))
-        return res.status(400).json({ message: "Email already registered" });
-    }
-
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 /**
  * =============================================
@@ -155,12 +143,7 @@ export const loginUser = async (req, res) => {
 
     const isEmail = identifier.includes("@");
 
-    /**
-     * ============================
-     * 1️⃣ TRY OWNER LOGIN (User)
-     * ============================
-     */
-    const owner = await prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: isEmail
         ? { email: identifier.toLowerCase() }
         : { username: identifier },
@@ -246,6 +229,7 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
 
 /**
  * =============================================

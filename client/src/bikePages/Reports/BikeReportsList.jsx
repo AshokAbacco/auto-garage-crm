@@ -102,7 +102,7 @@ export default function BikeReportsList({
         isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
       }`}>
         {/* Header */}
-        <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+        <div className="p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <FiTool size={24} />
@@ -130,8 +130,8 @@ export default function BikeReportsList({
                   key={srv.id}
                   className={`group py-4 px-5 flex justify-between items-center rounded-xl border-2 transition-all duration-300 ${
                     isDark
-                      ? "hover:bg-gray-700 border-gray-700 hover:border-indigo-500/50"
-                      : "hover:bg-gray-50 border-gray-100 hover:border-indigo-500/30"
+                      ? "hover:bg-gray-700 border-gray-700 hover:border-blue-600/50"
+                      : "hover:bg-gray-50 border-gray-100 hover:border-blue-600/30"
                   }`}
                 >
                   <div className="flex-1">
@@ -263,14 +263,14 @@ export default function BikeReportsList({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <FiTool className="text-purple-500" size={16} />
+                      <FiTool className="text-blue-600" size={16} />
                       <span className={isDark ? "text-gray-400" : "text-gray-600"}>Vehicle:</span>
                       <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                         {invoiceDetails.bike.bikeBrand} {invoiceDetails.bike.vehicleModel}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <FiHash className="text-orange-500" size={16} />
+                      <FiHash className="text-blue-600" size={16} />
                       <span className={isDark ? "text-gray-400" : "text-gray-600"}>Reg No:</span>
                       <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
                         {invoiceDetails.bike.regNumber}

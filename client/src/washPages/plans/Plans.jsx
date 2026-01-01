@@ -203,20 +203,21 @@ function PlanCard({ title, data, isDark }) {
             </h2>
 
             <div className="grid gap-6 md:grid-cols-2">
-                <DetailItem icon={<FiUser />} title="Customer Name" value={data.customerName} isDark={isDark} />
+                <DetailItem icon={<FiUser className="text-blue-500" />} title="Customer Name" value={data.customerName} isDark={isDark} />
 
-                <DetailItem icon={<FiClock />} title="Billing Period" value={data.billingPeriod} isDark={isDark} />
+                <DetailItem icon={<FiClock className="text-blue-500" />} title="Billing Period" value={data.billingPeriod} isDark={isDark} />
 
-                <DetailItem icon={<FiCreditCard />} title="Amount" value={`₹${data.amount}`} isDark={isDark} />
+                <DetailItem icon={<FiCreditCard className="text-blue-500" />} title="Amount" value={`₹${data.amount}`} isDark={isDark} />
 
-                <DetailItem icon={<FiCalendar />} title="Paid At" value={paidAt} isDark={isDark} />
+                <DetailItem icon={<FiCalendar className="text-blue-500" />} title="Paid At" value={paidAt} isDark={isDark} />
 
-                <DetailItem icon={<FiCalendar />} title="Expiry Date" value={expiryDate} isDark={isDark} />
+                <DetailItem icon={<FiCalendar className="text-blue-500" />} title="Expiry Date" value={expiryDate} isDark={isDark} />
 
-                <DetailItem icon={<FiCalendar />} title="Next Billing Date" value={nextBilling} isDark={isDark} />
+                <DetailItem icon={<FiCalendar className="text-blue-500" />} title="Next Billing Date" value={nextBilling} isDark={isDark} />
 
-                <DetailItem icon={<FiAlertTriangle />} title="Countdown" value={countdown} isDark={isDark} />
+                <DetailItem icon={<FiAlertTriangle className="text-blue-500" />} title="Countdown" value={countdown} isDark={isDark} />
             </div>
+
         </div>
     );
 }

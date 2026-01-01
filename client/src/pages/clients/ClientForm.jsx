@@ -475,7 +475,7 @@ export default function ClientForm() {
   // -------------------------------
   return (
     <div
-      className={`min-h-screen p-6 lg:ml-16 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
+      className={`min-h-screen lg:ml-16 ${isDark ? " text-gray-100" : "bg-gray-50 text-gray-900"
         }`}
       // 🛑 DISABLE RIGHT CLICK ON ENTIRE PAGE
       onContextMenu={(e) => e.preventDefault()}

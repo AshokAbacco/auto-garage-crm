@@ -53,7 +53,7 @@ export default function Plans() {
 
   if (loading)
     return (
-      <div className={`min-h-screen flex justify-center items-center ${isDark ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+      <div className={`min-h-screen flex justify-center items-center ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}>
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
           <p>Loading Plan Details...</p>
@@ -72,7 +72,7 @@ export default function Plans() {
     );
 
   return (
-    <div className={`min-h-screen p-6 transition-colors duration-300 ${isDark ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+    <div className={`min-h-screen p-1 transition-colors duration-300 ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}>
       <div className="max-w-4xl mx-auto space-y-8">
 
         {/* Page Header */}

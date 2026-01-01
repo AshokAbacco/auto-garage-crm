@@ -2,7 +2,9 @@ import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import prisma from "../models/prismaClient.js";
- 
+import { PlanType } from "@prisma/client";
+
+
 const router = express.Router();
  
 /* ----------------------------------------------
@@ -98,6 +100,21 @@ router.post("/create-subscription", async (req, res) => {
         error: `Invalid plan name: ${plan.name}`,
       });
     }
+    const prismaPlanMap = {
+      basic: PlanType.BASIC,
+      standard: PlanType.STANDARD,
+      premium: PlanType.PREMIUM,
+    };
+
+    // const prismaPlan = prismaPlanMap[rawName];
+
+    if (!prismaPlan) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid plan enum '${plan.name}'`,
+      });
+    }
+
 
     /* ---------------- CHECK UPGRADE ---------------- */
     const existingPayments = await prisma.payment.findMany({

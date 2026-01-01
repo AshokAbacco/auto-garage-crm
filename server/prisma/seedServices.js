@@ -8,80 +8,102 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Utility to clean Excel text completely
+ * - Removes invisible unicode characters
+ * - Removes leading & trailing ', =, ===
+ */
+function cleanText(value = "") {
+  return value
+    .toString()
+    .replace(/[\r\n\t\uFEFF\u200B\u00A0]/g, "") // invisible chars
+    .replace(/^['=]+/, "") // leading ' or =
+    .replace(/['=]+$/, "") // trailing ' or =
+    .trim();
+}
+
 async function seedServices() {
-    console.log("🚗 Starting Garage Services seeding...");
+  console.log("Starting Garage Services seeding...");
 
-    try {
-        const filePath = path.resolve(__dirname, "../services/List.xlsx");
-        console.log(`📂 Reading Excel from: ${filePath}`);
+  try {
+    const filePath = path.resolve(__dirname, "../services/List.xlsx");
+    console.log(`Reading Excel from: ${filePath}`);
 
-        const workbook = XLSX.readFile(filePath, { cellText: true });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    const workbook = XLSX.readFile(filePath, { cellText: true });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        console.log(`🧾 Total rows read from Excel: ${rows.length}`);
+    console.log(`Total rows read from Excel: ${rows.length}`);
 
-        // Optional cleanup (uncomment for reseeding)
-        // await prisma.subService.deleteMany();
-        // await prisma.serviceCategory.deleteMany();
+    // Uncomment for full reseed
+    // await prisma.subService.deleteMany();
+    // await prisma.serviceCategory.deleteMany();
 
-        let currentCategory = null;
-        let totalCategories = 0;
-        let totalSubServices = 0;
+    let currentCategory = null;
+    let totalCategories = 0;
+    let totalSubServices = 0;
 
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row) continue;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row) continue;
 
-            const colA = (row[0] || "").toString().trim();
-            const colB = (row[1] || "").toString().trim();
+      const colA = cleanText(row[0]);
+      const colB = cleanText(row[1]);
 
-            // Skip completely empty rows
-            if (!colA && !colB) continue;
+      // Skip empty rows
+      if (!colA && !colB) continue;
 
-            // 🟢 Detect Category (column A has a name, column B empty)
-            if (colA && !colB) {
-                const name = colA.replace(/[\r\n\t\uFEFF\u200B\u00A0]/g, "").trim();
-                if (!name) continue;
+      /**
+       * CATEGORY (Column A only)
+       */
+      if (colA && !colB) {
+        const category = await prisma.serviceCategory.create({
+          data: { name: colA },
+        });
 
-                const category = await prisma.serviceCategory.create({
-                    data: { name },
-                });
+        currentCategory = category;
+        totalCategories++;
+        console.log(`Added Category: ${colA}`);
+      } else if (currentCategory && colB) {
+        /**
+         * SUB-SERVICE (Column B)
+         */
+        await prisma.subService.create({
+          data: {
+            name: colB,
+            categoryId: currentCategory.id,
+          },
+        });
 
-                currentCategory = category;
-                totalCategories++;
-                console.log(`📁 Added Category: ${name}`);
-            }
-
-            // 🟣 Detect Sub-Service (column B has value)
-            else if (currentCategory && colB) {
-                const cleanName = colB
-                    .replace(/[\r\n\t\uFEFF\u200B\u00A0]/g, "")
-                    .replace(/^'+/, "")
-                    .trim();
-
-                if (!cleanName) continue;
-
-                await prisma.subService.create({
-                    data: {
-                        name: cleanName,
-                        categoryId: currentCategory.id,
-                    },
-                });
-                totalSubServices++;
-                console.log(`   ➕ Added Sub-Service: ${cleanName}`);
-            }
-        }
-
-        console.log("✅ Seeding completed successfully!");
-        console.log(`📦 Total Categories: ${totalCategories}`);
-        console.log(`🧩 Total Sub-Services: ${totalSubServices}`);
-    } catch (error) {
-        console.error("❌ Error seeding services:", error);
-    } finally {
-        await prisma.$disconnect();
+        totalSubServices++;
+        console.log(`   Added Sub-Service: ${colB}`);
+      }
     }
+
+    /**
+     * Ensure "Other" category exists
+     */
+    const existingOther = await prisma.serviceCategory.findFirst({
+      where: { name: "Other" },
+    });
+
+    if (!existingOther) {
+      await prisma.serviceCategory.create({
+        data: { name: "Other" },
+      });
+      totalCategories++;
+      console.log("Added Category: Other");
+    }
+
+    console.log("Seeding completed successfully");
+    console.log(`Total Categories: ${totalCategories}`);
+    console.log(`Total Sub-Services: ${totalSubServices}`);
+  } catch (error) {
+    console.error("Error seeding services:", error);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 seedServices();

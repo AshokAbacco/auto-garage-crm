@@ -1,11 +1,14 @@
-// src/
+// client/src/utils/axiosInstance.js
 import axios from "axios";
-
+ 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000",
+  baseURL: "http://localhost:5000",
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// ✅ Attach token to every request
+// 🔐 Attach token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -16,26 +19,23 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
-// ✅ HANDLE TOKEN EXPIRY (THIS IS WHAT YOU WERE MISSING)
+ 
+// 🚨 Handle ALL 401 cases safely
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (
-      error.response?.status === 401 &&
-      error.response?.data?.message?.includes("Token expired")
-    ) {
-      console.warn("🔒 Token expired → logging out");
-
+    if (error.response?.status === 401) {
+      console.warn("🔒 Unauthorized → logging out");
+ 
       localStorage.removeItem("token");
       localStorage.removeItem("loggedIn");
       localStorage.removeItem("user");
-
+ 
       window.location.href = "/login";
     }
-
+ 
     return Promise.reject(error);
   }
 );
-
+ 
 export default api;

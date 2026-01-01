@@ -10,8 +10,7 @@ import {
     Calendar
 } from "lucide-react";
 import axios from "axios";
-import { useTheme } from "../../contexts/ThemeContext";
-// Imported Theme Context
+import { useTheme } from "../contexts/ThemeContext"; // Imported Theme Context
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -75,14 +74,14 @@ const Reference = () => {
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
                     {/* 1. The Hero Card (Referral Code) */}
-                    <div className="relative p-8 overflow-hidden text-white border border-transparent shadow-xl lg:col-span-2 rounded-3xl bg-gradient-to-r from-violet-600 to-indigo-600 dark:border-gray-700">
+                    <div className="relative p-8 overflow-hidden text-white border border-transparent shadow-xl lg:col-span-2 rounded-3xl bg-gradient-to-r from-blue-600 to-blue-600 dark:border-blue-700">
                         {/* Decorative Circles */}
                         <div className="absolute top-0 right-0 w-64 h-64 -mt-16 -mr-16 bg-white rounded-full opacity-10 blur-3xl"></div>
                         <div className="absolute bottom-0 left-0 w-40 h-40 -mb-16 -ml-16 bg-white rounded-full opacity-10 blur-3xl"></div>
 
                         <div className="relative z-10 flex flex-col items-center justify-between gap-6 md:flex-row">
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 px-3 py-1 text-sm text-indigo-100 border rounded-full bg-white/10 w-fit backdrop-blur-md border-white/20">
+                                <div className="flex items-center gap-2 px-3 py-1 text-sm text-blue-100 border rounded-full bg-white/10 w-fit backdrop-blur-md border-white/20">
                                     <Share2 size={14} />
                                     <span>Your Unique Code</span>
                                 </div>
@@ -96,7 +95,7 @@ const Reference = () => {
 
                             <button
                                 onClick={copyCode}
-                                className="relative flex items-center gap-3 px-6 py-4 font-bold text-indigo-600 transition-all bg-white shadow-lg group rounded-xl hover:bg-gray-100 active:scale-95"
+                                className="relative flex items-center gap-3 px-6 py-4 font-bold text-blue-600 transition-all shadow-lg bg-blue group rounded-xl hover:bg-blue-100 active:scale-95"
                             >
                                 {copied ? (
                                     <>
@@ -128,8 +127,9 @@ const Reference = () => {
 
                         {/* Stat Card 2: Earnings */}
                         <div className={`p-6 rounded-3xl shadow-sm border flex items-center gap-5 ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
-                            <div className={`p-4 rounded-2xl ${isDark ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}>
-                                <Wallet size={28} />
+                            <div className={`p-4 rounded-2xl ${isDark ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"}`}>
+                                <Wallet size={28} className="text-blue-600 stroke-[2.5]" />
+
                             </div>
                             <div>
                                 <p className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-500"}`}>Total Earnings</p>

@@ -8,8 +8,8 @@ const CLIENTS = [
 ];
 
 const TEMPLATES = [
-    { id: "t1", name: "Welcome", body: "Hi {{name}}, welcome!" },
-    { id: "t2", name: "Ready", body: "Hi {{name}}, your car is ready." },
+    { id: "t1", name: "Welcome", body: "Hi name, welcome!" },
+    { id: "t2", name: "Ready", body: "Hi name, your car is ready." },
 ];
 
 // --- Helpers ---
@@ -108,8 +108,8 @@ export default function SMSalert() {
                     <button
                         onClick={() => addRecipient(manual)}
                         className={`px-4 py-2 text-white rounded transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${isDark
-                            ? "bg-indigo-600 hover:bg-indigo-700"
-                            : "bg-indigo-600 hover:bg-indigo-700"
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : "bg-blue-600 hover:bg-blue-700"
                             }`}
                     >
                         Add

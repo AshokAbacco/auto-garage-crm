@@ -48,21 +48,30 @@ model User {
   payments Payment[]
 
   // Referral System
-  myReferralCode   String  @unique
+  myReferralCode   String  @unique @default(cuid())
   referredByCode   String?
   referredByUserId Int?
 
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
-  clients        Client[]
-  invoices       Invoice[]
-  reminders      Reminder[]
-  ocrs           OcrRecord[]
-  bikes          Bike[]
-  bikeReminders  BikeReminder[]
-  washingClients WashingClient[]
+  clients       Client[]
+  invoices      Invoice[]
+  reminders     Reminder[]
+  ocrs          OcrRecord[]
+  bikes         Bike[]
+  bikeReminders BikeReminder[]
+
   bikeOcrRecords BikeOcrRecord[]
+
+  // washing 
+  washingClients WashingClient[]
+  // Admin → owns teams
+  washTeamsOwned WashTeam[]      @relation("AdminWashTeams")
+
+  // Team member → belongs to one team
+  washTeamId     Int?
+  washTeamMember WashTeam? @relation("TeamMember", fields: [washTeamId], references: [id])
 }
 
 model Client {
@@ -635,4 +644,21 @@ model WashBillingService {
 
   @@unique([washBillingId, washingServiceId])
   @@map("wash_billing_services")
+}
+
+model WashTeam {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Display / contact email only
+  email String @unique
+
+  // Admin who created the team
+  createdBy Int
+  admin     User @relation("AdminWashTeams", fields: [createdBy], references: [id])
+
+  // Team members
+  members User[] @relation("TeamMember")
+
+  createdAt DateTime @default(now())
 }

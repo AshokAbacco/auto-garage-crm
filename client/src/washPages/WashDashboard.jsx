@@ -78,14 +78,14 @@ const QuickStats = ({ clients, services, billings, isDark }) => {
           rowBg={rowBg}
         />
         <StatItem
-          icon={<Wrench className="text-green-500" />}
+          icon={<Wrench className="text-blue-500" />}
           label="Services This Month"
           value={servicesThisMonth}
           rowBg={rowBg}
         />
 
         <StatItem
-          icon={<AlertCircle className="text-red-500" />}
+          icon={<AlertCircle className="text-blue-500" />}
           label="Overdue Bills"
           value={overdueBills ? "Yes" : "No"}
           rowBg={rowBg}
@@ -269,28 +269,28 @@ const WashDashboard = () => {
       label: "Total Washes",
       value: totalWashes.toString(),
       change: "+15%",
-      color: "from-cyan-500 to-blue-600",
+      color: "from-blue-500 to-blue-600",
     },
     {
       icon: Clock,
       label: "In Progress",
       value: inProgressServices.toString(),
       change: "+5%",
-      color: "from-amber-500 to-orange-600",
+      color: "from-blue-500 to-blue-600",
     },
     {
       icon: CheckCircle,
       label: "Completed",
       value: completedServices.toString(),
       change: "+18%",
-      color: "from-green-500 to-emerald-600",
+      color: "from-blue-500 to-blue-600",
     },
     {
       icon: Users,
       label: "Total Clients",
       value: totalClients.toString(),
       change: "+32%",
-      color: "from-purple-500 to-pink-600",
+      color: "from-blue-500 to-blue-600",
     },
   ];
 
@@ -317,16 +317,16 @@ const WashDashboard = () => {
   return (
 
     <div
-      className={`min-h-screen pl-[7%] p-6 bg-gradient-to-br ${isDark
+      className={`min-h-screen pl-[] p-6 bg-gradient-to-br ${isDark
         ? "from-slate-900 via-slate-900 to-slate-950 text-white"
-        : "from-slate-50 via-cyan-50 to-blue-50 text-slate-900"
+        : "from-slate-50 via-blue-50 to-blue-50 text-slate-900"
         }`}
     >
       {/* Header */}
       <div className="mb-8 animate-fade-in">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text">
+            <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text">
               Washing Dashboard
             </h1>
             <p className={`mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
@@ -341,7 +341,7 @@ const WashDashboard = () => {
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${selectedPeriod === period
                   ? isDark
                     ? "bg-gradient-to-r from-slate-700 to-slate-500 text-white shadow-lg scale-105"
-                    : "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg scale-105"
+                    : "bg-gradient-to-r from-blue-500 to-blue-500 text-white shadow-lg scale-105"
                   : isDark
                     ? "bg-slate-800 text-gray-200 hover:bg-slate-700"
                     : "bg-white/90 text-gray-600 hover:bg-gray-100"
@@ -412,8 +412,8 @@ const WashDashboard = () => {
             </h2>
             <span
               className={`px-3 py-1 text-sm font-semibold rounded-full ${isDark
-                ? "bg-green-900/40 text-green-300"
-                : "bg-green-100 text-green-700"
+                ? "bg-blue-900/40 text-blue-300"
+                : "bg-blue-100 text-blue-700"
                 }`}
             >
               {activeWashes.length} in progress
@@ -442,12 +442,12 @@ const WashDashboard = () => {
                   key={index}
                   className={`p-4 transition-all duration-300 border rounded-xl ${isDark
                     ? "bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700 hover:border-slate-600"
-                    : "bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200 hover:from-cyan-100 hover:to-blue-100"
+                    : "bg-gradient-to-r from-blue-50 to-blue-50 border-blue-200 hover:from-blue-100 hover:to-blue-100"
                     }`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-gradient-to-br from-cyan-400 to-blue-500">
+                      <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-gradient-to-br from-blue-400 to-blue-500">
                         {wash.customer.charAt(0)}
                       </div>
                       <div>
@@ -494,13 +494,13 @@ const WashDashboard = () => {
                           }`}
                       >
                         <div
-                          className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                          className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-blue-500 to-blue-500"
                           style={{ width: `${wash.progress}%` }}
                         />
                       </div>
                     </div>
                     <div
-                      className={`flex items-center gap-1 text-sm font-medium ${isDark ? "text-cyan-300" : "text-cyan-600"
+                      className={`flex items-center gap-1 text-sm font-medium ${isDark ? "text-blue-300" : "text-blue-600"
                         }`}
                     >
                       <Clock className="w-4 h-4" />
@@ -544,8 +544,8 @@ const WashDashboard = () => {
               </div>
               <span
                 className={`px-2 py-1 text-xs font-semibold rounded-full ${isDark
-                  ? "bg-green-900/40 text-green-300"
-                  : "bg-green-100 text-green-600"
+                  ? "bg-blue-900/40 text-blue-300"
+                  : "bg-blue-100 text-blue-600"
                   }`}
               >
                 +24% vs yesterday
@@ -623,7 +623,7 @@ const WashDashboard = () => {
             </h2>
 
             <span
-              className={`flex items-center gap-1 text-sm ${isDark ? "text-amber-400" : "text-amber-500"
+              className={`flex items-center gap-1 text-sm ${isDark ? "text-blue-400" : "text-blue-500"
                 }`}
             >
               <AlertCircle className="w-4 h-4" />
@@ -709,7 +709,7 @@ const WashDashboard = () => {
                       }`}
                   >
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-500"
                       style={{
                         width: `${Math.min(
                           (service.bookings /

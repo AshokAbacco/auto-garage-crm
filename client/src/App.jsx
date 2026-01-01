@@ -88,6 +88,7 @@ import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
 import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
 import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
 import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
+import Teams from "./washPages/teams/Teams.jsx";
 function App() {
   return (
     <ThemeProvider>
@@ -175,15 +176,15 @@ function App() {
           <Route path="/bike-plans" element={<Upgrade />} />
           {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
           {/* ================= SALARY MODULE ================= */}
-        <Route path="/salary-login" element={<SalaryLogin />} />
-        <Route path="/salary-register" element={<SalaryRegister />} />
+          <Route path="/salary-login" element={<SalaryLogin />} />
+          <Route path="/salary-register" element={<SalaryRegister />} />
 
-        <Route element={<SalaryProtectedRoute />}>
-          <Route path="/salary-manage" element={<SalaryPage />} />
-        </Route>
+          <Route element={<SalaryProtectedRoute />}>
+            <Route path="/salary-manage" element={<SalaryPage />} />
+          </Route>
         </Route>
 
-          
+
 
 
 
@@ -206,6 +207,8 @@ function App() {
           <Route path="addclient" element={<Newclient />} />
           <Route path="/addclient/:id" element={<Newclient />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/teams" element={<Teams />} />
+
 
           <Route
             path="/billing/invoice/:id"
@@ -225,6 +228,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
+
     </ThemeProvider>
   );
 }

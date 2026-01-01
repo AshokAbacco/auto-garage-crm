@@ -13,7 +13,7 @@ const OCRHistory = ({ isDark, historyData, onDelete, onClear }) => {
                         ? isDark
                             ? "bg-gray-700 text-white border-2 border-gray-600"
                             : "bg-white text-gray-700 border-2 border-gray-300"
-                        : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+                        : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
                         }`}
                 >
                     <FiClock size={18} />
@@ -34,7 +34,7 @@ const OCRHistory = ({ isDark, historyData, onDelete, onClear }) => {
                     <div
                         className={`p-6 border-b ${isDark
                             ? "border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700"
-                            : "border-gray-200 bg-gradient-to-r from-orange-600 to-red-600"
+                            : "border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600"
                             }`}
                     >
                         <div className="flex items-center justify-between">

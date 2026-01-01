@@ -205,7 +205,7 @@ export default function UpgradePlans() {
   const handlePaymentComplete = () => {
     setShowModal(false);
     // Redirect to dashboard after successful payment
-    navigate("/car-dashboard");
+    navigate("/bike-dashboard");
     // Refresh the page to load new plan data
     window.location.reload();
   };
@@ -218,7 +218,7 @@ export default function UpgradePlans() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -235,11 +235,11 @@ export default function UpgradePlans() {
       {/* Header Section */}
       <section className="relative z-10 px-4 sm:px-6 py-12">
         <div className="max-w-7xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-violet-400" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 text-blue-400" />
             <span
               className={`text-sm font-medium ${
-                isDark ? "text-violet-300" : "text-violet-700"
+                isDark ? "text-blue-300" : "text-blue-700"
               }`}
             >
               Upgrade your plan to unlock more features
@@ -271,7 +271,7 @@ export default function UpgradePlans() {
               >
                 Choose Your Perfect Plan
               </span>
-              <span className="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent">
                 Scale as you grow
               </span>
             </h1>
@@ -303,7 +303,7 @@ export default function UpgradePlans() {
               }
               className={`relative w-16 h-8 rounded-full transition ${
                 billingPeriod === "yearly"
-                  ? "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600"
                   : "bg-gray-700"
               }`}
             >
@@ -334,7 +334,7 @@ export default function UpgradePlans() {
               onClick={() => setPlanType("bike")}
               className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                 planType === "bike"
-                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg"
+                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
                   : isDark
                   ? "bg-gray-800 text-gray-300 border border-gray-700"
                   : "bg-gray-200 text-gray-700"
@@ -384,7 +384,7 @@ export default function UpgradePlans() {
                       className={`px-4 py-1.5 rounded-full text-white text-xs font-bold shadow-lg flex items-center gap-1.5 ${
                         isCurrent
                           ? "bg-gradient-to-r from-green-500 to-emerald-500"
-                          : "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                          : "bg-gradient-to-r from-blue-500 to-blue-600"
                       }`}
                     >
                       {isCurrent ? (
@@ -407,10 +407,10 @@ export default function UpgradePlans() {
                     isCurrent
                       ? "bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50"
                       : isPopular
-                      ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-2xl shadow-violet-500/25 border-2 border-violet-400/50"
+                      ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-2xl shadow-blue-500/25 border-2 border-blue-400/50"
                       : isDark
-                      ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-violet-500/50"
-                      : "bg-white border-2 border-gray-200 hover:border-violet-500/50 shadow-xl"
+                      ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-blue-500/50"
+                      : "bg-white border-2 border-gray-200 hover:border-blue-500/50 shadow-xl"
                   }`}
                 >
                   {/* Icon */}
@@ -418,12 +418,12 @@ export default function UpgradePlans() {
                     className={`inline-flex p-3 rounded-2xl mb-6 ${
                       isPopular
                         ? "bg-white/20 backdrop-blur-sm"
-                        : "bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10"
+                        : "bg-gradient-to-br from-blue-500/10 to-blue-600/10"
                     }`}
                   >
                     <Icon
                       className={`w-7 h-7 ${
-                        isPopular ? "text-white" : "text-violet-500"
+                        isPopular ? "text-white" : "text-blue-500"
                       }`}
                     />
                   </div>
@@ -506,7 +506,7 @@ export default function UpgradePlans() {
                         ? "bg-gray-500 text-white cursor-not-allowed opacity-60"
                         : isPopular
                         ? "bg-white text-violet-600 hover:bg-gray-50 shadow-lg"
-                        : "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
+                        : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg hover:shadow-blue-500/25"
                     }`}
                   >
                     <span>{isCurrent ? "Current Plan" : "Upgrade Now"}</span>
@@ -538,10 +538,10 @@ export default function UpgradePlans() {
                 <div key={index} className="text-center space-y-3">
                   <div
                     className={`inline-flex p-4 rounded-2xl ${
-                      isDark ? "bg-violet-500/10" : "bg-violet-50"
+                      isDark ? "bg-blue-500/10" : "bg-blue-50"
                     }`}
                   >
-                    <Icon className="w-8 h-8 text-violet-500" />
+                    <Icon className="w-8 h-8 text-blue-500" />
                   </div>
                   <div>
                     <p

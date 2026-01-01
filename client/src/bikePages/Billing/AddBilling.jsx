@@ -20,26 +20,7 @@ import {
 } from "react-icons/fi";
 import { Toaster, toast } from "react-hot-toast";
 import { IndianRupee } from "lucide-react";
-const API_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Auth Helpers
-const getAuthToken = () =>
-  localStorage.getItem("token") || localStorage.getItem("authToken");
-
-const fetchWithAuth = async (url, options = {}) => {
-  const token = getAuthToken();
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-    ...options.headers,
-  };
-  const res = await fetch(url, { ...options, headers });
-  if (res.status === 401) {
-    localStorage.clear();
-    window.location.href = "/login";
-  }
-  return res;
-};
+import api from "../../utils/axiosInstance";
 
 // Invoice Number Generator
 const generateInvoiceNumber = () => `BIKE-INV-${Date.now()}`;
@@ -79,40 +60,41 @@ export default function AddBilling() {
 
   /* LOAD BIKE OWNERS */
   useEffect(() => {
-    // CASE 1: Coming from Service → Single Bike Only
-    if (serviceData?.clientId) {
-      setClients([{
-        id: serviceData.clientId,
-        ownerName: serviceData.clientName,
-        regNumber: serviceData.vehicle
-      }]);
+    const fetchClients = async () => {
+      // CASE 1: Coming from Service → Single Bike Only
+      if (serviceData?.bikeId) {
+        setClients([{
+          id: serviceData.bikeId,
+          ownerName: serviceData.clientName,
+          regNumber: serviceData.vehicle
+        }]);
 
-      setForm(prev => ({
-        ...prev,
-        bikeId: serviceData.clientId,
-        vehicle: serviceData.vehicle,
-        serviceCategory: serviceData.serviceCategory,
-        partsCost: serviceData.partsCost || 0,
-        laborCost: serviceData.laborCost || 0,
-        partsGst: serviceData.partsGst || 0,
-        laborGst: serviceData.laborGst || 0,
-      }));
+        setForm(prev => ({
+          ...prev,
+          bikeId: serviceData.bikeId,
+          vehicle: serviceData.vehicle,
+          serviceCategory: serviceData.serviceCategory,
+          partsCost: serviceData.partsCost || 0,
+          laborCost: serviceData.laborCost || 0,
+          partsGst: serviceData.partsGst || 0,
+          laborGst: serviceData.laborGst || 0,
+        }));
 
-      return;
-    }
+        return;
+      }
 
-    // CASE 2: Opened directly → Load ALL SERVICE BIKES
-    fetchWithAuth(`${API_URL}/api/bike-services`)
-      .then(res => res.json())
-      .then(data => {
+      // CASE 2: Opened directly → Load ALL SERVICE BIKES
+      try {
+        const res = await api.get("/api/bike-services");
+        const data = Array.isArray(res.data) ? res.data : [];
         setAllServices(data);
 
         const uniqueClients = [];
         const map = new Map();
 
         data.forEach(service => {
-          if (!map.has(service.client?.id)) {
-            map.set(service.client?.id, true);
+          if (service.client && !map.has(service.client.id)) {
+            map.set(service.client.id, true);
             uniqueClients.push({
               id: service.client.id,
               ownerName: service.client.ownerName,
@@ -123,8 +105,13 @@ export default function AddBilling() {
         });
 
         setClients(uniqueClients);
-      })
-      .catch(() => setClients([]));
+      } catch (err) {
+        console.error("Fetch clients error:", err);
+        setClients([]);
+      }
+    };
+
+    fetchClients();
   }, [serviceData]);
 
   /* AUTO-FILL SERVICE DATA ON BIKE SELECT */
@@ -155,18 +142,20 @@ export default function AddBilling() {
   useEffect(() => {
     if (!isEditMode) return;
 
-    setLoading(true);
-    fetchWithAuth(`${API_URL}/api/bike-invoices/${id}`)
-      .then(res => res.json())
-      .then(data => {
+    const fetchInvoice = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/api/bike-invoices/${id}`);
+        const data = res.data;
+
         setForm({
           invoiceNumber: data.invoiceNumber,
           date: data.createdAt?.split("T")[0],
           bikeId: data.bikeId,
           vehicle: data.vehicle,
-          serviceCategory: data.serviceCategory,
-          serviceSubCategory: data.serviceSubCategory,
-          serviceNotes: data.notes,
+          serviceCategory: "",  // Not stored in backend
+          serviceSubCategory: "",  // Not stored in backend
+          serviceNotes: "",  // Not stored in backend
           partsCost: data.partsCost,
           partsGst: data.partsGst,
           laborCost: data.laborCost,
@@ -177,20 +166,35 @@ export default function AddBilling() {
           paymentMode: data.paymentMode,
           status: data.status,
         });
-      })
-      .catch(() => {
+      } catch (err) {
+        console.error("Fetch invoice error:", err);
         setError("Failed to load invoice");
-        toast.error("Failed to load invoice");
-      })
-      .finally(() => setLoading(false));
-  }, [id, isEditMode]);
+        toast.error(err.response?.data?.message || "Failed to load invoice");
+        
+        if (err.response?.status === 403 || err.response?.status === 404) {
+          setTimeout(() => navigate("/bike-billing"), 2000);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvoice();
+  }, [id, isEditMode, navigate]);
 
   /* LOAD EXISTING BIKE INVOICES (FOR DUPLICATE CHECK) */
   useEffect(() => {
-    fetchWithAuth(`${API_URL}/api/bike-invoices`)
-      .then(res => res.json())
-      .then(setAllInvoices)
-      .catch(() => setAllInvoices([]));
+    const fetchAllInvoices = async () => {
+      try {
+        const res = await api.get("/api/bike-invoices");
+        setAllInvoices(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Fetch all invoices error:", err);
+        setAllInvoices([]);
+      }
+    };
+
+    fetchAllInvoices();
   }, []);
 
   /* AUTO GRAND TOTAL CALCULATION */
@@ -216,31 +220,29 @@ export default function AddBilling() {
       toast.error("Please select Bike Owner");
       return;
     }
+
     // PAYMENT VALIDATION
     if (form.status === "Paid" && !form.paymentMode) {
-    toast.error("Please select a Payment Mode for Paid invoices");
-    return;
+      toast.error("Please select a Payment Mode for Paid invoices");
+      return;
     }
 
     if (!form.paymentMode) {
-    const allow = window.confirm(
+      const allow = window.confirm(
         "You have NOT selected a Payment Mode.\n\nDo you still want to create invoice?"
-    );
-    if (!allow) return;
+      );
+      if (!allow) return;
     }
 
-
-    // DUPLICATE CHECK → ONLY SAME BIKE + SAME SERVICE CATEGORY
-    if (!isEditMode && allInvoices.length > 0) {
+    // DUPLICATE CHECK → ONLY SAME BIKE (can't check service since not stored)
+    if (!isEditMode && allInvoices.length > 0 && form.serviceCategory) {
       const duplicateInvoice = allInvoices.find(
-        inv =>
-          inv.bikeId === Number(form.bikeId) &&
-          inv.serviceCategory?.toLowerCase() === form.serviceCategory?.toLowerCase()
+        inv => inv.bikeId === Number(form.bikeId)
       );
 
       if (duplicateInvoice) {
         const allow = window.confirm(
-          "Invoice already exists for this Bike with the SAME Service.\n\nDo you want to create another invoice?"
+          "An invoice already exists for this Bike.\n\nDo you want to create another invoice?"
         );
         if (!allow) return;
       }
@@ -248,11 +250,10 @@ export default function AddBilling() {
 
     setLoading(true);
 
+    // Schema only supports basic fields - no serviceCategory, serviceSubCategory, or notes
     const payload = {
       bikeId: Number(form.bikeId),
       vehicle: form.vehicle,
-      serviceCategory: form.serviceCategory,
-      serviceSubCategory: form.serviceSubCategory,
       partsCost: Number(form.partsCost),
       partsGst: Number(form.partsGst),
       laborCost: Number(form.laborCost),
@@ -262,33 +263,27 @@ export default function AddBilling() {
       grandTotal: Number(form.total),
       paymentMode: form.paymentMode,
       status: form.status,
-      notes: form.serviceNotes,
     };
 
     try {
-      const res = await fetchWithAuth(
-        isEditMode
-          ? `${API_URL}/api/bike-invoices/${id}`
-          : `${API_URL}/api/bike-invoices`,
-        {
-          method: isEditMode ? "PUT" : "POST",
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = isEditMode
+        ? await api.put(`/api/bike-invoices/${id}`, payload)
+        : await api.post("/api/bike-invoices", payload);
 
-      const data = await res.json();
+      const data = res.data;
       toast.success(isEditMode ? "Invoice updated successfully" : "Invoice created successfully");
       navigate(`/bill/${isEditMode ? id : data.invoice.id}`);
-    } catch {
+    } catch (err) {
+      console.error("Submit error:", err);
       setError("Failed to save invoice");
-      toast.error("Failed to save invoice");
+      toast.error(err.response?.data?.message || "Failed to save invoice");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
       isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
     }`}>
       <Toaster position="top-right" />
@@ -309,7 +304,7 @@ export default function AddBilling() {
           </Link>
 
           <div>
-            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent`}>
+            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent`}>
               {isEditMode ? "Edit Invoice" : "Create New Invoice"}
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -372,6 +367,18 @@ export default function AddBilling() {
               Customer & Service Details
             </h2>
 
+            {/* Info Note */}
+            <div className={`mb-4 p-3 rounded-lg border ${
+              isDark 
+                ? "bg-blue-500/10 border-blue-500/30 text-blue-300" 
+                : "bg-blue-50 border-blue-200 text-blue-700"
+            }`}>
+              <p className="text-xs flex items-center gap-2">
+                <FiAlertCircle size={14} />
+                Note: Service category and notes are for reference only and won't be saved to invoice.
+              </p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <Select
                 label="Bike Owner"
@@ -410,6 +417,26 @@ export default function AddBilling() {
                 value={form.serviceSubCategory}
                 onChange={(e) => setForm({ ...form, serviceSubCategory: e.target.value })}
                 isDark={isDark}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className={`flex items-center gap-2 text-sm font-semibold mb-2 ${
+                isDark ? "text-gray-300" : "text-gray-700"
+              }`}>
+                <FiFileText className="text-blue-500" />
+                Service Notes
+              </label>
+              <textarea
+                placeholder="Add any additional service notes..."
+                value={form.serviceNotes}
+                onChange={(e) => setForm({ ...form, serviceNotes: e.target.value })}
+                rows={3}
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
+                }`}
               />
             </div>
           </div>
@@ -481,7 +508,7 @@ export default function AddBilling() {
             <h2 className={`flex items-center gap-2 text-lg font-bold mb-6 ${
               isDark ? "text-white" : "text-gray-900"
             }`}>
-              <FiCreditCard size={20} className="text-purple-500" />
+              <FiCreditCard size={20} className="text-blue-600" />
               Payment Details
             </h2>
 

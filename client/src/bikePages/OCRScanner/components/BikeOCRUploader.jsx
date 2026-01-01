@@ -66,7 +66,7 @@ const OCRUploader = ({
               : "border-gray-300 bg-gray-50 hover:bg-blue-50 hover:border-blue-500"
           }`}
         >
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
             <FiUpload className="text-white" size={32} />
           </div>
 
@@ -87,7 +87,7 @@ const OCRUploader = ({
               e.stopPropagation();
               fileInputRef.current.click();
             }}
-            className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
           >
             Browse File
           </button>
@@ -98,7 +98,7 @@ const OCRUploader = ({
               e.stopPropagation();
               setCameraOpen(true);
             }}
-            className="mt-4 ml-3 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 flex items-center gap-2"
+            className="mt-4 ml-3 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex items-center gap-2"
           >
             <FiCamera size={18} /> Use Camera
           </button>

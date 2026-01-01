@@ -33,7 +33,8 @@ import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 import carStaffRoutes from "./routes/carStaffRoutes.js";
 import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
-import bikeStaffSalaryRoutes from "./routes/BikeStaffSalaryRoutes.js";
+import bikeStaffSalaryRoutes from "./routes/BikestaffSalaryRoutes.js";
+import bikeMetaRoutes from "./routes/bikeMetaRoutes.js";
 import { protect } from "./middleware/authMiddleware.js";
 
 
@@ -58,7 +59,8 @@ const allowedOrigins = [
   "https://themotordesk.com",
   "https://www.themotordesk.com",
 
-  "https://l82ldgwl-5173.inc1.devtunnels.ms",
+  "https://tm04xn0p-5173.inc1.devtunnels.ms",
+  "https://86w0932d-5173.inc1.devtunnels.ms",
 ];
 
 app.use(
@@ -124,10 +126,14 @@ app.use("/uploads", express.static("uploads"));
 // bike routes
 app.use("/api/bikes", bikeRoutes);
 app.use("/api/bike-services", bikeServiceRoutes);
-app.use("/api/bike-invoices", bikeInvoiceRoutes);
+app.use("/api/bike-invoices", protect, bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
 app.use("/api/bike-ocr", bikeOCRRoutes);
 app.use("/api/bike-staff-salary", protect, bikeStaffSalaryRoutes);
+app.use("/api/bikes-meta", bikeMetaRoutes);
+
+
+
 //car company names and models
 app.use("/api/cars", carRoutes);
 

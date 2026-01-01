@@ -17,22 +17,7 @@ import {
 import { Toaster, toast } from "react-hot-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
-
-const getAuthToken = () =>
-  localStorage.getItem("token") || localStorage.getItem("authToken");
-
-const fetchWithAuth = async (url) => {
-  const token = getAuthToken();
-  const res = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return res;
-};
+import api from "../../utils/axiosInstance";
 
 export default function InvoiceBill() {
   const { id } = useParams();
@@ -51,11 +36,15 @@ export default function InvoiceBill() {
   const fetchInvoice = async () => {
     try {
       setLoading(true);
-      const res = await fetchWithAuth(`${API_URL}/api/bike-invoices/${id}`);
-      const data = await res.json();
-      setInvoice(data);
+      const res = await api.get(`/api/bike-invoices/${id}`);
+      setInvoice(res.data);
     } catch (err) {
-      toast.error("Failed to load invoice");
+      console.error("Fetch invoice error:", err);
+      toast.error(err.response?.data?.message || "Failed to load invoice");
+      
+      if (err.response?.status === 403 || err.response?.status === 404) {
+        setTimeout(() => navigate("/bike-billing"), 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -92,6 +81,7 @@ export default function InvoiceBill() {
       
       toast.success("PDF downloaded successfully");
     } catch (err) {
+      console.error("Download PDF error:", err);
       toast.error("Failed to download PDF");
     } finally {
       setDownloading(false);
@@ -118,7 +108,15 @@ export default function InvoiceBill() {
       <div className={`min-h-screen flex items-center justify-center ${
         isDark ? "bg-gray-900" : "bg-gray-100"
       }`}>
-        <p className="text-lg text-gray-600">Invoice not found</p>
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-lg text-red-600">Invoice not found</p>
+          <button
+            onClick={() => navigate("/bike-billing")}
+            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Back to Billing
+          </button>
+        </div>
       </div>
     );
   }
@@ -130,7 +128,7 @@ export default function InvoiceBill() {
   const grandTotal = Number(invoice.grandTotal);
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 print:p-0 print:ml-0 ${
+    <div className={`min-h-screen p-6 print:p-0 print:ml-0 ${
       isDark ? "bg-gray-900" : "bg-gray-100"
     } print:bg-white`}>
       <Toaster position="top-right" />
@@ -361,6 +359,19 @@ export default function InvoiceBill() {
                   <div className="col-span-4 px-4 py-3"></div>
                   <div className="col-span-2 px-4 py-3 text-right font-semibold text-gray-900">
                     ₹ {additionalTaxes.toFixed(2)}
+                  </div>
+                </div>
+              )}
+
+              {/* Discount */}
+              {invoice.discount > 0 && (
+                <div className="grid grid-cols-12 text-sm border-b border-gray-200">
+                  <div className="col-span-6 px-4 py-3 text-gray-700">
+                    Discount
+                  </div>
+                  <div className="col-span-4 px-4 py-3"></div>
+                  <div className="col-span-2 px-4 py-3 text-right font-semibold text-red-600">
+                    - ₹ {Number(invoice.discount).toFixed(2)}
                   </div>
                 </div>
               )}

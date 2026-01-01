@@ -127,20 +127,28 @@ model Client {
   @@index([regNumber])
 }
 
+// schema.prisma
 model Service {
-  id           Int      @id @default(autoincrement())
-  date         DateTime
-  notes        String?
-  partsCost    Float?
-  partsGst     Float?
-  laborCost    Float?
-  laborGst     Float?
-  cost         Float?
-  status       String?
-  clientId     Int
-  categoryId   Int?
-  subServiceId Int?
-  invoiceId    Int?
+  id               Int       @id @default(autoincrement())
+  date             DateTime
+  notes            String?
+  partsCost        Float?
+  partsGst         Float?
+  laborCost        Float?
+  laborGst         Float?
+  cost             Float?
+  status           String?
+  priority         String?   @default("Normal")
+  serviceInDate    DateTime?
+  serviceOutDate   DateTime?
+  expectedDelivery DateTime?
+  internalNotes    String?
+  assignedMechanic String?
+  advancePaid      Float?    @default(0)
+  clientId         Int
+  categoryId       Int?
+  subServiceId     Int?
+  invoiceId        Int?
 
   mediaFiles ServiceMedia[]
 
@@ -173,13 +181,6 @@ model Invoice {
 
   clientId Int
   userId   Int?
-
-  totalAmount Float
-
-  partsCost Float?
-  partsGst  Float?
-  laborCost Float?
-  laborGst  Float?
 
   tax        Float @default(0)
   discount   Float @default(0)
@@ -216,14 +217,38 @@ model InvoiceCostItem {
   id        Int @id @default(autoincrement())
   invoiceId Int
 
-  partName  String
-  partCost  Float
-  partGst   Float
-  laborCost Float?
-  laborGst  Float?
+  type String // "part" | "labor"
+  name String
+
+  quantity  Int
+  unitPrice Float
+
+  cgstRate Float
+  sgstRate Float
+
   totalCost Float
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model ServiceCostItem {
+  id        Int @id @default(autoincrement())
+  serviceId Int
+
+  type      String // "part" | "labor"
+  name      String
+  quantity  Int
+  unitPrice Float
+
+  cgstRate  Float?
+  sgstRate  Float?
+  totalCost Float
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 model Reminder {
@@ -237,19 +262,6 @@ model Reminder {
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
-}
-
-model ServiceCostItem {
-  id        Int    @id @default(autoincrement())
-  serviceId Int
-  partName  String
-  partCost  Float
-  partGst   Float
-  laborCost Float?
-  laborGst  Float?
-  totalCost Float
-
-  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 model ServiceCategory {

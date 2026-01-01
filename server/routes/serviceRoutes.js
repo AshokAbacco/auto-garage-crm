@@ -1,5 +1,6 @@
 // server/routes/serviceRoutes.js
 import express from "express";
+import multer from "multer";
 import {
   getServices,
   getServiceById,
@@ -10,49 +11,55 @@ import {
   getServiceTypes,
   searchSubServices,
   createSubService,
-  getServiceForBilling, // Add this import
+  getServiceForBilling,
 } from "../controllers/serviceController.js";
 import { createInvoiceFromService } from "../controllers/invoiceController.js";
 import { protect } from "../middleware/authMiddleware.js";
-import multer from "multer";
 
 const router = express.Router();
 
-// ✅ Multer memory storage for binary DB storage
-const upload = multer({ storage: multer.memoryStorage() });
+// ✅ Multer memory storage (required for DB storage)
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
 
 /* ========================
    SERVICE MANAGEMENT ROUTES
    ======================== */
 
-// ✅ Service types route must be BEFORE :id
+// Service types (must be before :id)
 router.get("/list", protect, getServiceTypes);
 
-// ✅ NEW: Sub-service search (typing suggestions)
+// Sub-service search
 router.get("/sub-services/search", protect, searchSubServices);
 
-// ✅ NEW: Get service for billing
+// Service for billing
 router.get("/:id/billing", protect, getServiceForBilling);
 
-// ✅ List services
+// List services
 router.get("/", protect, getServices);
 
-// ✅ Services by client
+// Services by client
 router.get("/client/:clientId", protect, getServicesByClient);
 
-// ✅ Get single service
+// Get single service
 router.get("/:id", protect, getServiceById);
 
-// ✅ Create service (multer must run BEFORE protect)
-router.post("/", upload.array("media", 20), protect, createService);
+// ✅ CREATE SERVICE (IMPORTANT FIX)
+// protect FIRST, upload SECOND
+// field name MUST be "images"
+router.post("/", protect, upload.array("images", 20), createService);
 
-// ✅ Update service (multer must run BEFORE protect)
-router.put("/:id", upload.array("media", 20), protect, updateService);
+// ✅ UPDATE SERVICE (IMPORTANT FIX)
+router.put("/:id", protect, upload.array("images", 20), updateService);
 
-// ✅ Delete service
+// Delete service
 router.delete("/:id", protect, deleteService);
+
+// Create sub-service
 router.post("/sub-services", protect, createSubService);
-// In serviceRoutes.js
+
+// Create invoice from service
 router.post("/:id/create-invoice", protect, createInvoiceFromService);
 
 export default router;

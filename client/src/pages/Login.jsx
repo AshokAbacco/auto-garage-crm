@@ -85,7 +85,7 @@ export default function ModernLogin() {
     },
 
     wash: {
-      label: "Car Wash",
+      label: "Vehicle Washing",
       icon: Droplets,
       gradient: "from-violet-600 via-purple-500 to-fuchsia-400",
       bgGradient: "from-slate-950 via-purple-950 to-fuchsia-950",
@@ -208,14 +208,6 @@ export default function ModernLogin() {
    }
 
    try {
-     /**
-      * =========================================
-      * STAFF vs OWNER LOGIN DETECTION
-      * =========================================
-      * Rule:
-      * - Staff → email only (CarStaff table)
-      * - Owner → email OR username (User table)
-      */
      const isStaffLogin = formData.identifier.includes("@");
 
      const loginUrl = isStaffLogin
@@ -681,8 +673,9 @@ export default function ModernLogin() {
                         />
                         <span>Secured with 256-bit encryption</span>
                       </div>
-                      <p className="text-gray-500 text-xs">
-                        © 2024 {currentConfig.label} CRM. All rights reserved.
+                      <p className="text-gray-100 text-xs">
+                        © {new Date().getFullYear()} {currentConfig.label} CRM.
+                        All rights reserved. Powered by Moto Desk.
                       </p>
                     </div>
                   </div>

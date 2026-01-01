@@ -3,22 +3,24 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   FiArrowLeft,
-  FiDollarSign,
-  FiClock,
-  FiTool,
-  FiUser,
   FiPrinter,
   FiFileText,
   FiClipboard,
-  FiTag,
   FiCalendar,
+  FiUser,
+  FiTool,
+  FiClock,
+  FiMapPin,
   FiPhone,
   FiMail,
-  FiMapPin,
-  FiInfo,
+  FiCheckCircle,
   FiPackage,
+  FiAlertCircle,
+  FiTag,
+  FiMessageSquare,
+  FiSmartphone,
 } from "react-icons/fi";
-import { FaCar, FaRupeeSign } from "react-icons/fa";
+import { FaCar, FaRupeeSign, FaWhatsapp } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -32,6 +34,31 @@ const apiRequest = async (url, options = {}) => {
   const res = await fetch(`${API_BASE}${url}`, { ...options, headers });
   return res;
 };
+
+// Helper Component for Info Grids
+const InfoItem = ({ icon: Icon, label, value, colorClass, isDark }) => (
+  <div className="flex items-start gap-3 p-3 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-colors">
+    <div className={`p-2.5 rounded-lg ${colorClass} bg-opacity-10 shrink-0`}>
+      <Icon className={`w-5 h-5 ${colorClass.replace("bg-", "text-")}`} />
+    </div>
+    <div className="overflow-hidden">
+      <p
+        className={`text-xs font-medium mb-0.5 ${
+          isDark ? "text-gray-400" : "text-gray-500"
+        }`}
+      >
+        {label}
+      </p>
+      <p
+        className={`font-semibold text-sm truncate ${
+          isDark ? "text-gray-100" : "text-gray-900"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  </div>
+);
 
 export default function ServiceDetail() {
   const { id } = useParams();
@@ -51,9 +78,6 @@ export default function ServiceDetail() {
           throw new Error(data.message || "Failed to load service");
         }
 
-        // Debug log to see what we're getting
-        console.log("Service data:", data);
-
         setService(data);
       } catch (err) {
         console.error("Error loading service:", err);
@@ -67,106 +91,77 @@ export default function ServiceDetail() {
 
   if (loading)
     return (
-      <div className="p-6 text-center text-gray-500">
-        Loading service details...
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDark ? "bg-gray-900 text-gray-400" : "bg-gray-50 text-gray-500"
+        }`}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p>Loading service details...</p>
+        </div>
       </div>
     );
 
   if (error)
     return (
-      <div className="p-6 text-center">
-        <p className="text-red-500 mb-3 font-semibold">{error}</p>
-        <Link to="/services" className="text-green-600 hover:underline">
-          Back to Services
-        </Link>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-2xl text-center max-w-md">
+          <FiAlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-500 mb-4 font-semibold text-lg">{error}</p>
+          <Link
+            to="/services"
+            className="px-6 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg shadow hover:shadow-md transition-all"
+          >
+            Back to Services
+          </Link>
+        </div>
       </div>
     );
 
-  if (!service)
-    return (
-      <div className="p-6 text-center text-gray-500">No service found.</div>
-    );
+  if (!service) return null;
 
-  // Parse cost items if they exist, otherwise create a single item from legacy fields
-  let costItems = [];
-
-  // Try to get costItems from various possible locations
-  if (service.costItems) {
-    try {
-      // Handle if it's already an array
-      if (Array.isArray(service.costItems)) {
-        costItems = service.costItems;
-      }
-      // Handle if it's a string (JSON)
-      else if (typeof service.costItems === "string") {
-        costItems = JSON.parse(service.costItems);
-      }
-    } catch (e) {
-      console.error("Error parsing costItems:", e);
-      costItems = [];
-    }
-  }
-
-  // If no costItems, create from legacy fields
-  if (
-    costItems.length === 0 &&
-    (service.partsCost !== undefined || service.laborCost !== undefined)
-  ) {
-    costItems = [
-      {
-        partName: "Service Parts",
-        partCost: service.partsCost || 0,
-        partGst: service.partsGst || 0,
-        laborCost: service.laborCost || 0,
-        laborGst: service.laborGst || 0,
-      },
-    ];
-  }
-
-  // Calculate totals from cost items
+  // --- Calculations ---
+  const costItems = service.serviceCostItems || [];
   const num = (v) => (Number.isFinite(+v) ? +v : 0);
+
   const totalAmount = costItems.reduce((sum, i) => {
-    const part = num(i.partCost) + (num(i.partCost) * num(i.partGst)) / 100;
-    const labor = num(i.laborCost) + (num(i.laborCost) * num(i.laborGst)) / 100;
-    return sum + part + labor;
+    const itemBase = num(i.quantity) * num(i.unitPrice);
+    const cgstAmount = (itemBase * num(i.cgstRate)) / 100;
+    const sgstAmount = (itemBase * num(i.sgstRate)) / 100;
+    return sum + itemBase + cgstAmount + sgstAmount;
   }, 0);
 
-  const statusColor =
-    service.status === "Pending"
-      ? "bg-red-600"
-      : service.status === "Paid"
-      ? "bg-green-600"
-      : "bg-gray-400";
+  const partsSubtotal = costItems
+    .filter((item) => item.type === "part")
+    .reduce((sum, i) => sum + num(i.totalCost), 0);
+  const laborSubtotal = costItems
+    .filter((item) => item.type === "labor")
+    .reduce((sum, i) => sum + num(i.totalCost), 0);
 
-  // Prepare service data for invoice creation
+  // Status Styling
+  const getStatusStyles = (status) => {
+    switch (status) {
+      case "Paid":
+        return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+    }
+  };
+
   const serviceDataForInvoice = {
     id: service.id,
     vehicle: `${service.client?.vehicleMake || ""} ${
       service.client?.vehicleModel || ""
     } (${service.client?.regNumber || ""})`,
-    mechanic: service.mechanic || "",
+    mechanic: service.assignedMechanic || "",
     description: service.notes || "",
-    partsCost: costItems.reduce((sum, item) => sum + num(item.partCost), 0),
-    partsGst:
-      costItems.length > 0
-        ? (costItems.reduce(
-            (sum, item) => sum + (num(item.partCost) * num(item.partGst)) / 100,
-            0
-          ) /
-            costItems.reduce((sum, item) => sum + num(item.partCost), 0)) *
-          100
-        : 0,
-    laborCost: costItems.reduce((sum, item) => sum + num(item.laborCost), 0),
-    laborGst:
-      costItems.length > 0
-        ? (costItems.reduce(
-            (sum, item) =>
-              sum + (num(item.laborCost) * num(item.laborGst)) / 100,
-            0
-          ) /
-            costItems.reduce((sum, item) => sum + num(item.laborCost), 0)) *
-          100
-        : 0,
+    partsCost: partsSubtotal,
+    partsGst: 0,
+    laborCost: laborSubtotal,
+    laborGst: 0,
     taxes: 0,
     discounts: 0,
     total: parseFloat(totalAmount.toFixed(2)),
@@ -174,333 +169,410 @@ export default function ServiceDetail() {
     status: service.status || "Pending",
     dueDate: "",
     notes: service.notes || "",
-    // Add service type and category
     serviceCategory: service.category?.name || "",
     serviceSubCategory: service.subService?.name || "",
     serviceNotes: service.notes || "",
-    // Include client ID
     clientId: service.client?.id,
+    costItems: costItems,
   };
+
+  // Common Card Classes
+  const cardClass = `rounded-2xl shadow-sm border ${
+    isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+  }`;
+  const headingClass = `text-lg font-bold flex items-center gap-2 mb-4 pb-3 border-b ${
+    isDark ? "border-gray-700" : "border-gray-100"
+  }`;
 
   return (
     <div
-      className={`min-h-screen p-1 lg:ml-16 ${
-        isDark ? " text-gray-100" : "bg-gray-50 text-gray-900"
+      className={`min-h-screen lg:ml-16 transition-colors duration-300 ${
+        isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
     >
-      {/* Header */}
+      {/* Top Navigation Bar */}
       <div
-        className={`rounded-3xl shadow-xl overflow-hidden ${
-          isDark ? "bg-gray-800" : "bg-white"
+        className={`sticky top-0 z-10 px-6 py-4 backdrop-blur-md border-b flex items-center justify-between ${
+          isDark
+            ? "bg-gray-900/80 border-gray-800"
+            : "bg-white/80 border-gray-200"
         }`}
       >
-        <div className="p-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/services"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <FiArrowLeft className="w-5 h-5" />
+          </Link>
           <div>
-            <Link
-              to="/services"
-              className="flex items-center gap-2 text-green-600 font-medium mb-2"
-            >
-              <FiArrowLeft /> Back
-            </Link>
-            <h1 className="text-3xl font-bold capitalize flex items-center gap-2">
-              <FiTool />{" "}
-              {service.subService?.name ||
-                service.category?.name ||
-                "Unnamed Service"}
+            <h1 className="text-xl font-bold flex items-center gap-3">
+              Service #{service.id}
+              <span
+                className={`px-3 py-0.5 text-xs rounded-full border font-medium uppercase tracking-wide ${getStatusStyles(
+                  service.status
+                )}`}
+              >
+                {service.status}
+              </span>
             </h1>
-            <p
-              className={`mt-1 ${
-                isDark ? "text-gray-400" : "text-gray-500"
-              } text-sm`}
-            >
-              Service ID #{service.id} •{" "}
-              {new Date(service.date).toLocaleDateString()}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium flex items-center gap-2"
-            >
-              <FiPrinter /> Print
-            </button>
-            <Link
-              to={`/services/${id}/edit`}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-2"
-            >
-              <FiFileText /> Edit
-            </Link>
           </div>
         </div>
-
-        {/* Status banner */}
-        <div
-          className={`p-4 text-center text-white font-semibold ${statusColor}`}
-        >
-          <FiClock className="inline mr-1" />
-          {service.status}
-        </div>
-
-        {/* Details Grid */}
-        <div className="grid md:grid-cols-2 gap-6 p-8">
-          {/* Service Info */}
-          <div
-            className={`p-6 rounded-2xl shadow ${
-              isDark ? "bg-gray-700" : "bg-gray-100"
+        <div className="flex gap-2">
+          <button
+            onClick={() => window.print()}
+            className={`p-2 rounded-lg border transition-all ${
+              isDark
+                ? "border-gray-700 hover:bg-gray-800"
+                : "border-gray-300 hover:bg-gray-100"
             }`}
           >
-            <h2 className="font-bold text-xl flex items-center gap-2 mb-4">
-              <FiTool /> Service Details
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-400">Service Category</p>
-                <p className="font-semibold">
-                  {service.category?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Service Sub-Category</p>
-                <p className="font-semibold">
-                  {service.subService?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Service Date</p>
-                <p className="font-semibold">
-                  {new Date(service.date).toLocaleDateString()}
-                </p>
-              </div>
-              {service.notes && (
-                <div>
-                  <p className="text-sm text-gray-400">Notes</p>
-                  <p
-                    className={`whitespace-pre-wrap ${
-                      isDark ? "text-gray-300" : "text-gray-700"
+            <FiPrinter className="w-5 h-5" />
+          </button>
+          <Link
+            to={`/services/${id}/edit`}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all"
+          >
+            <FiFileText />{" "}
+            <span className="hidden sm:inline">Edit Service</span>
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-4 lg:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* --- LEFT COLUMN (Details) --- */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* 1. Main Info Card */}
+            <div className={cardClass}>
+              <div className="p-6">
+                <h2 className={headingClass}>
+                  <FiTool className="text-blue-500" /> Service Information
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InfoItem
+                    icon={FiTag}
+                    label="Category"
+                    value={service.category?.name || "N/A"}
+                    colorClass="bg-blue-500"
+                    isDark={isDark}
+                  />
+                  <InfoItem
+                    icon={FiTool}
+                    label="Service Type"
+                    value={service.subService?.name || "General"}
+                    colorClass="bg-indigo-500"
+                    isDark={isDark}
+                  />
+                  <InfoItem
+                    icon={FiCalendar}
+                    label="Service Date"
+                    value={new Date(service.date).toLocaleDateString()}
+                    colorClass="bg-purple-500"
+                    isDark={isDark}
+                  />
+                  <InfoItem
+                    icon={FiClock}
+                    label="Expected Delivery"
+                    value={
+                      service.expectedDelivery
+                        ? new Date(service.expectedDelivery).toLocaleString()
+                        : "N/A"
+                    }
+                    colorClass="bg-orange-500"
+                    isDark={isDark}
+                  />
+                  <InfoItem
+                    icon={FiUser}
+                    label="Mechanic"
+                    value={service.assignedMechanic || "Unassigned"}
+                    colorClass="bg-teal-500"
+                    isDark={isDark}
+                  />
+                  <InfoItem
+                    icon={FiAlertCircle}
+                    label="Priority"
+                    value={service.priority || "Normal"}
+                    colorClass="bg-red-500"
+                    isDark={isDark}
+                  />
+                </div>
+
+                {/* Notes Section */}
+                {(service.notes || service.internalNotes) && (
+                  <div
+                    className={`mt-6 p-4 rounded-xl ${
+                      isDark
+                        ? "bg-gray-750 border border-gray-700"
+                        : "bg-gray-50 border border-gray-100"
                     }`}
                   >
-                    {service.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cost Breakdown - Modern Design */}
-          <div
-            className={`p-6 rounded-2xl shadow ${
-              isDark ? "bg-gray-700" : "bg-gray-100"
-            }`}
-          >
-            <h2 className="font-bold text-xl flex items-center gap-2 mb-4">
-              <FaRupeeSign /> Cost Breakdown
-            </h2>
-
-            {costItems.length > 0 ? (
-              <div className="space-y-3">
-                {costItems.map((item, index) => {
-                  const partTotal =
-                    num(item.partCost) +
-                    (num(item.partCost) * num(item.partGst)) / 100;
-                  const laborTotal =
-                    num(item.laborCost) +
-                    (num(item.laborCost) * num(item.laborGst)) / 100;
-                  const itemTotal = partTotal + laborTotal;
-
-                  return (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg ${
-                        isDark ? "bg-gray-800" : "bg-white"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`p-1.5 rounded-lg ${
-                              isDark ? "bg-gray-600" : "bg-gray-100"
-                            }`}
-                          >
-                            <FiPackage
-                              className={
-                                isDark ? "text-gray-300" : "text-gray-600"
-                              }
-                            />
-                          </div>
-                          <span className="font-medium text-sm">
-                            {item.partName || `Item #${index + 1}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <div className="flex justify-between">
-                            <span>Parts Cost</span>
-                            <span>₹{num(item.partCost).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Parts GST</span>
-                            <span>{num(item.partGst)}%</span>
-                          </div>
-                          <div className="flex justify-between font-medium text-green-500">
-                            <span>Parts Total</span>
-                            <span>₹{partTotal.toFixed(2)}</span>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between">
-                            <span>Labor Cost</span>
-                            <span>₹{num(item.laborCost).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Labor GST</span>
-                            <span>{num(item.laborGst)}%</span>
-                          </div>
-                          <div className="flex justify-between font-medium text-blue-500">
-                            <span>Labor Total</span>
-                            <span>₹{laborTotal.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`mt-2 pt-2 border-t ${
-                          isDark ? "border-gray-700" : "border-gray-200"
-                        } flex justify-between`}
-                      >
-                        <span className="font-medium">Item Total</span>
-                        <span className="font-bold">
-                          ₹{itemTotal.toFixed(2)}
+                    {service.notes && (
+                      <div className="mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider opacity-60">
+                          Customer Notes
                         </span>
+                        <p className="mt-1 text-sm leading-relaxed">
+                          {service.notes}
+                        </p>
                       </div>
-                    </div>
-                  );
-                })}
-
-                <div
-                  className={`mt-3 pt-3 border-t ${
-                    isDark ? "border-gray-600" : "border-gray-300"
-                  } flex justify-between text-lg font-bold text-green-500`}
-                >
-                  <span>Total Amount</span>
-                  <span>₹{totalAmount.toFixed(2)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4 text-gray-500">
-                No cost breakdown available
-              </div>
-            )}
-          </div>
-
-          {/* Uploaded Images */}
-          <div
-            className={`p-6 rounded-2xl shadow ${
-              isDark ? "bg-gray-700" : "bg-gray-100"
-            } md:col-span-2`}
-          >
-            <h2 className="font-bold text-xl flex items-center gap-2 mb-4">
-              <FiFileText /> Uploaded Images
-            </h2>
-
-            {service.mediaFiles?.length > 0 ? (
-              <div className="max-h-[500px] overflow-y-auto pr-2">
-                <div className="flex flex-wrap align-center justify-center gap-4">
-                  {service.mediaFiles.map((file) => (
-                    <div
-                      key={file.id}
-                      className="rounded-lg w-[20rem] overflow-hidden bg-gray-50 dark:bg-gray-800"
-                    >
-                      <img
-                        src={file.data}
-                        alt={file.fileName}
-                        className="w-full h-40 object-cover"
-                        loading="lazy"
-                      />
-                      <div className="p-2 text-xs text-gray-500 truncate">
-                        {file.fileName}
+                    )}
+                    {service.internalNotes && (
+                      <div className="pt-3 border-t dark:border-gray-700 border-gray-200">
+                        <span className="text-xs font-bold uppercase tracking-wider text-yellow-500">
+                          Internal Notes
+                        </span>
+                        <p className="mt-1 text-sm leading-relaxed italic opacity-80">
+                          {service.internalNotes}
+                        </p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-gray-400">
-                No attachments or images for this service.
-              </div>
-            )}
-          </div>
-
-          {/* Client Info */}
-          <div
-            className={`p-6 rounded-2xl shadow ${
-              isDark ? "bg-gray-700" : "bg-gray-100"
-            } md:col-span-2`}
-          >
-            <h2 className="font-bold text-xl flex items-center gap-2 mb-4">
-              <FiUser /> Client Information
-            </h2>
-            {service.client ? (
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <FiUser className="text-green-500" />{" "}
-                  <span>{service.client.fullName}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FaCar className="text-blue-500" />{" "}
-                  <span>{service.client.regNumber}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FiPhone className="text-purple-500" />{" "}
-                  <span>{service.client.phone || "N/A"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FiMail className="text-blue-500" />{" "}
-                  <span>{service.client.email || "N/A"}</span>
-                </div>
-                <div className="flex items-center gap-2 col-span-2 text-sm text-gray-800">
-                  <FiTag />{" "}
-                  <span>
-                    Vehicle:{" "}
-                    {service.client.vehicleMake
-                      ? `${service.client.vehicleMake} ${
-                          service.client.vehicleModel
-                        } (${service.client.vehicleYear || "N/A"})`
-                      : "N/A"}
-                  </span>
-                </div>
-                {service.client.address && (
-                  <div className="flex items-center gap-2 col-span-2 text-sm text-gray-800">
-                    <FiMapPin /> <span>{service.client.address}</span>
+                    )}
                   </div>
                 )}
               </div>
-            ) : (
-              <p className="text-gray-400 italic">No client linked.</p>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Billing CTA */}
-        <div className="border-t p-6 flex justify-between items-center flex-wrap gap-3">
-          <div>
-            <h3 className="font-bold text-lg">Ready to bill this service?</h3>
-            <p className="text-gray-500 text-sm">
-              Create or view invoice for this service.
-            </p>
+            {/* 2. Client & Vehicle Card */}
+            <div className={cardClass}>
+              <div className="p-6">
+                <h2 className={headingClass}>
+                  <FiUser className="text-green-500" /> Client & Vehicle
+                </h2>
+                {service.client ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Client Side */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/30">
+                          {service.client.fullName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-lg">
+                            {service.client.fullName}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            Client ID: #{service.client.id}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 pl-2">
+                        <div className="flex items-center gap-2 text-sm opacity-80">
+                          <FiPhone className="w-4 h-4" />{" "}
+                          {service.client.phone || "N/A"}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm opacity-80">
+                          <FiMail className="w-4 h-4" />{" "}
+                          {service.client.email || "N/A"}
+                        </div>
+                        {service.client.address && (
+                          <div className="flex items-center gap-2 text-sm opacity-80">
+                            <FiMapPin className="w-4 h-4" />{" "}
+                            {service.client.address}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Vehicle Side */}
+                    <div
+                      className={`p-4 rounded-xl border ${
+                        isDark
+                          ? "bg-gray-900/50 border-gray-700"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <FaCar className="text-2xl text-blue-500" />
+                        <span className="font-mono text-sm font-bold bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
+                          {service.client.regNumber}
+                        </span>
+                      </div>
+                      <p className="font-bold">
+                        {service.client.vehicleMake}{" "}
+                        {service.client.vehicleModel}
+                      </p>
+                      <p className="text-sm opacity-60">
+                        {service.client.vehicleYear || "Year unknown"}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 opacity-50 italic">
+                    No Client Information Attached
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 3. Media Gallery */}
+            <div className={cardClass}>
+              <div className="p-6">
+                <h2 className={headingClass}>
+                  <FiFileText className="text-purple-500" /> Attached Media
+                </h2>
+                {service.mediaFiles?.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {service.mediaFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border dark:border-gray-700"
+                      >
+                        <img
+                          src={file.data}
+                          alt={file.fileName}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm p-2 translate-y-full group-hover:translate-y-0 transition-transform">
+                          <p className="text-[10px] text-white truncate">
+                            {file.fileName}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed rounded-xl border-gray-300 dark:border-gray-700 text-gray-400">
+                    <FiPackage className="w-8 h-8 mb-2 opacity-50" />
+                    <span className="text-sm">No images uploaded</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <Link
-            to="/billing/new"
-            state={{
-              serviceId: service.id,
-              clientId: service.client?.id,
-              serviceData: serviceDataForInvoice,
-            }}
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg flex items-center gap-2"
-          >
-            <FiClipboard /> Create Invoice
-          </Link>
+
+          {/* --- RIGHT COLUMN (Cost Summary & Actions) --- */}
+          <div className="lg:col-span-1">
+            <div className="space-y-6">
+              {" "}
+              {/* Removed sticky top-24 here */}
+              {/* Cost Breakdown Card */}
+              <div
+                className={`${cardClass} overflow-hidden border-t-4 border-t-green-500`}
+              >
+                <div className="p-6">
+                  <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+                    <FaRupeeSign className="text-green-500" /> Cost Summary
+                  </h2>
+
+                  {/* Scrollable list - Increased Max Height */}
+                  <div className="max-h-[500px] overflow-y-auto pr-1 space-y-4 custom-scrollbar mb-4">
+                    {costItems.length > 0 ? (
+                      costItems.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-start text-base pb-3 border-b border-dashed border-gray-200 dark:border-gray-700 last:border-0"
+                        >
+                          <div>
+                            <p className="font-medium line-clamp-1">
+                              {item.name || `Item #${idx + 1}`}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {item.quantity} x ₹{num(item.unitPrice)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-base">
+                              ₹
+                              {(
+                                num(item.quantity) *
+                                num(item.unitPrice) *
+                                (1 +
+                                  (num(item.cgstRate) + num(item.sgstRate)) /
+                                    100)
+                              ).toFixed(2)}
+                            </p>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 capitalize">
+                              {item.type}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-center text-gray-400 py-4">
+                        No cost items added
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Totals Section */}
+                  <div
+                    className={`p-5 rounded-xl ${
+                      isDark ? "bg-gray-900/50" : "bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-500">Parts Total</span>
+                      <span>₹{partsSubtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-500">Labor Total</span>
+                      <span>₹{laborSubtotal.toFixed(2)}</span>
+                    </div>
+                    {service.advancePaid > 0 && (
+                      <div className="flex justify-between text-sm mb-1 text-green-600">
+                        <span>Advance Paid</span>
+                        <span>- ₹{num(service.advancePaid).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+                    <div className="flex justify-between items-end">
+                      <span className="font-bold text-lg">Total</span>
+                      <span className="font-bold text-3xl text-green-600">
+                        ₹{totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Action Card */}
+              <div className={cardClass}>
+                <div className="p-6">
+                  <h3 className="font-semibold mb-2">Next Actions</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Ready to finalize? Generate an invoice instantly.
+                  </p>
+
+                  <Link
+                    to="/billing/new"
+                    state={{
+                      serviceId: service.id,
+                      clientId: service.client?.id,
+                      serviceId: service.id,
+                    }}
+                    className="w-full py-3.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transform active:scale-95 transition-all"
+                  >
+                    <FiClipboard className="w-5 h-5" /> Generate Invoice
+                  </Link>
+
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <button
+                      className={`flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold border transition-colors ${
+                        isDark
+                          ? "bg-green-900/20 border-green-800 text-green-400 hover:bg-green-900/40"
+                          : "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      }`}
+                    >
+                      <FaWhatsapp className="w-5 h-5" /> WhatsApp
+                    </button>
+                    <button
+                      className={`flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold border transition-colors ${
+                        isDark
+                          ? "bg-blue-900/20 border-blue-800 text-blue-400 hover:bg-blue-900/40"
+                          : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      <FiSmartphone className="w-5 h-5" /> SMS
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

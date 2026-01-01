@@ -93,7 +93,7 @@ export default function BikeReports() {
       }`}>
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-4">
-            <FiRefreshCw className="animate-spin text-orange-500" size={40} />
+            <FiRefreshCw className="animate-spin text-blue-600" size={40} />
             <p className={`text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}>
               Loading Bike Reports...
             </p>
@@ -113,7 +113,7 @@ export default function BikeReports() {
       <div className="mb-8 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
               Business Reports & Analytics
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -133,7 +133,7 @@ export default function BikeReports() {
             onClick={() => toggleMode("analytics")}
             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
               mode === "analytics"
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg scale-105"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
                 : isDark
                 ? "text-gray-400 hover:text-white hover:bg-gray-700"
                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -147,7 +147,7 @@ export default function BikeReports() {
             onClick={() => toggleMode("reports")}
             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
               mode === "reports"
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg scale-105"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
                 : isDark
                 ? "text-gray-400 hover:text-white hover:bg-gray-700"
                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
@@ -188,7 +188,7 @@ export default function BikeReports() {
 
           <button
             onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300"
+            className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300"
             title="Refresh Data"
           >
             <FiRefreshCw size={20} />

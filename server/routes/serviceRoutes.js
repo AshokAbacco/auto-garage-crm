@@ -1,14 +1,18 @@
 // server/routes/serviceRoutes.js
 import express from "express";
 import {
-    getServices,
-    getServiceById,
-    getServicesByClient,
-    createService,
-    updateService,
-    deleteService,
-    getServiceTypes,
+  getServices,
+  getServiceById,
+  getServicesByClient,
+  createService,
+  updateService,
+  deleteService,
+  getServiceTypes,
+  searchSubServices,
+  createSubService,
+  getServiceForBilling, // Add this import
 } from "../controllers/serviceController.js";
+import { createInvoiceFromService } from "../controllers/invoiceController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import multer from "multer";
 
@@ -23,6 +27,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // ✅ Service types route must be BEFORE :id
 router.get("/list", protect, getServiceTypes);
+
+// ✅ NEW: Sub-service search (typing suggestions)
+router.get("/sub-services/search", protect, searchSubServices);
+
+// ✅ NEW: Get service for billing
+router.get("/:id/billing", protect, getServiceForBilling);
 
 // ✅ List services
 router.get("/", protect, getServices);
@@ -41,54 +51,8 @@ router.put("/:id", upload.array("media", 20), protect, updateService);
 
 // ✅ Delete service
 router.delete("/:id", protect, deleteService);
+router.post("/sub-services", protect, createSubService);
+// In serviceRoutes.js
+router.post("/:id/create-invoice", protect, createInvoiceFromService);
 
 export default router;
-
-
-
-// // server/routes/serviceRoutes.js
-// import express from "express";
-// import {
-//     getServices,
-//     getServiceById,
-//     getServicesByClient,
-//     createService,
-//     updateService,
-//     deleteService,
-//     getServiceTypes, // 👈 new endpoint for category + sub-services (optional)
-// } from "../controllers/serviceController.js";
-// import { protect } from "../middleware/authMiddleware.js";
-
-// const router = express.Router();
-
-// // 🔒 Protect all routes
-// router.use(protect);
-
-// /* ========================
-//    SERVICE MANAGEMENT ROUTES
-//    ======================== */
-
-// // 🟢 Get all services
-// router.get("/", getServices);
-
-// // 🟢 Get all services by a specific client
-// // ⚠️ Keep above "/:id" to avoid conflict
-// router.get("/client/:clientId", getServicesByClient);
-
-// // 🟢 Get a single service by ID
-// router.get("/:id", getServiceById);
-
-// // 🟢 Create new service
-// router.post("/", createService);
-
-// // 🟢 Update service
-// router.put("/:id", updateService);
-
-// // 🟢 Delete service
-// router.delete("/:id", deleteService);
-
-// // 🟢 Get all service categories + sub-services
-// // (for frontend dropdowns)
-// router.get("/types/list", getServiceTypes);
-
-// export default router;

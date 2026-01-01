@@ -33,7 +33,7 @@ import { Toaster } from "react-hot-toast";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-const DetailsPage = () => {
+const OCRScanner = () => {
   const { isDark } = useTheme();
   const [searchParams] = useSearchParams();
   const urlBikeClientId = searchParams.get("bikeClientId");
@@ -255,7 +255,7 @@ const DetailsPage = () => {
         setDailyUsage(newCount);
       }
 
-      setHistoryData((prev) => [...prev, record]);
+      setHistoryData((prev) => Array.isArray(prev) ? [...prev, record] : [record]);
       setIsSaved(true);
       toast.success("OCR data saved successfully!");
 
@@ -335,7 +335,7 @@ const DetailsPage = () => {
         <div
           className={`rounded-3xl p-6 sm:p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl ${isDark
             ? "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800"
-            : "bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
+            : "bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700"
             }`}
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -432,7 +432,7 @@ const DetailsPage = () => {
         {/* Upload or Camera */}
         <div className={`rounded-2xl p-6 shadow-xl transition-all duration-300 hover:shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white">
               <FiCamera />
             </div>
             <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Capture RC Document</h2>
@@ -465,7 +465,7 @@ const DetailsPage = () => {
             </div>
             <div className="w-full h-3 bg-gray-300 rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all duration-500 ${ocrStatus === "error" ? "bg-gradient-to-r from-red-500 to-red-600" : "bg-gradient-to-r from-blue-600 to-purple-600"}`}
+                className={`h-full transition-all duration-500 ${ocrStatus === "error" ? "bg-gradient-to-r from-red-500 to-red-600" : "bg-gradient-to-r from-blue-500 to-blue-600"}`}
                 style={{ width: `${ocrProgress}%` }}
               />
             </div>
@@ -498,7 +498,7 @@ const DetailsPage = () => {
         {/* Debug Info */}
         <div className={`rounded-2xl p-6 shadow-xl transition-all duration-300 hover:shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white">
               <FiSettings />
             </div>
             <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Debug Information</h2>
@@ -510,7 +510,7 @@ const DetailsPage = () => {
         {/* History */}
         <div className={`rounded-2xl p-6 shadow-xl transition-all duration-300 hover:shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white">
               <FiDatabase />
             </div>
             <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>OCR History</h2>
@@ -554,7 +554,7 @@ const DetailsPage = () => {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
           <div className={`relative max-w-md w-full transform transition-all duration-300 scale-100 animate-slideUp ${isDark ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
             {/* Decorative element */}
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
               <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
               </svg>
@@ -569,7 +569,7 @@ const DetailsPage = () => {
                   <span className="text-sm font-semibold">Basic</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mb-2">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full" style={{ width: "100%" }}></div>
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full" style={{ width: "100%" }}></div>
                 </div>
                 <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>10/10 scans used today</p>
               </div>
@@ -598,7 +598,7 @@ const DetailsPage = () => {
                   </ul>
                 </div>
                 <div className="text-center">
-                  <h3 className="font-semibold mb-2 text-purple-600">Premium</h3>
+                  <h3 className="font-semibold mb-2 text-blue-600">Premium</h3>
                   <ul className={`text-sm space-y-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
                     <li className="flex items-center justify-center">
                       <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -625,7 +625,7 @@ const DetailsPage = () => {
                 </button>
                 <button
                   onClick={() => (window.location.href = "/upgrade")}
-                  className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                  className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                 >
                   Upgrade Now
                 </button>
@@ -669,4 +669,4 @@ const DetailsPage = () => {
   );
 };
 
-export default DetailsPage;
+export default OCRScanner;

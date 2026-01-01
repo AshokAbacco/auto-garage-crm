@@ -57,7 +57,7 @@ const Reference = () => {
     }, [referrals]);
 
     return (
-        <div className={`ml-[4rem] min-h-screen p-6 transition-colors duration-300 ${isDark ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+        <div className={`ml-[4rem] sm:ml-0 min-h-screen p-4 sm:p-1 transition-colors duration-300 ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}>
             <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
 
                 {/* Header Section */}

@@ -367,12 +367,42 @@ export const getServicesList = async (req, res) => {
     }
 };
 
+// server/controllers/reportController.js
+export const getClientsDetails = async (req, res) => {
+  try {
+    const clients = await prisma.client.findMany({
+      where: {
+        userId: req.user.id
+      },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        vehicleMake: true,
+        vehicleModel: true,
+        vehicleYear: true,
+        regNumber: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    res.json(clients);
+  } catch (error) {
+    console.error("❌ Error fetching clients report:", error);
+    res.status(500).json({ message: "Failed to fetch clients report" });
+  }
+};
+
+
 export default {
-    getRevenueSummary,
-    getTopClients,
-    getServiceStats,
-    getInvoiceStatusSummary,
-    getFullInvoiceDetails,
-    getReportsSummary,
-    getServicesList,
+  getRevenueSummary,
+  getTopClients,
+  getServiceStats,
+  getInvoiceStatusSummary,
+  getFullInvoiceDetails,
+  getReportsSummary,
+  getServicesList,
+  getClientsDetails,
 };

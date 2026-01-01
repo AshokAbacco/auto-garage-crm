@@ -1,3 +1,4 @@
+//login.jsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   Car,
@@ -59,28 +60,36 @@ export default function ModernLogin() {
       ],
     },
     bike: {
-        label: "Bike Workshop",
-        icon: Bike,
-        gradient: "from-orange-500 via-orange-600 to-red-500",
-        bgGradient: "from-orange-950 via-zinc-950 to-orange-950",
-        lightBgGradient: "from-orange-50 via-orange-100 to-slate-50",
-        accentColor: "#f97316", // orange-500
-        lightAccent: "rgba(249, 115, 22, 0.25)",
-        particleColor: "#fb923c", // orange-400
-        title: "Rev Up Your Workshop",
-        subtitle: "Expert CRM for Two-Wheeler Service Centers",
-        features: [
-            { icon: Wrench, text: "Repair Tracking", color: "text-orange-500" },
-            { icon: Users, text: "Customer Profiles", color: "text-orange-400" },
-            { icon: Calendar, text: "Service Reminders", color: "text-orange-300" },
-            { icon: Settings, text: "Parts Management", color: "text-red-400" },
-        ],
-        stats: [
-            { icon: Users, value: "30K+", label: "Active Users" },
-            { icon: Star, value: "4.8", label: "Rating" },
-            { icon: Server, value: "99.8%", label: "Uptime" },
-            { icon: TrendingUp, value: "2.5x", label: "Growth" },
-        ],
+      label: "Bike Workshop",
+      icon: Bike,
+      gradient: "from-blue-600 via-blue-500 to-cyan-500",
+      bgGradient: "from-blue-900 via-blue-800 to-cyan-900",
+      lightBgGradient: "from-blue-50 via-cyan-50 to-white",
+      accentColor: "#2563EB", // blue-600
+      lightAccent: "#3B82F6", // blue-500
+      particleColor: "#06B6D4", // cyan-500
+      glowColor: "rgba(37, 99, 235, 0.3)", // blue glow
+      borderColor: "#60A5FA", // blue-400
+      title: "Rev Up Your Workshop",
+      subtitle: "Expert CRM for Two-Wheeler Service Centers",
+      features: [
+          { icon: Wrench, text: "Repair Tracking", color: "text-white" },
+          { icon: Users, text: "Customer Profiles", color: "text-blue-100" },
+          { icon: Calendar, text: "Service Reminders", color: "text-cyan-100" },
+          { icon: Settings, text: "Parts Management", color: "text-blue-200" },
+      ],
+      stats: [
+          { icon: Users, value: "30K+", label: "Active Users", color: "text-blue-400" },
+          { icon: Star, value: "4.8", label: "Rating", color: "text-cyan-400" },
+          { icon: Server, value: "99.8%", label: "Uptime", color: "text-blue-300" },
+          { icon: TrendingUp, value: "2.5x", label: "Growth", color: "text-cyan-300" },
+      ],
+      // Blur effects
+      blurEffects: {
+          backdrop: "backdrop-blur-xl",
+          glassEffect: "bg-white/10 backdrop-blur-lg",
+          cardBlur: "backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
+      }
     },
 
     wash: {
@@ -195,55 +204,84 @@ export default function ModernLogin() {
     if (error) setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+ const handleSubmit = async (e) => {
+   e.preventDefault();
+   setIsLoading(true);
+   setError("");
 
-    if (!formData.identifier || !formData.password) {
-      setError("Please fill in all fields");
-      setIsLoading(false);
-      return;
-    }
+   if (!formData.identifier || !formData.password) {
+     setError("Please fill in all fields");
+     setIsLoading(false);
+     return;
+   }
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            identifier: formData.identifier, // email or username
-            password: formData.password,
-            crmType: crmType,
-          }),
-        }
-      );
+   try {
+     /**
+      * =========================================
+      * STAFF vs OWNER LOGIN DETECTION
+      * =========================================
+      * Rule:
+      * - Staff → email only (CarStaff table)
+      * - Owner → email OR username (User table)
+      */
+     const isStaffLogin = formData.identifier.includes("@");
 
-      const data = await response.json();
+     const loginUrl = isStaffLogin
+       ? `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`
+       : `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
 
-      if (!response.ok) {
-        setError(data.message || "Invalid login");
-        setIsLoading(false);
-        return;
-      }
+     const payload = isStaffLogin
+       ? {
+           email: formData.identifier,
+           password: formData.password,
+         }
+       : {
+           identifier: formData.identifier,
+           password: formData.password,
+           crmType: crmType,
+         };
 
-      // SAVE TOKEN + USER
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("crmType", crmType);
+     const response = await fetch(loginUrl, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+       },
+       body: JSON.stringify(payload),
+     });
 
-      // REDIRECT TO DASHBOARD
-      window.location.href = `/${crmType}-dashboard`;
-    } catch (err) {
-      console.error(err);
-      setError("Server error. Try again later.");
-    }
+     const data = await response.json();
 
-    setIsLoading(false);
-  };
+     if (!response.ok) {
+       setError(data.message || "Invalid login");
+       setIsLoading(false);
+       return;
+     }
+
+     /**
+      * =========================================
+      * SAVE TOKEN + USER (SINGLE SOURCE OF TRUTH)
+      * =========================================
+      */
+     localStorage.setItem("token", data.token);
+     localStorage.setItem("user", JSON.stringify(data.user));
+     localStorage.setItem("crmType", crmType);
+
+     /**
+      * =========================================
+      * REDIRECT
+      * =========================================
+      * Staff and Owner use same dashboard,
+      * backend restricts data automatically
+      */
+     window.location.href = `/${crmType}-dashboard`;
+   } catch (err) {
+     console.error("Login error:", err);
+     setError("Server error. Try again later.");
+   }
+
+   setIsLoading(false);
+ };
+
 
   const IconComponent = currentConfig.icon;
 

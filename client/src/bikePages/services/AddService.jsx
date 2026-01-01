@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
 import {
@@ -13,18 +13,17 @@ import {
   User,
   Tag,
   AlertCircle,
-  X
+  X,
+  ChevronDown
 } from "lucide-react";
-import { Toaster, toast } from "react-hot-toast";
-
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { Toaster, toast  } from "react-hot-toast";
+import api from "../../utils/axiosInstance";
 
 export default function AddService() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const token = localStorage.getItem("token");
 
   const [clients, setClients] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -39,7 +38,9 @@ export default function AddService() {
     client: "",
     date: "",
     category: "",
+    categoryText: "",
     subService: "",
+    subServiceText: "",
     notes: "",
     parts: "",
     partsGst: "",
@@ -47,36 +48,51 @@ export default function AddService() {
     laborGst: "",
     status: "Pending",
   });
+
+  // Autocomplete states
   const [categoryQuery, setCategoryQuery] = useState("");
   const [subServiceQuery, setSubServiceQuery] = useState("");
-
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showSubServiceDropdown, setShowSubServiceDropdown] = useState(false);
 
+  const categoryInputRef = useRef(null);
+  const subServiceInputRef = useRef(null);
+  const categoryDropdownRef = useRef(null);
+  const subServiceDropdownRef = useRef(null);
+  const dateRef = useRef(null);
+ 
+
   /* FETCH BIKES */
   useEffect(() => {
-    fetch(`${API}/api/bikes`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setClients(data.data || []))
-      .catch(() => toast.error("Failed to load clients"));
+    const fetchClients = async () => {
+      try {
+        const res = await api.get("/api/bikes");
+        setClients(Array.isArray(res.data) ? res.data : res.data.data || []);
+      } catch (err) {
+        console.error("Fetch clients error:", err);
+        toast.error("Failed to load clients");
+      }
+    };
+
+    fetchClients();
   }, []);
 
   /* EDIT MODE LOAD */
   useEffect(() => {
     if (!isEditMode) return;
 
-    fetch(`${API}/api/bike-services/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchService = async () => {
+      try {
+        const res = await api.get(`/api/bike-services/${id}`);
+        const data = res.data;
+
         setForm({
           client: data.clientId,
           date: data.date.split("T")[0],
-          category: data.categoryId,
-          subService: data.subServiceId,
+          category: data.categoryId || "",
+          categoryText: data.category?.name || "",
+          subService: data.subServiceId || "",
+          subServiceText: data.subService?.name || "",
           notes: data.notes || "",
           parts: data.partsCost || "",
           partsGst: data.partsGst || "",
@@ -85,33 +101,131 @@ export default function AddService() {
           status: data.status,
         });
 
+        setCategoryQuery(data.category?.name || "");
+        setSubServiceQuery(data.subService?.name || "");
         setExistingImages(data.mediaFiles || []);
-      })
-      .catch(() => toast.error("Failed to load service"));
-  }, [id]);
+      } catch (err) {
+        console.error("Fetch service error:", err);
+        toast.error(err.response?.data?.message || "Failed to load service");
+        if (err.response?.status === 403 || err.response?.status === 404) {
+          setTimeout(() => navigate("/bike-services"), 2000);
+        }
+      }
+    };
+
+    fetchService();
+  }, [id, isEditMode, navigate]);
 
   /* FETCH CATEGORIES */
   useEffect(() => {
     if (!form.client) return;
 
-    setCategoryLoading(true);
+    const fetchCategories = async () => {
+      try {
+        setCategoryLoading(true);
+        const res = await api.get(`/api/bike-services/types/by-bike/${form.client}`);
+        setCategories(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Fetch categories error:", err);
+        toast.error("Failed to load categories");
+      } finally {
+        setCategoryLoading(false);
+      }
+    };
 
-    fetch(`${API}/api/bike-services/types/by-bike/${form.client}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setCategories(data || []))
-      .catch(() => toast.error("Failed to load categories"))
-      .finally(() => setCategoryLoading(false));
+    fetchCategories();
   }, [form.client]);
 
   /* FETCH SUB SERVICES */
   useEffect(() => {
-    const selected = categories.find(
-      (c) => c.id === Number(form.category)
-    );
+    const selected = categories.find((c) => c.id === Number(form.category));
     setSubServices(selected?.subServices || []);
   }, [form.category, categories]);
+
+  /* FILTER CATEGORIES BASED ON QUERY */
+  const filteredCategories = categories.filter((cat) =>
+    cat.name.toLowerCase().includes(categoryQuery.toLowerCase())
+  );
+
+  /* FILTER SUB SERVICES BASED ON QUERY */
+  const filteredSubServices = subServices.filter((sub) =>
+    sub.name.toLowerCase().includes(subServiceQuery.toLowerCase())
+  );
+
+  /* HANDLE CATEGORY SELECTION */
+  const handleCategorySelect = (category) => {
+    setForm({
+      ...form,
+      category: category.id,
+      categoryText: category.name,
+      subService: "",
+      subServiceText: "",
+    });
+    setCategoryQuery(category.name);
+    setShowCategoryDropdown(false);
+    setSubServiceQuery("");
+  };
+
+  /* HANDLE SUB SERVICE SELECTION */
+  const handleSubServiceSelect = (subService) => {
+    setForm({
+      ...form,
+      subService: subService.id,
+      subServiceText: subService.name,
+    });
+    setSubServiceQuery(subService.name);
+    setShowSubServiceDropdown(false);
+  };
+
+  /* HANDLE CATEGORY INPUT CHANGE */
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+    setCategoryQuery(value);
+    setForm({
+      ...form,
+      category: "",
+      categoryText: value,
+      subService: "",
+      subServiceText: "",
+    });
+    setShowCategoryDropdown(true);
+    setSubServiceQuery("");
+  };
+
+  /* HANDLE SUB SERVICE INPUT CHANGE */
+  const handleSubServiceChange = (e) => {
+    const value = e.target.value;
+    setSubServiceQuery(value);
+    setForm({
+      ...form,
+      subService: "",
+      subServiceText: value,
+    });
+    setShowSubServiceDropdown(true);
+  };
+
+  /* CLICK OUTSIDE TO CLOSE DROPDOWNS */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target) &&
+        !categoryInputRef.current.contains(event.target)
+      ) {
+        setShowCategoryDropdown(false);
+      }
+      if (
+        subServiceDropdownRef.current &&
+        !subServiceDropdownRef.current.contains(event.target) &&
+        !subServiceInputRef.current.contains(event.target)
+      ) {
+        setShowSubServiceDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   /* TOTAL */
   const total =
@@ -120,9 +234,9 @@ export default function AddService() {
     Number(form.labor || 0) +
     (Number(form.labor || 0) * Number(form.laborGst || 0)) / 100;
 
-  /* ADD + EDIT SUBMIT WITH IMAGE UPLOAD */
+  /* SUBMIT */
   const handleSubmit = async () => {
-    if (!form.client || !form.date || !form.category || !form.subService) {
+    if (!form.client || !form.date || !form.categoryText || !form.subServiceText) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -130,56 +244,34 @@ export default function AddService() {
     try {
       setLoading(true);
 
-      const formData = new FormData();
-
-      Object.entries({
-        clientId: form.client,
-        categoryId: form.category,
-        subServiceId: form.subService,
+      const payload = {
+        clientId: Number(form.client),
+        // Send ID if selected from list, otherwise send text for new entry
+        categoryId: form.category ? Number(form.category) : null,
+        categoryName: form.categoryText,
+        subServiceId: form.subService ? Number(form.subService) : null,
+        subServiceName: form.subServiceText,
         date: form.date,
         notes: form.notes,
-        partsCost: form.parts,
-        partsGst: form.partsGst,
-        laborCost: form.labor,
-        laborGst: form.laborGst,
+        partsCost: Number(form.parts || 0),
+        partsGst: Number(form.partsGst || 0),
+        laborCost: Number(form.labor || 0),
+        laborGst: Number(form.laborGst || 0),
         status: form.status,
-        cost: total.toFixed(2),
-      }).forEach(([key, val]) => formData.append(key, val));
+      };
 
-      mediaFiles.forEach((file) => formData.append("media", file));
+      if (isEditMode) {
+        await api.put(`/api/bike-services/${id}`, payload);
+        toast.success("Service updated successfully");
+      } else {
+        await api.post("/api/bike-services", payload);
+        toast.success("Service created successfully");
+      }
 
-      const res = await fetch(
-        isEditMode
-          ? `${API}/api/bike-services/${id}`
-          : `${API}/api/bike-services`,
-        {
-          method: isEditMode ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            clientId: Number(form.client),
-            categoryId: Number(form.category),
-            subServiceId: Number(form.subService),
-            date: form.date,
-            notes: form.notes,
-            partsCost: Number(form.parts || 0),
-            partsGst: Number(form.partsGst || 0),
-            laborCost: Number(form.labor || 0),
-            laborGst: Number(form.laborGst || 0),
-            status: form.status,
-          }),
-        }
-      );
-
-
-      if (!res.ok) throw new Error("Save failed");
-
-      toast.success(isEditMode ? "Service updated successfully" : "Service created successfully");
       navigate("/bike-services");
     } catch (err) {
-      toast.error(err.message || "Failed to save service");
+      console.error("Submit error:", err);
+      toast.error(err.response?.data?.message || "Failed to save service");
     } finally {
       setLoading(false);
     }
@@ -190,12 +282,12 @@ export default function AddService() {
   };
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
       isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
     }`}>
       <Toaster position="top-right" />
 
-      <div className="max-w-4xl mx-auto animate-fade-in">
+      <div className="max-w-6xl mx-auto animate-fade-in">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -211,246 +303,253 @@ export default function AddService() {
           </button>
 
           <div>
-            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent`}>
+            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent`}>
               {isEditMode ? "Edit Service" : "Add New Service"}
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-              {isEditMode ? "Update service details" : "Fill in the details to create a new service record"}
+              {isEditMode ? "Update service information" : "Create a new service record"}
             </p>
           </div>
         </div>
 
-        {/* Form Container */}
+        {/* Form */}
         <div className={`rounded-2xl shadow-xl border-2 p-8 transition-all duration-300 ${
-          isDark
-            ? "bg-gray-800 border-gray-700"
-            : "bg-white border-gray-100"
+          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
         }`}>
           <div className="space-y-6">
-            {/* Client Selection */}
-            <div className="space-y-2 animate-slide-down" style={{ animationDelay: "50ms" }}>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Client Selection */}
+            <div className="space-y-2 animate-slide-down w-full" style={{ animationDelay: "0ms" }}>
               <label className={`flex items-center gap-2 text-sm font-semibold ${
                 isDark ? "text-gray-300" : "text-gray-700"
               }`}>
-                <User size={16} className="text-green-500" />
-                Select Client *
+                <User size={16} className="text-blue-500" />
+                Client <span className="text-red-500">*</span>
               </label>
               <select
                 value={form.client}
-                onChange={(e) => setForm({ ...form, client: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, client: e.target.value, category: "", categoryText: "", subService: "", subServiceText: "" });
+                  setCategories([]);
+                  setSubServices([]);
+                  setCategoryQuery("");
+                  setSubServiceQuery("");
+                }}
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
                   isDark
                     ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-gray-50 border-gray-200 text-gray-900"
+                    : "bg-white border-gray-200 text-gray-900"
                 }`}
+                required
               >
-                <option value="">Choose a client...</option>
+                <option value="">Select a client</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.ownerName} - {c.bikeModel} - {c.regNumber}
+                    {c.ownerName} - {c.bikeBrand} {c.bikeModel} ({c.regNumber})
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Date */}
-            <div className="space-y-2 animate-slide-down" style={{ animationDelay: "100ms" }}>
-              <label className={`flex items-center gap-2 text-sm font-semibold ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}>
-                <Calendar size={16} className="text-blue-500" />
-                Service Date *
-              </label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-gray-50 border-gray-200 text-gray-900"
-                }`}
-              />
+            {/* Service Date */}
+              <div
+                className="space-y-2 animate-slide-down w-full cursor-pointer"
+                style={{ animationDelay: "50ms" }}
+                onClick={() => dateRef.current?.showPicker()}
+              >
+                <label
+                  className={`flex items-center gap-2 text-sm font-semibold ${
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
+                  <Calendar size={16} className="text-blue-600" />
+                  Service Date <span className="text-red-500">*</span>
+                </label>
+
+                <input
+                  ref={dateRef}
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  onClick={(e) => e.stopPropagation()} 
+                  className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600 text-white"
+                      : "bg-white border-gray-200 text-gray-900"
+                  }`}
+                  required
+                />
+              </div>
+
             </div>
 
-          {/* Category & Sub Service */}
-<div
-  className="grid md:grid-cols-2 gap-6 animate-slide-down"
-  style={{ animationDelay: "150ms" }}
->
-  {/* ================= CATEGORY ================= */}
-  <div className="space-y-2 relative">
-    <label
-      className={`flex items-center gap-2 text-sm font-semibold ${
-        isDark ? "text-gray-300" : "text-gray-700"
-      }`}
-    >
-      <Tag size={16} className="text-purple-500" />
-      Category *
-    </label>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Category - Autocomplete */}
+                <div className="w-full md:w-1/2 space-y-2 animate-slide-down relative" style={{ animationDelay: "100ms" }}>
+                  <label className={`flex items-center gap-2 text-sm font-semibold ${
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  }`}>
+                    <Tag size={16} className="text-purple-500" />
+                    Service Category <span className="text-red-500">*</span>
+                  </label>
 
-    <input
-      type="text"
-      value={categoryQuery}
-      disabled={!form.client || categoryLoading}
-      placeholder="Type category (eg: Brake)"
-      onFocus={() => setShowCategoryDropdown(true)}
-      onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 150)}
-      onChange={(e) => {
-        setCategoryQuery(e.target.value);
-        setForm({
-          ...form,
-          category: "",
-          subService: "",
-        });
-        setShowCategoryDropdown(true);
-      }}
-      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-        isDark
-          ? "bg-gray-700 border-gray-600 text-white disabled:bg-gray-800"
-          : "bg-gray-50 border-gray-200 text-gray-900 disabled:bg-gray-100"
-      }`}
-    />
+                  {categoryLoading ? (
+                    <div className="flex items-center gap-2 px-4 py-3">
+                      <Loader2 size={16} className="animate-spin text-blue-500" />
+                      <span className={isDark ? "text-gray-400" : "text-gray-600"}>
+                        Loading categories...
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        ref={categoryInputRef}
+                        type="text"
+                        value={categoryQuery}
+                        onChange={handleCategoryChange}
+                        onFocus={() => setShowCategoryDropdown(true)}
+                        placeholder="Type to search or add new category"
+                        disabled={!form.client}
+                        className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isDark
+                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500"
+                            : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
+                        }`}
+                        required
+                      />
+                      <ChevronDown
+                        size={20}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${
+                          isDark ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      />
 
-    {/* Category Dropdown */}
-    {showCategoryDropdown && categoryQuery && (
-      <div
-        className={`absolute z-20 w-full mt-1 rounded-xl border max-h-48 overflow-auto ${
-          isDark
-            ? "bg-gray-800 border-gray-700"
-            : "bg-white border-gray-200"
-        }`}
-      >
-        {categories
-          .filter((c) =>
-            c.name.toLowerCase().includes(categoryQuery.toLowerCase())
-          )
-          .map((c) => (
-            <div
-              key={c.id}
-              onClick={() => {
-                setCategoryQuery(c.name);
-                setForm({
-                  ...form,
-                  category: c.id,
-                  subService: "",
-                });
-                setShowCategoryDropdown(false);
-              }}
-              className="px-4 py-2 cursor-pointer hover:bg-green-500 hover:text-white"
-            >
-              {c.name}
+                      {showCategoryDropdown && categoryQuery && (
+                        <div
+                          ref={categoryDropdownRef}
+                          className={`absolute z-50 w-full mt-2 max-h-60 overflow-y-auto rounded-xl border-2 shadow-lg ${
+                            isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"
+                          }`}
+                        >
+                          {filteredCategories.length > 0 ? (
+                            filteredCategories.map((cat) => (
+                              <div
+                                key={cat.id}
+                                onClick={() => handleCategorySelect(cat)}
+                                className={`px-4 py-3 cursor-pointer transition-colors ${
+                                  isDark
+                                    ? "hover:bg-gray-600 text-white"
+                                    : "hover:bg-gray-100 text-gray-900"
+                                }`}
+                              >
+                                {cat.name}
+                              </div>
+                            ))
+                          ) : (
+                            <div className={`px-4 py-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                              <div className="flex items-center gap-2">
+                                <Tag size={16} className="text-green-500" />
+                                <span>
+                                  Will create new: "<strong>{categoryQuery}</strong>"
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Sub Service - Autocomplete */}
+                <div className="w-full md:w-1/2 space-y-2 animate-slide-down relative" style={{ animationDelay: "150ms" }}>
+                  <label className={`flex items-center gap-2 text-sm font-semibold ${
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  }`}>
+                    <Wrench size={16} className="text-green-500" />
+                    Sub Service <span className="text-red-500">*</span>
+                  </label>
+
+                  <div className="relative">
+                    <input
+                      ref={subServiceInputRef}
+                      type="text"
+                      value={subServiceQuery}
+                      onChange={handleSubServiceChange}
+                      onFocus={() => setShowSubServiceDropdown(true)}
+                      placeholder="Type to search or add new sub service"
+                      disabled={!form.categoryText}
+                      className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${
+                        isDark
+                          ? "bg-gray-700 border-gray-600 text-white placeholder-gray-500"
+                          : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
+                      }`}
+                      required
+                    />
+                    <ChevronDown
+                      size={20}
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${
+                        isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    />
+
+                    {showSubServiceDropdown && subServiceQuery && (
+                      <div
+                        ref={subServiceDropdownRef}
+                        className={`absolute z-50 w-full mt-2 max-h-60 overflow-y-auto rounded-xl border-2 shadow-lg ${
+                          isDark ? "bg-gray-700 border-gray-600" : "bg-white border-gray-200"
+                        }`}
+                      >
+                        {filteredSubServices.length > 0 ? (
+                          filteredSubServices.map((sub) => (
+                            <div
+                              key={sub.id}
+                              onClick={() => handleSubServiceSelect(sub)}
+                              className={`px-4 py-3 cursor-pointer transition-colors ${
+                                isDark
+                                  ? "hover:bg-gray-600 text-white"
+                                  : "hover:bg-gray-100 text-gray-900"
+                              }`}
+                            >
+                              {sub.name}
+                            </div>
+                          ))
+                        ) : (
+                          <div className={`px-4 py-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                            <div className="flex items-center gap-2">
+                              <Wrench size={16} className="text-green-500" />
+                              <span>
+                                Will create new: "<strong>{subServiceQuery}</strong>"
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
             </div>
-          ))}
-
-        {/* Custom Category */}
-        <div
-          onClick={() => {
-            setForm({ ...form, category: categoryQuery });
-            setShowCategoryDropdown(false);
-          }}
-          className="px-4 py-2 text-sm text-green-600 cursor-pointer hover:bg-green-50"
-        >
-          ➕ Use “{categoryQuery}”
-        </div>
-      </div>
-    )}
-  </div>
-
-  {/* ================= SUB SERVICE ================= */}
-  <div className="space-y-2 relative">
-    <label
-      className={`flex items-center gap-2 text-sm font-semibold ${
-        isDark ? "text-gray-300" : "text-gray-700"
-      }`}
-    >
-      <Wrench size={16} className="text-orange-500" />
-      Sub Service *
-    </label>
-
-    <input
-      type="text"
-      value={subServiceQuery}
-      disabled={!form.category}
-      placeholder="Type sub service (eg: Oil Change)"
-      onFocus={() => setShowSubServiceDropdown(true)}
-      onBlur={() => setTimeout(() => setShowSubServiceDropdown(false), 150)}
-      onChange={(e) => {
-        setSubServiceQuery(e.target.value);
-        setForm({ ...form, subService: "" });
-        setShowSubServiceDropdown(true);
-      }}
-      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-        isDark
-          ? "bg-gray-700 border-gray-600 text-white disabled:bg-gray-800"
-          : "bg-gray-50 border-gray-200 text-gray-900 disabled:bg-gray-100"
-      }`}
-    />
-
-    {/* Sub Service Dropdown */}
-    {showSubServiceDropdown && subServiceQuery && (
-      <div
-        className={`absolute z-20 w-full mt-1 rounded-xl border max-h-48 overflow-auto ${
-          isDark
-            ? "bg-gray-800 border-gray-700"
-            : "bg-white border-gray-200"
-        }`}
-      >
-        {subServices
-          .filter((s) =>
-            s.name.toLowerCase().includes(subServiceQuery.toLowerCase())
-          )
-          .map((s) => (
-            <div
-              key={s.id}
-              onClick={() => {
-                setSubServiceQuery(s.name);
-                setForm({ ...form, subService: s.id });
-                setShowSubServiceDropdown(false);
-              }}
-              className="px-4 py-2 cursor-pointer hover:bg-green-500 hover:text-white"
-            >
-              {s.name}
-            </div>
-          ))}
-
-        {/* Custom Sub Service */}
-        <div
-          onClick={() => {
-            setForm({ ...form, subService: subServiceQuery });
-            setShowSubServiceDropdown(false);
-          }}
-          className="px-4 py-2 text-sm text-green-600 cursor-pointer hover:bg-green-50"
-        >
-          ➕ Use “{subServiceQuery}”
-        </div>
-      </div>
-    )}
-  </div>
-</div>
 
 
             {/* Cost Breakdown */}
-            <div className={`p-6 rounded-xl border-2 space-y-4 animate-slide-down ${
-              isDark
-                ? "bg-gray-900/50 border-gray-700"
-                : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-100"
+            <div className={`p-6 rounded-xl space-y-4 animate-slide-down ${
+              isDark ? "bg-gray-700/50" : "bg-gray-50"
             }`} style={{ animationDelay: "200ms" }}>
-              <h3 className={`flex items-center gap-2 font-semibold ${
-                isDark ? "text-green-400" : "text-green-700"
+              <h3 className={`flex items-center gap-2 text-lg font-bold ${
+                isDark ? "text-white" : "text-gray-900"
               }`}>
-                <IndianRupee size={18} />
+                <IndianRupee size={20} className="text-green-500" />
                 Cost Breakdown
               </h3>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                    Parts Cost
+                    Parts Cost (₹)
                   </label>
                   <input
                     type="number"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={form.parts}
                     onChange={(e) => setForm({ ...form, parts: e.target.value })}
                     className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
@@ -480,11 +579,11 @@ export default function AddService() {
 
                 <div className="space-y-2">
                   <label className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                    Labor Cost
+                    Labor Cost (₹)
                   </label>
                   <input
                     type="number"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={form.labor}
                     onChange={(e) => setForm({ ...form, labor: e.target.value })}
                     className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
@@ -545,79 +644,6 @@ export default function AddService() {
                     : "bg-gray-50 border-gray-200 text-gray-900"
                 }`}
               />
-            </div>
-
-            {/* Image Upload */}
-            <div className="space-y-2 animate-slide-down" style={{ animationDelay: "300ms" }}>
-              <label className={`flex items-center gap-2 text-sm font-semibold ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}>
-                <ImageIcon size={16} className="text-pink-500" />
-                Upload Images
-              </label>
-              
-              <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all duration-300 hover:border-green-500 ${
-                isDark
-                  ? "border-gray-600 bg-gray-700/50"
-                  : "border-gray-300 bg-gray-50"
-              }`}>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => setMediaFiles([...e.target.files])}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="flex flex-col items-center gap-2 pointer-events-none">
-                  <ImageIcon size={32} className={isDark ? "text-gray-500" : "text-gray-400"} />
-                  <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                    Click to upload or drag and drop
-                  </p>
-                  <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>
-                    PNG, JPG, WEBP up to 10MB
-                  </p>
-                </div>
-              </div>
-
-              {/* Preview New Images */}
-              {mediaFiles.length > 0 && (
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mt-4">
-                  {Array.from(mediaFiles).map((file, idx) => (
-                    <div key={idx} className="relative group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={`Preview ${idx + 1}`}
-                        className="h-24 w-full object-cover rounded-lg border-2 border-gray-300"
-                      />
-                      <button
-                        onClick={() => removeMediaFile(idx)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Existing Images (Edit Mode) */}
-              {existingImages.length > 0 && (
-                <div className="mt-4">
-                  <p className={`text-sm mb-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                    Existing Images
-                  </p>
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                    {existingImages.map((img) => (
-                      <img
-                        key={img.id}
-                        src={img.data}
-                        alt="Service"
-                        className="h-24 w-full object-cover rounded-lg border-2 border-green-500"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Status */}

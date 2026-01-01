@@ -9,27 +9,32 @@ import { z } from "zod";
  */
 
 const clientBaseSchema = z.object({
-    fullName: z.string().min(2),
-    phone: z.string().min(6),
-    email: z.string().email().optional().nullable(),
-    address: z.string().optional().nullable(),
-    vehicleMake: z.string().min(1),
-    vehicleModel: z.string().min(1),
-    vehicleYear: z
-        .preprocess((val) => (val ? Number(val) : val), z.number().int().gte(1900).lte(2100))
-        .optional()
-        .nullable(),
-    regNumber: z.string().min(1),
-    vin: z.string().optional().nullable(),
-    fuel: z.string().optional().nullable(),   // NEW
-    seats: z.preprocess((v) => (v ? Number(v) : null), z.number().int().optional().nullable()), // NEW
-    carImage: z.string().optional().nullable(),
-    adImage: z.string().optional().nullable(),
-    staffPerson: z.string().optional().nullable(),
-    receiverName: z.string().optional().nullable(),
-    damageImages: z.array(z.string()).optional().nullable(),
+  fullName: z.string().min(2),
+  phone: z.string().min(6),
+  email: z.string().email().optional().nullable(),
+  address: z.string().optional().nullable(),
+  vehicleMake: z.string().min(1),
+  vehicleModel: z.string().min(1),
+  vehicleYear: z
+    .preprocess(
+      (val) => (val ? Number(val) : val),
+      z.number().int().gte(1900).lte(2100)
+    )
+    .optional()
+    .nullable(),
+  regNumber: z.string().min(1),
+  vin: z.string().optional().nullable(),
+  fuel: z.string().optional().nullable(), // NEW
+  seats: z.preprocess(
+    (v) => (v ? Number(v) : null),
+    z.number().int().optional().nullable()
+  ), // NEW
+  carImage: z.string().optional().nullable(),
+  adImage: z.string().optional().nullable(),
+  staffPerson: z.string().optional().nullable(),
+  receiverName: z.string().optional().nullable(),
+  damageImages: z.array(z.string()).optional().nullable(),
 });
-
 
 const clientCreateSchema = clientBaseSchema;
 const clientUpdateSchema = clientBaseSchema.partial();
@@ -42,71 +47,73 @@ const clientUpdateSchema = clientBaseSchema.partial();
  * ===========================
  */
 export const getClients = async (req, res) => {
-    try {
-        const page = Math.max(1, parseInt(req.query.page || "1"));
-        const limit = Math.min(100, parseInt(req.query.limit || "50"));
-        const skip = (page - 1) * limit;
+  const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
 
-        const where = {};
+  try {
+    const page = Math.max(1, parseInt(req.query.page || "1"));
+    const limit = Math.min(100, parseInt(req.query.limit || "50"));
+    const skip = (page - 1) * limit;
 
-        // ✅ Show only current user's clients, unless admin
-        if (req.user?.role !== "admin") {
-            where.userId = req.user?.id;
-        }
+    const where = {};
 
-        // ✅ Optional search query
-        if (req.query.q) {
-            const q = String(req.query.q).trim();
-            where.OR = [
-                { fullName: { contains: q, mode: "insensitive" } },
-                { phone: { contains: q, mode: "insensitive" } },
-                { email: { contains: q, mode: "insensitive" } },
-                { regNumber: { contains: q, mode: "insensitive" } },
-                { vehicleMake: { contains: q, mode: "insensitive" } },
-                { vehicleModel: { contains: q, mode: "insensitive" } },
-            ];
-        }
-
-        const [total, clients] = await Promise.all([
-            prisma.client.count({ where }),
-            prisma.client.findMany({
-                where,
-                select: {
-                    id: true,
-                    fullName: true,
-                    phone: true,
-                    email: true,
-                    regNumber: true,
-                    vehicleMake: true,
-                    vehicleModel: true,
-                    vehicleYear: true,
-                    carImage: true,
-                    receiverName: true,
-                    createdAt: true,
-                    _count: { select: { services: true } },
-                },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
-            }),
-        ]);
-
-        return res.status(200).json({
-            data: clients,
-            total,
-            page,
-            limit,
-            pages: Math.ceil(total / limit),
-        });
-    } catch (error) {
-        console.error("❌ getClients error:", error);
-        return res.status(500).json({
-            message: error.message || "Error fetching clients",
-            data: [],
-            total: 0,
-            page: 1,
-        });
+    // ✅ Show only current user's clients, unless admin
+    if (req.user?.role !== "admin") {
+      where.userId = ownerId;
     }
+
+    // ✅ Optional search query
+    if (req.query.q) {
+      const q = String(req.query.q).trim();
+      where.OR = [
+        { fullName: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { regNumber: { contains: q, mode: "insensitive" } },
+        { vehicleMake: { contains: q, mode: "insensitive" } },
+        { vehicleModel: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const [total, clients] = await Promise.all([
+      prisma.client.count({ where }),
+      prisma.client.findMany({
+        where,
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          email: true,
+          regNumber: true,
+          vehicleMake: true,
+          vehicleModel: true,
+          vehicleYear: true,
+          carImage: true,
+          receiverName: true,
+          createdAt: true,
+          _count: { select: { services: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return res.status(200).json({
+      data: clients,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("❌ getClients error:", error);
+    return res.status(500).json({
+      message: error.message || "Error fetching clients",
+      data: [],
+      total: 0,
+      page: 1,
+    });
+  }
 };
 
 /**
@@ -117,25 +124,25 @@ export const getClients = async (req, res) => {
  * ===========================
  */
 export const getClientById = async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ error: "Invalid client id" });
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid client id" });
 
-        const client = await prisma.client.findUnique({
-            where: { id },
-            include: {
-                services: { orderBy: { date: "desc" } },
-                invoices: { orderBy: { createdAt: "desc" } },
-                reminders: true,
-            },
-        });
+    const client = await prisma.client.findUnique({
+      where: { id },
+      include: {
+        services: { orderBy: { date: "desc" } },
+        invoices: { orderBy: { createdAt: "desc" } },
+        reminders: true,
+      },
+    });
 
-        if (!client) return res.status(404).json({ error: "Client not found" });
-        return res.json(client);
-    } catch (err) {
-        console.error("getClientById err:", err);
-        return res.status(500).json({ error: "Server error" });
-    }
+    if (!client) return res.status(404).json({ error: "Client not found" });
+    return res.json(client);
+  } catch (err) {
+    console.error("getClientById err:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
 };
 
 /**
@@ -145,7 +152,9 @@ export const getClientById = async (req, res) => {
  * @access Private
  * ===========================
  */
+
 export const createClient = async (req, res) => {
+  const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
   try {
     const parsed = clientCreateSchema.parse(req.body);
 
@@ -153,7 +162,7 @@ export const createClient = async (req, res) => {
     const existing = await prisma.client.findFirst({
       where: {
         regNumber: parsed.regNumber,
-        userId: req.user?.id, // check only for this garage/user
+        userId: ownerId, // check only for this garage/user
       },
     });
 
@@ -171,7 +180,7 @@ export const createClient = async (req, res) => {
     const client = await prisma.client.create({
       data: {
         ...parsed,
-        userId: req.user?.id || null,
+        userId: ownerId || null,
         damageImages: parsed.damageImages ?? null,
       },
     });
@@ -186,7 +195,6 @@ export const createClient = async (req, res) => {
   }
 };
 
-
 /**
  * ===========================
  * UPDATE client
@@ -195,28 +203,28 @@ export const createClient = async (req, res) => {
  * ===========================
  */
 export const updateClient = async (req, res) => {
-    try {
-        const id = Number(req.params.id);
-        if (!id) return res.status(400).json({ error: "Invalid client id" });
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: "Invalid client id" });
 
-        const parsed = clientUpdateSchema.parse(req.body);
+    const parsed = clientUpdateSchema.parse(req.body);
 
-        const client = await prisma.client.update({
-            where: { id },
-            data: {
-                ...parsed,
-                damageImages: parsed.damageImages ?? undefined, // undefined = don't touch
-            },
-        });
+    const client = await prisma.client.update({
+      where: { id },
+      data: {
+        ...parsed,
+        damageImages: parsed.damageImages ?? undefined, // undefined = don't touch
+      },
+    });
 
-        return res.json(client);
-    } catch (err) {
-        console.error("updateClient err:", err);
-        if (err?.errors) {
-            return res.status(400).json({ error: err.errors });
-        }
-        return res.status(500).json({ error: "Server error" });
+    return res.json(client);
+  } catch (err) {
+    console.error("updateClient err:", err);
+    if (err?.errors) {
+      return res.status(400).json({ error: err.errors });
     }
+    return res.status(500).json({ error: "Server error" });
+  }
 };
 
 /**
@@ -227,32 +235,42 @@ export const updateClient = async (req, res) => {
  * ===========================
  */
 export const deleteClient = async (req, res) => {
-    try {
-        const parsedId = parseInt(req.params.id);
-        if (isNaN(parsedId)) {
-            return res.status(400).json({ message: "Invalid client ID" });
-        }
+  const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
 
-        const client = await prisma.client.findUnique({
-            where: { id: parsedId },
-            include: { services: true, invoices: true },
-        });
-
-        if (!client) {
-            return res.status(404).json({ message: "Client not found" });
-        }
-
-        if (client.userId && req.user?.id !== client.userId && req.user?.role !== "admin") {
-            return res.status(403).json({ message: "Forbidden: you don't own this client" });
-        }
-
-        await prisma.service.deleteMany({ where: { clientId: parsedId } });
-        await prisma.invoice.deleteMany({ where: { clientId: parsedId } });
-        await prisma.client.delete({ where: { id: parsedId } });
-
-        res.status(200).json({ message: "Client and related records deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting client:", error);
-        res.status(500).json({ message: "Error deleting client" });
+  try {
+    const parsedId = parseInt(req.params.id);
+    if (isNaN(parsedId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
     }
+
+    const client = await prisma.client.findUnique({
+      where: { id: parsedId },
+      include: { services: true, invoices: true },
+    });
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    if (
+      client.userId &&
+      ownerId !== client.userId &&
+      req.user?.role !== "admin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: you don't own this client" });
+    }
+
+    await prisma.service.deleteMany({ where: { clientId: parsedId } });
+    await prisma.invoice.deleteMany({ where: { clientId: parsedId } });
+    await prisma.client.delete({ where: { id: parsedId } });
+
+    res
+      .status(200)
+      .json({ message: "Client and related records deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting client:", error);
+    res.status(500).json({ message: "Error deleting client" });
+  }
 };

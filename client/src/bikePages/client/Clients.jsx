@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useMemo  } from "react";
 import {
   Users,
   Phone,
@@ -261,7 +261,22 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
   const fullName = client.ownerName || client.fullName || "Unknown";
   const vehicleMake = client.bikeBrand || client.vehicleMake || "N/A";
   const vehicleModel = client.bikeModel || client.vehicleModel || "";
-  const bikeImage = client.bikeImage || client.carImage;
+ 
+  const getBikeImageSrc = (img) => {
+  if (!img) return null;
+
+  // base64
+  if (img.startsWith("data:image")) return img;
+
+  // full URL
+  if (img.startsWith("http")) return img;
+
+  // relative path
+  return `${import.meta.env.VITE_API_BASE_URL}${img}`;
+};
+
+const bikeImageSrc = getBikeImageSrc(client.bikeImage);
+
 
   return (
     <div
@@ -270,24 +285,23 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
       }`}
     >
       {/* Bike Image */}
-      <div
-        className={`w-48 h-48 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          isDark ? "bg-gray-700" : "bg-gray-200"
-        }`}
-      >
-        {bikeImage ? (
-          <img
-            src={bikeImage}
-            alt="bike"
-            className="w-full h-full object-cover rounded-xl"
-          />
-        ) : (
-          <Bike
-            size={64}
-            className={`${isDark ? "text-gray-400" : "text-gray-500"}`}
-          />
-        )}
-      </div>
+      <div className="w-48 h-48 rounded-xl bg-gray-200 flex items-center justify-center">
+      {bikeImageSrc ? (
+        <img
+          src={client.bikeImage || "https://via.placeholder.com/300"}
+          alt="Bike"
+          className="w-full h-full object-cover rounded-xl"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src =
+              "https://via.placeholder.com/300x200?text=No+Bike+Image";
+          }}
+        />
+      ) : (
+        <Bike size={64} className="text-gray-500" />
+      )}
+    </div>
+
 
       {/* Client Details */}
       <div className="flex-1 space-y-4">
@@ -358,7 +372,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
           {/* RIGHT */}
           <div className="space-y-3">
             {/* Year */}
-            {(client.bikeYear || client.vehicleYear) && (
+            {client.bikeYear && (
               <div className="flex items-center gap-3">
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? "bg-gray-700" : "bg-blue-50"
@@ -368,7 +382,7 @@ function ClientListCard({ client, onView, onEdit, onDelete, isDark }) {
                 </div>
 
                 <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                  Year: {client.bikeYear || client.vehicleYear}
+                  Year: {client.bikeYear || "-"}
                 </span>
               </div>
             )}

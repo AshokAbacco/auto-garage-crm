@@ -1,0 +1,40 @@
+[
+  {
+    "make": "HONDA",
+    "slug": "honda",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Honda_Logo.svg",
+    "models": [
+      {
+        "name": "Activa",
+        "slug": "activa",
+        "thumbnailUrl": "https://www.vhv.rs/dpng/d/471-4717101_honda-activa-transparent-images-honda-activa-new-model.png",
+        "heroUrl": "https://www.pngarts.com/files/11/Blue-Activa-Transparent-Images.png",
+        "yearVariants": {
+          "2024": {
+            "thumbnailUrl": "https://centralization-images.s3.ap-south-1.amazonaws.com/2_BIKE_Website_75a1cd08e0.png",
+            "heroUrl": "https://images.timesdrive.in/photo/msid-151054468,thumbsize-566229/151054468.jpg"
+          }
+        }
+      },
+      {
+        "name": "Shine",
+        "slug": "shine",
+        "thumbnailUrl": "https://images.timesdrive.in/thumb/msid-151180034,thumbsize-489279,width-450,height-254,resizemode-75/151180034.jpg",
+        "heroUrl": "https://www.srivasavihonda.com/wp-content/uploads/2020/06/Shine-125-BS6.png"
+      }
+    ]
+  },
+  {
+    "make": "HERO",
+    "slug": "hero",
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Hero_MotoCorp_Logo.svg/2560px-Hero_MotoCorp_Logo.svg.png",
+    "models": [
+      {
+        "name": "Splendor",
+        "slug": "splendor",
+        "thumbnailUrl": "https://e7.pngegg.com/pngimages/279/593/png-clipart-hero-honda-splendor-hero-motocorp-motorcycle-gurugram-motorcycle-car-india-thumbnail.png",
+        "heroUrl": "https://www.heromotocorp.com/content/dam/hero-commerce/in/en/products/practical/content-fragments/splendor-plus/assets/updated-image/feature/features-bg-web.png"
+      }
+    ]
+  }
+]

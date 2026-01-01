@@ -77,6 +77,11 @@ export default function AddClients() {
   const damageFileRef = useRef(null);
   const startPos = useRef({ x: 0, y: 0 });
   const startRot = useRef({ x: 0, y: 0 });
+  const [bikeImageLoading, setBikeImageLoading] = useState(false);
+
+  const [bikeMakes, setBikeMakes] = useState([]);
+  const [bikeModels, setBikeModels] = useState([]);
+  const [selectedBikeMake, setSelectedBikeMake] = useState(null);
 
   // ========== LOAD EXISTING CLIENT (EDIT MODE) ==========
   useEffect(() => {
@@ -158,6 +163,34 @@ export default function AddClients() {
     setActiveImage(form.adImage || form.carImage || "");
   }, [form.adImage, form.carImage]);
 
+  useEffect(() => {
+  if (form.vehicleMake && form.vehicleModel) {
+    const timer = setTimeout(() => {
+      fetchBikeImage(
+        form.vehicleMake,
+        form.vehicleModel,
+        form.vehicleYear
+      );
+    }, 500); // debounce
+
+    return () => clearTimeout(timer);
+  }
+}, [form.vehicleMake, form.vehicleModel, form.vehicleYear]);
+
+useEffect(() => {
+  const loadBikeMakes = async () => {
+    try {
+      const res = await api.get("/api/bikes-meta/local-makes");
+      setBikeMakes(res.data.makes || []);
+    } catch (err) {
+      console.error("Bike makes load error", err);
+    }
+  };
+
+  loadBikeMakes();
+}, []);
+
+
   // ========== OCR AUTOFILL FUNCTIONS ==========
   const handleScanButtonClick = () => {
     if (navigator.mediaDevices?.getUserMedia) cameraInputRef.current.click();
@@ -176,6 +209,53 @@ export default function AddClients() {
     const t = s.toLowerCase();
     return fuels.find((f) => t.includes(f)) || "";
   };
+
+const normalize = (v = "") => v.trim();
+
+const fetchBikeImage = async (make, model, year) => {
+  const nMake = normalize(make);
+  const nModel = normalize(model);
+
+  if (!nMake || !nModel) return;
+
+  try {
+    setBikeImageLoading(true);
+
+    console.log("🚲 Fetch bike image:", nMake, nModel, year);
+
+    const res = await api.get(
+      `/api/bikes-meta/local-image`,
+      {
+        params: {
+          make: nMake.toUpperCase(),
+          model: nModel,
+          year: year || undefined,
+        },
+      }
+    );
+
+    console.log("🖼 API response:", res.data);
+
+    const img = res.data?.heroUrl || res.data?.thumbnailUrl;
+
+    if (img) {
+      setForm((prev) => ({
+        ...prev,
+        carImage: img,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        carImage: "",
+      }));
+    }
+  } catch (err) {
+    console.warn("❌ Bike image not found", err?.response?.data);
+  } finally {
+    setBikeImageLoading(false);
+  }
+};
+
 
   // ---------- Map OCR → AddClients form ----------
   const mapBikeOcrToForm = (p = {}) => {
@@ -348,6 +428,7 @@ export default function AddClients() {
     );
   }
 
+  
   return (
     <div className={`min-h-screen p-6 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100"}`}>
       <Toaster position="top-right" />
@@ -536,15 +617,12 @@ export default function AddClients() {
             />
 
             <InputField
-              icon={<Bike size={18} />}
-              iconColor="text-blue-500"
               label="Vehicle Model"
-              name="vehicleModel"
               value={form.vehicleModel}
-              onChange={(e) => setForm({ ...form, vehicleModel: e.target.value })}
-              placeholder="e.g., Activa, Splendor"
-              isDark={isDark}
-              required
+              onChange={(e) =>
+                setForm({ ...form, vehicleModel: e.target.value })
+              }
+               
             />
 
             <InputField
@@ -559,6 +637,8 @@ export default function AddClients() {
               type="number"
               min="1900"
               max={new Date().getFullYear() + 1}
+               
+
             />
 
             <InputField
@@ -658,112 +738,70 @@ export default function AddClients() {
             <ImageIcon size={24} className="text-blue-500" />
             Vehicle Images
           </h2>
-
           {/* Main Image */}
           <div className="mb-6">
-            <label className={`block text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+            <label
+              className={`block text-sm font-semibold mb-3 ${
+                isDark ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
               Main Vehicle Image
             </label>
+
             <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, "main")}
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-                dragOver
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                  : isDark
+              className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${
+                isDark
                   ? "border-gray-600 bg-gray-700/50"
                   : "border-gray-300 bg-gray-50"
               }`}
             >
-              {form.carImage ? (
-                <div className="relative">
-                  <img src={form.carImage} alt="Vehicle" className="w-full h-64 object-cover rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, carImage: "" })}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+              {/* 🔄 Loading */}
+              {bikeImageLoading && (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <RotateCw className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+                  <p className="text-sm text-gray-500">Fetching vehicle image…</p>
                 </div>
-              ) : (
-                <div>
-                  <Upload className={`w-12 h-12 mx-auto mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`} />
-                  <p className={`text-sm mb-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                    Drag and drop or click to upload
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => mainFileRef.current.click()}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Choose File
-                  </button>
-                  <input
-                    ref={mainFileRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFiles(e.target.files, "main")}
-                    className="hidden"
+              )}
+
+              {/* 🖼 Image from backend */}
+              {!bikeImageLoading && form.carImage && (
+                <div className="relative">
+                  <img
+                    src={form.carImage}
+                    alt="Vehicle"
+                    className="w-80 h-64 object-cover rounded-lg"
                   />
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* AD Image */}
-          <div className="mb-6">
-            <label className={`block text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-              Additional Document/Image
-            </label>
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, "ad")}
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-                dragOver
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                  : isDark
-                  ? "border-gray-600 bg-gray-700/50"
-                  : "border-gray-300 bg-gray-50"
-              }`}
-            >
-              {form.adImage ? (
-                <div className="relative">
-                  <img src={form.adImage} alt="Document" className="w-full h-64 object-cover rounded-lg" />
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, adImage: "" })}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, carImage: "" }))
+                    }
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                   >
-                    <Trash2 size={20} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
-              ) : (
-                <div>
-                  <FileText className={`w-12 h-12 mx-auto mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`} />
-                  <p className={`text-sm mb-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-                    Upload RC, insurance, or other documents
+              )}
+
+              {/* 🚫 No image found */}
+              {!bikeImageLoading && !form.carImage && (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <img
+                    src={fallbackImage}
+                    alt="No vehicle"
+                    className="w-48 h-32 object-contain opacity-70 mb-3"
+                  />
+                  <p className="text-sm text-gray-500">
+                    No vehicle image found for this model
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = "image/*";
-                      input.onchange = (e) => handleFiles(e.target.files, "ad");
-                      input.click();
-                    }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Choose File
-                  </button>
                 </div>
               )}
             </div>
           </div>
 
+
+          
           {/* Damage Images */}
           <div>
             <label className={`block text-sm font-semibold mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>

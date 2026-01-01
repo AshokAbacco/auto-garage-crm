@@ -243,7 +243,8 @@ export default function ClientDetail() {
   const fullName = client.ownerName || client.fullName || "Unknown";
   const vehicleMake = client.bikeBrand || client.vehicleMake || "N/A";
   const vehicleModel = client.bikeModel || client.vehicleModel || "N/A";
-  const vehicleColor = client.bikeColor || client.vehicleColor || "N/A";
+  const vehicleColor = client.color || "N/A";
+
 
   return (
     <div
@@ -490,8 +491,8 @@ export default function ClientDetail() {
                       <InputField
                         icon={<Phone size={18} />}
                         label="Phone"
-                        name="phoneNumber"
-                        value={formData.phoneNumber || ""}
+                        name="phone"
+                        value={formData.phone || ""}
                         onChange={handleChange}
                         isDark={isDark}
                         type="tel"
@@ -540,7 +541,7 @@ export default function ClientDetail() {
                       <ContactCard
                         icon={<Phone size={18} />}
                         label="Phone"
-                        value={client.phoneNumber}
+                        value={client.phone}
                         isDark={isDark}
                       />
                       <ContactCard
@@ -605,8 +606,8 @@ export default function ClientDetail() {
                       <InputField
                         icon={<Hash size={18} />}
                         label="Registration Number"
-                        name="regNo"
-                        value={formData.regNo || ""}
+                        name="regNumber"
+                        value={formData.regNumber || ""}
                         onChange={handleChange}
                         isDark={isDark}
                         iconColor="text-yellow-500"
@@ -614,8 +615,8 @@ export default function ClientDetail() {
                       <InputField
                         icon={<Palette size={18} />}
                         label="Color"
-                        name="bikeColor"
-                        value={formData.bikeColor || ""}
+                        name="color"
+                        value={formData.color || ""}
                         onChange={handleChange}
                         isDark={isDark}
                         iconColor="text-purple-500"
@@ -623,8 +624,8 @@ export default function ClientDetail() {
                       <InputField
                         icon={<Calendar size={18} />}
                         label="Model Year"
-                        name="modelYear"
-                        value={formData.modelYear || ""}
+                        name="bikeYear"
+                        value={formData.bikeYear || ""}
                         onChange={handleChange}
                         isDark={isDark}
                         type="number"
@@ -633,8 +634,8 @@ export default function ClientDetail() {
                       <InputField
                         icon={<Droplet size={18} />}
                         label="Fuel Type"
-                        name="fuelType"
-                        value={formData.fuelType || ""}
+                        name="fuel"
+                        value={formData.fuel || ""}
                         onChange={handleChange}
                         isDark={isDark}
                         iconColor="text-orange-500"
@@ -657,7 +658,7 @@ export default function ClientDetail() {
                       <InfoCard
                         icon={<Hash size={18} />}
                         label="Registration"
-                        value={client.regNo}
+                        value={client.regNumber}
                         isDark={isDark}
                       />
                       <InfoCard
@@ -669,13 +670,13 @@ export default function ClientDetail() {
                       <InfoCard
                         icon={<Calendar size={18} />}
                         label="Year"
-                        value={client.modelYear}
+                        value={client.bikeYear}
                         isDark={isDark}
                       />
                       <InfoCard
                         icon={<Droplet size={18} />}
                         label="Fuel Type"
-                        value={client.fuelType}
+                        value={client.fuel}
                         isDark={isDark}
                       />
                     </>

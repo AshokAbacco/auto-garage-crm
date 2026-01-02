@@ -34,7 +34,7 @@ import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 import carStaffRoutes from "./routes/carStaffRoutes.js";
 import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
-import bikeStaffSalaryRoutes from "./routes/BikestaffSalaryRoutes.js";
+import bikeStaffSalaryRoutes from "./routes/BikeStaffSalaryRoutes.js";
 import bikeMetaRoutes from "./routes/bikeMetaRoutes.js";
 import { protect } from "./middleware/authMiddleware.js";
 

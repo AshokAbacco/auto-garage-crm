@@ -87,6 +87,8 @@ model User {
   createdBikeReminders  BikeReminder[]  @relation("CreatedBikeReminders")
   ownedBikeOcrRecords   BikeOcrRecord[] @relation("OwnerBikeOcrRecords")
   createdBikeOcrRecords BikeOcrRecord[] @relation("CreatedBikeOcrRecords")
+  bikeStaffs            BikeStaff[]
+  bikeTeams             BikeTeam[]
 
   // washing 
   washingClients WashingClient[]
@@ -94,8 +96,6 @@ model User {
   // Team member → belongs to one team
   washTeamId     Int?
   washTeamMember WashTeam?       @relation("TeamMember", fields: [washTeamId], references: [id])
-  bikeStaffs     BikeStaff[]
-  bikeTeams      BikeTeam[]
 }
 
 //car db schemas

@@ -20,14 +20,25 @@ export const registerUser = async (req, res) => {
     const emailLower = email.toLowerCase().trim();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔥 FETCH LATEST PAYMENT (SOURCE OF TRUTH)
+    /**
+     * =============================================
+     * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
+     * =============================================
+     */
     const latestPayment = await prisma.payment.findFirst({
       where: { email: emailLower },
       orderBy: { createdAt: "desc" },
     });
+
+    const plan = latestPayment?.plan || "BASIC";
+    const planExpiry = latestPayment?.planExpiry || null;
     const referralCodeUsed = latestPayment?.referralCode || null;
 
-    // 🔍 Find referrer user (if referral code exists)
+    /**
+     * =============================================
+     * REFERRAL LOOKUP (OPTIONAL)
+     * =============================================
+     */
     let referredByUserId = null;
 
     if (referralCodeUsed) {
@@ -41,11 +52,11 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    const userPlan = latestPayment?.plan || "BASIC";
-    const companyName = latestPayment?.companyName || null;
-    const phone = latestPayment?.phone || null;
-
-    // Check duplicates
+    /**
+     * =============================================
+     * DUPLICATE CHECKS
+     * =============================================
+     */
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
       prisma.user.findUnique({ where: { username } }),
@@ -60,10 +71,6 @@ export const registerUser = async (req, res) => {
         message: "This username is already taken.",
       });
     }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: emailLower },
-    });
 
     /**
      * =============================================
@@ -109,6 +116,7 @@ export const registerUser = async (req, res) => {
         myReferralCode,
         plan,
         planExpiry,
+        referredByUserId, // safe even if null
       },
     });
 
@@ -149,36 +157,36 @@ export const loginUser = async (req, res) => {
         : { username: identifier },
     });
 
-    if (owner) {
-      const isMatch = await bcrypt.compare(password, owner.password);
+    if (user) {
+      const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
 
       // ✅ CRM restriction applies ONLY to owner
-      if (!owner.allowedCrms.includes(crmType.toUpperCase())) {
+      if (!user.allowedCrms.includes(crmType.toUpperCase())) {
         return res.status(403).json({
           message: `You do not have access to the ${crmType} CRM`,
         });
       }
 
       const token = generateToken({
-        id: owner.id,
+        id: user.id,
         role: "user",
         type: "owner",
-        plan: owner.plan,
+        plan: user.plan,
       });
 
       return res.status(200).json({
         message: "Login successful",
         token,
         user: {
-          id: owner.id,
-          email: owner.email,
+          id: user.id,
+          email: user.email,
           role: "user",
           type: "owner",
-          plan: owner.plan,
-          allowedCrms: owner.allowedCrms,
+          plan: user.plan,
+          allowedCrms: user.allowedCrms,
           crmType,
         },
       });
@@ -189,16 +197,24 @@ export const loginUser = async (req, res) => {
      * 2️⃣ TRY STAFF LOGIN (CarStaff)
      * ============================
      */
-    const staff = await prisma.carStaff.findUnique({
+    const staffLogin = await prisma.carStaffLogin.findUnique({
       where: { email: identifier.toLowerCase() },
+      include: {
+        staff: true,
+      },
     });
 
-    if (!staff || !staff.isActive) {
+    if (!staffLogin || !staffLogin.isActive || !staffLogin.staff) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const isStaffMatch = await bcrypt.compare(password, staff.password);
+    const isStaffMatch = await bcrypt.compare(password, staffLogin.password);
+
     if (!isStaffMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    if (!staff || !staff.isActive) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
@@ -229,7 +245,6 @@ export const loginUser = async (req, res) => {
     });
   }
 };
-
 
 /**
  * =============================================

@@ -59,8 +59,7 @@ export const protect = async (req, res, next) => {
         id: true,
         username: true,
         email: true,
-        username: true,
-        role: true, // always "user"
+        role: true,
         plan: true,
         parentUserId: true,
         allowedCrms: true,
@@ -73,10 +72,11 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // 🔐 Normalize role (important)
+    // ✅ FIX: explicitly set type = "owner"
     req.user = {
       ...user,
-      role: user.role?.toUpperCase(),
+      type: "owner",
+      role: user.role, // keep as-is ("user")
     };
 
     next();

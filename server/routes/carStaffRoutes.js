@@ -9,13 +9,23 @@ import {
 } from "../controllers/carStaffController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { ownerOnly } from "../middleware/ownerOnly.js";
+import { requirePlan } from "../middleware/planMiddleware.js";
+
+
+
 
 const router = express.Router();
 
 /**
  * OWNER ONLY — STAFF HR MANAGEMENT
  */
-router.post("/", protect, ownerOnly, createStaff);
+router.post(
+  "/",
+  protect,
+  requirePlan(["STANDARD", "PREMIUM"]),
+  ownerOnly,
+  createStaff
+);
 router.get("/", protect, ownerOnly, listStaff);
 router.put("/:id", protect, ownerOnly, updateStaff);
 router.delete("/:id", protect, ownerOnly, deleteStaff);

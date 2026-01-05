@@ -1,6 +1,11 @@
 // server/controllers/invoiceController.js
 import prisma from "../models/prismaClient.js";
 
+function getOwnerUserId(req) {
+  return req.user.type === "staff" ? req.user.ownerId : req.user.id;
+}
+
+
 /* ============================================================
    📄 Get All Invoices
    @route   GET /api/invoices
@@ -11,7 +16,7 @@ export const getInvoices = async (req, res) => {
     const invoices = await prisma.invoice.findMany({
       where: {
         client: {
-          userId: req.user.id,
+          userId: getOwnerUserId(req),
         },
       },
       include: {
@@ -62,7 +67,7 @@ export const getInvoiceById = async (req, res) => {
       where: {
         id: Number(id),
         client: {
-          userId: req.user.id,
+          userId: getOwnerUserId(req),
         },
       },
       include: {
@@ -140,8 +145,12 @@ export const createInvoice = async (req, res) => {
        Ownership check
     ======================= */
     const client = await prisma.client.findFirst({
-      where: { id: Number(clientId), userId: req.user.id },
+      where: {
+        id: Number(clientId),
+        userId: getOwnerUserId(req),
+      },
     });
+
 
     if (!client) {
       return res.status(403).json({ message: "Unauthorized client" });
@@ -240,9 +249,10 @@ export const updateInvoice = async (req, res) => {
     const existing = await prisma.invoice.findFirst({
       where: {
         id: Number(id),
-        client: { userId: req.user.id },
+        client: { userId: getOwnerUserId(req) },
       },
     });
+
 
     if (!existing) {
       return res.status(404).json({ message: "Invoice not found" });
@@ -372,7 +382,7 @@ export const deleteInvoice = async (req, res) => {
       where: {
         id: parseInt(id),
         client: {
-          userId: req.user.id, // Ensure invoice belongs to current user's client
+          userId: getOwnerUserId(req), // Ensure invoice belongs to current user's client
         },
       },
     });
@@ -408,7 +418,7 @@ export const getClients = async (req, res) => {
     const limit = Math.min(100, parseInt(req.query.limit || "50"));
     const skip = (page - 1) * limit;
 
-    const where = { userId: req.user.id }; // Only get clients for the authenticated user
+    const where = { userId: getOwnerUserId(req) }; // Only get clients for the authenticated user
 
     if (req.query.q) {
       const q = String(req.query.q).trim().toLowerCase();
@@ -475,7 +485,7 @@ export const getClientById = async (req, res) => {
     const client = await prisma.client.findFirst({
       where: {
         id: parseInt(id),
-        userId: req.user.id, // Filter by authenticated user
+        userId: getOwnerUserId(req), // Filter by authenticated user
       },
       include: {
         services: {
@@ -553,7 +563,7 @@ export const createInvoiceFromService = async (req, res) => {
     const service = await prisma.service.findFirst({
       where: {
         id: Number(id),
-        client: { userId: req.user.id },
+        client: { userId: getOwnerUserId(req) },
       },
       include: {
         client: true,
@@ -608,7 +618,7 @@ export const createInvoiceFromService = async (req, res) => {
       data: {
         invoiceNumber,
         clientId: service.clientId,
-        userId: req.user.id,
+        userId: getOwnerUserId(req),
 
         vehicle: `${service.client.vehicleMake} ${service.client.vehicleModel}`,
         mechanic: service.mechanic || null,

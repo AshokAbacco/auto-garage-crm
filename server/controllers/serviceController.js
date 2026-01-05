@@ -5,6 +5,12 @@ import prisma from "../models/prismaClient.js";
  * Convert a media file record to a data: URI string (defensive for Buffers, Uint8Array, Array, base64 strings).
  * Expects file to have at least: { data, mimeType, type } where data may be Buffer/Uint8Array/Array/string.
  */
+
+function getOwnerUserId(req) {
+  return req.user.type === "staff" ? req.user.ownerId : req.user.id;
+}
+
+
 function toDataUri(file) {
   if (!file) return null;
   const mime = file.mimeType || file.type || "application/octet-stream";
@@ -61,6 +67,7 @@ function requireAuth(req, res) {
   return true;
 }
 
+
 /**
  * Map an array of media file records to the API-friendly shape.
  * Ensures `data` is a proper data:<mime>;base64,... string (or null).
@@ -85,7 +92,7 @@ export const getServices = async (req, res) => {
 
   try {
     const services = await prisma.service.findMany({
-      where: { client: { userId: req.user.id } },
+      where: { client: { userId: getOwnerUserId(req) } },
       include: {
         client: { select: { id: true, fullName: true, regNumber: true } },
         category: true,
@@ -137,7 +144,7 @@ export const getServicesByClient = async (req, res) => {
     const client = await prisma.client.findFirst({
       where: {
         id: parseInt(clientId),
-        userId: req.user.id, // Ensure client belongs to current user
+        userId: getOwnerUserId(req), // Ensure client belongs to current user
       },
       include: {
         services: {
@@ -218,7 +225,7 @@ export const getServiceById = async (req, res) => {
     if (!id) return res.status(400).json({ message: "Invalid service ID" });
 
     const service = await prisma.service.findFirst({
-      where: { id, client: { userId: req.user.id } },
+      where: { id, client: { userId: getOwnerUserId(req) } },
       include: {
         client: true,
         category: true,
@@ -347,12 +354,15 @@ export const createService = async (req, res) => {
         .json({ message: "Invalid service in date format" });
     }
 
+    const ownerUserId = getOwnerUserId(req);
+
     const client = await prisma.client.findFirst({
       where: {
         id: parseInt(clientId),
-        userId: req.user.id,
+        userId: ownerUserId, // ✅ FIX
       },
     });
+
 
     if (!client) {
       return res.status(403).json({ message: "Unauthorized client access" });
@@ -442,7 +452,7 @@ export const updateService = async (req, res) => {
     const existing = await prisma.service.findFirst({
       where: {
         id: parseInt(id),
-        client: { userId: req.user.id },
+        client: { userId: getOwnerUserId(req) },
       },
     });
 
@@ -565,7 +575,7 @@ export const deleteService = async (req, res) => {
       where: {
         id: parseInt(id),
         client: {
-          userId: req.user.id, // Ensure service belongs to current user's client
+          userId: getOwnerUserId(req), // Ensure service belongs to current user's client
         },
       },
     });
@@ -650,6 +660,8 @@ export const searchSubServices = async (req, res) => {
 
 // Add this new function to create a sub-service
 export const createSubService = async (req, res) => {
+  console.log("SERVICE CREATE USER:", req.user);
+  console.log("OWNER USER ID:", getOwnerUserId(req));
   try {
     const { name, categoryId } = req.body;
 
@@ -702,7 +714,7 @@ export const getServiceForBilling = async (req, res) => {
       where: {
         id: parseInt(id),
         client: {
-          userId: req.user.id,
+          userId: getOwnerUserId(req),
         },
       },
       include: {

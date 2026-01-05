@@ -46,8 +46,6 @@ router.get("/client/:clientId", protect, getServicesByClient);
 router.get("/:id", protect, getServiceById);
 
 // ✅ CREATE SERVICE (IMPORTANT FIX)
-// protect FIRST, upload SECOND
-// field name MUST be "images"
 router.post("/", protect, upload.array("images", 20), createService);
 
 // ✅ UPDATE SERVICE (IMPORTANT FIX)

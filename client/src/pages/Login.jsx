@@ -33,6 +33,7 @@ export default function ModernLogin() {
   const [floatingElements, setFloatingElements] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ripples, setRipples] = useState([]);
+  const [loginMode, setLoginMode] = useState("owner");
   const containerRef = useRef(null);
 
   const CRM_CONFIG = {
@@ -204,75 +205,81 @@ export default function ModernLogin() {
     if (error) setError("");
   };
 
- const handleSubmit = async (e) => {
-   e.preventDefault();
-   setIsLoading(true);
-   setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
 
-   if (!formData.identifier || !formData.password) {
-     setError("Please fill in all fields");
-     setIsLoading(false);
-     return;
-   }
+  if (!formData.identifier || !formData.password) {
+    setError("Please fill in all fields");
+    setIsLoading(false);
+    return;
+  }
 
-   try {
-     const isStaffLogin = formData.identifier.includes("@");
+  // 🚫 Staff must use email
+  if (loginMode === "staff" && !formData.identifier.includes("@")) {
+    setError("Staff must login using email address");
+    setIsLoading(false);
+    return;
+  }
 
-     const loginUrl = isStaffLogin
-       ? `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`
-       : `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+  try {
+    let loginUrl = "";
+    let payload = {};
 
-     const payload = isStaffLogin
-       ? {
-           email: formData.identifier,
-           password: formData.password,
-         }
-       : {
-           identifier: formData.identifier,
-           password: formData.password,
-           crmType: crmType,
-         };
+    // 👷 STAFF LOGIN
+    if (loginMode === "staff") {
+      loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
+      payload = {
+        email: formData.identifier.trim().toLowerCase(),
+        password: formData.password,
+      };
+    }
 
-     const response = await fetch(loginUrl, {
-       method: "POST",
-       headers: {
-         "Content-Type": "application/json",
-       },
-       body: JSON.stringify(payload),
-     });
+    // 👤 OWNER LOGIN
+    else {
+      loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+      payload = {
+        identifier: formData.identifier.trim(),
+        password: formData.password,
+        crmType,
+      };
+    }
 
-     const data = await response.json();
+    const response = await fetch(loginUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-     if (!response.ok) {
-       setError(data.message || "Invalid login");
-       setIsLoading(false);
-       return;
-     }
+    const data = await response.json();
 
-     /**
-      * =========================================
-      * SAVE TOKEN + USER (SINGLE SOURCE OF TRUTH)
-      * =========================================
-      */
-     localStorage.setItem("token", data.token);
-     localStorage.setItem("user", JSON.stringify(data.user));
-     localStorage.setItem("crmType", crmType);
+    if (!response.ok) {
+      setError(data.message || "Invalid login");
+      setIsLoading(false);
+      return;
+    }
 
-     /**
-      * =========================================
-      * REDIRECT
-      * =========================================
-      * Staff and Owner use same dashboard,
-      * backend restricts data automatically
-      */
-     window.location.href = `/${crmType}-dashboard`;
-   } catch (err) {
-     console.error("Login error:", err);
-     setError("Server error. Try again later.");
-   }
+    // ✅ SAVE AUTH (ONLY PLACE)
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("crmType", crmType);
 
-   setIsLoading(false);
- };
+    // ✅ CORRECT REDIRECT
+    if (loginMode === "staff") {
+      window.location.href = `/${crmType}-dashboard`;
+    } else {
+      window.location.href = `/${crmType}-dashboard`;
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("Server error. Try again later.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
 
   const IconComponent = currentConfig.icon;
@@ -642,6 +649,33 @@ export default function ModernLogin() {
                           {error}
                         </div>
                       )}
+                      <div className="flex mb-4 bg-white/10 rounded-xl p-1">
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode("owner")}
+                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
+      ${
+        loginMode === "owner"
+          ? "bg-white text-black shadow"
+          : "text-white/70 hover:text-white"
+      }`}
+                        >
+                          Owner Login
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode("staff")}
+                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
+      ${
+        loginMode === "staff"
+          ? "bg-white text-black shadow"
+          : "text-white/70 hover:text-white"
+      }`}
+                        >
+                          Staff Login
+                        </button>
+                      </div>
 
                       {/* Submit Button */}
                       <button
@@ -656,15 +690,23 @@ export default function ModernLogin() {
                           {isLoading ? (
                             <>
                               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              <span>Logging in...</span>
+                              <span>
+                                Logging in as{" "}
+                                {loginMode === "staff" ? "Staff" : "Owner"}...
+                              </span>
                             </>
                           ) : (
                             <>
-                              <span>Login to Dashboard</span>
+                              <span>
+                                {loginMode === "staff"
+                                  ? "Login as Staff"
+                                  : "Login to Dashboard"}
+                              </span>
                               <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                             </>
                           )}
                         </span>
+
                         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       </button>
                     </form>

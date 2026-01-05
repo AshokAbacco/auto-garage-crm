@@ -244,6 +244,8 @@ router.post("/verify-payment-localhost", async (req, res) => {
           data: {
             plan: payment.plan,
             planExpiry: nextBillingDate,
+            companyName: payment.companyName || undefined,
+            phone: payment.phone || undefined,
           },
         });
 
@@ -375,6 +377,17 @@ router.post("/razorpay-webhook", async (req, res) => {
             expiryDate: nextBillingDate,
           },
         });
+
+        await prisma.user.update({
+          where: { email: record.email },
+          data: {
+            plan: record.plan,
+            planExpiry: nextBillingDate,
+            companyName: record.companyName || undefined,
+            phone: record.phone || undefined,
+          },
+        });
+
 
         console.log("DB updated to ACTIVE for:", sub.id);
       } else {

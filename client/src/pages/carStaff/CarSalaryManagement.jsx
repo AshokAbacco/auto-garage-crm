@@ -30,6 +30,7 @@ export default function SalaryManagement() {
   const [staffList, setStaffList] = useState([]);
   const [showPrepare, setShowPrepare] = useState(false);
   const [viewSalary, setViewSalary] = useState(null);
+  const [companyName, setCompanyName] = useState("");
 
   /* ================= FETCH ================= */
   const loadSalaries = async () => {
@@ -52,9 +53,29 @@ export default function SalaryManagement() {
     }
   };
 
+  const loadProfile = async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/user/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      setCompanyName(data.companyName || "");
+    } catch (err) {
+      console.error("Failed to load profile", err);
+    }
+  };
+
+
   useEffect(() => {
     loadSalaries();
     loadStaff();
+    loadProfile(); 
   }, [month, year]);
 
   /* ================= GENERATE / UPDATE ================= */
@@ -206,6 +227,7 @@ export default function SalaryManagement() {
       {viewSalary && (
         <SalaryViewModal
           salary={viewSalary}
+          companyName={companyName} // ✅ PASS HERE
           onClose={() => setViewSalary(null)}
         />
       )}

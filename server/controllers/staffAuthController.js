@@ -3,63 +3,11 @@ import jwt from "jsonwebtoken";
 import prisma from "../models/prismaClient.js";
 import PLAN_LIMITS from "../config/planLimits.js";
 
-
-// export const loginStaff = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     if (!email || !password) {
-//       return res.status(400).json({
-//         message: "Email and password are required",
-//       });
-//     }
-
-//     const staff = await prisma.carStaff.findUnique({
-//       where: { email: email.toLowerCase() },
-//     });
-
-//     if (!staff || !staff.isActive) {
-//       return res.status(401).json({
-//         message: "Invalid credentials or inactive staff",
-//       });
-//     }
-
-//     const isMatch = await bcrypt.compare(password, staff.password);
-//     if (!isMatch) {
-//       return res.status(401).json({ message: "Invalid credentials" });
-//     }
-
-//     // 🔐 Staff JWT (NOTE: type = staff)
-//     const token = jwt.sign(
-//       {
-//         id: staff.id,
-//         type: "staff",
-//         ownerId: staff.ownerId,
-//       },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "7d" }
-//     );
-
-//     return res.status(200).json({
-//       message: "Staff login successful",
-//       token,
-//       user: {
-//         id: staff.id,
-//         type: "staff",
-//         role: "staff",
-//         ownerId: staff.ownerId,
-//         name: staff.name,
-//         email: staff.email,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("❌ Staff Login Error:", error);
-//     return res.status(500).json({
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
+/**
+ * =====================================================
+ * STAFF LOGIN
+ * =====================================================
+ */
 export const loginStaff = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -71,7 +19,7 @@ export const loginStaff = async (req, res) => {
     }
 
     /**
-     * 1️⃣ Find login record
+     * 1️⃣ Find staff login record
      */
     const login = await prisma.carStaffLogin.findUnique({
       where: { email: email.toLowerCase() },
@@ -80,7 +28,7 @@ export const loginStaff = async (req, res) => {
       },
     });
 
-    if (!login || !login.isActive) {
+    if (!login || !login.isActive || !login.staff) {
       return res.status(401).json({
         message: "Invalid credentials or inactive account",
       });
@@ -95,11 +43,19 @@ export const loginStaff = async (req, res) => {
     }
 
     /**
-     * 3️⃣ Issue JWT
+     * 3️⃣ Fetch OWNER plan
+     */
+    const owner = await prisma.user.findUnique({
+      where: { id: login.ownerId },
+      select: { plan: true },
+    });
+
+    /**
+     * 4️⃣ Issue JWT
      */
     const token = jwt.sign(
       {
-        id: login.id, // 🔑 login id
+        id: login.id, // login id
         type: "staff",
         ownerId: login.ownerId,
       },
@@ -107,17 +63,20 @@ export const loginStaff = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-
+    /**
+     * 5️⃣ Return login response (IMPORTANT)
+     */
     return res.status(200).json({
       message: "Staff login successful",
       token,
       user: {
         id: login.staff.id,
-        type: "staff",
-        role: login.staff.role,
-        ownerId: login.ownerId,
         name: login.staff.name,
         email: login.email,
+        role: login.staff.role,
+        type: "staff",
+        ownerId: login.ownerId,
+        plan: owner?.plan || "BASIC", // ✅ OWNER PLAN
       },
     });
   } catch (error) {
@@ -128,6 +87,11 @@ export const loginStaff = async (req, res) => {
   }
 };
 
+/**
+ * =====================================================
+ * CREATE STAFF LOGIN (OWNER ONLY)
+ * =====================================================
+ */
 export const createStaffLogin = async (req, res) => {
   try {
     if (req.user.type !== "owner") {
@@ -145,7 +109,7 @@ export const createStaffLogin = async (req, res) => {
     }
 
     /**
-     * 1️⃣ Verify staff belongs to THIS owner
+     * 1️⃣ Verify staff belongs to owner
      */
     const staff = await prisma.carStaff.findFirst({
       where: {
@@ -168,7 +132,7 @@ export const createStaffLogin = async (req, res) => {
     }
 
     /**
-     * 2️⃣ Check ACTIVE staff login limit (PLAN)
+     * 2️⃣ Check plan limits
      */
     const activeLoginCount = await prisma.carStaffLogin.count({
       where: {
@@ -188,7 +152,7 @@ export const createStaffLogin = async (req, res) => {
     }
 
     /**
-     * 3️⃣ Prevent duplicate email globally
+     * 3️⃣ Prevent duplicate email
      */
     const emailExists = await prisma.carStaffLogin.findUnique({
       where: { email: email.toLowerCase() },
@@ -228,27 +192,36 @@ export const createStaffLogin = async (req, res) => {
   }
 };
 
-
+/**
+ * =====================================================
+ * STAFF PROFILE
+ * =====================================================
+ */
 export const getStaffProfile = async (req, res) => {
   try {
     if (req.user.type !== "staff") {
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    /**
+     * Fetch staff + owner plan
+     */
     const staff = await prisma.carStaff.findUnique({
-      where: { id: req.user.id }, // carStaff.id = 2
+      where: { id: req.user.id },
       select: {
         id: true,
         name: true,
         role: true,
+        ownerId: true,
         owner: {
           select: {
-            companyName: true, // ✅ from User table
+            companyName: true,
+            plan: true, // ✅ OWNER PLAN
           },
         },
         login: {
           select: {
-            email: true, // ✅ from CarStaffLogin
+            email: true,
           },
         },
       },
@@ -261,9 +234,11 @@ export const getStaffProfile = async (req, res) => {
     return res.status(200).json({
       id: staff.id,
       name: staff.name,
-      email: staff.login.email, // ✅ correct source
+      email: staff.login.email,
       role: staff.role,
+      ownerId: staff.ownerId,
       companyName: staff.owner.companyName,
+      plan: staff.owner.plan || "BASIC", // ✅ IMPORTANT
       type: "staff",
     });
   } catch (error) {

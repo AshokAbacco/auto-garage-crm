@@ -78,8 +78,8 @@ import AddBilling from "./bikePages/Billing/AddBilling.jsx";
 import InvoiceBill from "./bikePages/Billing/InvoiceBill.jsx";
 import BikeProfile from "./components/BikeProfile.jsx";
 import ProformaInvoice from "./pages/billing/ProformaInvoice.jsx";
-import StaffManagement from "./pages/CarStaffManagement.jsx";
-import SalaryManagement from "./pages/CarSalaryManagement.jsx";
+import StaffManagement from "./pages/carStaff/CarStaffManagement.jsx";
+import SalaryManagement from "./pages/carStaff/CarSalaryManagement.jsx";
 
 import WashDashboard from "./washPages/WashDashboard.jsx";
 import ClientsDetails from "./washPages/client/ClientsDetails.jsx";
@@ -239,9 +239,6 @@ function App() {
           <Route path="/washProfile" element={<WashingProfile />} />
           <Route path="/bike-plans" element={<Upgrade />} />
           <Route path="/team-register" element={<TeamRegister />} />
-
-
-
         </Route>
         <Route path="/team-login" element={<TeamLogin />} />
 
@@ -266,7 +263,6 @@ function App() {
           <Route path="/billing" element={<Billing />} />
           <Route path="/teams" element={<Teams />} />
 
-
           <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
 
           <Route path="/billing/create-invoice" element={<NewInvoice />} />
@@ -280,7 +276,6 @@ function App() {
         {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
     </ThemeProvider>
   );
 }

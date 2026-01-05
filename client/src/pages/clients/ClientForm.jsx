@@ -470,13 +470,17 @@ export default function ClientForm() {
     );
   }
 
+  const effectivePlan = user?.plan || "BASIC";
+
+
   // -------------------------------
   // MAIN UI
   // -------------------------------
   return (
     <div
-      className={`min-h-screen p-6 lg:ml-16 ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
-        }`}
+      className={`min-h-screen lg:ml-16 ${
+        isDark ? " text-gray-100" : "bg-gray-50 text-gray-900"
+      }`}
       // 🛑 DISABLE RIGHT CLICK ON ENTIRE PAGE
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -502,8 +506,9 @@ export default function ClientForm() {
 
         {/* Header */}
         <div
-          className={`rounded-3xl p-8 shadow-lg flex items-center justify-between ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
+          className={`rounded-3xl p-8 shadow-lg flex items-center justify-between ${
+            isDark ? "bg-gray-800" : "bg-white"
+          }`}
         >
           <div>
             <h1 className="text-3xl font-bold">
@@ -523,10 +528,11 @@ export default function ClientForm() {
                   : fileInputRef.current.click()
               }
               disabled={isProcessingRC}
-              className={`px-5 py-3 rounded-xl flex items-center gap-2 text-white shadow-md ${isDark
-                ? "bg-indigo-600 hover:bg-indigo-700"
-                : "bg-indigo-500 hover:bg-indigo-600"
-                }`}
+              className={`px-5 py-3 rounded-xl flex items-center gap-2 text-white shadow-md ${
+                isDark
+                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  : "bg-indigo-500 hover:bg-indigo-600"
+              }`}
             >
               <FiCamera />
               {isProcessingRC ? "Scanning..." : "Scan RC"}
@@ -539,26 +545,17 @@ export default function ClientForm() {
         </div>
 
         {/* Personal Info */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+        <div>
           <PersonalInfoSection form={form} setForm={setForm} isDark={isDark} />
         </div>
 
         {/* Vehicle Info */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Vehicle Information</h2>
-
+        <div>
           <VehicleInfoSection
             form={form}
             setForm={setForm}
             isDark={isDark}
-            userPlan={user?.plan}
+            userPlan={effectivePlan}
             carMakes={carMakes}
             carModels={carModels}
             fetchCarModels={fetchCarModels}
@@ -568,15 +565,12 @@ export default function ClientForm() {
         </div>
 
         {/* Vehicle Images */}
-        <div
-          className={`rounded-3xl p-8 shadow-lg ${isDark ? "bg-gray-800" : "bg-white"
-            }`}
-        >
-          <h2 className="text-xl font-semibold mb-4">Vehicle Images</h2>
-
+        <div>
           {/* Auto-filled image from local dataset */}
           {form.carImage && (
-            <div className="mb-4 flex justify-center"> {/* Added flex justify-center */}
+            <div className="mb-4 flex justify-center">
+              {" "}
+              {/* Added flex justify-center */}
               <img
                 src={form.carImage}
                 // Adjusted width for better centering control
@@ -599,10 +593,11 @@ export default function ClientForm() {
           <button
             type="button"
             onClick={() => navigate("/clients")}
-            className={`px-6 py-3 rounded-xl font-medium shadow ${isDark
-              ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-              : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
+            className={`px-6 py-3 rounded-xl font-medium shadow ${
+              isDark
+                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
           >
             <FiX className="inline-block mr-1" />
             Cancel
@@ -611,12 +606,13 @@ export default function ClientForm() {
           <button
             type="submit"
             disabled={loading}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 text-white font-semibold shadow ${loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : isDark
+            className={`px-6 py-3 rounded-xl flex items-center gap-2 text-white font-semibold shadow ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : isDark
                 ? "bg-green-600 hover:bg-green-700"
                 : "bg-green-500 hover:bg-green-600"
-              }`}
+            }`}
           >
             <FiSave />
             {loading ? "Saving..." : "Save Client"}

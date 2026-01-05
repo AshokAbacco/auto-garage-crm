@@ -1,6 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiEye, FiEdit, FiTrash2, FiX, FiUser, FiPhone, FiMail, FiCreditCard, FiHash, FiAlertCircle, FiRefreshCw } from "react-icons/fi";
+import {
+  FiEye,
+  FiEdit,
+  FiTrash2,
+  FiX,
+  FiUser,
+  FiPhone,
+  FiMail,
+  FiCreditCard,
+  FiHash,
+  FiAlertCircle,
+  FiRefreshCw,
+} from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Toaster } from "react-hot-toast";
@@ -19,6 +31,29 @@ export default function ClientsList() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
+  // Use the same color configuration as Layout.js
+  const colors = useMemo(
+    () => ({
+      // Backgrounds
+      layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
+      mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
+      elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
+
+      // Text
+      textPrimary: isDark ? "#E5E7EB" : "#0F172A",
+      textSecondary: isDark ? "#94A3B8" : "#475569",
+
+      // Brand & Accents
+      brand: isDark ? "#1E3A8A" : "#0B1D51",
+      primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
+
+      // Borders & Hover
+      border: isDark ? "#1E293B" : "#E5E7EB",
+      hoverBg: isDark ? "#1E293B" : "#F8FAFC",
+    }),
+    [isDark]
+  );
+
   const fetchClients = async (pageToFetch = 1, search = "") => {
     try {
       setLoading(true);
@@ -27,8 +62,12 @@ export default function ClientsList() {
         throw new Error("Authentication token not found. Please log in again.");
       }
 
-      const url = `${API_BASE}/api/clients?page=${pageToFetch}&limit=${limit}${search ? `&q=${encodeURIComponent(search)}` : ""}`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const url = `${API_BASE}/api/clients?page=${pageToFetch}&limit=${limit}${
+        search ? `&q=${encodeURIComponent(search)}` : ""
+      }`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!res.ok) {
         if (res.status === 401) {
@@ -58,7 +97,11 @@ export default function ClientsList() {
     } catch (err) {
       setError(err.message);
       console.error("Fetch clients failed:", err);
-      if (err.message.includes("401") || err.message.includes("Unauthorized") || err.message.includes("token")) {
+      if (
+        err.message.includes("401") ||
+        err.message.includes("Unauthorized") ||
+        err.message.includes("token")
+      ) {
         localStorage.removeItem("token");
         navigate("/login");
       }
@@ -113,7 +156,11 @@ export default function ClientsList() {
     } catch (err) {
       console.error("Delete client failed:", err);
       toast.error(err.message);
-      if (err.message.includes("401") || err.message.includes("Unauthorized") || err.message.includes("token")) {
+      if (
+        err.message.includes("401") ||
+        err.message.includes("Unauthorized") ||
+        err.message.includes("token")
+      ) {
         localStorage.removeItem("token");
         navigate("/login");
       }
@@ -124,7 +171,12 @@ export default function ClientsList() {
 
   // Handle authentication error
   useEffect(() => {
-    if (error && (error.includes("Unauthorized") || error.includes("401") || error.includes("token"))) {
+    if (
+      error &&
+      (error.includes("Unauthorized") ||
+        error.includes("401") ||
+        error.includes("token"))
+    ) {
       const timer = setTimeout(() => {
         navigate("/login");
       }, 1500);
@@ -133,8 +185,11 @@ export default function ClientsList() {
   }, [error, navigate]);
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} lg:ml-16 transition-colors duration-300`}>
-      <div className="p-4 mx-auto space-y-6 max-w-7xl sm:p-6 lg:p-8">
+    <div
+      className="min-h-screen lg:ml-16 transition-colors duration-300"
+      style={{ backgroundColor: colors.mainBg }}
+    >
+      <div className="p-4 mx-auto space-y-6 max-w-7xl sm:p-1 lg:p-2">
         {/* Toast Notifications */}
         <div className="fixed z-50 top-4 right-4">
           <Toaster
@@ -142,22 +197,23 @@ export default function ClientsList() {
             toastOptions={{
               duration: 4000,
               style: {
-                background: isDark ? '#374151' : '#ffffff',
-                color: isDark ? '#f3f4f6' : '#1f2937',
-                border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb',
-                borderRadius: '0.75rem',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                background: colors.elementBg,
+                color: colors.textPrimary,
+                border: `1px solid ${colors.border}`,
+                borderRadius: "0.75rem",
+                boxShadow:
+                  "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
               },
               success: {
                 iconTheme: {
-                  primary: '#10b981',
-                  secondary: isDark ? '#111827' : '#f9fafb',
+                  primary: "#10b981",
+                  secondary: colors.elementBg,
                 },
               },
               error: {
                 iconTheme: {
-                  primary: '#ef4444',
-                  secondary: isDark ? '#111827' : '#f9fafb',
+                  primary: "#ef4444",
+                  secondary: colors.elementBg,
                 },
               },
             }}
@@ -166,11 +222,24 @@ export default function ClientsList() {
 
         {/* Error Message */}
         {error && (
-          <div className={`rounded-2xl p-4 shadow-lg border transition-all duration-300 ${isDark ? "bg-red-900/20 border-red-800" : "bg-red-50 border-red-200"}`}>
+          <div
+            className="rounded-2xl p-4 shadow-lg border transition-all duration-300"
+            style={{
+              backgroundColor: isDark ? "rgba(127, 29, 29, 0.2)" : "#FEF2F2",
+              borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FECACA",
+            }}
+          >
             <div className="flex items-center gap-3">
               <FiAlertCircle className="flex-shrink-0 text-red-500" size={20} />
-              <p className={`font-semibold ${isDark ? "text-red-400" : "text-red-700"}`}>Error: {error}</p>
-              {(error.includes("Unauthorized") || error.includes("401") || error.includes("token")) && (
+              <p
+                className="font-semibold"
+                style={{ color: isDark ? "#FCA5A5" : "#DC2626" }}
+              >
+                Error: {error}
+              </p>
+              {(error.includes("Unauthorized") ||
+                error.includes("401") ||
+                error.includes("token")) && (
                 <button
                   onClick={() => navigate("/login")}
                   className="px-3 py-1 ml-auto text-sm text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700"
@@ -183,13 +252,27 @@ export default function ClientsList() {
         )}
 
         {/* Header */}
-        <div className={`rounded-2xl p-6 sm:p-8 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? 'bg-gradient-to-r from-blue-900/50 to-purple-900/50' : 'bg-gradient-to-r from-blue-600 to-purple-600'}`}>
-          <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl lg:text-4xl">Client Management</h1>
-          <p className="text-blue-100">Manage your clients and their vehicles</p>
+        <div
+          className="rounded-2xl p-6 sm:p-8 shadow-lg transition-all duration-300 hover:shadow-xl"
+          style={{
+            background: isDark
+              ? "linear-gradient(to right, rgba(30, 58, 138, 0.5), rgba(124, 58, 237, 0.5))"
+              : "linear-gradient(to right, #2563eb, #9333ea)",
+          }}
+        >
+          <h1 className="mb-2 text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
+            Client Management
+          </h1>
+          <p className="text-blue-100">
+            Manage your clients and their vehicles
+          </p>
         </div>
 
         {/* Search & Add Button */}
-        <div className={`rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        <div
+          className="rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
+          style={{ backgroundColor: colors.elementBg }}
+        >
           <div className="flex flex-col gap-4 lg:flex-row">
             <div className="flex-1">
               <input
@@ -197,10 +280,13 @@ export default function ClientsList() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search by name, phone, email, reg no..."
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all ${isDark
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-600"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                className="w-full px-4 py-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                style={{
+                  backgroundColor: colors.elementBg,
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                  placeholderColor: colors.textSecondary,
+                }}
               />
             </div>
             <Link
@@ -220,35 +306,54 @@ export default function ClientsList() {
             value={total}
             icon={<FiUser size={24} />}
             gradient="from-blue-500 to-blue-600"
-            isDark={isDark}
+            colors={colors}
           />
           <StatCard
             title="Current Page"
             value={data.length}
             icon={<FaCar size={24} />}
             gradient="from-purple-500 to-purple-600"
-            isDark={isDark}
+            colors={colors}
           />
           <StatCard
             title="Page"
             value={`${page}/${totalPages}`}
             icon={<FiMail size={24} />}
             gradient="from-green-500 to-green-600"
-            isDark={isDark}
+            colors={colors}
           />
         </div>
 
         {/* Full Width Cards List */}
         {loading ? (
-          <div className={`rounded-2xl p-16 text-center shadow-lg transition-all duration-300 ${isDark ? "bg-gray-800" : "bg-white"}`}>
+          <div
+            className="rounded-2xl p-16 text-center shadow-lg transition-all duration-300"
+            style={{ backgroundColor: colors.elementBg }}
+          >
             <div className="w-12 h-12 mx-auto border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
-            <p className={`mt-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}>Loading clients...</p>
+            <p className="mt-4" style={{ color: colors.textSecondary }}>
+              Loading clients...
+            </p>
           </div>
         ) : data.length === 0 ? (
-          <div className={`rounded-2xl p-16 text-center shadow-lg transition-all duration-300 ${isDark ? "bg-gray-800" : "bg-white"}`}>
-            <FiUser size={48} className={`mx-auto mb-4 ${isDark ? "text-gray-600" : "text-gray-300"}`} />
-            <p className={`text-lg font-semibold ${isDark ? "text-gray-300" : "text-gray-600"}`}>No clients found</p>
-            <p className={`text-sm mt-2 ${isDark ? "text-gray-500" : "text-gray-400"}`}>Try adjusting your search or add a new client</p>
+          <div
+            className="rounded-2xl p-16 text-center shadow-lg transition-all duration-300"
+            style={{ backgroundColor: colors.elementBg }}
+          >
+            <FiUser
+              size={48}
+              className="mx-auto mb-4"
+              style={{ color: colors.textSecondary }}
+            />
+            <p
+              className="text-lg font-semibold"
+              style={{ color: colors.textPrimary }}
+            >
+              No clients found
+            </p>
+            <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+              Try adjusting your search or add a new client
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -257,20 +362,28 @@ export default function ClientsList() {
                 key={client.id}
                 client={client}
                 onView={() => navigate(`/clients/${client.id}`)}
-                onEdit={() => navigate(`/clients/${client.id}/edit`, { state: { clientData: client } })}
+                onEdit={() =>
+                  navigate(`/clients/${client.id}/edit`, {
+                    state: { clientData: client },
+                  })
+                }
                 onDelete={() => deleteClient(client.id)}
                 onQuickView={() => setSelectedClient(client)}
-                isDark={isDark}
+                colors={colors}
               />
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        <div className={`rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
+        <div
+          className="rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
+          style={{ backgroundColor: colors.elementBg }}
+        >
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-              Showing {(page - 1) * limit + 1} - {Math.min(page * limit, total)} of {total}
+            <div className="text-sm" style={{ color: colors.textSecondary }}>
+              Showing {(page - 1) * limit + 1} - {Math.min(page * limit, total)}{" "}
+              of {total}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -278,14 +391,23 @@ export default function ClientsList() {
                   if (page > 1) fetchClients(page - 1, q);
                 }}
                 disabled={page <= 1}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${page <= 1
-                  ? isDark ? "bg-gray-700 text-gray-500 cursor-not-allowed" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-300"
-                  } shadow`}
+                className="px-4 py-2 rounded-lg font-medium transition-all shadow"
+                style={{
+                  backgroundColor:
+                    page <= 1 ? colors.hoverBg : colors.elementBg,
+                  color: page <= 1 ? colors.textSecondary : colors.textPrimary,
+                  border: `1px solid ${colors.border}`,
+                }}
               >
                 Previous
               </button>
-              <div className={`px-4 py-2 rounded-lg font-medium ${isDark ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-700"}`}>
+              <div
+                className="px-4 py-2 rounded-lg font-medium"
+                style={{
+                  backgroundColor: colors.elementBg,
+                  color: colors.textPrimary,
+                }}
+              >
                 {page} / {totalPages}
               </div>
               <button
@@ -293,10 +415,16 @@ export default function ClientsList() {
                   if (page < totalPages) fetchClients(page + 1, q);
                 }}
                 disabled={page >= totalPages}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${page >= totalPages
-                  ? isDark ? "bg-gray-700 text-gray-500 cursor-not-allowed" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : isDark ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-300"
-                  } shadow`}
+                className="px-4 py-2 rounded-lg font-medium transition-all shadow"
+                style={{
+                  backgroundColor:
+                    page >= totalPages ? colors.hoverBg : colors.elementBg,
+                  color:
+                    page >= totalPages
+                      ? colors.textSecondary
+                      : colors.textPrimary,
+                  border: `1px solid ${colors.border}`,
+                }}
               >
                 Next
               </button>
@@ -311,7 +439,7 @@ export default function ClientsList() {
             onClose={() => setSelectedClient(null)}
             navigate={navigate}
             deleteClient={deleteClient}
-            isDark={isDark}
+            colors={colors}
           />
         )}
       </div>
@@ -319,19 +447,34 @@ export default function ClientsList() {
   );
 }
 
-function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
+function ClientCard({ client, onView, onEdit, onDelete, onQuickView, colors }) {
+  const isDark = colors.layoutBg === "#020617";
+
   return (
-    <div className={`rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-2xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
+    <div
+      className="rounded-2xl shadow-lg overflow-hidden transition-all hover:shadow-2xl"
+      style={{ backgroundColor: colors.elementBg }}
+    >
       <div className="flex flex-col md:flex-row">
         {/* Vehicle Image */}
-        <div className="relative flex-shrink-0 h-48 overflow-hidden cursor-pointer md:w-64 md:h-auto group" onClick={onQuickView}>
+        <div
+          className="relative flex-shrink-0 h-48 overflow-hidden cursor-pointer md:w-64 md:h-auto group"
+          onClick={onQuickView}
+        >
           <img
-            src={client.carImage || `https://via.placeholder.com/400x300?text=${encodeURIComponent(client.vehicleMake)}+${encodeURIComponent(client.vehicleModel)}`}
+            src={
+              client.carImage ||
+              `https://via.placeholder.com/400x300?text=${encodeURIComponent(
+                client.vehicleMake
+              )}+${encodeURIComponent(client.vehicleModel)}`
+            }
             alt="Vehicle"
             className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(client.vehicleMake)}+${encodeURIComponent(client.vehicleModel)}`;
+              e.target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(
+                client.vehicleMake
+              )}+${encodeURIComponent(client.vehicleModel)}`;
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent md:bg-gradient-to-t md:from-black/60 md:via-transparent"></div>
@@ -347,37 +490,76 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
                 {client.fullName?.charAt(0)?.toUpperCase() || "C"}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className={`font-bold text-xl truncate ${isDark ? "text-white" : "text-gray-900"}`}>{client.fullName}</h3>
+                <h3
+                  className="font-bold text-xl truncate"
+                  style={{ color: colors.textPrimary }}
+                >
+                  {client.fullName}
+                </h3>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>Active</span>
+                  <span
+                    className="text-xs"
+                    style={{ color: colors.textSecondary }}
+                  >
+                    Active
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Vehicle Details */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className={`flex items-center gap-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}>
-                <FaCar size={16} className={isDark ? "text-blue-400" : "text-blue-600"} />
-                <span className="text-sm font-semibold">{client.vehicleMake} {client.vehicleModel}</span>
+              <div
+                className="flex items-center gap-2"
+                style={{ color: colors.textSecondary }}
+              >
+                <FaCar
+                  size={16}
+                  style={{ color: isDark ? "#60A5FA" : "#2563EB" }}
+                />
+                <span className="text-sm font-semibold">
+                  {client.vehicleMake} {client.vehicleModel}
+                </span>
               </div>
-              <div className={`flex items-center gap-2 text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+              <div
+                className="flex items-center gap-2 text-sm"
+                style={{ color: colors.textSecondary }}
+              >
                 <FaCar size={14} />
                 <span>Year: {client.vehicleYear}</span>
               </div>
-              <div className={`flex items-center gap-2 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-                <FiPhone size={14} className={isDark ? "text-blue-400" : "text-blue-600"} />
+              <div
+                className="flex items-center gap-2 text-sm"
+                style={{ color: colors.textSecondary }}
+              >
+                <FiPhone
+                  size={14}
+                  style={{ color: isDark ? "#60A5FA" : "#2563EB" }}
+                />
                 <span className="truncate">{client.phone}</span>
               </div>
-              <div className={`flex items-center gap-2 text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-                <FiMail size={14} className={isDark ? "text-purple-400" : "text-purple-600"} />
+              <div
+                className="flex items-center gap-2 text-sm"
+                style={{ color: colors.textSecondary }}
+              >
+                <FiMail
+                  size={14}
+                  style={{ color: isDark ? "#A78BFA" : "#9333EA" }}
+                />
                 <span className="truncate">{client.email}</span>
               </div>
             </div>
 
             {/* Registration Number */}
             <div>
-              <span className={`inline-block px-4 py-2 rounded-lg font-mono font-bold text-sm ${isDark ? "bg-gray-700 text-yellow-400" : "bg-gray-100 text-gray-900"}`}>
+              <span
+                className="inline-block px-4 py-2 rounded-lg font-mono font-bold text-sm"
+                style={{
+                  backgroundColor: isDark ? "#1E293B" : "#F3F4F6",
+                  color: isDark ? "#FCD34D" : "#1F2937",
+                }}
+              >
                 {client.regNumber}
               </span>
             </div>
@@ -387,7 +569,12 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
           <div className="flex gap-2 md:flex-col md:gap-3">
             <button
               onClick={onView}
-              className={`flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${isDark ? "hover:bg-blue-900/30 text-blue-400 border border-blue-800" : "hover:bg-blue-50 text-blue-600 border border-blue-200"}`}
+              className="flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 border"
+              style={{
+                backgroundColor: isDark ? "rgba(59, 130, 246, 0.1)" : "#EFF6FF",
+                color: isDark ? "#60A5FA" : "#2563EB",
+                borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#DBEAFE",
+              }}
               title="View Details"
             >
               <FiEye size={20} />
@@ -395,7 +582,12 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
             </button>
             <button
               onClick={onEdit}
-              className={`flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${isDark ? "hover:bg-purple-900/30 text-purple-400 border border-purple-800" : "hover:bg-purple-50 text-purple-600 border border-purple-200"}`}
+              className="flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 border"
+              style={{
+                backgroundColor: isDark ? "rgba(168, 85, 247, 0.1)" : "#F3E8FF",
+                color: isDark ? "#A78BFA" : "#9333EA",
+                borderColor: isDark ? "rgba(168, 85, 247, 0.3)" : "#E9D5FF",
+              }}
               title="Edit Client"
             >
               <FiEdit size={20} />
@@ -403,11 +595,18 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
             </button>
             <button
               onClick={() => {
-                if (window.confirm("Are you sure you want to delete this client?")) {
+                if (
+                  window.confirm("Are you sure you want to delete this client?")
+                ) {
                   onDelete();
                 }
               }}
-              className={`flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 ${isDark ? "hover:bg-red-900/30 text-red-400 border border-red-800" : "hover:bg-red-50 text-red-600 border border-red-200"}`}
+              className="flex-1 md:flex-none p-3 rounded-xl transition-all flex items-center justify-center gap-2 border"
+              style={{
+                backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEE2E2",
+                color: isDark ? "#F87171" : "#DC2626",
+                borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
+              }}
               title="Delete Client"
             >
               <FiTrash2 size={20} />
@@ -420,15 +619,32 @@ function ClientCard({ client, onView, onEdit, onDelete, onQuickView, isDark }) {
   );
 }
 
-function StatCard({ title, value, icon, gradient, isDark }) {
+function StatCard({ title, value, icon, gradient, colors }) {
+  const isDark = colors.layoutBg === "#020617";
+
   return (
-    <div className={`rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-800" : "bg-white"}`}>
+    <div
+      className="rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
+      style={{ backgroundColor: colors.elementBg }}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className={`text-sm font-medium mb-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>{title}</p>
-          <p className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{value}</p>
+          <p
+            className="text-sm font-medium mb-1"
+            style={{ color: colors.textSecondary }}
+          >
+            {title}
+          </p>
+          <p
+            className="text-3xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            {value}
+          </p>
         </div>
-        <div className={`w-14 h-14 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110`}>
+        <div
+          className={`w-14 h-14 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110`}
+        >
           <div className="text-white">{icon}</div>
         </div>
       </div>
@@ -436,12 +652,25 @@ function StatCard({ title, value, icon, gradient, isDark }) {
   );
 }
 
-function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
+function ClientModal({ client, onClose, navigate, deleteClient, colors }) {
+  const isDark = colors.layoutBg === "#020617";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className={`rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col ${isDark ? "bg-gray-800" : "bg-white"} transform transition-all duration-300 scale-95 animate-scaleIn`}>
+      <div
+        className="rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        style={{ backgroundColor: colors.elementBg }}
+      >
         {/* Header */}
-        <div className={`p-6 border-b flex items-center justify-between ${isDark ? "border-gray-700 bg-gradient-to-r from-blue-900/50 to-purple-900/50" : "border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600"}`}>
+        <div
+          className="p-6 border-b flex items-center justify-between"
+          style={{
+            background: isDark
+              ? "linear-gradient(to right, rgba(30, 58, 138, 0.5), rgba(124, 58, 237, 0.5))"
+              : "linear-gradient(to right, #2563eb, #9333ea)",
+            borderColor: colors.border,
+          }}
+        >
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-12 h-12 transition-transform duration-300 bg-white/20 backdrop-blur-sm rounded-xl hover:scale-110">
               <FaCar className="text-white" size={24} />
@@ -451,7 +680,10 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
               <p className="text-sm text-white/80">Complete information</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 transition-all text-white/80 hover:text-white hover:bg-white/20 rounded-xl">
+          <button
+            onClick={onClose}
+            className="p-2 transition-all text-white/80 hover:text-white hover:bg-white/20 rounded-xl"
+          >
             <FiX size={24} />
           </button>
         </div>
@@ -460,22 +692,41 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
             {/* Vehicle Image */}
-            <div className={`rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl ${isDark ? "bg-gray-700" : "bg-gray-100"}`}>
+            <div
+              className="rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl"
+              style={{ backgroundColor: isDark ? "#1E293B" : "#F3F4F6" }}
+            >
               <img
-                src={client.carImage || `https://via.placeholder.com/600x300?text=${encodeURIComponent(client.vehicleMake)}+${encodeURIComponent(client.vehicleModel)}`}
+                src={
+                  client.carImage ||
+                  `https://via.placeholder.com/600x300?text=${encodeURIComponent(
+                    client.vehicleMake
+                  )}+${encodeURIComponent(client.vehicleModel)}`
+                }
                 alt="Vehicle"
                 className="object-contain w-full h-48"
               />
             </div>
 
             {/* Client Info */}
-            <div className={`flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-50"}`}>
+            <div
+              className="flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 hover:shadow-md"
+              style={{ backgroundColor: isDark ? "#1E293B" : "#F9FAFB" }}
+            >
               <div className="flex items-center justify-center w-16 h-16 text-2xl font-bold text-white transition-transform duration-300 shadow-lg rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 hover:scale-110">
                 {client.fullName?.charAt(0)?.toUpperCase() || "C"}
               </div>
               <div>
-                <h4 className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>{client.fullName}</h4>
-                <p className={`flex items-center gap-1 mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                <h4
+                  className="text-xl font-bold"
+                  style={{ color: colors.textPrimary }}
+                >
+                  {client.fullName}
+                </h4>
+                <p
+                  className="flex items-center gap-1 mt-1"
+                  style={{ color: colors.textSecondary }}
+                >
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                   Active Client
                 </p>
@@ -484,18 +735,54 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
 
             {/* Details Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoItem icon={<FiPhone />} label="Phone" value={client.phone} isDark={isDark} />
-              <InfoItem icon={<FiMail />} label="Email" value={client.email} isDark={isDark} />
-              <InfoItem icon={<FaCar />} label="Vehicle" value={`${client.vehicleMake} ${client.vehicleModel}`} isDark={isDark} />
-              <InfoItem icon={<FaCar />} label="Year" value={client.vehicleYear} isDark={isDark} />
-              <InfoItem icon={<FiCreditCard />} label="Reg No." value={client.regNumber} isDark={isDark} />
-              <InfoItem icon={<FiHash />} label="VIN" value={client.vin || "N/A"} isDark={isDark} />
+              <InfoItem
+                icon={<FiPhone />}
+                label="Phone"
+                value={client.phone}
+                colors={colors}
+              />
+              <InfoItem
+                icon={<FiMail />}
+                label="Email"
+                value={client.email}
+                colors={colors}
+              />
+              <InfoItem
+                icon={<FaCar />}
+                label="Vehicle"
+                value={`${client.vehicleMake} ${client.vehicleModel}`}
+                colors={colors}
+              />
+              <InfoItem
+                icon={<FaCar />}
+                label="Year"
+                value={client.vehicleYear}
+                colors={colors}
+              />
+              <InfoItem
+                icon={<FiCreditCard />}
+                label="Reg No."
+                value={client.regNumber}
+                colors={colors}
+              />
+              <InfoItem
+                icon={<FiHash />}
+                label="VIN"
+                value={client.vin || "N/A"}
+                colors={colors}
+              />
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className={`p-6 border-t ${isDark ? "border-gray-700 bg-gray-750" : "border-gray-200 bg-gray-50"}`}>
+        <div
+          className="p-6 border-t"
+          style={{
+            backgroundColor: isDark ? "#1E293B" : "#F9FAFB",
+            borderColor: colors.border,
+          }}
+        >
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => {
@@ -509,10 +796,17 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
             </button>
             <button
               onClick={() => {
-                navigate(`/clients/${client.id}/edit`, { state: { clientData: client } });
+                navigate(`/clients/${client.id}/edit`, {
+                  state: { clientData: client },
+                });
                 onClose();
               }}
-              className={`py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl font-semibold ${isDark ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-white hover:bg-gray-50 text-purple-600 border-2 border-purple-600"}`}
+              className="py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl font-semibold"
+              style={{
+                backgroundColor: isDark ? "#9333EA" : "#FFFFFF",
+                color: isDark ? "#FFFFFF" : "#9333EA",
+                border: `2px solid ${isDark ? "#9333EA" : "#9333EA"}`,
+              }}
             >
               <FiEdit size={18} />
               Edit
@@ -524,7 +818,12 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
                   onClose();
                 }
               }}
-              className={`py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl font-semibold ${isDark ? "bg-red-600 hover:bg-red-700 text-white" : "bg-white hover:bg-red-50 text-red-600 border-2 border-red-600"}`}
+              className="py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl font-semibold"
+              style={{
+                backgroundColor: isDark ? "#DC2626" : "#FFFFFF",
+                color: isDark ? "#FFFFFF" : "#DC2626",
+                border: `2px solid ${isDark ? "#DC2626" : "#DC2626"}`,
+              }}
             >
               <FiTrash2 size={18} />
               Delete
@@ -534,37 +833,46 @@ function ClientModal({ client, onClose, navigate, deleteClient, isDark }) {
       </div>
 
       <style jsx>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
-        
-        @keyframes scaleIn {
+        @keyframes fadeIn {
           from {
-            transform: scale(0.95);
             opacity: 0;
           }
           to {
-            transform: scale(1);
             opacity: 1;
           }
         }
-        
-        .animate-scaleIn {
-          animation: scaleIn 0.3s ease-out forwards;
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
         }
       `}</style>
     </div>
   );
 }
 
-function InfoItem({ icon, label, value, isDark }) {
+function InfoItem({ icon, label, value, colors }) {
+  const isDark = colors.layoutBg === "#020617";
+
   return (
-    <div className={`flex items-start gap-3 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-white"}`}>
+    <div
+      className="flex items-start gap-3 p-4 rounded-xl transition-all duration-300 hover:shadow-md"
+      style={{ backgroundColor: colors.elementBg }}
+    >
       <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white transition-transform duration-300 shadow rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 hover:scale-110">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-xs font-medium mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>{label}</p>
-        <p className={`font-semibold truncate ${isDark ? "text-white" : "text-gray-900"}`}>{value}</p>
+        <p
+          className="text-xs font-medium mb-1"
+          style={{ color: colors.textSecondary }}
+        >
+          {label}
+        </p>
+        <p
+          className="font-semibold truncate"
+          style={{ color: colors.textPrimary }}
+        >
+          {value}
+        </p>
       </div>
     </div>
   );

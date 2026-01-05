@@ -1,8 +1,8 @@
-// server/routes/payments.js
 import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import prisma from "../models/prismaClient.js";
+import { PlanType } from "@prisma/client";
 
 const router = express.Router();
 
@@ -14,20 +14,32 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-console.log("Using Razorpay Key:", process.env.RAZORPAY_KEY_ID);
-console.log("Loaded Plan IDs:", {
-  BASIC: process.env.RAZORPAY_PLAN_CAR_BASIC,
-  STANDARD: process.env.RAZORPAY_PLAN_CAR_STANDARD,
-  PREMIUM: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
-});
-
 /* ----------------------------------------------
-   Config helpers
+   🔹 CONFIG
 ---------------------------------------------- */
-const isProduction = process.env.NODE_ENV === "production";
 const useTrial = (process.env.USE_TRIAL || "true").toLowerCase() === "true";
 
-// Helper to add interval (monthly/yearly) to a Date
+/* ----------------------------------------------
+   🔹 PLAN MAPPINGS
+---------------------------------------------- */
+
+// Razorpay Plan IDs (ENV)
+const RAZORPAY_PLAN_MAP = {
+  basic: process.env.RAZORPAY_PLAN_CAR_BASIC,
+  standard: process.env.RAZORPAY_PLAN_CAR_STANDARD,
+  premium: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
+};
+
+// Prisma Enum mapping
+const PRISMA_PLAN_MAP = {
+  basic: "BASIC",
+  standard: "STANDARD",
+  premium: "PREMIUM",
+};
+
+/* ----------------------------------------------
+   🔹 DATE UTILS
+---------------------------------------------- */
 function addInterval(date, billingPeriod) {
   const d = new Date(date);
   if (billingPeriod === "monthly") {
@@ -38,87 +50,90 @@ function addInterval(date, billingPeriod) {
   return d;
 }
 
-
-
+/* =========================================================
+   1️⃣ CREATE SUBSCRIPTION
+========================================================= */
 router.post("/create-subscription", async (req, res) => {
   try {
     const { plan, billingPeriod, customer } = req.body || {};
 
-    // Basic validation
-    if (!plan || !plan.name || typeof plan.numericPrice !== "number") {
+    /* ---------------- VALIDATION ---------------- */
+    if (!plan?.name || typeof plan.numericPrice !== "number") {
       return res.status(400).json({
         success: false,
-        error: "Invalid 'plan' object. Expect { name, numericPrice }",
+        error: "Invalid plan data",
       });
     }
 
-    if (!billingPeriod || !["monthly", "yearly"].includes(billingPeriod)) {
+    if (!["monthly", "yearly"].includes(billingPeriod)) {
       return res.status(400).json({
         success: false,
-        error: "Invalid 'billingPeriod'. Use 'monthly' or 'yearly'.",
+        error: "Invalid billing period",
       });
     }
 
-    if (!customer || !customer.email || !customer.name || !customer.phone) {
+    if (!customer?.email || !customer?.name || !customer?.phone) {
       return res.status(400).json({
         success: false,
-        error: "Invalid 'customer' object. Expect { name, email, phone }",
+        error: "Invalid customer data",
       });
     }
 
-    // Razorpay keys check
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       return res.status(500).json({
         success: false,
-        error: "Razorpay API keys missing",
+        error: "Razorpay keys missing",
       });
     }
 
-    // Plan mapping
-    const rawName = (plan?.name || "").toLowerCase().trim().replace(/\s+/g, "");
-    const planMapping = {
-      basic: process.env.RAZORPAY_PLAN_CAR_BASIC,
-      standard: process.env.RAZORPAY_PLAN_CAR_STANDARD,
-      premium: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
-    };
+    /* ---------------- PLAN NORMALIZATION ---------------- */
+    const rawPlanName = plan.name.toLowerCase().trim().replace(/\s+/g, "");
 
-    const planID = planMapping[rawName];
-    if (!planID) {
+    const razorpayPlanId = RAZORPAY_PLAN_MAP[rawPlanName];
+    const prismaPlan = PRISMA_PLAN_MAP[rawPlanName];
+
+    if (!razorpayPlanId || !prismaPlan) {
       return res.status(400).json({
         success: false,
-        error: `Invalid plan name '${plan.name}'`,
+        error: `Invalid plan name: ${plan.name}`,
+      });
+    }
+    const prismaPlanMap = {
+      basic: PlanType.BASIC,
+      standard: PlanType.STANDARD,
+      premium: PlanType.PREMIUM,
+    };
+
+    // const prismaPlan = prismaPlanMap[rawName];
+
+    if (!prismaPlan) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid plan enum '${plan.name}'`,
       });
     }
 
-    // Check if user already has a subscription
-    const existing = await prisma.payment.findMany({
+    /* ---------------- CHECK UPGRADE ---------------- */
+    const existingPayments = await prisma.payment.findMany({
       where: { email: customer.email.toLowerCase() },
     });
 
-    const isUpgrade = existing.length > 0;
-    const useTrial = true;
+    const isUpgrade = existingPayments.length > 0;
 
-    // ---------------------------
-    // 🔥 Trial = start in 10 minutes
-    // ---------------------------
-    let startAt = undefined;
-
+    /* ---------------- TRIAL LOGIC ---------------- */
+    let startAt;
     if (!isUpgrade && useTrial) {
-      startAt = Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000);
+      startAt = Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000);
     }
 
-    // ---------------------------
-    // 🔥 Build Subscription Payload
-    // ---------------------------
+    /* ---------------- RAZORPAY SUBSCRIPTION ---------------- */
+    const totalCount = billingPeriod === "monthly" ? 12 : 1;
+
     const subscriptionPayload = {
-      plan_id: planID,
-      total_count: 12,
+      plan_id: razorpayPlanId,
+      total_count: totalCount,
       quantity: 1,
       customer_notify: 1,
-
-      // ❌ MUST REMOVE "customer" COMPLETELY
-      // customer: {},  ← remove
-
       notes: {
         planName: plan.name,
         customerEmail: customer.email,
@@ -128,32 +143,32 @@ router.post("/create-subscription", async (req, res) => {
 
     if (startAt) subscriptionPayload.start_at = startAt;
 
-    // ---------------------------
-    // Create subscription
-    // ---------------------------
     let subscription;
     try {
       subscription = await razorpay.subscriptions.create(subscriptionPayload);
     } catch (err) {
-      console.error("Razorpay subscription error:", err);
+      console.error("Razorpay error:", err);
       return res.status(502).json({
         success: false,
-        error: err?.error?.description || "Razorpay error",
+        error: err?.error?.description || "Razorpay subscription failed",
       });
     }
 
-    // Save to DB
-    let created = await prisma.payment.create({
+    /* ---------------- SAVE TO DB ---------------- */
+    const payment = await prisma.payment.create({
       data: {
         customerName: customer.name,
         companyName: customer.companyName || null,
         email: customer.email.toLowerCase(),
         phone: customer.phone,
-        plan: plan.name,
+
+        plan: prismaPlan, // ✅ ENUM FIX
         billingPeriod,
-        amount: plan.numericPrice,
+        amount: Number(plan.numericPrice),
+
         referralCode: customer.referenceCode || null,
         gstNumber: customer.gstNumber || null,
+
         subscriptionId: subscription.id,
         isTrial: !!startAt,
         status: startAt ? "TRIAL" : "PENDING",
@@ -168,65 +183,87 @@ router.post("/create-subscription", async (req, res) => {
       razorpayKey: process.env.RAZORPAY_KEY_ID,
       isTrial: !!startAt,
       trialEndDate: startAt ? new Date(startAt * 1000) : null,
-      paymentRecordId: created.id,
+      paymentRecordId: payment.id,
     });
-  } catch (e) {
-    console.error("Unexpected Error:", e);
-    return res.status(500).json({ success: false, error: e.message });
+  } catch (err) {
+    console.error("CREATE SUBSCRIPTION ERROR →", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Internal Server Error",
+    });
   }
 });
 
-
-
-
-/* ----------------------------------------------
-   2️⃣ VERIFY PAYMENT (for localhost/dev)
-   - Use this to flip records to ACTIVE in dev if you cannot receive webhooks locally.
----------------------------------------------- */
+/* =========================================================
+   2️⃣ VERIFY PAYMENT (LOCALHOST / DEV)
+========================================================= */
 router.post("/verify-payment-localhost", async (req, res) => {
   try {
     const { subscriptionId, paymentId } = req.body;
+
     if (!subscriptionId || !paymentId) {
-      return res.status(400).json({ success: false, error: "subscriptionId & paymentId required" });
+      return res.status(400).json({
+        success: false,
+        error: "subscriptionId & paymentId required",
+      });
     }
 
-    // Fetch subscription to check status
     const subscription = await razorpay.subscriptions.fetch(subscriptionId);
-    console.log("Fetched subscription for verify:", subscriptionId, "status:", subscription.status);
 
     if (subscription.status === "active") {
-      // Use findUnique because subscriptionId is unique in DB schema
       const record = await prisma.payment.findUnique({
         where: { subscriptionId },
       });
 
       if (!record) {
-        return res.status(404).json({ success: false, error: "Subscription not found in DB" });
+        return res.status(404).json({
+          success: false,
+          error: "Subscription not found",
+        });
       }
 
-      // Compute next billing date from now (first successful charge date)
-      const firstChargeAt = new Date();
-      const nextBillingDate = addInterval(firstChargeAt, record.billingPeriod);
+      const paidAt = new Date();
+      const nextBillingDate = addInterval(paidAt, record.billingPeriod);
 
-      const updated = await prisma.payment.update({
-        where: { subscriptionId },
-        data: {
-          status: "ACTIVE",
-          isTrial: false,
-          paidAt: firstChargeAt,
-          paymentId: paymentId,
-          nextBillingDate: nextBillingDate,
-          expiryDate: nextBillingDate,
-        },
+     const updated = await prisma.$transaction(async (tx) => {
+        const payment = await tx.payment.update({
+          where: { subscriptionId },
+          data: {
+            status: "ACTIVE",
+            isTrial: false,
+            paidAt,
+            paymentId,
+            nextBillingDate,
+            expiryDate: nextBillingDate,
+          },
+        });
+
+        // 🔥 UPDATE USER PLAN
+        await tx.user.update({
+          where: { email: payment.email },
+          data: {
+            plan: payment.plan,
+            planExpiry: nextBillingDate,
+          },
+        });
+
+        return payment;
       });
 
-      return res.json({ success: true, message: "Payment verified and activated", updated });
+
+      return res.json({ success: true, updated });
     }
 
-    return res.json({ success: false, error: "Subscription not active yet" });
+    return res.json({
+      success: false,
+      error: "Subscription not active yet",
+    });
   } catch (err) {
     console.error("verify-payment-localhost error:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
   }
 });
 
@@ -241,11 +278,12 @@ router.post("/razorpay-webhook", async (req, res) => {
   console.log("RAW BODY RECEIVED >>>", req.body);
   console.log("=================================================\n");
 
-
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
-      return res.status(500).json({ success: false, error: "Webhook secret missing" });
+      return res
+        .status(500)
+        .json({ success: false, error: "Webhook secret missing" });
     }
 
     // 🔥 Always raw buffer
@@ -254,7 +292,9 @@ router.post("/razorpay-webhook", async (req, res) => {
     const signature = req.headers["x-razorpay-signature"];
     if (!signature) {
       console.error("Missing signature");
-      return res.status(400).json({ success: false, error: "Missing signature" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing signature" });
     }
 
     // Verify signature
@@ -265,7 +305,9 @@ router.post("/razorpay-webhook", async (req, res) => {
 
     if (expected !== signature) {
       console.error("❌ Invalid signature");
-      return res.status(400).json({ success: false, error: "Invalid signature" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid signature" });
     }
 
     // Parse raw payload
@@ -372,47 +414,42 @@ router.post("/razorpay-webhook", async (req, res) => {
     return res.status(500).json({ success: false, error: err.message });
   }
 });
-
-
-/* ----------------------------------------------
-   4️⃣ FETCH USER PLAN (ACTIVE)
----------------------------------------------- */
+/* =========================================================
+   3️⃣ FETCH USER PLAN
+========================================================= */
 router.get("/user-plan/:email", async (req, res) => {
   try {
-    let { email } = req.params;
+    const email = req.params.email?.toLowerCase().trim();
+
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const allPayments = await prisma.payment.findMany({
-      where: { email: normalizedEmail },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (allPayments.length === 0) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "No payment records found for this user",
+        message: "Email is required",
       });
     }
 
-    const currentPlan = allPayments[0];
-    const previousPlan = allPayments.length > 1 ? allPayments[1] : null;
+    const payments = await prisma.payment.findMany({
+      where: { email },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!payments.length) {
+      return res.json({
+        success: false,
+        message: "No payment records found",
+      });
+    }
 
     return res.json({
       success: true,
-      currentPlan,
-      previousPlan,
-      history: allPayments   
+      currentPlan: payments[0],
+      previousPlan: payments[1] || null,
+      history: payments,
     });
-
   } catch (err) {
     return res.status(500).json({
       success: false,
-      error: "Error fetching plan",
-      details: err.message,
+      error: err.message,
     });
   }
 });

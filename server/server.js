@@ -16,28 +16,43 @@ import ocrRoutes from "./routes/OCRRoutes.js";
 import paymentRoutes from "./routes/payments.js";
 import userRoutes from "./routes/userRoutes.js";
 
-import dashboardRoutes from './routes/dashboardRoutes.js';
+// import dashboardRoutes from "./routes/dashboardRoutes.js";
+import carDashboardRoutes from "./routes/carDashboardRoutes.js";
+
 import referralRoutes from "./routes/referral.js";
-
-
 
 //washing crm import statements
 import washingClientRoutes from "./routes/washingRoutes.js";
+import washingServiceRoutes from "./routes/washingserviceRoutes.js";
+import washBillingRoutes from "./routes/washInvoiceRoutes.js";
+import teamsRoutes from "./routes/teamsRoutes.js"; // adjust path if needed
+
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
 import bikeServiceRoutes from "./routes/bikeServiceRoutes.js";
 import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
+import carStaffRoutes from "./routes/carStaffRoutes.js";
+import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
+import bikeStaffSalaryRoutes from "./routes/BikeStaffSalaryRoutes.js";
+import bikeMetaRoutes from "./routes/bikeMetaRoutes.js";
+import { protect } from "./middleware/authMiddleware.js";
+
 
 import carRoutes from "./routes/carRoutes.js";
+import staffAuthRoutes from "./routes/staffAuthRoutes.js"
+import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js"
+import serviceApprovalRoutes from "./routes/serviceApprovalRoutes.js";
+import whatsappRoutes from "./routes/whatsappRoutes.js";
+import whatsappWebhookRoutes from "./routes/whatsappWebhookRoutes.js";
+
+
+
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
-
 // Load environment variables
 dotenv.config();
-
-
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,7 +66,8 @@ const allowedOrigins = [
   "https://themotordesk.com",
   "https://www.themotordesk.com",
 
-  "https://tm04xn0p-5173.inc1.devtunnels.ms"
+  "https://tm04xn0p-5173.inc1.devtunnels.ms",
+  "https://86w0932d-5173.inc1.devtunnels.ms",
 ];
 
 app.use(
@@ -69,14 +85,12 @@ app.use(
   })
 );
 
-
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
   express.raw({ type: "application/json" })
 );
-
-
+app.use("/api/whatsapp", whatsappWebhookRoutes);
 
 /* -----------------------------------------------------
    🧩 Middleware Configuration
@@ -84,9 +98,6 @@ app.post(
 
 // Security HTTP headers
 app.use(helmet());
-
-
- 
 
 // Logging (Morgan)
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
@@ -118,19 +129,28 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 app.use("/uploads", express.static("uploads"));
-
 
 // bike routes
 app.use("/api/bikes", bikeRoutes);
 app.use("/api/bike-services", bikeServiceRoutes);
-app.use("/api/bike-invoices", bikeInvoiceRoutes);
+app.use("/api/bike-invoices", protect, bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
+app.use("/api/bike-ocr", bikeOCRRoutes);
+app.use("/api/bike-staff-salary", protect, bikeStaffSalaryRoutes);
+app.use("/api/bikes-meta", bikeMetaRoutes);
+
+
 
 //car company names and models
 app.use("/api/cars", carRoutes);
+
+app.use("/api/car-staff", carStaffRoutes);
+app.use("/api/staff-auth", staffAuthRoutes);
+app.use("/api/carstaff-salary", carstaffSalaryRoutes);
+
+app.use("/api", serviceApprovalRoutes);
+app.use("/api", whatsappRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes
@@ -140,19 +160,20 @@ app.use("/api/auth", authRoutes); // 🔑 Auth routes (login/register/profile)
 app.use("/api/clients", clientRoutes); // 👥 Client routes
 app.use("/api/services", serviceRoutes); // 🧰 Service routes
 
-
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
 
 app.use("/api/ocr", ocrRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+// app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/dashboard", carDashboardRoutes);
 app.use("/api/referral", referralRoutes);
-
 
 //washing crm related routes
 app.use("/api/washing-clients", washingClientRoutes);
-
+app.use("/api/washing-services", washingServiceRoutes);
+app.use("/api/wash-billing", washBillingRoutes);
+app.use("/api/teams", teamsRoutes);
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

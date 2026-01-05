@@ -13,11 +13,16 @@ enum CrmType {
   WASH
 }
 
-//⭐⭐  ADD PLAN ENUM
 enum PlanType {
   BASIC
   STANDARD
   PREMIUM
+}
+
+enum SalaryStatus {
+  UNPAID
+  PAID
+  HOLD
 }
 
 enum ServiceStatus {
@@ -27,28 +32,32 @@ enum ServiceStatus {
   CANCELLED
 }
 
+enum UserRole {
+  USER
+  TEAM_MEMBER
+}
+
 model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  username    String?   @unique
-  password    String
+  id           Int     @id @default(autoincrement())
+  email        String  @unique
+  username     String? @unique
+  password     String
+  profileImage String?
+  phone        String?
+  companyName  String?
+
+  // OWNER only
   role        String    @default("user")
   allowedCrms CrmType[] @default([])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  profileImage String?
-  phone        String?
-  companyName  String?
-
-  //⭐⭐ Subscription fields
+  // Subscription fields
   plan       PlanType  @default(BASIC)
   planExpiry DateTime?
 
-  //⭐⭐ Link to Payment (subscriptions)
   payments Payment[]
 
-  // Referral System
   myReferralCode   String  @unique
   referredByCode   String?
   referredByUserId Int?
@@ -56,14 +65,41 @@ model User {
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
-  clients        Client[]
-  invoices       Invoice[]
-  reminders      Reminder[]
-  ocrs           OcrRecord[]
-  bikes          Bike[]
-  bikeReminders  BikeReminder[]
+  // Car
+  clients          Client[]
+  invoices         Invoice[]
+  reminders        Reminder[]
+  ocrs             OcrRecord[]
+  staffMembers     CarStaff[]
+  carStaffLogins   CarStaffLogin[]
+  carStaffSalaries CarStaffSalary[]
+
+  //Bike
+  parentUserId          Int?
+  parentUser            User?           @relation("TeamUsers", fields: [parentUserId], references: [id])
+  teamUsers             User[]          @relation("TeamUsers")
+  ownedBikes            Bike[]          @relation("OwnerBikes")
+  createdBikes          Bike[]          @relation("CreatedBikes")
+  ownedBikeServices     BikeService[]   @relation("OwnerBikeServices")
+  createdBikeServices   BikeService[]   @relation("CreatedBikeServices")
+  ownedBikeInvoices     BikeInvoice[]   @relation("OwnerBikeInvoices")
+  createdBikeInvoices   BikeInvoice[]   @relation("CreatedBikeInvoices")
+  ownedBikeReminders    BikeReminder[]  @relation("OwnerBikeReminders")
+  createdBikeReminders  BikeReminder[]  @relation("CreatedBikeReminders")
+  ownedBikeOcrRecords   BikeOcrRecord[] @relation("OwnerBikeOcrRecords")
+  createdBikeOcrRecords BikeOcrRecord[] @relation("CreatedBikeOcrRecords")
+  bikeStaffs            BikeStaff[]
+  bikeTeams             BikeTeam[]
+
+  // washing 
   washingClients WashingClient[]
+  washTeamsOwned WashTeam[]      @relation("AdminWashTeams")
+  // Team member → belongs to one team
+  washTeamId     Int?
+  washTeamMember WashTeam?       @relation("TeamMember", fields: [washTeamId], references: [id])
 }
+
+//car db schemas
 
 model Client {
   id           Int      @id @default(autoincrement())
@@ -75,9 +111,9 @@ model Client {
   vehicleModel String
   vehicleYear  Int
   regNumber    String
-  vin          String?
-  fuel         String?
+  fuel         String? // ✅ ADD THIS
   seats        Int?
+  vin          String?
   carImage     String?
   adImage      String?
   staffPerson  String?
@@ -98,16 +134,31 @@ model Client {
   @@index([regNumber])
 }
 
+// schema.prisma
 model Service {
-  id           Int      @id @default(autoincrement())
-  date         DateTime
-  notes        String?
-  partsCost    Float?
-  partsGst     Float?
-  laborCost    Float?
-  laborGst     Float?
-  cost         Float?
-  status       String?
+  id               Int       @id @default(autoincrement())
+  date             DateTime
+  notes            String?
+  partsCost        Float?
+  partsGst         Float?
+  laborCost        Float?
+  laborGst         Float?
+  cost             Float?
+  status           String?
+  priority         String?   @default("Normal")
+  serviceInDate    DateTime?
+  serviceOutDate   DateTime?
+  expectedDelivery DateTime?
+  internalNotes    String?
+  assignedMechanic String?
+  advancePaid      Float?    @default(0)
+
+  // 🔹 APPROVAL WORKFLOW (NEW)
+  approvalStatus String    @default("PENDING")
+  approvalNote   String?
+  approvalAt     DateTime?
+  approvalSource String? // "whatsapp" | "web"
+
   clientId     Int
   categoryId   Int?
   subServiceId Int?
@@ -120,15 +171,9 @@ model Service {
   category   ServiceCategory? @relation(fields: [categoryId], references: [id])
   subService SubService?      @relation(fields: [subServiceId], references: [id])
 
-  createdAt                DateTime                @default(now())
-  updatedAt                DateTime                @updatedAt
-  washingClient            WashingClient?          @relation(fields: [washingClientId], references: [id])
-  washingClientId          Int?
-  washingServiceCategory   WashingServiceCategory? @relation(fields: [washingServiceCategoryId], references: [id])
-  washingServiceCategoryId Int?
-  washingSubService        WashingSubService?      @relation(fields: [washingSubServiceId], references: [id])
-  washingSubServiceId      Int?
-  washingServiceMedias     WashingServiceMedia[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  serviceCostItems ServiceCostItem[]
 }
 
 model ServiceMedia {
@@ -140,10 +185,8 @@ model ServiceMedia {
   serviceId Int
   service   Service @relation(fields: [serviceId], references: [id])
 
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime?       @updatedAt
-  washingService   WashingService? @relation(fields: [washingServiceId], references: [id])
-  washingServiceId Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model Invoice {
@@ -152,13 +195,6 @@ model Invoice {
 
   clientId Int
   userId   Int?
-
-  totalAmount Float
-
-  partsCost Float?
-  partsGst  Float?
-  laborCost Float?
-  laborGst  Float?
 
   tax        Float @default(0)
   discount   Float @default(0)
@@ -180,14 +216,53 @@ model Invoice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  services        Service[]
-  washingClient   WashingClient? @relation(fields: [washingClientId], references: [id])
-  washingClientId Int?
+  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  services         Service[]
+  washingClient    WashingClient?    @relation(fields: [washingClientId], references: [id])
+  washingClientId  Int?
+  invoiceCostItems InvoiceCostItem[]
 
   @@index([status])
   @@index([paymentMode])
+}
+
+model InvoiceCostItem {
+  id        Int @id @default(autoincrement())
+  invoiceId Int
+
+  type String // "part" | "labor"
+  name String
+
+  quantity  Int
+  unitPrice Float
+
+  cgstRate Float
+  sgstRate Float
+
+  totalCost Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model ServiceCostItem {
+  id        Int @id @default(autoincrement())
+  serviceId Int
+
+  type      String // "part" | "labor"
+  name      String
+  quantity  Int
+  unitPrice Float
+
+  cgstRate  Float?
+  sgstRate  Float?
+  totalCost Float
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 model Reminder {
@@ -204,27 +279,22 @@ model Reminder {
 }
 
 model ServiceCategory {
-  id                 Int                 @id @default(autoincrement())
-  name               String              @unique
-  subServices        SubService[]
-  services           Service[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  washingSubServices WashingSubService[]
-  washingServices    WashingService[]
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  subServices SubService[]
+  services    Service[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model SubService {
-  id                       Int                     @id @default(autoincrement())
-  name                     String
-  categoryId               Int?
-  category                 ServiceCategory?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  services                 Service[]
-  createdAt                DateTime                @default(now())
-  updatedAt                DateTime                @updatedAt
-  washingServiceCategory   WashingServiceCategory? @relation(fields: [washingServiceCategoryId], references: [id])
-  washingServiceCategoryId Int?
-  washingServices          WashingService[]
+  id         Int              @id @default(autoincrement())
+  name       String
+  categoryId Int?
+  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  services   Service[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 }
 
 model OcrRecord {
@@ -244,10 +314,99 @@ model OcrRecord {
   @@index([userId])
 }
 
+model CarStaff {
+  id Int @id @default(autoincrement())
+
+  // Owner relationship
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Basic staff info
+  name     String
+  role     String?
+  phone    String?
+  joinDate DateTime @default(now())
+  isActive Boolean  @default(true)
+
+  // Salary configuration (DEFAULT RULES)
+  baseSalary             Float   @default(0)
+  deductionPerLeave      Float   @default(0)
+  bonusDefault           Float   @default(0)
+  extraDeductionsDefault Float   @default(0)
+  includeInPayroll       Boolean @default(true)
+
+  // Relations
+  login            CarStaffLogin?
+  carStaffSalaries CarStaffSalary[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model CarStaffLogin {
+  id Int @id @default(autoincrement())
+
+  staffId Int
+  staff   CarStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  email    String  @unique
+  password String
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([staffId])
+  @@index([ownerId])
+}
+
+model CarStaffSalary {
+  id Int @id @default(autoincrement())
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  staffId Int
+  staff   CarStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  // Period
+  month Int // 1 - 12
+  year  Int
+
+  // Snapshot of salary rules (copied from staff at generation time)
+  baseSalary        Float
+  deductionPerLeave Float
+  bonus             Float
+  extraDeductions   Float
+
+  // Monthly data
+  leaves         Int
+  leaveDeduction Float
+
+  // Final computed value (LOCKED)
+  netSalary Float
+
+  // Payment status
+  status SalaryStatus @default(UNPAID)
+  paidAt DateTime?
+  paidBy Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([staffId, month, year])
+  @@index([ownerId])
+}
+
 model Payment {
   id String @id @default(cuid())
 
-  // ⭐⭐ Link to user
+  // Link to user
   userId Int?
   user   User? @relation(fields: [userId], references: [id])
 
@@ -257,7 +416,7 @@ model Payment {
   email        String?
   phone        String?
 
-  // ⭐⭐ Plan should be enum
+  // Plan should be enum
   plan          PlanType?
   billingPeriod String?
   amount        Float?
@@ -282,89 +441,11 @@ model Payment {
   updatedAt DateTime @updatedAt
 }
 
-//washhing crm client schema
-
-model WashingClient {
-  id               Int              @id @default(autoincrement())
-  fullName         String
-  phone            String
-  address          String?
-  vehicleMake      String
-  vehicleModel     String
-  mainImage        String?
-  additionalImages String[]
-  userId           Int?
-  createdAt        DateTime         @default(now())
-  user             User?            @relation(fields: [userId], references: [id])
-  services         Service[]
-  invoices         Invoice[]
-  washingServices  WashingService[]
-}
-
-model WashingServiceCategory {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  description String?
-
-  subServices SubService[]
-  services    Service[]
-}
-
-model WashingSubService {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
-
-  categoryId Int
-  category   ServiceCategory @relation(fields: [categoryId], references: [id])
-
-  services Service[]
-}
-
-model WashingService {
-  id   Int      @id @default(autoincrement())
-  date DateTime
-
-  status ServiceStatus @default(PENDING)
-
-  clientId Int
-  client   WashingClient @relation(fields: [clientId], references: [id])
-
-  categoryId Int
-  category   ServiceCategory @relation(fields: [categoryId], references: [id])
-
-  subServiceId Int?
-  subService   SubService? @relation(fields: [subServiceId], references: [id])
-
-  partsCost      Decimal @default(0) @db.Decimal(10, 2)
-  laborCost      Decimal @default(0) @db.Decimal(10, 2)
-  estimatedTotal Decimal @default(0) @db.Decimal(10, 2)
-
-  notes String?
-
-  media ServiceMedia[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([clientId])
-  @@index([categoryId])
-}
-
-model WashingServiceMedia {
-  id        Int     @id @default(autoincrement())
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
-
-  url      String
-  mimeType String?
-  fileName String?
-}
-
-//  Bike Tables
+// Bike Tables
 
 model Bike {
-  id        Int     @id @default(autoincrement())
+  id Int @id @default(autoincrement())
+
   ownerName String
   phone     String
   email     String?
@@ -386,20 +467,35 @@ model Bike {
   color        String?
   fuel         String?
   notes        String?
-  bikeServices BikeService[]
-  userId       Int?
-  user         User?         @relation(fields: [userId], references: [id])
 
-  createdAt     DateTime       @default(now())
-  bikeInvoices  BikeInvoice[]
-  bikeReminders BikeReminder[]
+  /**
+   * 🔐 OWNERSHIP (USER BASED)
+   */
+  ownerUserId Int
+  createdById Int
+
+  ownerUser User @relation("OwnerBikes", fields: [ownerUserId], references: [id])
+  createdBy User @relation("CreatedBikes", fields: [createdById], references: [id])
+
+  /**
+   * 🔗 RELATIONS
+   */
+  bikeServices   BikeService[]
+  bikeInvoices   BikeInvoice[]
+  bikeReminders  BikeReminder[]
+  bikeOcrRecords BikeOcrRecord[]
+
+  createdAt DateTime @default(now())
+
+  @@index([ownerUserId])
+  @@index([createdById])
 }
 
 model BikeService {
   id Int @id @default(autoincrement())
 
   clientId Int
-  client   Bike @relation(fields: [clientId], references: [id])
+  client   Bike @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   categoryId Int
   category   BikeServiceCategory @relation(fields: [categoryId], references: [id])
@@ -412,7 +508,6 @@ model BikeService {
 
   partsCost Float @default(0)
   partsGst  Float @default(0)
-
   laborCost Float @default(0)
   laborGst  Float @default(0)
 
@@ -422,9 +517,104 @@ model BikeService {
   invoiceId Int?
   invoice   BikeInvoice? @relation("InvoiceServices", fields: [invoiceId], references: [id])
 
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  ownerUserId Int
+  createdById Int
+
+  ownerUser User @relation("OwnerBikeServices", fields: [ownerUserId], references: [id])
+  createdBy User @relation("CreatedBikeServices", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   bikeServiceMedias BikeServiceMedia[]
+
+  @@index([ownerUserId])
+  @@index([createdById])
+  @@index([clientId])
+  @@index([invoiceId])
+}
+
+model BikeInvoice {
+  id            Int    @id @default(autoincrement())
+  invoiceNumber String @unique
+
+  bikeId    Int
+  bike      Bike    @relation(fields: [bikeId], references: [id])
+  vehicle   String?
+  partsCost Float   @default(0)
+  partsGst  Float   @default(0)
+  laborCost Float   @default(0)
+  laborGst  Float   @default(0)
+  tax       Float   @default(0)
+  discount  Float   @default(0)
+
+  grandTotal Float
+
+  paymentMode String?
+  status      String    @default("Pending")
+  paidAt      DateTime?
+  dueDate     DateTime?
+
+  ownerUserId Int
+  createdById Int
+
+  ownerUser User @relation("OwnerBikeInvoices", fields: [ownerUserId], references: [id])
+  createdBy User @relation("CreatedBikeInvoices", fields: [createdById], references: [id])
+
+  services BikeService[] @relation("InvoiceServices")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerUserId])
+  @@index([createdById])
+  @@index([bikeId])
+}
+
+model BikeReminder {
+  id Int @id @default(autoincrement())
+
+  bikeClientId Int
+  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+
+  ownerUserId Int
+  createdById Int?
+
+  ownerUser User  @relation("OwnerBikeReminders", fields: [ownerUserId], references: [id])
+  createdBy User? @relation("CreatedBikeReminders", fields: [createdById], references: [id])
+
+  message    String
+  remindDate DateTime
+  remindTime String?
+  isDone     Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerUserId])
+  @@index([createdById])
+  @@index([bikeClientId])
+}
+
+model BikeOcrRecord {
+  id Int @id @default(autoincrement())
+
+  bikeClientId Int
+  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+
+  ownerUserId Int
+  createdById Int?
+
+  ownerUser User  @relation("OwnerBikeOcrRecords", fields: [ownerUserId], references: [id])
+  createdBy User? @relation("CreatedBikeOcrRecords", fields: [createdById], references: [id])
+
+  rawText    String
+  parsedData Json
+  confidence Float?
+  imageUrl   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model BikeServiceCategory {
@@ -466,62 +656,238 @@ model BikeServiceMedia {
   createdAt DateTime @default(now())
 }
 
-model BikeInvoice {
-  id            Int    @id @default(autoincrement())
-  invoiceNumber String @unique
+model BikeStaff {
+  id            Int                 @id @default(autoincrement())
+  // 🔗 Owner (Admin/User who created staff)
+  userId        Int
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 👤 Staff details
+  name          String
+  role          String
+  // 💰 Salary fields
+  baseSalary    Float
+  bonus         Float               @default(0)
+  leaves        Int                 @default(0)
+  deductions    Float               @default(0)
+  // 📅 Status tracking
+  joiningDate   DateTime
+  status        String              @default("pending") // pending | paid
+  lastPaid      DateTime?
+  // 🔗 Salary history
+  salaryHistory BikeSalaryHistory[]
+  // ⏱️ Meta
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  bikeTeams     BikeTeam[]
+}
 
-  // relation to Bike (your client)
-  bikeId Int
-  bike   Bike @relation(fields: [bikeId], references: [id])
+model BikeSalaryHistory {
+  id          Int       @id @default(autoincrement())
+  // 🔗 Staff reference
+  bikeStaffId Int
+  staff       BikeStaff @relation(fields: [bikeStaffId], references: [id], onDelete: Cascade)
+  // 🗓️ Salary snapshot
+  month       String // "Sep 2025"
+  baseSalary  Float
+  bonus       Float
+  deductions  Float
+  netSalary   Float
+  // 💸 Payment info
+  paidDate    DateTime
+  createdAt   DateTime  @default(now())
+}
 
-  // Bike service info (optional or detailed stored data)
-  serviceCategory    String?
-  serviceSubCategory String?
-  serviceNotes       String?
+// Bike TeamUsers login
 
-  vehicle String? // bikeModel or brand if needed
+model BikeTeam {
+  id Int @id @default(autoincrement())
 
-  // Pricing
-  partsCost Float @default(0)
-  partsGst  Float @default(0)
-  laborCost Float @default(0)
-  laborGst  Float @default(0)
-  tax       Float @default(0)
-  discount  Float @default(0)
+  // 🔗 Owner (Garage / Admin User)
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  grandTotal Float
+  // 👤 Employee profile
+  name        String
+  role        String? // Mechanic, Manager, Helper
+  phone       String?
+  joiningDate DateTime @default(now())
 
-  // Payment
-  paymentMode String?
-  status      String    @default("Pending")
-  paidAt      DateTime?
-  dueDate     DateTime?
+  // 🔐 Optional login
+  login BikeTeamLogin?
 
-  notes String?
+  // 🔗 Salary profile
+  staff BikeStaff? @relation(fields: [bikeStaffId], references: [id])
 
-  // relation to BikeService (each service inside invoice)
-  services BikeService[] @relation("InvoiceServices")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bikeStaffId Int?
+
+  @@index([ownerId])
+}
+
+model BikeTeamLogin {
+  id Int @id @default(autoincrement())
+
+  bikeTeamId Int      @unique
+  team       BikeTeam @relation(fields: [bikeTeamId], references: [id], onDelete: Cascade)
+
+  username String  @unique
+  password String
+  isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model BikeReminder {
+// Washing CRM client schema
+model WashingClient {
+  id               Int      @id @default(autoincrement())
+  fullName         String
+  phone            String
+  address          String?
+  email            String?
+  vehicleMake      String
+  vehicleModel     String
+  regNumber        String?
+  mainImage        String?
+  additionalImages String[]
+  userId           Int?
+  createdAt        DateTime @default(now())
+
+  user            User?            @relation(fields: [userId], references: [id])
+  washingServices WashingService[]
+  washBillings    WashBilling[]
+  invoices        Invoice[]
+}
+
+model WashingServiceCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  subServices WashingSubService[]
+  services    WashingService[]
+
+  @@unique([name])
+  @@map("washing_service_categories")
+}
+
+model WashingSubService {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  categoryId  Int
+  createdAt   DateTime @default(now())
+
+  category WashingServiceCategory @relation(fields: [categoryId], references: [id])
+  services WashingService[]
+
+  @@unique([name, categoryId])
+  @@map("washing_sub_services")
+}
+
+model WashingServiceMedia {
   id Int @id @default(autoincrement())
 
-  bikeClientId Int
-  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+  washingServiceId Int
+  washingService   WashingService @relation(fields: [washingServiceId], references: [id], onDelete: Cascade)
 
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
+  url       String
+  mimeType  String?
+  fileName  String?
+  createdAt DateTime @default(now())
 
-  message String
+  @@map("washing_service_media")
+}
 
-  remindDate DateTime
-  remindTime String?
+model WashingService {
+  id     Int           @id @default(autoincrement())
+  date   DateTime
+  status ServiceStatus @default(PENDING)
 
-  isDone Boolean @default(false)
+  clientId Int
+  client   WashingClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  categoryId Int
+  category   WashingServiceCategory @relation(fields: [categoryId], references: [id])
+
+  subServiceId Int?
+  subService   WashingSubService? @relation(fields: [subServiceId], references: [id])
+
+  partsCost      Decimal @default(0) @db.Decimal(10, 2)
+  partsGst       Decimal @default(0) @db.Decimal(10, 2)
+  estimatedTotal Decimal @default(0) @db.Decimal(10, 2)
+
+  notes String?
+
+  media WashingServiceMedia[]
+
+  /**
+   * 🔗 Invoice link via JOIN table
+   */
+  billings WashBillingService[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("washing_services")
+}
+
+model WashBilling {
+  id            Int    @id @default(autoincrement())
+  invoiceNumber String @unique
+
+  washingClientId Int
+  userId          Int
+
+  partsCost Decimal @default(0) @db.Decimal(10, 2)
+  partsGst  Decimal @default(0) @db.Decimal(10, 2)
+
+  grandTotal Decimal @db.Decimal(10, 2)
+
+  paymentMode String?
+  status      String    @default("PENDING")
+  paidAt      DateTime?
+  dueDate     DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  washingClient WashingClient        @relation(fields: [washingClientId], references: [id])
+  services      WashBillingService[]
+
+  @@index([washingClientId])
+  @@map("wash_billings")
+}
+
+model WashBillingService {
+  id Int @id @default(autoincrement())
+
+  washBillingId    Int
+  washingServiceId Int
+
+  washBilling    WashBilling    @relation(fields: [washBillingId], references: [id], onDelete: Cascade)
+  washingService WashingService @relation(fields: [washingServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([washBillingId, washingServiceId])
+  @@map("wash_billing_services")
+}
+
+model WashTeam {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Display / contact email only
+  email String @unique
+
+  // Admin who created the team
+  createdBy Int
+  admin     User @relation("AdminWashTeams", fields: [createdBy], references: [id])
+
+  // Team members
+  members User[] @relation("TeamMember")
+
+  createdAt DateTime @default(now())
 }

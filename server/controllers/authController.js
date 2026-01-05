@@ -18,8 +18,45 @@ export const registerUser = async (req, res) => {
     }
 
     const emailLower = email.toLowerCase().trim();
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Check duplicates
+    /**
+     * =============================================
+     * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
+     * =============================================
+     */
+    const latestPayment = await prisma.payment.findFirst({
+      where: { email: emailLower },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const plan = latestPayment?.plan || "BASIC";
+    const planExpiry = latestPayment?.planExpiry || null;
+    const referralCodeUsed = latestPayment?.referralCode || null;
+
+    /**
+     * =============================================
+     * REFERRAL LOOKUP (OPTIONAL)
+     * =============================================
+     */
+    let referredByUserId = null;
+
+    if (referralCodeUsed) {
+      const referrer = await prisma.user.findUnique({
+        where: { myReferralCode: referralCodeUsed },
+        select: { id: true },
+      });
+
+      if (referrer) {
+        referredByUserId = referrer.id;
+      }
+    }
+
+    /**
+     * =============================================
+     * DUPLICATE CHECKS
+     * =============================================
+     */
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
       prisma.user.findUnique({ where: { username } }),
@@ -27,16 +64,19 @@ export const registerUser = async (req, res) => {
 
     if (
       existingUserByUsername &&
-      (!existingUserByEmail || existingUserByUsername.id !== existingUserByEmail.id)
+      (!existingUserByEmail ||
+        existingUserByUsername.id !== existingUserByEmail.id)
     ) {
       return res.status(400).json({
         message: "This username is already taken.",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // CASE 1 — User exists by email (temporary user previously created)
+    /**
+     * =============================================
+     * CASE 1 — USER EXISTS (EMAIL FROM PAYMENT)
+     * =============================================
+     */
     if (existingUserByEmail) {
       const updatedUser = await prisma.user.update({
         where: { email: emailLower },
@@ -44,7 +84,8 @@ export const registerUser = async (req, res) => {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-          plan: "BASIC", // ⭐ Default plan on registration
+          plan,
+          planExpiry,
         },
       });
 
@@ -57,7 +98,11 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // CASE 2 — New user
+    /**
+     * =============================================
+     * CASE 2 — NEW USER
+     * =============================================
+     */
     const myReferralCode =
       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -69,10 +114,9 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
-        profileImage: null,
-        referredByCode: null,
-        referredByUserId: null,
-        plan: "BASIC", // ⭐ Default plan
+        plan,
+        planExpiry,
+        referredByUserId, // safe even if null
       },
     });
 
@@ -85,18 +129,10 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Registration Error:", error);
-
-    if (error.code === "P2002") {
-      const target = error.meta?.target || [];
-      if (target.includes("username"))
-        return res.status(400).json({ message: "Username already taken" });
-      if (target.includes("email"))
-        return res.status(400).json({ message: "Email already registered" });
-    }
-
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 /**
  * =============================================
@@ -116,49 +152,90 @@ export const loginUser = async (req, res) => {
     const isEmail = identifier.includes("@");
 
     const user = await prisma.user.findFirst({
-      where: isEmail ? { email: identifier.toLowerCase() } : { username: identifier },
+      where: isEmail
+        ? { email: identifier.toLowerCase() }
+        : { username: identifier },
     });
 
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (user) {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+      // ✅ CRM restriction applies ONLY to owner
+      if (!user.allowedCrms.includes(crmType.toUpperCase())) {
+        return res.status(403).json({
+          message: `You do not have access to the ${crmType} CRM`,
+        });
+      }
 
-    // CRM permission check
-    if (!user.allowedCrms.includes(crmType.toUpperCase())) {
-      return res.status(403).json({
-        message: `You do not have access to the ${crmType} CRM`,
+      const token = generateToken({
+        id: user.id,
+        role: "user",
+        type: "owner",
+        plan: user.plan,
+      });
+
+      return res.status(200).json({
+        message: "Login successful",
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: "user",
+          type: "owner",
+          plan: user.plan,
+          allowedCrms: user.allowedCrms,
+          crmType,
+        },
       });
     }
 
-    // Fetch extra fields from payment table (optional)
-    const userPayment = await prisma.payment.findFirst({
-      where: { email: user.email },
-      orderBy: { createdAt: "desc" },
-      select: { companyName: true, phone: true },
+    /**
+     * ============================
+     * 2️⃣ TRY STAFF LOGIN (CarStaff)
+     * ============================
+     */
+    const staffLogin = await prisma.carStaffLogin.findUnique({
+      where: { email: identifier.toLowerCase() },
+      include: {
+        staff: true,
+      },
     });
 
-    // ⭐ Token now includes plan
-    const token = generateToken(user);
+    if (!staffLogin || !staffLogin.isActive || !staffLogin.staff) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isStaffMatch = await bcrypt.compare(password, staffLogin.password);
+
+    if (!isStaffMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    if (!staff || !staff.isActive) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // ❗ Staff does NOT need allowedCrms check
+    const token = generateToken({
+      id: staff.id,
+      role: "staff",
+      type: "staff",
+      ownerId: staff.ownerId,
+    });
 
     return res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: user.id,
-        username: user.username,
-        email: user.email.toLowerCase(),
-        role: user.role,
-        plan: user.plan, // ⭐ RETURN PLAN
-        profileImage: user.profileImage || null,
-        allowedCrms: user.allowedCrms,
+        id: staff.id,
+        email: staff.email,
+        role: "staff",
+        type: "staff",
+        ownerId: staff.ownerId,
         crmType,
-        companyName: userPayment?.companyName || null,
-        phone: userPayment?.phone || null,
       },
     });
   } catch (error) {
@@ -201,7 +278,7 @@ export const getProfile = async (req, res) => {
 
 /**
  * =============================================
- * VERIFY TOKEN
+ * VERIFY TOKEN (OWNER + STAFF)
  * =============================================
  */
 export const verifyToken = async (req, res) => {
@@ -209,28 +286,75 @@ export const verifyToken = async (req, res) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ valid: false, message: "No token provided" });
+      return res.status(401).json({ valid: false });
     }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    /**
+     * ===============================
+     * STAFF TOKEN
+     * ===============================
+     */
+    if (decoded.type === "staff") {
+      const login = await prisma.carStaffLogin.findUnique({
+        where: { id: decoded.id },
+        include: {
+          staff: true,
+        },
+      });
+
+      if (!login || !login.isActive || !login.staff) {
+        return res.status(401).json({ valid: false });
+      }
+
+      return res.status(200).json({
+        valid: true,
+        user: {
+          id: login.id, // staff id
+          loginId: login.id, // login id
+          type: "staff",
+          role: "staff",
+          ownerId: login.ownerId,
+          name: login.staff.name,
+        },
+      });
+    }
+
+    /**
+     * ===============================
+     * OWNER TOKEN
+     * ===============================
+     */
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, username: true, email: true, role: true, plan: true },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        plan: true,
+      },
     });
 
     if (!user) {
-      return res.status(404).json({ valid: false, message: "User not found" });
+      return res.status(401).json({ valid: false });
     }
 
     return res.status(200).json({
       valid: true,
-      user,
+      user: {
+        id: user.id,
+        type: "owner",
+        role: user.role,
+        plan: user.plan,
+        email: user.email,
+      },
     });
   } catch (error) {
     console.error("❌ Token Verification Error:", error);
-    return res.status(401).json({ valid: false, message: "Invalid or expired token" });
+    return res.status(401).json({ valid: false });
   }
 };
 

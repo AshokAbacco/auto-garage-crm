@@ -18,9 +18,12 @@ import {
     Layers,
     ChevronDown,
     ChevronRight,
+    CogIcon,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate, Outlet } from "react-router-dom";
+import { UsersRound } from "lucide-react";
+
 
 export default function WashingLayoutPage() {
     const { isDark, toggleTheme } = useTheme();
@@ -44,21 +47,18 @@ export default function WashingLayoutPage() {
             icon: Users,
         },
         {
+            to: "/washing-services",
             label: "Services",
             icon: Wrench,
-            children: [
-                { to: "/washing-services", label: "Services" },
-                { to: "/washing-services/sub-services", label: "Sub Services" },
-            ],
         },
+
         {
+            to: "/washing-alerts",
             label: "Alerts",
             icon: MessageSquare,
-            children: [
-                { to: "/washing-alerts", label: "SMS & WhatsApp Alerts" },
-
-            ],
         },
+
+
         {
             to: "/washing-Billing",
             label: "Billing",
@@ -79,6 +79,13 @@ export default function WashingLayoutPage() {
             label: "Reference",
             icon: Network,
         },
+        {
+            to: "/teams",
+            label: "Teams",
+            icon: UsersRound,
+        },
+
+
         {
             to: "/washing-upgrade",
             label: "Upgrade",

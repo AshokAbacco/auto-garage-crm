@@ -1,72 +1,113 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import {
-  FiArrowLeft,
-  FiPrinter,
-  FiDownload,
-  FiCalendar,
-  FiUser,
-  FiMail,
-  FiPhone,
-  FiMapPin,
-  FiCreditCard,
-  FiCheckCircle,
-  FiClock,
-  FiAlertCircle,
-  FiTool,
-  FiFileText,
-  FiDollarSign,
-  FiHash,
-  FiInfo,
-  FiPercent,
-  FiTag,
-} from 'react-icons/fi'
-import { FaRupeeSign, FaCar, FaWrench } from "react-icons/fa";
-import { useTheme } from '../../contexts/ThemeContext'
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
+import { FiArrowLeft, FiPrinter, FiDownload } from "react-icons/fi";
+import { useTheme } from "../../contexts/ThemeContext";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Helper function to get auth token
-const getAuthToken = () => localStorage.getItem('token') || localStorage.getItem('authToken');
+const numberToWords = (num) => {
+  const a = [
+    "",
+    "One ",
+    "Two ",
+    "Three ",
+    "Four ",
+    "Five ",
+    "Six ",
+    "Seven ",
+    "Eight ",
+    "Nine ",
+    "Ten ",
+    "Eleven ",
+    "Twelve ",
+    "Thirteen ",
+    "Fourteen ",
+    "Fifteen ",
+    "Sixteen ",
+    "Seventeen ",
+    "Eighteen ",
+    "Nineteen ",
+  ];
+  const b = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+  const format = (n) => {
+    if (n < 20) return a[n];
+    if (n < 100) return b[Math.floor(n / 10)] + " " + a[n % 10];
+    if (n < 1000) return a[Math.floor(n / 100)] + "Hundred " + format(n % 100);
+    if (n < 100000)
+      return format(Math.floor(n / 1000)) + "Thousand " + format(n % 1000);
+    if (n < 10000000)
+      return format(Math.floor(n / 100000)) + "Lakh " + format(n % 100000);
+    return "";
+  };
+  return `${format(Math.floor(num))}Only`.replace(/\s+/g, " ");
+};
 
-// Helper function to make authenticated API requests
+const getAuthToken = () =>
+  localStorage.getItem("token") || localStorage.getItem("authToken");
+
 const fetchWithAuth = async (url, options = {}) => {
   const token = getAuthToken();
-  if (!token) throw new Error('No authentication token found');
-
+  if (!token) throw new Error("No authentication token found");
   const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    ...options.headers
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+    ...options.headers,
   };
-
   const response = await fetch(url, { ...options, headers });
   if (response.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('authToken');
-    window.location.href = '/login';
-    throw new Error('Session expired. Please login again.');
+    window.location.href = "/login";
+    throw new Error("Session expired.");
   }
   return response;
 };
 
-export default function Invoice() {
+export default function Invoice({ previewData }) {
   const { id } = useParams();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { isDark } = useTheme();
   const printRef = useRef();
+  const isPreview = Boolean(previewData);
+  const [userProfile, setUserProfile] = useState(null);
 
-  // Fetch invoice
   useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const res = await fetchWithAuth(`${API_URL}/api/user/profile`);
+        const data = await res.json();
+        setUserProfile(data);
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  useEffect(() => {
+    if (isPreview) {
+      setLoading(false);
+      return;
+    }
     const fetchInvoice = async () => {
       try {
         const res = await fetchWithAuth(`${API_URL}/api/invoices/${id}`);
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to fetch invoice');
+        if (!res.ok) throw new Error(data.message || "Failed to fetch invoice");
         setInvoice(data);
-        console.log("Invoice data:", data); // For debugging
       } catch (err) {
         setError(err.message);
       } finally {
@@ -74,344 +115,535 @@ export default function Invoice() {
       }
     };
     fetchInvoice();
-  }, [id]);
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
-
-  const handlePrint = () => {
-    setTimeout(() => {
-      window.print();
-    }, 100);
-  };
-
-  const handleDownloadPDF = () => alert('PDF download feature coming soon!');
+  }, [id, isPreview]);
 
   if (loading)
-    return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>Loading invoice...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center font-sans">
+        Loading Invoice...
+      </div>
+    );
   if (error)
-    return <div className="p-8 text-center text-red-500 font-semibold">Error: {error}</div>;
+    return (
+      <div className="p-10 text-center text-red-500 font-bold">
+        Error: {error}
+      </div>
+    );
 
-  const c = invoice?.client || {};
-  const partsCost = Number(invoice.partsCost || 0);
-  const partsGst = Number(invoice.partsGst || 0);
-  const laborCost = Number(invoice.laborCost || 0);
-  const laborGst = Number(invoice.laborGst || 0);
-  const tax = Number(invoice.tax || 0);
-  const discount = Number(invoice.discount || 0);
-  const grandTotal = Number(invoice.grandTotal || 0);
+  const invoiceData = isPreview
+    ? { ...previewData, invoiceCostItems: previewData?.costItems || [] }
+    : invoice || {};
+  // const owner = isPreview ? previewData?.userProfile : userProfile;
+  const owner = previewData?.userProfile || userProfile;
 
-  const partsTotal = partsCost + (partsCost * partsGst) / 100;
-  const laborTotal = laborCost + (laborCost * laborGst) / 100;
+  const c = invoiceData?.client || {};
+  const items = invoiceData?.invoiceCostItems || [];
 
-  const paymentStatus = invoice.status === 'Paid' ? 'text-green-500' : 'text-yellow-500';
-  const paymentMode = invoice.paymentMode || 'N/A';
+  const parts = items.filter((item) => item?.type === "part");
+  const labour = items.filter((item) => item?.type === "labor");
+
+  const getTaxGroups = (itemArray) => {
+    const groups = {};
+    itemArray.forEach((item) => {
+      const rate = Number(item.cgstRate || 0);
+      const rateStr = rate.toFixed(2);
+      const taxable = Number(item.quantity || 0) * Number(item.unitPrice || 0);
+      const taxAmt = (taxable * rate) / 100;
+      if (!groups[rateStr]) {
+        groups[rateStr] = { rate: rateStr, taxable: 0, taxAmount: 0 };
+      }
+      groups[rateStr].taxable += taxable;
+      groups[rateStr].taxAmount += taxAmt;
+    });
+    return Object.values(groups);
+  };
+
+  const partsTaxGroups = getTaxGroups(parts);
+  const laborTaxGroups = getTaxGroups(labour);
+
+  const totalTaxable = items.reduce(
+    (sum, i) => sum + Number(i.quantity || 0) * Number(i.unitPrice || 0),
+    0
+  );
+  const totalTax = items.reduce((sum, i) => {
+    const taxable = Number(i.quantity || 0) * Number(i.unitPrice || 0);
+    return (
+      sum +
+      (taxable * (Number(i.cgstRate || 0) + Number(i.sgstRate || 0))) / 100
+    );
+  }, 0);
+
+  const discount = Number(invoiceData.discount || 0);
+  const totalWithTax = totalTaxable + totalTax;
+  const rawTotal = totalWithTax - discount;
+
+  // Round down logic
+  const finalPayable = Math.floor(rawTotal);
+  const roundOff = (finalPayable - rawTotal).toFixed(2);
+
+  const handleDownloadPDF = async () => {
+    const element = printRef.current;
+    if (!element) return;
+    const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+    const pdf = new jsPDF("p", "mm", "a4");
+    pdf.addImage(
+      canvas.toDataURL("image/png"),
+      "PNG",
+      0,
+      0,
+      210,
+      (canvas.height * 210) / canvas.width
+    );
+    pdf.save(`Invoice_${invoiceData?.invoiceNumber}.pdf`);
+  };
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'} print:bg-white print:text-black`}>
-      {/* Action Bar - Hidden when printing */}
-      <div className="flex justify-between items-center mb-6 print:hidden">
-        <Link to="/billing" className={`flex items-center gap-2 font-medium ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+    <div
+      className={`min-h-screen p-4 lg:p-8 ${
+        isDark ? "bg-slate-900" : ""
+      } print:bg-white print:p-0`}
+    >
+      {/* CRITICAL PRINT STYLES */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @media print {
+          body * { visibility: hidden; }
+          .printable-area, .printable-area * { visibility: visible; }
+          .printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 10mm !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          .no-print { display: none !important; }
+        }
+      `,
+        }}
+      />
+
+      <div className="max-w-[210mm] mx-auto mb-6 flex justify-between items-center no-print">
+        <Link
+          to="/billing"
+          className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors font-medium"
+        >
           <FiArrowLeft /> Back to Billing
         </Link>
         <div className="flex gap-3">
           <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 bg-gray-800 text-white px-6 py-3 rounded-xl hover:bg-gray-700"
+            onClick={() => window.print()}
+            className="bg-gray-800 text-white px-5 py-2 rounded-md flex items-center gap-2 hover:bg-black"
           >
             <FiPrinter /> Print
           </button>
           <button
             onClick={handleDownloadPDF}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700"
+            className="bg-blue-600 text-white px-5 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700"
           >
             <FiDownload /> Download PDF
           </button>
         </div>
       </div>
 
-      {/* Invoice Card */}
-      <div ref={printRef} className="print-content max-w-5xl mx-auto shadow-2xl rounded-3xl overflow-hidden bg-white text-black print:shadow-none print:rounded-none">
-        {/* Header */}
-        <div className="p-6 border-b-2 border-gray-300">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">AUTO GARAGE</h1>
-              <p className="text-sm">Professional Auto Services</p>
-              <div className="mt-2 space-y-1 text-xs">
-                <p className="flex items-center gap-2"><FiMapPin size={12} /> Bengaluru, India</p>
-                <p className="flex items-center gap-2"><FiMail size={12} /> contact@autogarage.com</p>
-                <p className="flex items-center gap-2"><FiPhone size={12} /> +91 98765 43210</p>
+      <div
+        ref={printRef}
+        className="printable-area relative  max-w-[210mm] mx-auto bg-white text-black p-10 shadow-lg font-sans text-[11px] leading-tight min-h-[297mm] flex flex-col border border-gray-200"
+      >
+        {isPreview && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span
+              className="text-[70px] font-black text-gray-400 opacity-20 rotate-[-30deg] select-none"
+              style={{ marginTop: "-300px" }}
+            >
+              PROFORMA INVOICE
+            </span>
+          </div>
+        )}
+
+        {/* Header Section */}
+        <div className="flex justify-between items-start border-b-2 border-gray-900 pb-5 mb-6">
+          <div className="w-2/3">
+            <h1 className="text-3xl font-bold uppercase mb-2 text-gray-900">
+              {owner?.companyName || "Company Name"}
+            </h1>
+            <p className="text-[10px] text-gray-600 leading-relaxed max-w-md">
+              {owner?.address || "Address N/A"}
+            </p>
+            <div className="mt-3 text-[10px] space-y-1">
+              <div className="flex gap-6">
+                <span className="font-semibold">GSTIN:</span>
+                <span>{owner?.gstNumber || "N/A"}</span>
+              </div>
+              <div className="flex gap-6">
+                <span className="font-semibold">Contact:</span>
+                <span>{owner?.phone || "N/A"}</span>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs font-semibold">INVOICE NUMBER</p>
-              <h2 className="text-2xl font-black mb-1">#{invoice.invoiceNumber}</h2>
-              <p className={`font-bold text-sm ${paymentStatus}`}>{invoice.status}</p>
-            </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <p className="text-xs">Invoice Date</p>
-              <p className="font-semibold text-sm">{formatDate(invoice.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-xs">Payment Mode</p>
-              <p className="font-semibold text-sm capitalize">{paymentMode}</p>
-            </div>
+          <div className="text-right">
+            <h2 className="text-3xl font-bold text-gray-900 mb-1">
+              TAX INVOICE
+            </h2>
+            <p className="text-[9px] font-semibold uppercase text-gray-500">
+              Cash / Credit
+            </p>
           </div>
         </div>
 
-        {/* Client Info */}
-        <div className="grid md:grid-cols-2 gap-4 p-6 border-b border-gray-300">
-          <div>
-            <h3 className="text-base font-bold flex items-center gap-2 mb-2">
-              <FiUser /> Bill To
+        {/* Customer & Vehicle Info */}
+        <div className="grid grid-cols-2 gap-8 mb-6 pb-6 border-b border-gray-300">
+          <div className="space-y-2">
+            <h3 className="font-bold text-[10px] uppercase text-gray-500 mb-3">
+              Customer Details
             </h3>
-            <p className="font-semibold text-sm">{c.fullName}</p>
-            <p className="text-xs">{c.address || 'Address not provided'}</p>
-            <p className="text-xs mt-1 flex items-center gap-2"><FiPhone size={12} /> {c.phone}</p>
-            <p className="text-xs flex items-center gap-2"><FiMail size={12} /> {c.email}</p>
+            <div className="space-y-1.5">
+              <div className="flex">
+                <span className="w-28 text-gray-600">Name:</span>
+                <span className="font-medium uppercase">
+                  {c?.fullName || "Walking Customer"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="w-28 text-gray-600">Address:</span>
+                <span className="font-medium">{c?.address || "N/A"}</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 text-gray-600">Contact:</span>
+                <span className="font-medium">{c?.phone || "N/A"}</span>
+              </div>
+            </div>
           </div>
-
-          <div>
-            <h3 className="text-base font-bold flex items-center gap-2 mb-2">
-              <FaCar /> Vehicle Details
+          <div className="space-y-2">
+            <h3 className="font-bold text-[10px] uppercase text-gray-500 mb-3">
+              Invoice Details
             </h3>
-            <p className="font-semibold text-sm">{c.vehicleMake} {c.vehicleModel} ({c.regNumber})</p>
+            <div className="space-y-1.5">
+              <div className="flex">
+                <span className="w-32 text-gray-600">Invoice No:</span>
+                <span className="font-medium">
+                  {invoiceData?.invoiceNumber}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="w-32 text-gray-600">Date:</span>
+                <span className="font-medium">
+                  {new Date(invoiceData?.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="w-32 text-gray-600">Vehicle No:</span>
+                <span className="font-medium uppercase">
+                  {c?.regNumber || "N/A"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="w-32 text-gray-600">Model/Make:</span>
+                <span className="font-medium uppercase">
+                  {invoiceData?.vehicle || "N/A"}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Service Details */}
-        <div className="p-6 border-b border-gray-300">
-          <h2 className="text-base font-bold mb-3 flex items-center gap-2"><FiTool /> Service Details</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs">Service Category</p>
-              <p className="font-semibold text-sm">{invoice.serviceCategory || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-xs">Service Sub-Category</p>
-              <p className="font-semibold text-sm">{invoice.serviceSubCategory || 'N/A'}</p>
-            </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-xs">Service Description</p>
-            <p className="font-semibold text-sm">{invoice.serviceNotes || invoice.notes || 'N/A'}</p>
-          </div>
-          <div className="mt-3">
-            <p className="text-xs">Mechanic</p>
-            <p className="font-semibold text-sm">{invoice.mechanic || 'N/A'}</p>
-          </div>
-        </div>
-
-        {/* Cost Breakdown */}
-        <div className="p-6">
-          <h2 className="text-base font-bold mb-3 flex items-center gap-2"><FaRupeeSign /> Cost Breakdown</h2>
-          <table className="w-full text-xs border-collapse">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="text-left p-2 font-semibold">Description</th>
-                <th className="text-right p-2 font-semibold">Cost</th>
-                <th className="text-right p-2 font-semibold">GST (%)</th>
-                <th className="text-right p-2 font-semibold">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b">
-                <td className="p-2 flex items-center gap-2"><FiTool /> Parts</td>
-                <td className="p-2 text-right">₹ {partsCost.toFixed(2)}</td>
-                <td className="p-2 text-right">{partsGst}%</td>
-                <td className="p-2 text-right font-bold">₹ {partsTotal.toFixed(2)}</td>
-              </tr>
-              <tr className="border-b">
-                <td className="p-2 flex items-center gap-2"><FaWrench /> Labor</td>
-                <td className="p-2 text-right">₹ {laborCost.toFixed(2)}</td>
-                <td className="p-2 text-right">{laborGst}%</td>
-                <td className="p-2 text-right font-bold">₹ {laborTotal.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td className="p-2 font-semibold">Additional Taxes</td>
-                <td className="p-2 text-right" colSpan="3">₹ {tax.toFixed(2)}</td>
-              </tr>
-              {discount > 0 && (
-                <tr>
-                  <td className="p-2 font-semibold text-red-500">Discounts</td>
-                  <td className="p-2 text-right text-red-500" colSpan="3">-₹ {discount.toFixed(2)}</td>
+        {/* Parts and Labour Tables (Logic kept from previous version) */}
+        {/* ... (Your parts and labour table code) ... */}
+        {parts.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-bold text-[11px] uppercase mb-3 text-gray-800">
+              Genuine Parts Details
+            </h3>
+            <table className="w-full text-[9px] border-collapse border border-gray-400">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="border border-gray-400 p-1.5 w-10 text-center">
+                    S.No
+                  </th>
+                  <th className="border border-gray-400 p-1.5">Description</th>
+                  <th className="border border-gray-400 p-1.5 text-center w-10">
+                    Qty
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-16">
+                    Rate
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-16">
+                    Taxable
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-center w-12">
+                    CGST
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-14">
+                    Amt
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-center w-12">
+                    SGST
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-14">
+                    Amt
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-20">
+                    Total
+                  </th>
                 </tr>
-              )}
-              <tr className="bg-gray-100">
-                <td className="p-3 font-bold">Grand Total</td>
-                <td colSpan="3" className="p-3 text-right font-bold text-lg">₹ {grandTotal.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {parts.map((item, idx) => (
+                  <tr key={`p-${idx}`}>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {idx + 1}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 uppercase font-medium">
+                      {item.name}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {item.quantity}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {Number(item.unitPrice).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {(item.quantity * item.unitPrice).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {item.cgstRate}%
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {(
+                        (item.quantity * item.unitPrice * item.cgstRate) /
+                        100
+                      ).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {item.sgstRate}%
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {(
+                        (item.quantity * item.unitPrice * item.sgstRate) /
+                        100
+                      ).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right font-bold">
+                      {(
+                        item.quantity *
+                        item.unitPrice *
+                        (1 + (item.cgstRate + item.sgstRate) / 100)
+                      ).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {/* Payment Info */}
-        <div className="p-6 border-t border-gray-300 bg-gray-50">
-          <h3 className="font-bold text-base mb-2 flex items-center gap-2"><FiCreditCard /> Payment Details</h3>
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div>
-              <p className="font-semibold">Bank Name</p>
-              <p>Auto Garage Bank</p>
+        {labour.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-bold text-[11px] uppercase mb-3 text-gray-800">
+              Labour Details
+            </h3>
+            <table className="w-full text-[9px] border-collapse border border-gray-400">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="border border-gray-400 p-1.5 w-10 text-center">
+                    S.No
+                  </th>
+                  <th className="border border-gray-400 p-1.5">Description</th>
+                  <th className="border border-gray-400 p-1.5 text-center w-10">
+                    Qty
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-16">
+                    Rate
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-16">
+                    Taxable
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-center w-12">
+                    CGST
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-14">
+                    Amt
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-center w-12">
+                    SGST
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-14">
+                    Amt
+                  </th>
+                  <th className="border border-gray-400 p-1.5 text-right w-20">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {labour.map((item, idx) => (
+                  <tr key={`l-${idx}`}>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {idx + 1}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 uppercase font-medium">
+                      {item.name}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {item.quantity}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {Number(item.unitPrice).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {(item.quantity * item.unitPrice).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {item.cgstRate}%
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {(
+                        (item.quantity * item.unitPrice * item.cgstRate) /
+                        100
+                      ).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-center">
+                      {item.sgstRate}%
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right">
+                      {(
+                        (item.quantity * item.unitPrice * item.sgstRate) /
+                        100
+                      ).toFixed(2)}
+                    </td>
+                    <td className="border border-gray-400 p-1.5 text-right font-bold">
+                      {(
+                        item.quantity *
+                        item.unitPrice *
+                        (1 + (item.cgstRate + item.sgstRate) / 100)
+                      ).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Calculation Section */}
+        <div className="mt-4 border-t-2 border-gray-800 pt-4">
+          <h3 className="font-bold text-[11px] uppercase mb-4 text-gray-800">
+            Grand Total Calculation
+          </h3>
+          <div className="flex justify-between gap-10">
+            <div className="w-1/2 space-y-1.5 text-[10px]">
+              {partsTaxGroups.map((g, i) => (
+                <div key={`pc-${i}`} className="flex justify-between pl-4">
+                  <span className="text-gray-600">
+                    CGST(Parts) @{" "}
+                    <span className="font-bold text-black">{g.rate}%</span> on
+                    Amount{" "}
+                    <span className="font-bold ml-1 text-black">
+                      ₹{g.taxable.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="font-medium">₹{g.taxAmount.toFixed(2)}</span>
+                </div>
+              ))}
+              {partsTaxGroups.map((g, i) => (
+                <div key={`ps-${i}`} className="flex justify-between pl-4">
+                  <span className="text-gray-600">
+                    SGST(Parts) @{" "}
+                    <span className="font-bold text-black">{g.rate}%</span> on
+                    Amount{" "}
+                    <span className="font-bold ml-1 text-black">
+                      ₹{g.taxable.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="font-medium">₹{g.taxAmount.toFixed(2)}</span>
+                </div>
+              ))}
+              {laborTaxGroups.map((g, i) => (
+                <div key={`lc-${i}`} className="flex justify-between pl-4">
+                  <span className="text-gray-600">
+                    CGST(Labor) @{" "}
+                    <span className="font-bold text-black">{g.rate}%</span> on
+                    Amount{" "}
+                    <span className="font-bold ml-1 text-black">
+                      ₹{g.taxable.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="font-medium">₹{g.taxAmount.toFixed(2)}</span>
+                </div>
+              ))}
+              {laborTaxGroups.map((g, i) => (
+                <div
+                  key={`ls-${i}`}
+                  className="flex justify-between pl-4 border-b pb-2"
+                >
+                  <span className="text-gray-600">
+                    SGST(Labor) @{" "}
+                    <span className="font-bold text-black">{g.rate}%</span> on
+                    Amount{" "}
+                    <span className="font-bold ml-1 text-black">
+                      ₹{g.taxable.toFixed(2)}
+                    </span>
+                  </span>
+                  <span className="font-medium">₹{g.taxAmount.toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="pt-2">
+                <span className="font-bold text-gray-800">
+                  Total Amount (In Words):
+                </span>
+                <p className="italic font-bold text-gray-900">
+                  {numberToWords(finalPayable)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold">Account No.</p>
-              <p>1234567890</p>
-            </div>
-            <div>
-              <p className="font-semibold">IFSC Code</p>
-              <p>AUTG0001234</p>
-            </div>
-            <div>
-              <p className="font-semibold">Branch</p>
-              <p>Bengaluru Main</p>
+
+            <div className="w-1/2 space-y-1.5 text-[10px]">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Net Amount (Incl. Tax)</span>
+                <span>₹{totalWithTax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-red-600">
+                <span>Discount</span>
+                <span>- ₹{discount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-bold border-t pt-1">
+                <span>Amount After Discount</span>
+                <span>₹{rawTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Round off</span>
+                {/* Math.floor ensures this is always a negative subtraction */}
+                <span className="font-medium text-red-500">₹{roundOff}</span>
+              </div>
+              <div className="flex justify-between text-[12px] font-black bg-gray-100 px-2 py-1.5 border-y border-gray-400">
+                <span>AMOUNT PAYABLE</span>
+                <span>₹{finalPayable.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center py-4">
-          <p className="font-semibold text-base">Thank You for Your Business!</p>
-          <p className="text-xs">For any queries, contact us at contact@autogarage.com</p>
+        {/* Footer Section */}
+        <div className="mt-auto pt-8 border-t border-gray-200 text-center">
+          <p className="text-blue-700 font-bold text-[10px] mb-1">
+            Thank you for choosing {owner?.companyName || "our services"} for
+            your vehicle service!
+          </p>
+          <p className="text-gray-600 text-[9px] mb-4">
+            Support Email:{" "}
+            <span className="text-black font-semibold">
+              {owner?.email || "support@company.com"}
+            </span>
+          </p>
+          <div className="flex justify-between items-center text-[8px] text-gray-800 uppercase font-medium tracking-wider">
+            <span>The Motor Desk © {new Date().getFullYear()}</span>
+            <span>Digital Billing System - Secure & Verified</span>
+          </div>
         </div>
       </div>
-
-      {/* Print Styles */}
-      <style jsx global>{`
-        @media print {
-          @page { 
-            margin: 0.5cm; 
-            size: A4;
-          }
-          
-          /* Hide everything except the invoice when printing */
-          body * {
-            visibility: hidden;
-          }
-          
-          /* Show only the invoice and its children */
-          .print-content, .print-content * {
-            visibility: visible;
-          }
-          
-          /* Position the invoice at the top left when printing */
-          .print-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          
-          /* Remove shadows and rounded corners for print */
-          .shadow-2xl, .shadow-xl {
-            box-shadow: none !important;
-          }
-          
-          .rounded-3xl, .rounded-xl, .rounded-lg {
-            border-radius: 0 !important;
-          }
-          
-          /* Ensure text is black */
-          .text-blue-600, .text-purple-600, .text-green-500, .text-yellow-500, .text-red-500 { 
-            color: black !important; 
-          }
-          
-          /* Ensure backgrounds are white */
-          .bg-gradient-to-r, .bg-gray-100, .bg-gray-50, .bg-gray-800, .bg-gray-900 { 
-            background-color: white !important; 
-          }
-          
-          /* Ensure borders are visible */
-          .border-gray-300, .border-gray-200, .border-gray-700 { 
-            border-color: #d1d5db !important; 
-          }
-          
-          /* Reduce padding for print */
-          .p-8 {
-            padding: 1rem !important;
-          }
-          
-          .p-6 {
-            padding: 0.75rem !important;
-          }
-          
-          .p-4 {
-            padding: 0.5rem !important;
-          }
-          
-          .p-3 {
-            padding: 0.4rem !important;
-          }
-          
-          .p-2 {
-            padding: 0.3rem !important;
-          }
-          
-          /* Reduce font sizes for print */
-          .text-4xl {
-            font-size: 1.75rem !important;
-          }
-          
-          .text-3xl {
-            font-size: 1.5rem !important;
-          }
-          
-          .text-2xl {
-            font-size: 1.25rem !important;
-          }
-          
-          .text-xl {
-            font-size: 1.1rem !important;
-          }
-          
-          .text-lg {
-            font-size: 1rem !important;
-          }
-          
-          .text-base {
-            font-size: 0.9rem !important;
-          }
-          
-          .text-sm {
-            font-size: 0.8rem !important;
-          }
-          
-          .text-xs {
-            font-size: 0.7rem !important;
-          }
-          
-          /* Reduce gaps for print */
-          .gap-6 {
-            gap: 1rem !important;
-          }
-          
-          .gap-4 {
-            gap: 0.75rem !important;
-          }
-          
-          .gap-3 {
-            gap: 0.5rem !important;
-          }
-          
-          .gap-2 {
-            gap: 0.4rem !important;
-          }
-          
-          /* Reduce margins for print */
-          .mb-6, .mb-4, .mb-3, .mb-2, .mb-1 {
-            margin-bottom: 0.5rem !important;
-          }
-          
-          .mt-6, .mt-4, .mt-3, .mt-2, .mt-1 {
-            margin-top: 0.5rem !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,447 +1,671 @@
 // server/controllers/invoiceController.js
 import prisma from "../models/prismaClient.js";
 
+function getOwnerUserId(req) {
+  return req.user.type === "staff" ? req.user.ownerId : req.user.id;
+}
+
+
 /* ============================================================
    📄 Get All Invoices
+   @route   GET /api/invoices
+   @access  Private
 ============================================================ */
 export const getInvoices = async (req, res) => {
-    try {
-        // Only get invoices for the authenticated user's clients
-        const invoices = await prisma.invoice.findMany({
-            where: {
-                client: {
-                    userId: req.user.id // Filter by authenticated user
-                }
-            },
-            include: {
-                client: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        phone: true,
-                        email: true,
-                        regNumber: true,
-                    },
-                },
-                services: {
-                    select: {
-                        id: true,
-                        partsCost: true,
-                        partsGst: true,
-                        laborCost: true,
-                        laborGst: true,
-                        cost: true,
-                        status: true,
-                        date: true,
-                    },
-                },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+  try {
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        client: {
+          userId: getOwnerUserId(req),
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            email: true,
+            regNumber: true,
+            vehicleMake: true,
+            vehicleModel: true,
+            vehicleYear: true,
+          },
+        },
+        invoiceCostItems: {
+          orderBy: { id: "asc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-        res.status(200).json(invoices);
-    } catch (error) {
-        console.error("❌ Error fetching invoices:", error);
-        res.status(500).json({ message: "Error fetching invoices" });
-    }
+    res.status(200).json(invoices);
+  } catch (error) {
+    console.error("❌ Error fetching invoices:", error);
+    res.status(500).json({
+      message: "Error fetching invoices",
+      error: String(error),
+    });
+  }
 };
+
 
 /* ============================================================
-   📘 Get Single Invoice
+   📄 Get Invoice by ID
+   @route   GET /api/invoices/:id
+   @access  Private
 ============================================================ */
 export const getInvoiceById = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        // Check that the invoice belongs to a client of the authenticated user
-        const invoice = await prisma.invoice.findFirst({
-            where: {
-                id: parseInt(id),
-                client: {
-                    userId: req.user.id // Filter by authenticated user
-                }
-            },
-            include: {
-                client: true,
-                services: true,
-            },
-        });
-
-        if (!invoice) {
-            return res.status(404).json({ message: "Invoice not found or access denied" });
-        }
-
-        res.status(200).json(invoice);
-    } catch (error) {
-        console.error("❌ Error fetching invoice:", error);
-        res.status(500).json({ message: "Error fetching invoice" });
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: "Invalid invoice ID" });
     }
+
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        id: Number(id),
+        client: {
+          userId: getOwnerUserId(req),
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            email: true,
+            regNumber: true,
+            vehicleMake: true,
+            vehicleModel: true,
+            vehicleYear: true,
+          },
+        },
+        invoiceCostItems: {
+          orderBy: { id: "asc" },
+        },
+      },
+    });
+
+    if (!invoice) {
+      return res
+        .status(404)
+        .json({ message: "Invoice not found or access denied" });
+    }
+
+    res.status(200).json(invoice);
+  } catch (error) {
+    console.error("❌ Error fetching invoice:", error);
+    res.status(500).json({
+      message: "Error fetching invoice",
+      error: String(error),
+    });
+  }
 };
+
 
 /* ============================================================
    ➕ Create Invoice
+   @route   POST /api/invoices
+   @access  Private
 ============================================================ */
 export const createInvoice = async (req, res) => {
-    try {
-        const {
-            clientId,
-            serviceIds = [],
+  try {
+    const {
+      clientId,
+      vehicle,
+      mechanic,
+      paymentMode,
+      status,
+      dueDate,
+      notes,
+      serviceCategory,
+      serviceSubCategory,
+      serviceNotes,
+      discount,
+      costItems,
+    } = req.body;
 
-            // ✅ Pricing
-            partsCost = 0,
-            partsGst = 0,
-            laborCost = 0,
-            laborGst = 0,
-            totalAmount,
-            tax = 0,
-            discount = 0,
-            grandTotal,
-
-            // ✅ Payment
-            paymentMode = null,
-            status = "Pending",
-            dueDate,
-            notes,
-
-            // ✅ Service details (missing earlier)
-            serviceCategory,
-            serviceSubCategory,
-            serviceNotes,
-            mechanic,
-            vehicle,
-        } = req.body;
-
-        // Validation
-        if (!clientId || !grandTotal)
-            return res.status(400).json({ message: "Missing required fields" });
-
-        // Check correct ownership
-        const client = await prisma.client.findFirst({
-            where: {
-                id: parseInt(clientId),
-                userId: req.user.id,
-            },
-        });
-
-        if (!client) {
-            return res.status(403).json({
-                message: "You are not authorized to create an invoice for this client",
-            });
-        }
-
-        // ✅ Check serviceIds
-        if (serviceIds.length > 0) {
-            const unpaidServices = await prisma.service.findMany({
-                where: {
-                    id: { in: serviceIds.map(Number) },
-                    status: { notIn: ["Paid", "Processing"] },
-                    client: {
-                        userId: req.user.id,
-                    },
-                },
-            });
-
-            if (unpaidServices.length > 0) {
-                return res.status(400).json({
-                    message:
-                        "All related services must be marked as 'Paid' or 'Processing' before creating an invoice.",
-                    unpaidServices,
-                });
-            }
-        }
-
-        const invoiceNumber = `INV-${Date.now()}`;
-
-        // ✅ Create Invoice With Service Fields
-        const invoice = await prisma.invoice.create({
-            data: {
-                invoiceNumber,
-                clientId: parseInt(clientId),
-
-                // Pricing
-                totalAmount: parseFloat(totalAmount || 0),
-                partsCost: parseFloat(partsCost || 0),
-                partsGst: parseFloat(partsGst || 0),
-                laborCost: parseFloat(laborCost || 0),
-                laborGst: parseFloat(laborGst || 0),
-                tax: parseFloat(tax),
-                discount: parseFloat(discount),
-                grandTotal: parseFloat(grandTotal),
-
-                // Payment
-                paymentMode,
-                status,
-                paidAt: status === "Paid" ? new Date() : null,
-                dueDate: dueDate ? new Date(dueDate) : null,
-
-                notes: notes || null,
-
-                // ✅ Store service details (fix)
-                serviceCategory: serviceCategory || null,
-                serviceSubCategory: serviceSubCategory || null,
-                serviceNotes: serviceNotes || null,
-                mechanic: mechanic || null,
-                vehicle: vehicle || null,
-            },
-            include: {
-                client: true,
-            },
-        });
-
-        // ✅ If invoice created for services → link them
-        if (serviceIds.length > 0) {
-            await prisma.service.updateMany({
-                where: {
-                    id: { in: serviceIds.map(Number) },
-                    client: {
-                        userId: req.user.id,
-                    },
-                },
-                data: {
-                    invoiceId: invoice.id,
-                    status: "Billed",
-                },
-            });
-        }
-
-        const fullInvoice = await prisma.invoice.findUnique({
-            where: { id: invoice.id },
-            include: {
-                client: true,
-                services: true,
-            },
-        });
-
-        res.status(201).json({
-            message: "✅ Invoice created successfully",
-            invoice: fullInvoice,
-        });
-    } catch (error) {
-        console.error("❌ Error creating invoice:", error);
-        res.status(500).json({ message: "Error creating invoice" });
+    /* =======================
+       Validation
+    ======================= */
+    if (!clientId || isNaN(Number(clientId))) {
+      return res.status(400).json({ message: "Invalid clientId" });
     }
+
+    if (!Array.isArray(costItems) || costItems.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one cost item required" });
+    }
+
+    /* =======================
+       Ownership check
+    ======================= */
+    const client = await prisma.client.findFirst({
+      where: {
+        id: Number(clientId),
+        userId: getOwnerUserId(req),
+      },
+    });
+
+
+    if (!client) {
+      return res.status(403).json({ message: "Unauthorized client" });
+    }
+
+    /* =======================
+       Calculate totals (SAME AS BILLING FORM)
+    ======================= */
+    let grandTotal = 0;
+
+    const normalizedItems = costItems.map((item) => {
+      const base = Number(item.quantity) * Number(item.unitPrice);
+      const cgst = (base * Number(item.cgstRate || 0)) / 100;
+      const sgst = (base * Number(item.sgstRate || 0)) / 100;
+      const total = base + cgst + sgst;
+
+      grandTotal += total;
+
+      return {
+        type: item.type,
+        name: item.name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        cgstRate: Number(item.cgstRate),
+        sgstRate: Number(item.sgstRate),
+        totalCost: total,
+      };
+    });
+
+    const finalAmount = Math.floor(grandTotal - Number(discount || 0));
+
+    if (finalAmount <= 0) {
+      return res.status(400).json({ message: "Invalid total amount" });
+    }
+
+    /* =======================
+       Create Invoice
+    ======================= */
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber: `INV-${Date.now()}`,
+        clientId: Number(clientId),
+        vehicle: vehicle || null,
+        mechanic: mechanic || null,
+
+        discount: Number(discount || 0),
+        grandTotal: finalAmount,
+
+        paymentMode: paymentMode || null,
+        status: status || "Pending",
+        paidAt: status === "Paid" ? new Date() : null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+
+        notes: notes || null,
+        serviceCategory: serviceCategory || null,
+        serviceSubCategory: serviceSubCategory || null,
+        serviceNotes: serviceNotes || null,
+
+        invoiceCostItems: {
+          create: normalizedItems,
+        },
+      },
+      include: {
+        client: true,
+        invoiceCostItems: true,
+      },
+    });
+
+    return res.status(201).json({
+      message: "✅ Invoice created successfully",
+      invoice,
+    });
+  } catch (error) {
+    console.error("❌ createInvoice error:", error);
+    return res.status(500).json({
+      message: "Failed to create invoice",
+      error: String(error),
+    });
+  }
 };
 
 
 /* ============================================================
    ✏️ Update Invoice
+   @route   PUT /api/invoices/:id
+   @access  Private
 ============================================================ */
 export const updateInvoice = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const {
-            partsCost,
-            partsGst,
-            laborCost,
-            laborGst,
-            totalAmount,
-            tax,
-            discount,
-            grandTotal,
-            paymentMode,
-            status,
-            dueDate,
-            notes,
-        } = req.body;
+  try {
+    const { id } = req.params;
 
-        // Check that the invoice belongs to a client of the authenticated user
-        const invoice = await prisma.invoice.findFirst({
-            where: {
-                id: parseInt(id),
-                client: {
-                    userId: req.user.id // Filter by authenticated user
-                }
-            },
-        });
-
-        if (!invoice) return res.status(404).json({ message: "Invoice not found or access denied" });
-
-        const updatedInvoice = await prisma.invoice.update({
-            where: { id: parseInt(id) },
-            data: {
-                partsCost: parseFloat(partsCost || 0),
-                partsGst: parseFloat(partsGst || 0),
-                laborCost: parseFloat(laborCost || 0),
-                laborGst: parseFloat(laborGst || 0),
-                totalAmount: parseFloat(totalAmount || 0),
-                tax: parseFloat(tax || 0),
-                discount: parseFloat(discount || 0),
-                grandTotal: parseFloat(grandTotal || 0),
-                paymentMode,
-                status,
-                paidAt: status === "Paid" ? new Date() : null,
-                dueDate: dueDate ? new Date(dueDate) : null,
-                notes,
-            },
-            include: {
-                client: true,
-                services: true,
-            },
-        });
-
-        res.status(200).json({
-            message: "✅ Invoice updated successfully",
-            invoice: updatedInvoice,
-        });
-    } catch (error) {
-        console.error("❌ Error updating invoice:", error);
-        res.status(500).json({ message: "Error updating invoice" });
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: "Invalid invoice ID" });
     }
+
+    const existing = await prisma.invoice.findFirst({
+      where: {
+        id: Number(id),
+        client: { userId: getOwnerUserId(req) },
+      },
+    });
+
+
+    if (!existing) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+
+    const {
+      clientId,
+      vehicle,
+      mechanic,
+      paymentMode,
+      status,
+      dueDate,
+      notes,
+      serviceCategory,
+      serviceSubCategory,
+      serviceNotes,
+      discount,
+      costItems,
+    } = req.body;
+
+    if (!Array.isArray(costItems)) {
+      return res.status(400).json({ message: "Invalid cost items" });
+    }
+
+    /* =======================
+       Recalculate totals
+    ======================= */
+    let grandTotal = 0;
+
+    const normalizedItems = costItems.map((item) => {
+      const base = Number(item.quantity) * Number(item.unitPrice);
+      const cgst = (base * Number(item.cgstRate || 0)) / 100;
+      const sgst = (base * Number(item.sgstRate || 0)) / 100;
+      const total = base + cgst + sgst;
+
+      grandTotal += total;
+
+      return {
+        invoiceId: Number(id),
+        type: item.type,
+        name: item.name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        cgstRate: Number(item.cgstRate),
+        sgstRate: Number(item.sgstRate),
+        totalCost: total,
+      };
+    });
+
+    const finalAmount = Math.floor(grandTotal - Number(discount || 0));
+
+    /* =======================
+       Update Invoice
+    ======================= */
+    await prisma.invoice.update({
+      where: { id: Number(id) },
+      data: {
+        clientId: clientId ? Number(clientId) : existing.clientId,
+        vehicle: vehicle || existing.vehicle,
+        mechanic: mechanic || existing.mechanic,
+
+        discount: Number(discount || 0),
+        grandTotal: finalAmount,
+
+        paymentMode: paymentMode || existing.paymentMode,
+        status: status || existing.status,
+        paidAt: status === "Paid" ? new Date() : existing.paidAt,
+        dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
+
+        notes: notes ?? existing.notes,
+        serviceCategory: serviceCategory ?? existing.serviceCategory,
+        serviceSubCategory: serviceSubCategory ?? existing.serviceSubCategory,
+        serviceNotes: serviceNotes ?? existing.serviceNotes,
+      },
+    });
+
+    /* =======================
+       Replace cost items
+    ======================= */
+    await prisma.invoiceCostItem.deleteMany({
+      where: { invoiceId: Number(id) },
+    });
+
+    if (normalizedItems.length > 0) {
+      await prisma.invoiceCostItem.createMany({
+        data: normalizedItems,
+      });
+    }
+
+    const updated = await prisma.invoice.findUnique({
+      where: { id: Number(id) },
+      include: {
+        client: true,
+        invoiceCostItems: true,
+      },
+    });
+
+    return res.status(200).json({
+      message: "✅ Invoice updated successfully",
+      invoice: updated,
+    });
+  } catch (error) {
+    console.error("❌ updateInvoice error:", error);
+    return res.status(500).json({
+      message: "Failed to update invoice",
+      error: String(error),
+    });
+  }
 };
+
 
 /* ============================================================
    🗑️ Delete Invoice
+   @route   DELETE /api/invoices/:id
+   @access  Private
 ============================================================ */
 export const deleteInvoice = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        // Check that the invoice belongs to a client of the authenticated user
-        const invoice = await prisma.invoice.findFirst({
-            where: {
-                id: parseInt(id),
-                client: {
-                    userId: req.user.id // Filter by authenticated user
-                }
-            },
-        });
-
-        if (!invoice) return res.status(404).json({ message: "Invoice not found or access denied" });
-
-        await prisma.service.updateMany({
-            where: {
-                invoiceId: invoice.id,
-                client: {
-                    userId: req.user.id // Ensure services belong to the user's clients
-                }
-            },
-            data: { invoiceId: null, status: "Unpaid" },
-        });
-
-        await prisma.invoice.delete({ where: { id: invoice.id } });
-
-        res.json({ message: "🗑️ Invoice deleted successfully" });
-    } catch (error) {
-        console.error("❌ Error deleting invoice:", error);
-        res.status(500).json({ message: "Error deleting invoice" });
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: "Invalid invoice ID" });
     }
+
+    // Check that the invoice belongs to a client of the authenticated user
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        id: parseInt(id),
+        client: {
+          userId: getOwnerUserId(req), // Ensure invoice belongs to current user's client
+        },
+      },
+    });
+
+    if (!invoice) {
+      return res
+        .status(404)
+        .json({ message: "Invoice not found or access denied" });
+    }
+
+    // Delete the invoice (cascade will delete related cost items)
+    await prisma.invoice.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.status(200).json({ message: "🗑️ Invoice deleted successfully" });
+  } catch (error) {
+    console.error("❌ Error deleting invoice:", error);
+    res
+      .status(500)
+      .json({ message: "Error deleting invoice", error: String(error) });
+  }
 };
 
 /* ============================================================
-   📘 GET CLIENTS (Paginated + Lightweight)
+   📄 Get Clients (Paginated + Lightweight)
+   @route   GET /api/clients
+   @access  Private
 ============================================================ */
 export const getClients = async (req, res) => {
-    try {
-        const page = Math.max(1, parseInt(req.query.page || "1"));
-        const limit = Math.min(100, parseInt(req.query.limit || "50"));
-        const skip = (page - 1) * limit;
+  try {
+    const page = Math.max(1, parseInt(req.query.page || "1"));
+    const limit = Math.min(100, parseInt(req.query.limit || "50"));
+    const skip = (page - 1) * limit;
 
-        const where = { userId: req.user.id }; // Only get clients for the authenticated user
+    const where = { userId: getOwnerUserId(req) }; // Only get clients for the authenticated user
 
-        if (req.query.q) {
-            const q = String(req.query.q).trim().toLowerCase();
-            where.OR = [
-                { fullName: { contains: q, mode: "insensitive" } },
-                { phone: { contains: q, mode: "insensitive" } },
-                { email: { contains: q, mode: "insensitive" } },
-                { regNumber: { contains: q, mode: "insensitive" } },
-                { vehicleMake: { contains: q, mode: "insensitive" } },
-                { vehicleModel: { contains: q, mode: "insensitive" } },
-            ];
-        }
-
-        const [total, clients] = await Promise.all([
-            prisma.client.count({ where }),
-            prisma.client.findMany({
-                where,
-                select: {
-                    id: true,
-                    fullName: true,
-                    phone: true,
-                    email: true,
-                    regNumber: true,
-                    vehicleMake: true,
-                    vehicleModel: true,
-                    createdAt: true,
-                    _count: { select: { services: true } },
-                },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
-            }),
-        ]);
-
-        res.status(200).json({
-            success: true,
-            total,
-            page,
-            limit,
-            pages: Math.ceil(total / limit),
-            data: clients,
-        });
-    } catch (error) {
-        console.error("❌ Error fetching clients:", error);
-        res.status(500).json({ message: "Error fetching clients" });
+    if (req.query.q) {
+      const q = String(req.query.q).trim().toLowerCase();
+      where.OR = [
+        { fullName: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { regNumber: { contains: q, mode: "insensitive" } },
+        { vehicleMake: { contains: q, mode: "insensitive" } },
+        { vehicleModel: { contains: q, mode: "insensitive" } },
+      ];
     }
+
+    const [total, clients] = await Promise.all([
+      prisma.client.count({ where }),
+      prisma.client.findMany({
+        where,
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          email: true,
+          regNumber: true,
+          vehicleMake: true,
+          vehicleModel: true,
+          createdAt: true,
+          _count: { select: { services: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+      data: clients,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching clients:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching clients", error: String(error) });
+  }
 };
 
 /* ============================================================
-   📘 GET CLIENT BY ID (Detailed)
+   📄 Get Client by ID (Detailed)
+   @route   GET /api/clients/:id
+   @access  Private
 ============================================================ */
 export const getClientById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!id || isNaN(Number(id))) {
-            return res.status(400).json({ message: "Invalid client ID" });
-        }
-
-        // Check that the client belongs to the authenticated user
-        const client = await prisma.client.findFirst({
-            where: {
-                id: parseInt(id),
-                userId: req.user.id // Filter by authenticated user
-            },
-            include: {
-                services: {
-                    select: {
-                        id: true,
-                        notes: true,
-                        partsCost: true,
-                        partsGst: true,
-                        laborCost: true,
-                        laborGst: true,
-                        cost: true,
-                        status: true,
-                        date: true,
-                        invoiceId: true,
-                    },
-                    orderBy: { date: "desc" },
-                },
-                invoices: {
-                    select: {
-                        id: true,
-                        invoiceNumber: true,
-                        totalAmount: true,
-                        grandTotal: true,
-                        paymentMode: true,
-                        status: true,
-                        dueDate: true,
-                        createdAt: true,
-                    },
-                    orderBy: { createdAt: "desc" },
-                },
-            },
-        });
-
-        if (!client)
-            return res.status(404).json({ message: "Client not found or access denied" });
-
-        res.status(200).json({
-            success: true,
-            data: client,
-        });
-    } catch (error) {
-        console.error("❌ Error fetching client:", error);
-        res.status(500).json({ message: "Error fetching client details" });
+  try {
+    const { id } = req.params;
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: "Invalid client ID" });
     }
+
+    // Check that the client belongs to the authenticated user
+    const client = await prisma.client.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: getOwnerUserId(req), // Filter by authenticated user
+      },
+      include: {
+        services: {
+          select: {
+            id: true,
+            notes: true,
+            partsCost: true,
+            partsGst: true,
+            laborCost: true,
+            laborGst: true,
+            cost: true,
+            status: true,
+            date: true,
+            invoiceId: true,
+            category: {
+              select: {
+                name: true,
+              },
+            },
+            subService: {
+              select: {
+                name: true,
+              },
+            },
+          },
+          orderBy: { date: "desc" },
+        },
+        invoices: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            totalAmount: true,
+            grandTotal: true,
+            paymentMode: true,
+            status: true,
+            dueDate: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!client) {
+      return res
+        .status(404)
+        .json({ message: "Client not found or access denied" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: client,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching client:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching client", error: String(error) });
+  }
 };
+
+/* ============================================================
+   🔄 Create Invoice from Service
+   @route   POST /api/services/:id/create-invoice
+   @access  Private
+============================================================ */
+export const createInvoiceFromService = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({ message: "Invalid service ID" });
+    }
+
+    const service = await prisma.service.findFirst({
+      where: {
+        id: Number(id),
+        client: { userId: getOwnerUserId(req) },
+      },
+      include: {
+        client: true,
+        category: true,
+        subService: true,
+        serviceCostItems: true,
+      },
+    });
+
+    if (!service) {
+      return res
+        .status(404)
+        .json({ message: "Service not found or access denied" });
+    }
+
+    if (!service.serviceCostItems || service.serviceCostItems.length === 0) {
+      return res.status(400).json({
+        message: "Service has no cost items to generate invoice",
+      });
+    }
+
+    /* =======================
+       Recalculate totals (IMPORTANT)
+    ======================= */
+    let grandTotal = 0;
+
+    const normalizedItems = service.serviceCostItems.map((item) => {
+      const base = Number(item.quantity) * Number(item.unitPrice);
+      const cgst = (base * Number(item.cgstRate || 0)) / 100;
+      const sgst = (base * Number(item.sgstRate || 0)) / 100;
+      const total = base + cgst + sgst;
+
+      grandTotal += total;
+
+      return {
+        type: item.type,
+        name: item.name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        cgstRate: Number(item.cgstRate),
+        sgstRate: Number(item.sgstRate),
+        totalCost: total,
+      };
+    });
+
+    const invoiceNumber = `INV-${Date.now()}`;
+
+    /* =======================
+       Create Invoice
+    ======================= */
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        clientId: service.clientId,
+        userId: getOwnerUserId(req),
+
+        vehicle: `${service.client.vehicleMake} ${service.client.vehicleModel}`,
+        mechanic: service.mechanic || null,
+
+        tax: 0,
+        discount: 0,
+        grandTotal,
+
+        paymentMode: null,
+        status: "Pending",
+
+        serviceCategory: service.category?.name || null,
+        serviceSubCategory: service.subService?.name || null,
+        serviceNotes: service.notes || null,
+
+        invoiceCostItems: {
+          create: normalizedItems,
+        },
+      },
+      include: {
+        client: true,
+        invoiceCostItems: true,
+      },
+    });
+
+    /* =======================
+       Mark service billed
+    ======================= */
+    await prisma.service.update({
+      where: { id: service.id },
+      data: {
+        invoiceId: invoice.id,
+        status: "Billed",
+      },
+    });
+
+    return res.status(201).json({
+      message: "✅ Invoice created from service successfully",
+      invoice,
+    });
+  } catch (error) {
+    console.error("❌ Error creating invoice from service:", error);
+    return res.status(500).json({
+      message: "Error creating invoice from service",
+      error: String(error),
+    });
+  }
+};
+
+

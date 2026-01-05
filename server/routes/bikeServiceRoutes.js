@@ -30,8 +30,8 @@ router.get("/types/list", getBikeServiceTypes);
 router.get("/", getBikeServices);
 router.get("/client/:clientId", getBikeServicesByClient);
 router.get("/:id", getBikeServiceById);
-router.post("/", upload.array("media"), createBikeService);
-router.put("/:id", upload.array("media"), updateBikeService);
+router.post("/", createBikeService);
+router.put("/:id", updateBikeService);
 router.delete("/:id", deleteBikeService);
 
 export default router;

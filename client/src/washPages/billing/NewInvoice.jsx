@@ -1,340 +1,407 @@
-// src/billing/CreateInvoice.jsx
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft,
-    Hash,
-    Calendar,
-    User2,
-    Tag,
-    Car,
-    Wrench,
     FileText,
+    User,
+    Wrench,
     IndianRupee,
-    Percent,
     CreditCard,
-    Save,
-    X,
-    BadgeCheck,
 } from "lucide-react";
+import { useTheme } from "../../contexts/ThemeContext"; // Import theme context
 
-export default function CreateInvoice() {
+const API = import.meta.env.VITE_API_BASE_URL;
+
+
+
+export default function NewInvoice() {
+    const { isDark } = useTheme();
     const navigate = useNavigate();
+    const { state } = useLocation();   // ✅ hook inside component
+    const token = localStorage.getItem("token");
 
-    // simple cost state to drive the Grand Total
-    const [partsCost, setPartsCost] = useState(0);
-    const [partsGst, setPartsGst] = useState(0);
-    const [laborCost, setLaborCost] = useState(0);
-    const [laborGst, setLaborGst] = useState(0);
-    const [additionalTaxes, setAdditionalTaxes] = useState(0);
-    const [discounts, setDiscounts] = useState(0);
+    const preselectedServiceId = state?.serviceId || ""; // ✅ safe here
 
-    const grandTotal = useMemo(() => {
-        const pCost = Number(partsCost) || 0;
-        const pGst = Number(partsGst) || 0;
-        const lCost = Number(laborCost) || 0;
-        const lGst = Number(laborGst) || 0;
-        const taxAdd = Number(additionalTaxes) || 0;
-        const disc = Number(discounts) || 0;
 
-        const partsTotal = pCost + (pCost * pGst) / 100;
-        const laborTotal = lCost + (lCost * lGst) / 100;
+    const isEdit = state?.isEdit;
+    const billing = state?.billing;
 
-        return partsTotal + laborTotal + taxAdd - disc;
-    }, [partsCost, partsGst, laborCost, laborGst, additionalTaxes, discounts]);
+    /* ================= EDITABLE STATE ================= */
+    const [invoiceNumber, setInvoiceNumber] = useState(
+        billing?.invoiceNumber || `INV-${Date.now()}`
+    );
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // hook up to your API here
-        alert("Invoice submitted (hook up API here)");
+    const [invoiceDate, setInvoiceDate] = useState(
+        billing?.invoiceDate?.split("T")[0] ||
+        new Date().toISOString().split("T")[0]
+    );
+
+    const [client, setClient] = useState({
+        id: billing?.washingClient?.id || "",
+        fullName: billing?.washingClient?.fullName || "",
+        phone: billing?.washingClient?.phone || "",
+        email: billing?.washingClient?.email || "",
+        address: billing?.washingClient?.address || "",
+        regNumber: billing?.washingClient?.regNumber || "",
+    });
+
+
+    const [service, setService] = useState({
+        category: billing?.category?.name || "",
+        subService: billing?.subService?.name || "",
+        date: billing?.serviceDate?.split("T")[0] || "",
+        notes: billing?.notes || "",
+    });
+
+    const [cost, setCost] = useState(Number(billing?.partsCost || 0));
+    const [gstPercent, setGstPercent] = useState(Number(billing?.partsGst || 0));
+
+    const [paymentMode, setPaymentMode] = useState(billing?.paymentMode || "");
+    const [status, setStatus] = useState(billing?.status || "PENDING");
+
+    /* ================= CALCULATIONS ================= */
+    const gstAmount = (cost * gstPercent) / 100;
+    const grandTotal = cost + gstAmount;
+
+    /* ================= SUBMIT ================= */
+    const [services, setServices] = useState([]);
+    const [selectedServiceId, setSelectedServiceId] = useState(preselectedServiceId);
+
+
+    useEffect(() => {
+        if (!selectedServiceId) return;
+
+        const selected = services.find(s => s.id == selectedServiceId);
+        if (!selected) return;
+
+        setService({
+            category: selected.category?.name || "",
+            subService: selected.subService?.name || "",
+            date: selected.date?.split("T")[0] || "",
+            notes: selected.notes || "",
+        });
+
+        setCost(Number(selected.partsCost || 0));
+        setGstPercent(Number(selected.partsGst || 0));
+
+        setClient({
+            id: selected.client?.id || "",
+            fullName: selected.client?.fullName || "",
+            phone: selected.client?.phone || "",
+            email: selected.client?.email || "",
+            address: selected.client?.address || "",
+            regNumber: selected.client?.regNumber || "",
+        });
+
+    }, [selectedServiceId, services]);
+
+
+    useEffect(() => {
+        const fetchServices = async () => {
+            const res = await fetch(`${API}/api/washing-services`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            setServices(Array.isArray(data) ? data : []);
+        };
+        fetchServices();
+    }, []);
+
+    useEffect(() => {
+        if (isEdit && billing?.services?.length) {
+            setSelectedServiceId(billing.services[0].washingService.id);
+        }
+    }, [isEdit, billing]);
+
+    const [clients, setClients] = useState([]);
+
+    useEffect(() => {
+        fetch(`${API}/api/clients`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(res => res.json())
+            .then(data => setClients(Array.isArray(data) ? data : []));
+    }, []);
+
+
+    const submitInvoice = async () => {
+        const url = isEdit
+            ? `${API}/api/wash-billing/${billing.id}`
+            : `${API}/api/wash-billing`;
+
+        const method = isEdit ? "PUT" : "POST";
+
+        await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                washingClientId: client.id,
+                serviceIds: [selectedServiceId],
+                invoiceNumber,
+                invoiceDate,
+                partsCost: cost,
+                partsGst: gstPercent,
+                grandTotal,
+                paymentMode,
+                status,
+            }),
+        });
+
+        navigate("/washing-Billing");
     };
 
+
     return (
-        <div className="min-h-screen px-6 py-6 bg-slate-50 lg:px-12">
-            {/* Top back link */}
-            <button
-                type="button"
-                onClick={() => navigate("/billing")}
-                className="inline-flex items-center gap-2 mb-4 text-sm font-medium text-slate-600 hover:text-slate-900"
+        <div className={`min-h-screen p-6 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gray-100"}`}>
+            <div className="max-w-5xl mx-auto space-y-6">
+
+                {/* HEADER */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className={`flex items-center gap-2 transition-colors ${isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-600 hover:text-gray-700"}`}
+                >
+                    <ArrowLeft size={16} /> Back
+                </button>
+
+                <h1 className={`text-3xl font-bold ${isDark ? "text-white" : ""}`}>Create Invoice</h1>
+
+                {/* INVOICE INFO */}
+                <Card title="Invoice Information" icon={<FileText />} isDark={isDark}>
+                    <Grid>
+                        <Input
+                            label="Invoice Number"
+                            value={invoiceNumber}
+                            onChange={e => setInvoiceNumber(e.target.value)}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="Invoice Date"
+                            type="date"
+                            value={invoiceDate}
+                            onChange={e => setInvoiceDate(e.target.value)}
+                            isDark={isDark}
+                        />
+                    </Grid>
+                </Card>
+
+                {/* CLIENT */}
+                <Card title="Client Details" icon={<User />} isDark={isDark}>
+                    <Grid>
+                        <Select
+                            label="Select Service"
+                            value={selectedServiceId}
+                            onChange={(e) => setSelectedServiceId(e.target.value)}
+                            isDark={isDark}
+                        >
+                            <option value="">Select Service</option>
+                            {services.map(s => (
+                                <option key={s.id} value={s.id}>
+                                    {s.subService?.name} - {s.client?.fullName}
+                                </option>
+                            ))}
+                        </Select>
+
+
+                        <Input
+                            label="Phone"
+                            value={client.phone}
+                            onChange={e => setClient({ ...client, phone: e.target.value })}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="Email"
+                            value={client.email}
+                            onChange={e => setClient({ ...client, email: e.target.value })}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="Vehicle Reg No"
+                            value={client.regNumber}
+                            onChange={e => setClient({ ...client, regNumber: e.target.value })}
+                            isDark={isDark}
+                        />
+                    </Grid>
+                    <Textarea
+                        label="Address"
+                        value={client.address}
+                        onChange={e => setClient({ ...client, address: e.target.value })}
+                        isDark={isDark}
+                    />
+                </Card>
+
+                {/* SERVICE */}
+                <Card title="Service Details" icon={<Wrench />} isDark={isDark}>
+                    <Grid>
+                        <Input
+                            label="Category"
+                            value={service.category}
+                            onChange={e => setService({ ...service, category: e.target.value })}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="Sub Service"
+                            value={service.subService}
+                            onChange={e => setService({ ...service, subService: e.target.value })}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="Service Date"
+                            type="date"
+                            value={service.date}
+                            onChange={e => setService({ ...service, date: e.target.value })}
+                            isDark={isDark}
+                        />
+                    </Grid>
+                    <Textarea
+                        label="Notes"
+                        value={service.notes}
+                        onChange={e => setService({ ...service, notes: e.target.value })}
+                        isDark={isDark}
+                    />
+                </Card>
+
+                {/* COST */}
+                <Card title="Cost Breakdown" icon={<IndianRupee />} isDark={isDark}>
+                    <Grid>
+                        <Input
+                            label="Service Cost (₹)"
+                            type="number"
+                            value={cost}
+                            onChange={e => setCost(Number(e.target.value))}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="GST %"
+                            type="number"
+                            value={gstPercent}
+                            onChange={e => setGstPercent(Number(e.target.value))}
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="GST Amount"
+                            value={gstAmount.toFixed(2)}
+                            disabled
+                            isDark={isDark}
+                        />
+                        <Input
+                            label="Grand Total"
+                            value={grandTotal.toFixed(2)}
+                            disabled
+                            isDark={isDark}
+                        />
+                    </Grid>
+                </Card>
+
+                {/* PAYMENT */}
+                <Card title="Payment Details" icon={<CreditCard />} isDark={isDark}>
+                    <Grid>
+                        <Select
+                            label="Payment Mode"
+                            value={paymentMode}
+                            onChange={e => setPaymentMode(e.target.value)}
+                            isDark={isDark}
+                        >
+                            <option value="">Select</option>
+                            <option>Cash</option>
+                            <option>UPI</option>
+                            <option>Card</option>
+                        </Select>
+
+                        <Select
+                            label="Status"
+                            value={status}
+                            onChange={e => setStatus(e.target.value)}
+                            isDark={isDark}
+                        >
+                            <option value="PENDING">Pending</option>
+                            <option value="PAID">Paid</option>
+                        </Select>
+                    </Grid>
+                </Card>
+
+                {/* ACTION */}
+                <button
+                    onClick={submitInvoice}
+                    className={`w-full py-3 text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${isDark
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-green-600 hover:bg-green-700"
+                        }`}
+                >
+                    Create Invoice
+                </button>
+            </div>
+        </div>
+    );
+}
+
+/* ================= UI HELPERS ================= */
+
+function Card({ title, icon, children, isDark }) {
+    return (
+        <div className={`p-6 rounded-xl transition-all duration-300 ${isDark
+            ? "bg-gray-800 border border-gray-700"
+            : "bg-white shadow"
+            }`}>
+            <h3 className={`flex items-center gap-2 mb-4 font-semibold ${isDark ? "text-white" : ""
+                }`}>
+                {icon} {title}
+            </h3>
+            {children}
+        </div>
+    );
+}
+
+function Grid({ children }) {
+    return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
+}
+
+function Input({ label, isDark, ...props }) {
+    return (
+        <div>
+            <label className={`block mb-1 text-sm ${isDark ? "text-gray-300" : ""}`}>{label}</label>
+            <input
+                {...props}
+                className={`w-full p-3 rounded-lg transition-all duration-300 outline-none ${isDark
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    } border`}
+            />
+        </div>
+    );
+}
+
+function Textarea({ label, isDark, ...props }) {
+    return (
+        <div className="mt-4">
+            <label className={`block mb-1 text-sm ${isDark ? "text-gray-300" : ""}`}>{label}</label>
+            <textarea
+                {...props}
+                className={`w-full p-3 rounded-lg transition-all duration-300 outline-none resize-none ${isDark
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    } border`}
+                rows={3}
+            />
+        </div>
+    );
+}
+
+function Select({ label, children, isDark, ...props }) {
+    return (
+        <div>
+            <label className={`block mb-1 text-sm ${isDark ? "text-gray-300" : ""}`}>{label}</label>
+            <select
+                {...props}
+                className={`w-full p-3 rounded-lg transition-all duration-300 outline-none ${isDark
+                    ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    : "bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    } border`}
             >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Billing</span>
-            </button>
-
-            {/* Page Title */}
-            <h1 className="mb-6 text-3xl font-semibold text-slate-900">Create Invoice</h1>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Invoice header card */}
-                <section className="p-6 bg-white border shadow-sm rounded-2xl">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        {/* Invoice Number */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Hash className="w-4 h-4" />
-                                <span>Invoice Number</span>
-                            </label>
-                            <input
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                defaultValue="INV-20251208-9337"
-                            />
-                        </div>
-
-                        {/* Invoice Date */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Calendar className="w-4 h-4" />
-                                <span>Invoice Date</span>
-                            </label>
-                            <input
-                                type="date"
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                defaultValue={new Date().toISOString().slice(0, 10)}
-                            />
-                        </div>
-
-                        {/* Customer */}
-                        <div className="md:col-span-2">
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <User2 className="w-4 h-4" />
-                                <span>Customer</span>
-                            </label>
-                            <select className="w-full px-3 py-2 border rounded-lg border-slate-200 bg-slate-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option>Select Customer</option>
-                                <option>John Doe</option>
-                                <option>Jane Smith</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Service Details card */}
-                <section className="p-6 bg-white border shadow-sm rounded-2xl">
-                    <h2 className="mb-4 text-lg font-semibold text-slate-900">Service Details</h2>
-
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        {/* Service Category */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Tag className="w-4 h-4" />
-                                <span>Service Category</span>
-                            </label>
-                            <select className="w-full px-3 py-2 border rounded-lg border-slate-200 bg-slate-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option>Select Category</option>
-                                <option>General Service</option>
-                                <option>Body Repair</option>
-                            </select>
-                        </div>
-
-                        {/* Service Sub-category */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Tag className="w-4 h-4" />
-                                <span>Service Sub-Category</span>
-                            </label>
-                            <select className="w-full px-3 py-2 border rounded-lg border-slate-200 bg-slate-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option>Select Sub-Category</option>
-                                <option>Interior Cleaning</option>
-                                <option>Exterior Detailing</option>
-                            </select>
-                        </div>
-
-                        {/* Vehicle */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Car className="w-4 h-4" />
-                                <span>Vehicle</span>
-                            </label>
-                            <input
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                placeholder="Select or enter vehicle"
-                            />
-                        </div>
-
-                        {/* Mechanic */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Wrench className="w-4 h-4" />
-                                <span>Mechanic</span>
-                            </label>
-                            <input
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                placeholder="Assign mechanic"
-                            />
-                        </div>
-
-                        {/* Service Notes */}
-                        <div className="md:col-span-2">
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <FileText className="w-4 h-4" />
-                                <span>Service Notes</span>
-                            </label>
-                            <textarea
-                                rows={4}
-                                className="w-full px-3 py-2 border rounded-lg resize-none bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                placeholder="Enter any additional notes or details..."
-                            />
-                        </div>
-                    </div>
-                </section>
-
-                {/* Cost Breakdown card */}
-                <section className="p-6 bg-white border shadow-sm rounded-2xl">
-                    <h2 className="mb-4 text-lg font-semibold text-slate-900">Cost Breakdown</h2>
-
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        {/* Parts Cost */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <IndianRupee className="w-4 h-4" />
-                                <span>Parts Cost</span>
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={partsCost}
-                                onChange={(e) => setPartsCost(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            />
-                        </div>
-
-                        {/* Parts GST */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Percent className="w-4 h-4" />
-                                <span>Parts GST (%)</span>
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={partsGst}
-                                onChange={(e) => setPartsGst(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            />
-                        </div>
-
-                        {/* Labor Cost */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <IndianRupee className="w-4 h-4" />
-                                <span>Labor Cost</span>
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={laborCost}
-                                onChange={(e) => setLaborCost(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            />
-                        </div>
-
-                        {/* Labor GST */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Percent className="w-4 h-4" />
-                                <span>Labor GST (%)</span>
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={laborGst}
-                                onChange={(e) => setLaborGst(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            />
-                        </div>
-
-                        {/* Additional Taxes */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Tag className="w-4 h-4" />
-                                <span>Additional Taxes</span>
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={additionalTaxes}
-                                onChange={(e) => setAdditionalTaxes(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            />
-                        </div>
-
-                        {/* Discounts */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <Tag className="w-4 h-4" />
-                                <span>Discounts</span>
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={discounts}
-                                onChange={(e) => setDiscounts(e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg bg-slate-50/40 border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                            />
-                        </div>
-
-                        {/* Payment Mode */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <CreditCard className="w-4 h-4" />
-                                <span>Payment Mode</span>
-                            </label>
-                            <select className="w-full px-3 py-2 border rounded-lg border-slate-200 bg-slate-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option>Select Payment Mode</option>
-                                <option>Cash</option>
-                                <option>UPI</option>
-                                <option>Card</option>
-                                <option>Bank Transfer</option>
-                            </select>
-                        </div>
-
-                        {/* Payment Status */}
-                        <div>
-                            <label className="flex items-center gap-2 mb-1 text-sm font-medium text-slate-800">
-                                <BadgeCheck className="w-4 h-4" />
-                                <span>Payment Status</span>
-                            </label>
-                            <select className="w-full px-3 py-2 border rounded-lg border-slate-200 bg-slate-50/40 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option>Pending</option>
-                                <option>Paid</option>
-                                <option>Partially Paid</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Grand total + buttons */}
-                    <div className="flex flex-col items-start justify-between mt-8 gap-y-4 md:flex-row md:items-center">
-                        <div className="text-base font-semibold text-slate-900">
-                            Grand Total:
-                        </div>
-                        <div className="flex items-center gap-8 md:ml-auto">
-                            <div className="text-2xl font-bold text-emerald-600">
-                                ₹ {grandTotal.toFixed(2)}
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    type="submit"
-                                    className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white shadow rounded-xl bg-emerald-600 hover:bg-emerald-700"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    Create Invoice
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => navigate("/billing")}
-                                    className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold bg-white border rounded-xl text-slate-700 hover:bg-slate-50"
-                                >
-                                    <X className="w-4 h-4" />
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </form>
+                {children}
+            </select>
         </div>
     );
 }

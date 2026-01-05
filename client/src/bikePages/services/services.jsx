@@ -7,20 +7,18 @@ import {
   RefreshCw, 
   AlertCircle,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Wrench,
   CheckCircle,
   Clock,
   TrendingUp
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
-
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import api from "../../utils/axiosInstance";
 
 const Services = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,16 +31,11 @@ const Services = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/bike-services`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Fetch failed");
-
-      const data = await res.json();
-      setServices(data.services || data || []);
+      const res = await api.get("/api/bike-services");
+      setServices(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      toast.error("Failed to load services");
+      console.error("Fetch services error:", err);
+      toast.error(err.response?.data?.message || "Failed to load services");
     } finally {
       setLoading(false);
     }
@@ -67,8 +60,46 @@ const Services = () => {
       .includes(searchQuery.toLowerCase())
   );
 
+  const updateStatus = async (serviceId, newStatus) => {
+    try {
+      // Find existing service
+      const service = services.find((s) => s.id === serviceId);
+      if (!service) return;
+
+      await api.put(`/api/bike-services/${serviceId}`, {
+        // Required fields
+        clientId: service.clientId,
+        categoryId: service.categoryId,
+        subServiceId: service.subServiceId,
+        date: service.date,
+
+        // Optional fields
+        notes: service.notes || "",
+        partsCost: Number(service.partsCost || 0),
+        partsGst: Number(service.partsGst || 0),
+        laborCost: Number(service.laborCost || 0),
+        laborGst: Number(service.laborGst || 0),
+
+        // Updated field
+        status: newStatus,
+      });
+
+      // Update UI instantly
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === serviceId ? { ...s, status: newStatus } : s
+        )
+      );
+
+      toast.success("Status updated successfully");
+    } catch (err) {
+      console.error("Status update error:", err);
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
       isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
     }`}>
       <Toaster position="top-right" />
@@ -77,7 +108,7 @@ const Services = () => {
       <div className="mb-8 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent`}>
+            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent`}>
               Service Management
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -87,7 +118,7 @@ const Services = () => {
 
           <button
             onClick={() => navigate("/bike-services/add")}
-            className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
+            className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
           >
             <PlusCircle size={20} className="group-hover:rotate-90 transition-transform duration-300" />
             Add New Service
@@ -122,21 +153,21 @@ const Services = () => {
         {/* Pending Services */}
         <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
           isDark
-            ? "bg-gray-800 border-gray-700 hover:border-orange-500/50"
-            : "bg-white border-gray-100 hover:border-orange-500/30"
+            ? "bg-gray-800 border-gray-700 hover:border-blue-600/50"
+            : "bg-white border-gray-100 hover:border-blue-600/30"
         }`}>
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-xl ${
-              isDark ? "bg-orange-500/20" : "bg-orange-50"
+              isDark ? "bg-blue-500/20" : "bg-blue-50"
             }`}>
-              <Clock size={24} className="text-orange-500" />
+              <Clock size={24} className="text-blue-600" />
             </div>
-            <AlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-orange-500 transition-colors`} />
+            <AlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-blue-600 transition-colors`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
             Pending Services
           </p>
-          <h2 className="text-3xl font-bold text-orange-500">
+          <h2 className="text-3xl font-bold text-blue-600">
             {pendingServices}
           </h2>
         </div>
@@ -156,7 +187,7 @@ const Services = () => {
             <CheckCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-green-500 transition-colors`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Paid Services
+            Completed Services
           </p>
           <h2 className="text-3xl font-bold text-green-500">
             {paidServices}
@@ -166,18 +197,18 @@ const Services = () => {
         {/* Total Revenue */}
         <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
           isDark
-            ? "bg-gradient-to-br from-green-900/50 to-emerald-900/50 border-green-700/50 hover:border-green-500/50"
-            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:border-green-500/30"
+            ? "bg-gray-800 border-gray-700 hover:border-green-500/50"
+            : "bg-white border-gray-100 hover:border-green-500/30"
         }`}>
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-xl ${
-              isDark ? "bg-green-500/30" : "bg-green-100"
+              isDark ? "bg-green-500/20" : "bg-green-50"
             }`}>
-              <DollarSign size={24} className="text-green-600" />
+              <IndianRupee size={24} className="text-green-500" />
             </div>
-            <TrendingUp size={20} className={`${isDark ? "text-green-400" : "text-green-500"} group-hover:scale-110 transition-transform`} />
+            <TrendingUp size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-green-500 transition-colors`} />
           </div>
-          <p className={`text-sm mb-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+          <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
             Total Revenue
           </p>
           <h2 className="text-3xl font-bold text-green-600">
@@ -187,7 +218,7 @@ const Services = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="mb-8 animate-slide-down">
+      <div className="mb-8 animate-slide-down" style={{ animationDelay: "100ms" }}>
         <div className="relative max-w-2xl">
           <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
             isDark ? "text-gray-400" : "text-gray-500"
@@ -241,6 +272,7 @@ const Services = () => {
                 isDark={isDark}
                 index={index}
                 onClick={() => navigate(`/bike-services/${service.id}`)}
+                updateStatus={updateStatus}
               />
             ))
           )}
@@ -298,7 +330,7 @@ const Services = () => {
   );
 };
 
-function ServiceCard({ service, isDark, index, onClick }) {
+function ServiceCard({ service, isDark, index, onClick, updateStatus }) {
   return (
     <div
       onClick={onClick}
@@ -355,11 +387,27 @@ function ServiceCard({ service, isDark, index, onClick }) {
                 ? "bg-green-500/20 text-green-400 group-hover:bg-green-500/30"
                 : "bg-green-100 text-green-700 group-hover:bg-green-200"
               : isDark
-              ? "bg-orange-500/20 text-orange-400 group-hover:bg-orange-500/30"
-              : "bg-orange-100 text-orange-700 group-hover:bg-orange-200"
+              ? "bg-blue-500/20 text-blue-400 group-hover:bg-blue-500/30"
+              : "bg-blue-100 text-blue-700 group-hover:bg-blue-200"
           }`}
         >
-          {service.status}
+          <select
+            value={service.status}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => updateStatus(service.id, e.target.value)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border cursor-pointer transition-all ${
+              service.status === "Paid"
+                ? isDark
+                  ? "bg-green-500/20 text-green-400 border-green-500/40"
+                  : "bg-green-100 text-green-700 border-green-300"
+                : isDark
+                ? "bg-blue-500/20 text-blue-400 border-blue-600/40"
+                : "bg-blue-100 text-blue-700 border-blue-300"
+            }`}
+          >
+            <option value="Pending">Pending</option>
+            <option value="Paid">Completed</option>
+          </select>
         </span>
 
         <div className="text-right">
@@ -367,7 +415,15 @@ function ServiceCard({ service, isDark, index, onClick }) {
             Total Amount
           </p>
           <p className="text-2xl font-bold text-green-600">
-            ₹{service.cost}
+            ₹{(
+              Number(service.cost || 0) ||
+              (
+                Number(service.partsCost || 0) +
+                (Number(service.partsCost || 0) * Number(service.partsGst || 0)) / 100 +
+                Number(service.laborCost || 0) +
+                (Number(service.laborCost || 0) * Number(service.laborGst || 0)) / 100
+              )
+            ).toFixed(2)}
           </p>
         </div>
 

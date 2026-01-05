@@ -7,7 +7,6 @@ import {
   FiEdit,
   FiSearch,
   FiFileText,
-  FiDollarSign,
   FiCheckCircle,
   FiClock,
   FiTrendingUp,
@@ -16,26 +15,8 @@ import {
 } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Toaster, toast } from "react-hot-toast";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
-
-const getAuthToken = () =>
-  localStorage.getItem("token") || localStorage.getItem("authToken");
-
-const fetchWithAuth = async (url, options = {}) => {
-  const token = getAuthToken();
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-    ...options.headers,
-  };
-  const res = await fetch(url, { ...options, headers });
-  if (res.status === 401) {
-    localStorage.clear();
-    window.location.href = "/login";
-  }
-  return res;
-};
+import { IndianRupee } from "lucide-react";
+import api from "../../utils/axiosInstance";
 
 export default function BillingList() {
   const { isDark } = useTheme();
@@ -52,11 +33,11 @@ export default function BillingList() {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const res = await fetchWithAuth(`${API_URL}/api/bike-invoices`);
-      const data = await res.json();
-      setInvoices(data);
+      const res = await api.get("/api/bike-invoices");
+      setInvoices(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      toast.error("Failed to load invoices");
+      console.error("Fetch invoices error:", err);
+      toast.error(err.response?.data?.message || "Failed to load invoices");
     } finally {
       setLoading(false);
     }
@@ -76,11 +57,12 @@ export default function BillingList() {
     if (!confirm("Are you sure you want to delete this invoice?")) return;
     
     try {
-      await fetchWithAuth(`${API_URL}/api/bike-invoices/${id}`, { method: "DELETE" });
+      await api.delete(`/api/bike-invoices/${id}`);
       setInvoices(prev => prev.filter(i => i.id !== id));
       toast.success("Invoice deleted successfully");
     } catch (err) {
-      toast.error("Failed to delete invoice");
+      console.error("Delete invoice error:", err);
+      toast.error(err.response?.data?.message || "Failed to delete invoice");
     }
   };
 
@@ -88,13 +70,23 @@ export default function BillingList() {
   const totalInvoices = invoices.length;
   const paidInvoices = invoices.filter(inv => inv.status === "Paid").length;
   const pendingInvoices = invoices.filter(inv => inv.status === "Pending").length;
-  const totalRevenue = invoices
-    .filter(inv => inv.status === "Paid")
-    .reduce((sum, inv) => sum + Number(inv.grandTotal || 0), 0)
-    .toFixed(2);
+  const totalRevenue = useMemo(() => {
+    return invoices
+      .filter(inv =>
+        ["paid", "Paid", "PAID", "Completed"].includes(inv.status)
+      )
+      .reduce((sum, inv) => {
+        const amount = String(inv.grandTotal || "0")
+          .replace(/,/g, "")   // remove commas
+          .replace(/₹/g, ""); // remove currency if any
+
+        return sum + Number(amount);
+      }, 0)
+      .toFixed(2);
+  }, [invoices]);
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
       isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
     }`}>
       <Toaster position="top-right" />
@@ -103,7 +95,7 @@ export default function BillingList() {
       <div className="mb-8 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent`}>
+            <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent`}>
               Billing Management
             </h1>
             <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -113,7 +105,7 @@ export default function BillingList() {
 
           <Link
             to="/bill/new"
-            className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
+            className="group flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
           >
             <FiPlus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
             New Invoice
@@ -148,21 +140,21 @@ export default function BillingList() {
         {/* Pending Invoices */}
         <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
           isDark
-            ? "bg-gray-800 border-gray-700 hover:border-orange-500/50"
-            : "bg-white border-gray-100 hover:border-orange-500/30"
+            ? "bg-gray-800 border-gray-700 hover:border-blue-600/50"
+            : "bg-white border-gray-100 hover:border-blue-600/30"
         }`}>
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-xl ${
-              isDark ? "bg-orange-500/20" : "bg-orange-50"
+              isDark ? "bg-blue-500/20" : "bg-blue-50"
             }`}>
-              <FiClock size={24} className="text-orange-500" />
+              <FiClock size={24} className="text-blue-600" />
             </div>
-            <FiAlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-orange-500 transition-colors`} />
+            <FiAlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-blue-600 transition-colors`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
             Pending Payments
           </p>
-          <h2 className="text-3xl font-bold text-orange-500">
+          <h2 className="text-3xl font-bold text-blue-600">
             {pendingInvoices}
           </h2>
         </div>
@@ -199,7 +191,7 @@ export default function BillingList() {
             <div className={`p-3 rounded-xl ${
               isDark ? "bg-blue-500/30" : "bg-blue-100"
             }`}>
-              <FiDollarSign size={24} className="text-blue-600" />
+              <IndianRupee size={24} className="text-blue-600" />
             </div>
             <FiTrendingUp size={20} className={`${isDark ? "text-blue-400" : "text-blue-500"} group-hover:scale-110 transition-transform`} />
           </div>
@@ -213,7 +205,7 @@ export default function BillingList() {
       </div>
 
       {/* Search Bar */}
-      <div className="mb-8 animate-slide-down">
+      <div className="mb-8 animate-slide-down" style={{ animationDelay: "100ms" }}>
         <div className="relative max-w-2xl">
           <FiSearch className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
             isDark ? "text-gray-400" : "text-gray-500"
@@ -332,8 +324,8 @@ function InvoiceCard({ invoice, isDark, index, onView, onEdit, onDelete }) {
       ? "bg-green-500/20 text-green-400 border-green-500/50"
       : "bg-green-100 text-green-700 border-green-200",
     Pending: isDark
-      ? "bg-orange-500/20 text-orange-400 border-orange-500/50"
-      : "bg-orange-100 text-orange-700 border-orange-200",
+      ? "bg-blue-500/20 text-blue-400 border-blue-600/50"
+      : "bg-blue-100 text-blue-700 border-blue-200",
   };
 
   return (
@@ -413,8 +405,8 @@ function InvoiceCard({ invoice, isDark, index, onView, onEdit, onDelete }) {
             onClick={onEdit}
             className={`p-2.5 rounded-lg font-medium transition-all duration-300 hover:scale-110 active:scale-95 ${
               isDark
-                ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30"
-                : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
             }`}
             title="Edit Invoice"
           >

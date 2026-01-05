@@ -1,39 +1,29 @@
-// client/src/pages/reports/AnalyticsView.jsx
 import React, { useMemo } from "react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
   BarChart,
   Bar,
-  Legend,
 } from "recharts";
 import {
   FiDollarSign,
   FiCheckCircle,
   FiClock,
   FiTool,
-  FiTrendingUp,
   FiActivity,
+  FiUsers,
+  FiTrendingUp,
+  FiAlertCircle,
+  FiXCircle,
 } from "react-icons/fi";
 import { FaRupeeSign } from "react-icons/fa";
-export default function AnalyticsView({ summary, invoices, isDark }) {
-  const COLORS = [
-    "#6366F1",
-    "#06B6D4",
-    "#10B981",
-    "#F59E0B",
-    "#EF4444",
-    "#8B5CF6",
-  ];
 
+export default function AnalyticsView({ summary, invoices, isDark }) {
   // Build monthly revenue trend from invoice list
   const revenueOverTime = useMemo(() => {
     if (!invoices?.length) return [];
@@ -47,401 +37,902 @@ export default function AnalyticsView({ summary, invoices, isDark }) {
       )}`;
       map[key] = (map[key] || 0) + Number(inv.grandTotal || 0);
     });
-    return Object.entries(map).map(([month, revenue]) => ({ month, revenue }));
+    return Object.entries(map)
+      .map(([month, revenue]) => ({ month, revenue }))
+      .sort((a, b) => a.month.localeCompare(b.month));
   }, [invoices]);
 
   const serviceSummary = summary?.serviceSummary || {};
 
-  const serviceStatusData = [
-    { name: "Completed", value: serviceSummary.completedServices || 0 },
-    { name: "Pending", value: serviceSummary.pendingServices || 0 },
-    { name: "Cancelled", value: serviceSummary.cancelledServices || 0 },
-  ];
+  // Calculate percentages for service status
+  const totalServices = serviceSummary.totalServices || 0;
+  const completedPercent =
+    totalServices > 0
+      ? (
+          ((serviceSummary.completedServices || 0) / totalServices) *
+          100
+        ).toFixed(1)
+      : 0;
+  const pendingPercent =
+    totalServices > 0
+      ? (((serviceSummary.pendingServices || 0) / totalServices) * 100).toFixed(
+          1
+        )
+      : 0;
+  const cancelledPercent =
+    totalServices > 0
+      ? (
+          ((serviceSummary.cancelledServices || 0) / totalServices) *
+          100
+        ).toFixed(1)
+      : 0;
+
+  // Calculate invoice status percentages
+  const totalInvoices =
+    summary?.invoiceStatusSummary?.reduce((acc, item) => acc + item.count, 0) ||
+    0;
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          className={`p-3 rounded-lg shadow-xl border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+          }`}
+        >
+          <p
+            className={`text-xs font-semibold ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            } mb-1`}
+          >
+            {label}
+          </p>
+          <p className={`text-sm font-bold text-blue-900`}>
+            ₹
+            {payload[0].value?.toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
+            })}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="space-y-8">
-      {/* ===== Revenue Summary (Dark + Light Mode) ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Revenue */}
+    <div
+      className={`min-h-screen ${
+        isDark ? "" : "bg-gray-50"
+      }  `}
+    >
+      <div className="">
+        {/* Header */}
         <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-green-900/40 to-teal-900/40 border-gray-700 text-green-200"
-          : "bg-gradient-to-r from-green-500 to-teal-500 text-white border-green-300/20"
-      }
-    `}
-        >
-          <FaRupeeSign size={28} />
-          <h4 className="text-lg font-semibold mt-2">Total Revenue</h4>
-          <p className="text-2xl font-bold">
-            ₹ {summary?.revenueSummary?.totalRevenue?.toFixed(2) || 0}
-          </p>
-        </div>
-
-        {/* Paid Revenue */}
-        <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border-gray-700 text-blue-200"
-          : "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-300/20"
-      }
-    `}
-        >
-          <FiCheckCircle size={28} />
-          <h4 className="text-lg font-semibold mt-2">Paid Revenue</h4>
-          <p className="text-2xl font-bold">
-            ₹ {summary?.revenueSummary?.paidRevenue?.toFixed(2) || 0}
-          </p>
-        </div>
-
-        {/* Pending Revenue */}
-        <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-gray-700 text-yellow-200"
-          : "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-yellow-300/20"
-      }
-    `}
-        >
-          <FiClock size={28} />
-          <h4 className="text-lg font-semibold mt-2">Pending Revenue</h4>
-          <p className="text-2xl font-bold">
-            ₹ {summary?.revenueSummary?.pendingRevenue?.toFixed(2) || 0}
-          </p>
-        </div>
-      </div>
-
-      {/* ===== Service Summary (Dark + Light Mode) ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Total Services */}
-        <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-emerald-900/40 to-green-900/40 border-gray-700 text-emerald-200"
-          : "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-green-300/20"
-      }
-    `}
-        >
-          <FiTool size={28} />
-          <h4 className="text-lg font-semibold mt-2">Total Services</h4>
-          <p className="text-2xl font-bold">
-            {serviceSummary.totalServices || 0}
-          </p>
-        </div>
-
-        {/* Completed */}
-        <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-sky-900/40 to-blue-900/40 border-gray-700 text-sky-200"
-          : "bg-gradient-to-r from-sky-500 to-blue-600 text-white border-blue-300/20"
-      }
-    `}
-        >
-          <FiCheckCircle size={28} />
-          <h4 className="text-lg font-semibold mt-2">Completed</h4>
-          <p className="text-2xl font-bold">
-            {serviceSummary.completedServices || 0}
-          </p>
-        </div>
-
-        {/* Pending */}
-        <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-amber-900/40 to-orange-900/40 border-gray-700 text-amber-200"
-          : "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-orange-300/20"
-      }
-    `}
-        >
-          <FiClock size={28} />
-          <h4 className="text-lg font-semibold mt-2">Pending</h4>
-          <p className="text-2xl font-bold">
-            {serviceSummary.pendingServices || 0}
-          </p>
-        </div>
-
-        {/* Average Cost */}
-        <div
-          className={`p-6 rounded-2xl shadow-xl border
-      ${
-        isDark
-          ? "bg-gradient-to-r from-rose-900/40 to-pink-900/40 border-gray-700 text-rose-200"
-          : "bg-gradient-to-r from-rose-500 to-pink-600 text-white border-pink-300/20"
-      }
-    `}
-        >
-          <FiActivity size={28} />
-          <h4 className="text-lg font-semibold mt-2">Avg Service Cost</h4>
-          <p className="text-2xl font-bold">
-            ₹ {serviceSummary.averageServiceCost?.toFixed(2) || 0}
-          </p>
-        </div>
-      </div>
-
-      {/* ===== Revenue Over Time ===== */}
-      <div
-        className={`rounded-3xl border shadow-lg ${
-          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
-      >
-        <div
-          className={`p-5 border-b ${
+          className={`rounded-2xl p-6 mb-6 shadow-lg ${
             isDark
-              ? "border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700"
-              : "border-gray-200 bg-gradient-to-r from-indigo-600 to-purple-600"
-          } text-white`}
+              ? "bg-gray-800"
+              : "bg-gradient-to-r from-blue-900 to-blue-800"
+          }`}
         >
-          <h3 className="text-2xl font-bold">Revenue Over Time</h3>
-          <p className="text-sm text-white/80">Monthly revenue from invoices</p>
+          <h1
+            className={`text-2xl font-bold ${
+              isDark ? "text-white" : "text-white"
+            } mb-1`}
+          >
+            Analytics Dashboard
+          </h1>
+          <p
+            className={`text-sm ${isDark ? "text-gray-300" : "text-blue-100"}`}
+          >
+            Track your business performance and insights
+          </p>
         </div>
 
-        <div className="p-6">
-          {revenueOverTime.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              No revenue data available
+        {/* ===== Revenue Summary Cards ===== */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {/* Total Revenue */}
+          <div
+            className={`rounded-xl shadow-md p-5 hover:shadow-lg transition-shadow border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div
+                className={`p-3 rounded-lg ${
+                  isDark ? "bg-gray-700" : "bg-blue-50"
+                }`}
+              >
+                <FaRupeeSign
+                  size={20}
+                  className={isDark ? "text-blue-400" : "text-blue-900"}
+                />
+              </div>
+              <span
+                className={`text-xs font-semibold px-2 py-1 rounded ${
+                  isDark
+                    ? "text-blue-400 bg-gray-700"
+                    : "text-blue-900 bg-blue-50"
+                }`}
+              >
+                ALL TIME
+              </span>
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={revenueOverTime}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={isDark ? "#374151" : "#e6e6e6"}
-                />
-                <XAxis
-                  dataKey="month"
-                  stroke={isDark ? "#9CA3AF" : "#6B7280"}
-                />
-                <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? "#1F2937" : "#fff",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#6366F1"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
+            <p
+              className={`text-xs font-medium ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              } mb-1`}
+            >
+              Total Revenue
+            </p>
+            <p
+              className={`text-2xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              ₹
+              {(summary?.revenueSummary?.totalRevenue || 0).toLocaleString(
+                "en-IN",
+                { maximumFractionDigits: 2 }
+              )}
+            </p>
+          </div>
 
-      {/* ===== Invoice Status Distribution ===== */}
-      <div
-        className={`rounded-3xl border shadow-lg ${
-          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
-      >
+          {/* Paid Revenue */}
+          <div
+            className={`rounded-xl shadow-md p-5 hover:shadow-lg transition-shadow border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div
+                className={`p-3 rounded-lg ${
+                  isDark ? "bg-gray-700" : "bg-green-50"
+                }`}
+              >
+                <FiCheckCircle
+                  size={20}
+                  className={isDark ? "text-green-400" : "text-green-600"}
+                />
+              </div>
+              <span
+                className={`text-xs font-semibold px-2 py-1 rounded ${
+                  isDark
+                    ? "text-green-400 bg-gray-700"
+                    : "text-green-600 bg-green-50"
+                }`}
+              >
+                RECEIVED
+              </span>
+            </div>
+            <p
+              className={`text-xs font-medium ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              } mb-1`}
+            >
+              Paid Revenue
+            </p>
+            <p
+              className={`text-2xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              ₹
+              {(summary?.revenueSummary?.paidRevenue || 0).toLocaleString(
+                "en-IN",
+                { maximumFractionDigits: 2 }
+              )}
+            </p>
+          </div>
+
+          {/* Pending Revenue */}
+          <div
+            className={`rounded-xl shadow-md p-5 hover:shadow-lg transition-shadow border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div
+                className={`p-3 rounded-lg ${
+                  isDark ? "bg-gray-700" : "bg-orange-50"
+                }`}
+              >
+                <FiClock
+                  size={20}
+                  className={isDark ? "text-orange-400" : "text-orange-600"}
+                />
+              </div>
+              <span
+                className={`text-xs font-semibold px-2 py-1 rounded ${
+                  isDark
+                    ? "text-orange-400 bg-gray-700"
+                    : "text-orange-600 bg-orange-50"
+                }`}
+              >
+                PENDING
+              </span>
+            </div>
+            <p
+              className={`text-xs font-medium ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              } mb-1`}
+            >
+              Pending Revenue
+            </p>
+            <p
+              className={`text-2xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              ₹
+              {(summary?.revenueSummary?.pendingRevenue || 0).toLocaleString(
+                "en-IN",
+                { maximumFractionDigits: 2 }
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* ===== Revenue Trend Chart ===== */}
         <div
-          className={`p-5 border-b ${
-            isDark
-              ? "border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700"
-              : "border-gray-200 bg-gradient-to-r from-green-600 to-teal-600"
-          } text-white`}
+          className={`rounded-xl shadow-md mb-6 border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+          }`}
         >
-          <h3 className="text-2xl font-bold">Invoice Status Distribution</h3>
-          <p className="text-sm text-white/80">
-            Breakdown of invoices by payment status
-          </p>
-        </div>
+          <div
+            className={`border-b rounded-xl p-4 ${
+              isDark ? "bg-gray-700" : "bg-blue-900"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <FiTrendingUp
+                className={isDark ? "text-white" : "text-white"}
+                size={18}
+              />
+              <h3
+                className={`text-base font-bold ${
+                  isDark ? "text-white" : "text-white"
+                }`}
+              >
+                Revenue Trend
+              </h3>
+            </div>
+            <p
+              className={`text-xs mt-1 ${
+                isDark ? "text-gray-300" : "text-blue-100"
+              }`}
+            >
+              Monthly revenue performance
+            </p>
+          </div>
 
-        <div className="p-6">
-          {summary?.invoiceStatusSummary?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie
-                  data={summary.invoiceStatusSummary}
-                  dataKey="count"
-                  nameKey="status"
-                  outerRadius={100}
-                  label
+          <div className="p-5">
+            {revenueOverTime.length === 0 ? (
+              <div className="text-center py-12">
+                <FiAlertCircle
+                  size={32}
+                  className={`mx-auto mb-2 ${
+                    isDark ? "text-gray-600" : "text-gray-300"
+                  }`}
+                />
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-400"
+                  }`}
                 >
-                  {summary.invoiceStatusSummary.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? "#1F2937" : "#fff",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #ccc",
-                  }}
+                  No revenue data available
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={revenueOverTime}>
+                  <defs>
+                    <linearGradient
+                      id="colorRevenue"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={isDark ? "#374151" : "#e5e7eb"}
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    stroke={isDark ? "#9ca3af" : "#9ca3af"}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke={isDark ? "#9ca3af" : "#9ca3af"}
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#1e3a8a"
+                    fillOpacity={1}
+                    fill="url(#colorRevenue)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* ===== Service Status & Metrics ===== */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Service Status Card */}
+          <div
+            className={`rounded-xl shadow-md border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-100"
+            }`}
+          >
+            <div
+              className={`border-b p-4 rounded-xl ${
+                isDark ? "bg-gray-700" : "bg-blue-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <FiTool
+                  className={isDark ? "text-white" : "text-white"}
+                  size={18}
                 />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center text-gray-500 py-12">
-              No invoice data available
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ===== Service Status Breakdown ===== */}
-      <div
-        className={`rounded-3xl border shadow-lg ${
-          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
-      >
-        <div
-          className={`p-5 border-b ${
-            isDark
-              ? "border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700"
-              : "border-gray-200 bg-gradient-to-r from-cyan-600 to-teal-500"
-          } text-white`}
-        >
-          <h3 className="text-2xl font-bold">Service Status Overview</h3>
-          <p className="text-sm text-white/80">
-            Completion and progress of all services
-          </p>
-        </div>
-
-        <div className="p-6">
-          {serviceStatusData.every((s) => s.value === 0) ? (
-            <div className="text-center text-gray-500 py-12">
-              No service data available
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie
-                  data={serviceStatusData}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={100}
-                  label
+                <h3
+                  className={`text-base font-bold ${
+                    isDark ? "text-white" : "text-white"
+                  }`}
                 >
-                  {serviceStatusData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                  Service Status
+                </h3>
+              </div>
+              <p
+                className={`text-xs mt-1 ${
+                  isDark ? "text-gray-300" : "text-blue-100"
+                }`}
+              >
+                Completion overview
+              </p>
+            </div>
+
+            <div className="p-5">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div
+                  className={`text-center p-3 rounded-lg border ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600"
+                      : "bg-blue-50 border-blue-100"
+                  }`}
+                >
+                  <FiTool
+                    size={20}
+                    className={`mx-auto mb-1 ${
+                      isDark ? "text-blue-400" : "text-blue-900"
+                    }`}
+                  />
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    } mb-1`}
+                  >
+                    Total
+                  </p>
+                  <p
+                    className={`text-2xl font-bold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {serviceSummary.totalServices || 0}
+                  </p>
+                </div>
+                <div
+                  className={`text-center p-3 rounded-lg border ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  <FiActivity
+                    size={20}
+                    className={`mx-auto mb-1 ${
+                      isDark ? "text-purple-400" : "text-purple-600"
+                    }`}
+                  />
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    } mb-1`}
+                  >
+                    Avg Cost
+                  </p>
+                  <p
+                    className={`text-lg font-bold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    ₹
+                    {(serviceSummary.averageServiceCost || 0).toLocaleString(
+                      "en-IN",
+                      { maximumFractionDigits: 0 }
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {totalServices > 0 ? (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <FiCheckCircle size={14} className="text-green-600" />
+                        <span
+                          className={`text-xs font-medium ${
+                            isDark ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          Completed
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-green-600">
+                        {serviceSummary.completedServices || 0} (
+                        {completedPercent}%)
+                      </span>
+                    </div>
+                    <div
+                      className={`w-full rounded-full h-2 ${
+                        isDark ? "bg-gray-700" : "bg-gray-200"
+                      }`}
+                    >
+                      <div
+                        className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${completedPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <FiClock size={14} className="text-orange-600" />
+                        <span
+                          className={`text-xs font-medium ${
+                            isDark ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          Pending
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-orange-600">
+                        {serviceSummary.pendingServices || 0} ({pendingPercent}
+                        %)
+                      </span>
+                    </div>
+                    <div
+                      className={`w-full rounded-full h-2 ${
+                        isDark ? "bg-gray-700" : "bg-gray-200"
+                      }`}
+                    >
+                      <div
+                        className="bg-orange-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${pendingPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <FiXCircle size={14} className="text-red-600" />
+                        <span
+                          className={`text-xs font-medium ${
+                            isDark ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          Cancelled
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-red-600">
+                        {serviceSummary.cancelledServices || 0} (
+                        {cancelledPercent}%)
+                      </span>
+                    </div>
+                    <div
+                      className={`w-full rounded-full h-2 ${
+                        isDark ? "bg-gray-700" : "bg-gray-200"
+                      }`}
+                    >
+                      <div
+                        className="bg-red-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${cancelledPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FiAlertCircle
+                    size={24}
+                    className={`mx-auto mb-2 ${
+                      isDark ? "text-gray-600" : "text-gray-300"
+                    }`}
+                  />
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-gray-400" : "text-gray-400"
+                    }`}
+                  >
+                    No service data
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Invoice Status Card */}
+          <div
+            className={`rounded-xl shadow-md border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-100"
+            }`}
+          >
+            <div
+              className={`border-b p-4 rounded-xl ${
+                isDark ? "bg-gray-700" : "bg-blue-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <FiDollarSign
+                  className={isDark ? "text-white" : "text-white"}
+                  size={18}
+                />
+                <h3
+                  className={`text-base font-bold ${
+                    isDark ? "text-white" : "text-white"
+                  }`}
+                >
+                  Invoice Status
+                </h3>
+              </div>
+              <p
+                className={`text-xs mt-1 ${
+                  isDark ? "text-gray-300" : "text-blue-100"
+                }`}
+              >
+                Payment breakdown
+              </p>
+            </div>
+
+            <div className="p-5">
+              {summary?.invoiceStatusSummary?.length > 0 ? (
+                <div className="space-y-3">
+                  {summary.invoiceStatusSummary.map((item, index) => {
+                    const percentage =
+                      totalInvoices > 0
+                        ? ((item.count / totalInvoices) * 100).toFixed(1)
+                        : 0;
+                    const statusConfig = {
+                      Paid: {
+                        icon: FiCheckCircle,
+                        color: "green",
+                        bg: isDark ? "bg-gray-700" : "bg-green-50",
+                        border: isDark ? "border-gray-600" : "border-green-200",
+                        bar: "bg-green-500",
+                      },
+                      Pending: {
+                        icon: FiClock,
+                        color: "orange",
+                        bg: isDark ? "bg-gray-700" : "bg-orange-50",
+                        border: isDark
+                          ? "border-gray-600"
+                          : "border-orange-200",
+                        bar: "bg-orange-500",
+                      },
+                      Cancelled: {
+                        icon: FiXCircle,
+                        color: "red",
+                        bg: isDark ? "bg-gray-700" : "bg-red-50",
+                        border: isDark ? "border-gray-600" : "border-red-200",
+                        bar: "bg-red-500",
+                      },
+                    };
+                    const config =
+                      statusConfig[item.status] || statusConfig.Pending;
+                    const Icon = config.icon;
+
+                    return (
+                      <div
+                        key={index}
+                        className={`${config.bg} rounded-lg p-3 border ${config.border}`}
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="flex items-center gap-2">
+                            <Icon
+                              size={16}
+                              className={`text-${config.color}-600`}
+                            />
+                            <span
+                              className={`text-xs font-semibold ${
+                                isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-sm font-bold text-${config.color}-600`}
+                          >
+                            {item.count}
+                          </span>
+                        </div>
+                        <div
+                          className={`w-full rounded-full h-2 ${
+                            isDark ? "bg-gray-600" : "bg-white"
+                          }`}
+                        >
+                          <div
+                            className={`${config.bar} h-2 rounded-full transition-all duration-500`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <p
+                          className={`text-xs font-medium text-${config.color}-600 mt-1`}
+                        >
+                          {percentage}% of total
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FiAlertCircle
+                    size={24}
+                    className={`mx-auto mb-2 ${
+                      isDark ? "text-gray-600" : "text-gray-300"
+                    }`}
+                  />
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-gray-400" : "text-gray-400"
+                    }`}
+                  >
+                    No invoice data
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ===== Top Services by Revenue ===== */}
+        <div
+          className={`rounded-xl shadow-md mb-6 border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+          }`}
+        >
+          <div
+            className={`border-b p-4 rounded-xl ${
+              isDark ? "bg-gray-700" : "bg-blue-900"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <FiActivity
+                className={isDark ? "text-white" : "text-white"}
+                size={18}
+              />
+              <h3
+                className={`text-base font-bold ${
+                  isDark ? "text-white" : "text-white"
+                }`}
+              >
+                Top Services by Revenue
+              </h3>
+            </div>
+            <p
+              className={`text-xs mt-1 ${
+                isDark ? "text-gray-300" : "text-blue-100"
+              }`}
+            >
+              Highest-earning services
+            </p>
+          </div>
+
+          <div className="p-5">
+            {serviceSummary?.topServiceTypes?.length > 0 ? (
+              <div className="space-y-3">
+                {serviceSummary.topServiceTypes
+                  .slice(0, 5)
+                  .map((service, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between p-3 rounded-lg border hover:border-blue-400 transition-colors ${
+                        isDark
+                          ? "bg-gray-700 border-gray-600"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                            isDark ? "bg-blue-600" : "bg-blue-900"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p
+                            className={`text-sm font-semibold ${
+                              isDark ? "text-white" : "text-gray-900"
+                            }`}
+                          >
+                            {service.type}
+                          </p>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            {service.count} services
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className={`text-base font-bold ${
+                            isDark ? "text-blue-400" : "text-blue-900"
+                          }`}
+                        >
+                          ₹
+                          {service.total.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </p>
+                      </div>
+                    </div>
                   ))}
-                </Pie>
-                <Legend />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? "#1F2937" : "#fff",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #ccc",
-                  }}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FiAlertCircle
+                  size={24}
+                  className={`mx-auto mb-2 ${
+                    isDark ? "text-gray-600" : "text-gray-300"
+                  }`}
                 />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-gray-400" : "text-gray-400"
+                  }`}
+                >
+                  No service revenue data
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* ===== Top Service Types by Revenue ===== */}
-      <div
-        className={`rounded-3xl border shadow-lg ${
-          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
-      >
+        {/* ===== Top Clients ===== */}
         <div
-          className={`p-5 border-b ${
-            isDark
-              ? "border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700"
-              : "border-gray-200 bg-gradient-to-r from-pink-600 to-orange-500"
-          } text-white`}
+          className={`rounded-xl shadow-md border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+          }`}
         >
-          <h3 className="text-2xl font-bold">Top Services by Revenue</h3>
-          <p className="text-sm text-white/80">Highest-earning service types</p>
-        </div>
-
-        <div className="p-6">
-          {serviceSummary?.topServiceTypes?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart layout="vertical" data={serviceSummary.topServiceTypes}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={isDark ? "#374151" : "#e6e6e6"}
-                />
-                <XAxis type="number" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-                <YAxis
-                  dataKey="type"
-                  type="category"
-                  width={140}
-                  stroke={isDark ? "#9CA3AF" : "#6B7280"}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? "#1F2937" : "#fff",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <Bar dataKey="total" fill="#06B6D4" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center text-gray-500 py-12">
-              No service revenue data available
+          <div
+            className={`border-b rounded-xl p-4 ${
+              isDark ? "bg-gray-700" : "bg-blue-900"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <FiUsers
+                className={isDark ? "text-white" : "text-white"}
+                size={18}
+              />
+              <h3
+                className={`text-base font-bold ${
+                  isDark ? "text-white" : "text-white"
+                }`}
+              >
+                Top Clients
+              </h3>
             </div>
-          )}
-        </div>
-      </div>
+            <p
+              className={`text-xs mt-1 ${
+                isDark ? "text-gray-300" : "text-blue-100"
+              }`}
+            >
+              Highest-spending customers
+            </p>
+          </div>
 
-      {/* ===== Top Clients ===== */}
-      <div
-        className={`rounded-3xl border shadow-lg ${
-          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
-      >
-        <div
-          className={`p-5 border-b ${
-            isDark
-              ? "border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700"
-              : "border-gray-200 bg-gradient-to-r from-violet-600 to-indigo-600"
-          } text-white`}
-        >
-          <h3 className="text-2xl font-bold">Top Clients</h3>
-          <p className="text-sm text-white/80">
-            Clients with highest total spending
-          </p>
-        </div>
-
-        <div className="p-6">
-          {summary?.topClients?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={summary.topClients}>
-                <XAxis
-                  dataKey="fullName"
-                  stroke={isDark ? "#9CA3AF" : "#6B7280"}
+          <div className="p-5">
+            {summary?.topClients?.length > 0 ? (
+              <div className="space-y-3">
+                {summary.topClients.slice(0, 5).map((client, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-between p-3 rounded-lg border hover:border-blue-400 transition-colors ${
+                      isDark
+                        ? "bg-gray-700 border-gray-600"
+                        : "bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                          isDark ? "bg-blue-600" : "bg-blue-900"
+                        }`}
+                      >
+                        {client.fullName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p
+                          className={`text-sm font-semibold ${
+                            isDark ? "text-white" : "text-gray-900"
+                          }`}
+                        >
+                          {client.fullName}
+                        </p>
+                        <p
+                          className={`text-xs ${
+                            isDark ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
+                          Customer #{index + 1}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`text-base font-bold ${
+                          isDark ? "text-blue-400" : "text-blue-900"
+                        }`}
+                      >
+                        ₹
+                        {client.totalSpent.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FiAlertCircle
+                  size={24}
+                  className={`mx-auto mb-2 ${
+                    isDark ? "text-gray-600" : "text-gray-300"
+                  }`}
                 />
-                <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? "#1F2937" : "#fff",
-                    borderRadius: "0.5rem",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <Bar dataKey="totalSpent" fill="#8B5CF6" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center text-gray-500 py-12">
-              No client data available
-            </div>
-          )}
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-gray-400" : "text-gray-400"
+                  }`}
+                >
+                  No client data
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

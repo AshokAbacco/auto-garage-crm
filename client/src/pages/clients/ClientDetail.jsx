@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   FiEdit,
@@ -32,6 +32,30 @@ export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark } = useTheme();
+
+  // Use the same color configuration as Layout.js
+  const colors = useMemo(
+    () => ({
+      // Backgrounds
+      layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
+      mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
+      elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
+
+      // Text
+      textPrimary: isDark ? "#E5E7EB" : "#0F172A",
+      textSecondary: isDark ? "#94A3B8" : "#475569",
+
+      // Brand & Accents
+      brand: isDark ? "#1E3A8A" : "#0B1D51",
+      primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
+
+      // Borders & Hover
+      border: isDark ? "#1E293B" : "#E5E7EB",
+      hoverBg: isDark ? "#1E293B" : "#F8FAFC",
+    }),
+    [isDark]
+  );
+
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,7 +80,9 @@ export default function ClientDetail() {
         setLoading(true);
         const token = localStorage.getItem("token");
         if (!token) {
-          throw new Error("Authentication token not found. Please log in again.");
+          throw new Error(
+            "Authentication token not found. Please log in again."
+          );
         }
 
         const res = await fetch(`${API_BASE}/api/clients/${id}`, {
@@ -76,7 +102,10 @@ export default function ClientDetail() {
         setClient(data);
       } catch (err) {
         setError(err.message || "Unknown error");
-        if (err.message.includes("401") || err.message.includes("Unauthorized")) {
+        if (
+          err.message.includes("401") ||
+          err.message.includes("Unauthorized")
+        ) {
           navigate("/login");
         }
       } finally {
@@ -274,10 +303,16 @@ export default function ClientDetail() {
 
   if (loading)
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: colors.mainBg }}
+      >
         <div className="relative">
           <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-          <div className={`mt-4 text-center font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+          <div
+            className="mt-4 text-center font-medium"
+            style={{ color: colors.textSecondary }}
+          >
             Loading client...
           </div>
         </div>
@@ -286,16 +321,28 @@ export default function ClientDetail() {
 
   if (error)
     return (
-      <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <div className={`max-w-md w-full p-6 rounded-2xl ${isDark ? 'bg-red-900/20 border-red-800' : 'bg-red-50 border-red-200'} border`}>
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: colors.mainBg }}
+      >
+        <div
+          className="max-w-md w-full p-6 rounded-2xl"
+          style={{
+            backgroundColor: isDark ? "rgba(127, 29, 29, 0.2)" : "#FEF2F2",
+            borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FECACA",
+          }}
+        >
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <FiX className="w-8 h-8 text-red-600" />
             </div>
-            <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-red-400' : 'text-red-700'}`}>
+            <h3
+              className="text-lg font-semibold mb-2"
+              style={{ color: isDark ? "#FCA5A5" : "#DC2626" }}
+            >
               Error Loading Client
             </h3>
-            <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>{error}</p>
+            <p style={{ color: colors.textSecondary }}>{error}</p>
             <button
               onClick={() => navigate("/login")}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -312,12 +359,20 @@ export default function ClientDetail() {
   // derived summary
   const services = client.services || [];
   const invoices = client.invoices || [];
-  const lastService = services[0]?.date ? new Date(services[0].date).toLocaleDateString() : "N/A";
+  const lastService = services[0]?.date
+    ? new Date(services[0].date).toLocaleDateString()
+    : "N/A";
   const totalServices = services.length;
-  const totalBilled = invoices.reduce((s, i) => s + (i.grandTotal || i.totalAmount || 0), 0);
+  const totalBilled = invoices.reduce(
+    (s, i) => s + (i.grandTotal || i.totalAmount || 0),
+    0
+  );
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} lg:ml-16 transition-colors duration-300`}>
+    <div
+      className="min-h-screen lg:ml-16 transition-colors duration-300"
+      style={{ backgroundColor: colors.mainBg }}
+    >
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Toast Notifications */}
         <Toaster
@@ -325,22 +380,23 @@ export default function ClientDetail() {
           toastOptions={{
             duration: 4000,
             style: {
-              background: isDark ? '#374151' : '#ffffff',
-              color: isDark ? '#f3f4f6' : '#1f2937',
-              border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb',
-              borderRadius: '0.75rem',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              background: colors.elementBg,
+              color: colors.textPrimary,
+              border: `1px solid ${colors.border}`,
+              borderRadius: "0.75rem",
+              boxShadow:
+                "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
             },
             success: {
               iconTheme: {
-                primary: '#10b981',
-                secondary: isDark ? '#111827' : '#f9fafb',
+                primary: "#10b981",
+                secondary: colors.elementBg,
               },
             },
             error: {
               iconTheme: {
-                primary: '#ef4444',
-                secondary: isDark ? '#111827' : '#f9fafb',
+                primary: "#ef4444",
+                secondary: colors.elementBg,
               },
             },
           }}
@@ -349,12 +405,14 @@ export default function ClientDetail() {
         {/* Back Button */}
         <Link
           to="/clients"
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${isDark
-            ? "text-gray-300 hover:text-white hover:bg-gray-800"
-            : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-            }`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300"
+          style={{
+            backgroundColor: colors.hoverBg,
+            color: colors.textSecondary,
+            border: `1px solid ${colors.border}`,
+          }}
         >
-          <FiArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
+          <FiArrowLeft className="w-4 h-4 transition-transform duration-300" />
           <span className="font-medium">Back to Clients</span>
         </Link>
 
@@ -380,10 +438,12 @@ export default function ClientDetail() {
             <div className="flex justify-between items-start mb-6">
               <Link
                 to="/clients"
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${isDark
-                  ? "text-gray-300 hover:text-white hover:bg-gray-800"
-                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300"
+                style={{
+                  backgroundColor: colors.hoverBg,
+                  color: colors.textSecondary,
+                  border: `1px solid ${colors.border}`,
+                }}
               >
                 <FiArrowLeft className="w-4 h-4" />
                 <span className="font-medium">Back</span>
@@ -423,9 +483,7 @@ export default function ClientDetail() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">
                 {client.vehicleMake} {client.vehicleModel}
               </h2>
-              <p className="text-white/80 text-sm">
-                Total Lifetime Value
-              </p>
+              <p className="text-white/80 text-sm">Total Lifetime Value</p>
               <p className="text-2xl font-bold text-white">
                 ₹{totalBilled.toFixed(2)}
               </p>
@@ -433,35 +491,107 @@ export default function ClientDetail() {
 
             {/* Vehicle Specifications */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <SpecCard icon={<BsFuelPumpFill />} label="FUEL TYPE" value={client.fuel} />
-              <SpecCard icon={<FiUsers />} label="SEATS" value={client.seats} />
-              <SpecCard icon={<FiHash />} label="COLOR" value={client.color || "N/A"} />
-              <SpecCard icon={<FiTool />} label="BODY TYPE" value={client.bodyType || "SUV"} />
+              <SpecCard
+                icon={<BsFuelPumpFill />}
+                label="FUEL TYPE"
+                value={client.fuel}
+                colors={colors}
+              />
+              <SpecCard
+                icon={<FiUsers />}
+                label="SEATS"
+                value={client.seats}
+                colors={colors}
+              />
+              <SpecCard
+                icon={<FiHash />}
+                label="COLOR"
+                value={client.color || "N/A"}
+                colors={colors}
+              />
+              <SpecCard
+                icon={<FiTool />}
+                label="BODY TYPE"
+                value={client.bodyType || "SUV"}
+                colors={colors}
+              />
             </div>
           </div>
         </div>
 
         {/* Contact Information */}
-        <div className={`rounded-2xl p-6 sm:p-8 shadow-xl ${isDark ? 'bg-gray-800' : 'bg-white'} transition-all duration-300 hover:shadow-2xl`}>
-          <h2 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <div
+          className="rounded-2xl p-6 sm:p-8 shadow-xl transition-all duration-300 hover:shadow-2xl"
+          style={{ backgroundColor: colors.elementBg }}
+        >
+          <h2
+            className="text-xl font-bold mb-6"
+            style={{ color: colors.textPrimary }}
+          >
             Contact Information
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <ContactCard icon={<FiPhone />} label="Phone" value={client.phone} isDark={isDark} />
-            <ContactCard icon={<FiMail />} label="Email" value={client.email} isDark={isDark} />
-            <ContactCard icon={<FiMapPin />} label="Address" value={client.address} isDark={isDark} />
-            <ContactCard icon={<FiCreditCard />} label="Registration No." value={client.regNumber} isDark={isDark} />
-            <ContactCard icon={<FiHash />} label="VIN / Chassis" value={client.vin} isDark={isDark} />
-            <ContactCard icon={<FiCalendar />} label="Last Service" value={lastService} isDark={isDark} />
-            <ContactCard icon={<BsFuelPumpFill />} label="Fuel Type" value={client.fuel} isDark={isDark} />
-            <ContactCard icon={<FiUsers />} label="Seating Capacity" value={client.seats} isDark={isDark} />
+            <ContactCard
+              icon={<FiPhone />}
+              label="Phone"
+              value={client.phone}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<FiMail />}
+              label="Email"
+              value={client.email}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<FiMapPin />}
+              label="Address"
+              value={client.address}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<FiCreditCard />}
+              label="Registration No."
+              value={client.regNumber}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<FiHash />}
+              label="VIN / Chassis"
+              value={client.vin}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<FiCalendar />}
+              label="Last Service"
+              value={lastService}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<BsFuelPumpFill />}
+              label="Fuel Type"
+              value={client.fuel}
+              colors={colors}
+            />
+            <ContactCard
+              icon={<FiUsers />}
+              label="Seating Capacity"
+              value={client.seats}
+              colors={colors}
+            />
           </div>
         </div>
 
         {/* Tabs Section */}
-        <div className={`rounded-2xl shadow-xl overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'} transition-all duration-300 hover:shadow-2xl`}>
+        <div
+          className="rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl"
+          style={{ backgroundColor: colors.elementBg }}
+        >
           {/* Tab Header */}
-          <div className={`p-4 sm:p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div
+            className="p-4 sm:p-6 border-b"
+            style={{ borderColor: colors.border }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               {/* Tab Buttons */}
               <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
@@ -469,14 +599,17 @@ export default function ClientDetail() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md transform scale-105"
-                      : isDark
+                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${
+                      activeTab === tab
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md transform scale-105"
+                        : isDark
                         ? "text-gray-300 hover:bg-gray-700"
                         : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                    }`}
                   >
-                    {tab === "ocr" ? "OCR Records" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {tab === "ocr"
+                      ? "OCR Records"
+                      : tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
                 ))}
               </div>
@@ -510,9 +643,24 @@ export default function ClientDetail() {
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <StatCard title="Last Service" value={lastService} icon={<FiCalendar />} isDark={isDark} />
-                <StatCard title="Total Services" value={totalServices} icon={<FiTool />} isDark={isDark} />
-                <StatCard title="Total Billed" value={`₹${totalBilled.toFixed(2)}`} icon={<FiDollarSign />} isDark={isDark} />
+                <StatCard
+                  title="Last Service"
+                  value={lastService}
+                  icon={<FiCalendar />}
+                  colors={colors}
+                />
+                <StatCard
+                  title="Total Services"
+                  value={totalServices}
+                  icon={<FiTool />}
+                  colors={colors}
+                />
+                <StatCard
+                  title="Total Billed"
+                  value={`₹${totalBilled.toFixed(2)}`}
+                  icon={<FiDollarSign />}
+                  colors={colors}
+                />
               </div>
             )}
 
@@ -527,30 +675,41 @@ export default function ClientDetail() {
                         setSelectedService(s);
                         setServiceForm(s);
                       }}
-                      className={`p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 ${isDark ? "bg-gray-700 hover:bg-gray-650" : "bg-gray-50 hover:bg-gray-100"
-                        }`}
+                      className="p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md transform hover:-translate-y-1"
+                      style={{ backgroundColor: colors.hoverBg }}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className={`font-bold text-lg truncate ${isDark ? "text-white" : "text-gray-800"}`}>
+                          <h3
+                            className="font-bold text-lg truncate"
+                            style={{ color: colors.textPrimary }}
+                          >
                             {s.type || "Service"}
                           </h3>
-                          <p className={`text-sm mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-                            {new Date(s.date).toLocaleDateString()} • ₹{(s.cost || 0).toFixed(2)}
+                          <p
+                            className="text-sm mt-1"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            {new Date(s.date).toLocaleDateString()} • ₹
+                            {(s.cost || 0).toFixed(2)}
                           </p>
                           {s.notes && (
-                            <p className={`text-xs mt-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                            <p
+                              className="text-xs mt-2"
+                              style={{ color: colors.textSecondary }}
+                            >
                               {s.notes}
                             </p>
                           )}
                         </div>
                         <span
-                          className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${s.status === "Paid"
-                            ? "bg-green-500/20 text-green-400"
-                            : s.status === "In Progress"
+                          className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                            s.status === "Paid"
+                              ? "bg-green-500/20 text-green-400"
+                              : s.status === "In Progress"
                               ? "bg-yellow-500/20 text-yellow-400"
                               : "bg-red-500/20 text-red-400"
-                            }`}
+                          }`}
                         >
                           {s.status}
                         </span>
@@ -559,8 +718,13 @@ export default function ClientDetail() {
                   ))
                 ) : (
                   <div className="text-center py-12">
-                    <FiTool className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
-                    <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>No service records yet.</p>
+                    <FiTool
+                      className="w-12 h-12 mx-auto mb-3"
+                      style={{ color: colors.textSecondary }}
+                    />
+                    <p style={{ color: colors.textSecondary }}>
+                      No service records yet.
+                    </p>
                   </div>
                 )}
               </div>
@@ -574,23 +738,33 @@ export default function ClientDetail() {
                     <div
                       key={inv.id}
                       onClick={() => setSelectedInvoice(inv)}
-                      className={`p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 ${isDark ? "bg-gray-700 hover:bg-gray-650" : "bg-gray-50 hover:bg-gray-100"
-                        }`}
+                      className="p-4 sm:p-5 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md transform hover:-translate-y-1"
+                      style={{ backgroundColor: colors.hoverBg }}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-800"}`}>
+                          <h3
+                            className="font-bold text-lg"
+                            style={{ color: colors.textPrimary }}
+                          >
                             Invoice #{inv.id}
                           </h3>
-                          <p className={`text-sm mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-                            {new Date(inv.createdAt).toLocaleDateString()} • ₹{((inv.grandTotal || inv.totalAmount) || 0).toFixed(2)}
+                          <p
+                            className="text-sm mt-1"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            {new Date(inv.createdAt).toLocaleDateString()} • ₹
+                            {(inv.grandTotal || inv.totalAmount || 0).toFixed(
+                              2
+                            )}
                           </p>
                         </div>
                         <span
-                          className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${inv.status === "Paid"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-yellow-500/20 text-yellow-400"
-                            }`}
+                          className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                            inv.status === "Paid"
+                              ? "bg-green-500/20 text-green-400"
+                              : "bg-yellow-500/20 text-yellow-400"
+                          }`}
                         >
                           {inv.status}
                         </span>
@@ -599,8 +773,13 @@ export default function ClientDetail() {
                   ))
                 ) : (
                   <div className="text-center py-12">
-                    <FiDollarSign className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
-                    <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>No invoices found.</p>
+                    <FiDollarSign
+                      className="w-12 h-12 mx-auto mb-3"
+                      style={{ color: colors.textSecondary }}
+                    />
+                    <p style={{ color: colors.textSecondary }}>
+                      No invoices found.
+                    </p>
                   </div>
                 )}
               </div>
@@ -611,7 +790,10 @@ export default function ClientDetail() {
               <div className="space-y-4">
                 {/* If there's a parsed buffer (from local camera/upload), show results + save */}
                 {ocrParsed && (
-                  <div className={`p-4 rounded-xl ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'} transition-all duration-300 hover:shadow-md`}>
+                  <div
+                    className="p-4 rounded-xl transition-all duration-300 hover:shadow-md"
+                    style={{ backgroundColor: isDark ? "#1E293B" : "#F3F4F6" }}
+                  >
                     <OCRResults
                       isDark={isDark}
                       parsedData={ocrParsed}
@@ -623,18 +805,30 @@ export default function ClientDetail() {
 
                 {/* OCR history list */}
                 {isLoadingOCR ? (
-                  <p className="text-center text-gray-500">Loading OCR records...</p>
+                  <p
+                    className="text-center"
+                    style={{ color: colors.textSecondary }}
+                  >
+                    Loading OCR records...
+                  </p>
                 ) : ocrRecords.length ? (
                   ocrRecords.map((r) => (
                     <div
                       key={r.id}
-                      className={`p-4 rounded-xl flex justify-between items-center border transition-all duration-300 hover:shadow-md transform hover:-translate-y-1 ${isDark ? "border-gray-700 bg-gray-700/50" : "border-gray-200 bg-gray-50"}`}
+                      className="p-4 rounded-xl flex justify-between items-center border transition-all duration-300 hover:shadow-md transform hover:-translate-y-1"
+                      style={{
+                        borderColor: colors.border,
+                        backgroundColor: colors.hoverBg,
+                      }}
                     >
                       <div>
-                        <h4 className={`font-semibold ${isDark ? "text-white" : "text-gray-800"}`}>
+                        <h4
+                          className="font-semibold"
+                          style={{ color: colors.textPrimary }}
+                        >
                           {r.parsedData?.ownerName || "Unknown Owner"}
                         </h4>
-                        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                        <p style={{ color: colors.textSecondary }}>
                           Reg: {r.parsedData?.regNo || "N/A"}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -660,7 +854,10 @@ export default function ClientDetail() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-10 text-gray-500">
+                  <div
+                    className="text-center py-10"
+                    style={{ color: colors.textSecondary }}
+                  >
                     <FiFileText className="mx-auto mb-2" size={32} />
                     <p>No OCR records found for this client.</p>
                   </div>
@@ -673,8 +870,19 @@ export default function ClientDetail() {
         {/* OCR Detail Modal – redesigned and grouped */}
         {selectedOCR && (
           <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 p-6 overflow-y-auto backdrop-blur-sm">
-            <div className={`w-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl ${isDark ? "bg-gray-800" : "bg-white"} transform transition-all duration-300 scale-95 animate-scaleIn`}>
-              <div className={`flex items-center justify-between p-4 ${isDark ? "bg-gradient-to-r from-blue-900/60 to-purple-900/60 text-white" : "bg-gradient-to-r from-blue-500 to-purple-600 text-white"}`}>
+            <div
+              className="w-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl"
+              style={{ backgroundColor: colors.elementBg }}
+            >
+              <div
+                className="flex items-center justify-between p-4"
+                style={{
+                  background: isDark
+                    ? "linear-gradient(to right, rgba(30, 58, 138, 0.6), rgba(124, 58, 237, 0.6))"
+                    : "linear-gradient(to right, #2563eb, #9333ea)",
+                  color: "white",
+                }}
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white">
                     <FiFileText />
@@ -682,7 +890,9 @@ export default function ClientDetail() {
                   <h3 className="text-lg font-semibold">OCR Record Details</h3>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="text-sm text-white/80 mr-4">Created: {new Date(selectedOCR.createdAt).toLocaleString()}</div>
+                  <div className="text-sm text-white/80 mr-4">
+                    Created: {new Date(selectedOCR.createdAt).toLocaleString()}
+                  </div>
                   <button
                     onClick={() => setSelectedOCR(null)}
                     className="text-white hover:opacity-90 transition-opacity duration-300"
@@ -694,44 +904,163 @@ export default function ClientDetail() {
 
               <div className="p-6 space-y-6">
                 {/* Group: Vehicle Identification */}
-                <Section title="🚗 Vehicle Identification">
-                  <TwoCol label="Registration Number" value={selectedOCR.parsedData?.regNo} isDark={isDark} />
-                  <TwoCol label="Registration Date" value={selectedOCR.parsedData?.regDate} isDark={isDark} />
-                  <TwoCol label="Chassis Number" value={selectedOCR.parsedData?.chassisNo} isDark={isDark} />
-                  <TwoCol label="Engine Number" value={selectedOCR.parsedData?.engineNo} isDark={isDark} />
-                  <TwoCol label="Maker (Manufacturer)" value={selectedOCR.parsedData?.maker || selectedOCR.parsedData?.mfr} isDark={isDark} />
-                  <TwoCol label="Model / Variant" value={(selectedOCR.parsedData?.model || "") + (selectedOCR.parsedData?.variant ? ` / ${selectedOCR.parsedData.variant}` : "")} isDark={isDark} />
+                <Section title="🚗 Vehicle Identification" colors={colors}>
+                  <TwoCol
+                    label="Registration Number"
+                    value={selectedOCR.parsedData?.regNo}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Registration Date"
+                    value={selectedOCR.parsedData?.regDate}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Chassis Number"
+                    value={selectedOCR.parsedData?.chassisNo}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Engine Number"
+                    value={selectedOCR.parsedData?.engineNo}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Maker (Manufacturer)"
+                    value={
+                      selectedOCR.parsedData?.maker ||
+                      selectedOCR.parsedData?.mfr
+                    }
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Model / Variant"
+                    value={
+                      (selectedOCR.parsedData?.model || "") +
+                      (selectedOCR.parsedData?.variant
+                        ? ` / ${selectedOCR.parsedData.variant}`
+                        : "")
+                    }
+                    colors={colors}
+                  />
                 </Section>
 
                 {/* Group: Vehicle Specifications */}
-                <Section title="⚙️ Vehicle Specifications">
-                  <TwoCol label="Vehicle Class" value={selectedOCR.parsedData?.vehicleClass} isDark={isDark} />
-                  <TwoCol label="Body Type" value={selectedOCR.parsedData?.body || selectedOCR.parsedData?.bodyType} isDark={isDark} />
-                  <TwoCol label="Colour" value={selectedOCR.parsedData?.colour || selectedOCR.parsedData?.color} isDark={isDark} />
-                  <TwoCol label="Fuel Type" value={selectedOCR.parsedData?.fuel || selectedOCR.parsedData?.fuelType} isDark={isDark} />
-                  <TwoCol label="Wheel Base" value={selectedOCR.parsedData?.wheelBase} isDark={isDark} />
-                  <TwoCol label="MFG Date" value={selectedOCR.parsedData?.mfgDate} isDark={isDark} />
-                  <TwoCol label="Seating Capacity" value={selectedOCR.parsedData?.seating || selectedOCR.parsedData?.seatingCapacity} isDark={isDark} />
-                  <TwoCol label="No. of Cylinders" value={selectedOCR.parsedData?.noOfCyl} isDark={isDark} />
-                  <TwoCol label="Unladen Weight" value={selectedOCR.parsedData?.unladenWt} isDark={isDark} />
-                  <TwoCol label="CC" value={selectedOCR.parsedData?.cc} isDark={isDark} />
+                <Section title="⚙️ Vehicle Specifications" colors={colors}>
+                  <TwoCol
+                    label="Vehicle Class"
+                    value={selectedOCR.parsedData?.vehicleClass}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Body Type"
+                    value={
+                      selectedOCR.parsedData?.body ||
+                      selectedOCR.parsedData?.bodyType
+                    }
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Colour"
+                    value={
+                      selectedOCR.parsedData?.colour ||
+                      selectedOCR.parsedData?.color
+                    }
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Fuel Type"
+                    value={
+                      selectedOCR.parsedData?.fuel ||
+                      selectedOCR.parsedData?.fuelType
+                    }
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Wheel Base"
+                    value={selectedOCR.parsedData?.wheelBase}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="MFG Date"
+                    value={selectedOCR.parsedData?.mfgDate}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Seating Capacity"
+                    value={
+                      selectedOCR.parsedData?.seating ||
+                      selectedOCR.parsedData?.seatingCapacity
+                    }
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="No. of Cylinders"
+                    value={selectedOCR.parsedData?.noOfCyl}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Unladen Weight"
+                    value={selectedOCR.parsedData?.unladenWt}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="CC"
+                    value={selectedOCR.parsedData?.cc}
+                    colors={colors}
+                  />
                 </Section>
 
                 {/* Group: Registration / Validity */}
-                <Section title="🧾 Registration / Validity">
-                  <TwoCol label="Reg/FC Valid Upto" value={selectedOCR.parsedData?.regFcUpto} isDark={isDark} />
-                  <TwoCol label="Fitness Valid Upto" value={selectedOCR.parsedData?.fitUpto || selectedOCR.parsedData?.fitnessUpto} isDark={isDark} />
-                  <TwoCol label="Insurance Valid Upto" value={selectedOCR.parsedData?.insuranceUpto} isDark={isDark} />
-                  <TwoCol label="Tax Valid Upto" value={selectedOCR.parsedData?.taxUpto} isDark={isDark} />
+                <Section title="🧾 Registration / Validity" colors={colors}>
+                  <TwoCol
+                    label="Reg/FC Valid Upto"
+                    value={selectedOCR.parsedData?.regFcUpto}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Fitness Valid Upto"
+                    value={
+                      selectedOCR.parsedData?.fitUpto ||
+                      selectedOCR.parsedData?.fitnessUpto
+                    }
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Insurance Valid Upto"
+                    value={selectedOCR.parsedData?.insuranceUpto}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="Tax Valid Upto"
+                    value={selectedOCR.parsedData?.taxUpto}
+                    colors={colors}
+                  />
                 </Section>
 
                 {/* Group: Ownership */}
-                <Section title="👤 Ownership">
-                  <TwoCol label="Owner Name" value={selectedOCR.parsedData?.ownerName} isDark={isDark} />
-                  <TwoCol label="S/W/D Of" value={selectedOCR.parsedData?.swdOf} isDark={isDark} />
+                <Section title="👤 Ownership" colors={colors}>
+                  <TwoCol
+                    label="Owner Name"
+                    value={selectedOCR.parsedData?.ownerName}
+                    colors={colors}
+                  />
+                  <TwoCol
+                    label="S/W/D Of"
+                    value={selectedOCR.parsedData?.swdOf}
+                    colors={colors}
+                  />
                   <div className="col-span-full">
-                    <div className="text-xs font-semibold text-gray-400 mb-2">Address</div>
-                    <div className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 border-gray-600 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}>
+                    <div className="text-xs font-semibold text-gray-400 mb-2">
+                      Address
+                    </div>
+                    <div
+                      className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${
+                        isDark
+                          ? "bg-gray-700/40 border-gray-600 text-white"
+                          : "bg-gray-50 border-gray-200 text-gray-900"
+                      }`}
+                    >
                       {selectedOCR.parsedData?.address || "—"}
                     </div>
                   </div>
@@ -740,8 +1069,16 @@ export default function ClientDetail() {
                 {/* Raw OCR text (collapsed style) */}
                 {selectedOCR.rawText && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-500 mb-2">Raw OCR Text</h4>
-                    <pre className={`p-4 rounded-xl text-sm transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 text-white" : "bg-gray-50 text-gray-800"}`}>
+                    <h4 className="text-sm font-semibold text-gray-500 mb-2">
+                      Raw OCR Text
+                    </h4>
+                    <pre
+                      className={`p-4 rounded-xl text-sm transition-all duration-300 hover:shadow-md ${
+                        isDark
+                          ? "bg-gray-700/40 text-white"
+                          : "bg-gray-50 text-gray-800"
+                      }`}
+                    >
                       {selectedOCR.rawText}
                     </pre>
                   </div>
@@ -759,7 +1096,7 @@ export default function ClientDetail() {
             -ms-overflow-style: none;
             scrollbar-width: none;
           }
-          
+
           @keyframes scaleIn {
             from {
               transform: scale(0.95);
@@ -770,7 +1107,7 @@ export default function ClientDetail() {
               opacity: 1;
             }
           }
-          
+
           .animate-scaleIn {
             animation: scaleIn 0.3s ease-out forwards;
           }
@@ -788,17 +1125,28 @@ export default function ClientDetail() {
    - SpecCard (new component for vehicle specs)
 ---------------------- */
 
-function ContactCard({ icon, label, value, isDark }) {
+function ContactCard({ icon, label, value, colors }) {
+  const isDark = colors.layoutBg === "#020617";
+
   return (
-    <div className={`p-4 rounded-xl flex items-center gap-3 transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-50"}`}>
+    <div
+      className="p-4 rounded-xl flex items-center gap-3 transition-all duration-300 hover:shadow-md"
+      style={{ backgroundColor: colors.hoverBg }}
+    >
       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0 transition-transform duration-300 hover:scale-110">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className={`text-xs font-medium uppercase mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+        <p
+          className="text-xs font-medium uppercase mb-1"
+          style={{ color: colors.textSecondary }}
+        >
           {label}
         </p>
-        <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <p
+          className="font-semibold truncate"
+          style={{ color: colors.textPrimary }}
+        >
           {value || "—"}
         </p>
       </div>
@@ -806,12 +1154,22 @@ function ContactCard({ icon, label, value, isDark }) {
   );
 }
 
-function StatCard({ title, value, icon, isDark }) {
+function StatCard({ title, value, icon, colors }) {
   return (
-    <div className={`p-5 rounded-xl flex items-center justify-between transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-50"}`}>
+    <div
+      className="p-5 rounded-xl flex items-center justify-between transition-all duration-300 hover:shadow-md"
+      style={{ backgroundColor: colors.hoverBg }}
+    >
       <div>
-        <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
-        <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+        <p
+          className="text-sm font-medium mb-1"
+          style={{ color: colors.textSecondary }}
+        >
+          {title}
+        </p>
+        <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+          {value}
+        </p>
       </div>
       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white transition-transform duration-300 hover:scale-110">
         {icon}
@@ -820,7 +1178,9 @@ function StatCard({ title, value, icon, isDark }) {
   );
 }
 
-function SpecCard({ icon, label, value }) {
+function SpecCard({ icon, label, value, colors }) {
+  const isDark = colors.layoutBg === "#020617";
+
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
       <div className="flex items-center gap-3">
@@ -837,26 +1197,31 @@ function SpecCard({ icon, label, value }) {
 }
 
 /* Section wrapper for modal groups */
-function Section({ title, children, isDark }) {
+function Section({ title, children, colors }) {
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
-        <h4 className={`font-semibold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{title}</h4>
+        <h4 className="font-semibold" style={{ color: colors.textPrimary }}>
+          {title}
+        </h4>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {children}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
     </div>
   );
 }
 
 /* Two-column label/value box used inside modal */
-function TwoCol({ label, value, isDark }) {
+function TwoCol({ label, value, colors }) {
   return (
-    <div className={`p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${isDark ? "bg-gray-700/40 border-gray-600" : "bg-gray-50 border-gray-200"}`}>
+    <div
+      className="p-4 rounded-xl border transition-all duration-300 hover:shadow-md"
+      style={{ borderColor: colors.border, backgroundColor: colors.hoverBg }}
+    >
       <div className="text-xs text-gray-400 mb-2">{label}</div>
-      <div className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{value || "—"}</div>
+      <div className="font-semibold" style={{ color: colors.textPrimary }}>
+        {value || "—"}
+      </div>
     </div>
   );
 }

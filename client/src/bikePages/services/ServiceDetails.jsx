@@ -4,14 +4,14 @@ import { useTheme } from "../../contexts/ThemeContext";
 import {
   ArrowLeft,
   Calendar,
-  DollarSign,
+  IndianRupee,
   Edit2,
   FileText,
   Printer,
   User,
   Phone,
   Mail,
-  Car,
+  Bike,
   Hash,
   Wrench,
   Tag,
@@ -23,14 +23,12 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
-
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import api from "../../utils/axiosInstance";
 
 const ServiceDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark } = useTheme();
-  const token = localStorage.getItem("token");
 
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,16 +40,16 @@ const ServiceDetails = () => {
   const fetchService = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/bike-services/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch");
-
-      const data = await res.json();
-      setService(data);
+      const res = await api.get(`/api/bike-services/${id}`);
+      setService(res.data);
     } catch (err) {
-      toast.error("Failed to load service details");
+      console.error("Fetch service error:", err);
+      toast.error(err.response?.data?.message || "Failed to load service details");
+      
+      // Redirect on unauthorized or not found
+      if (err.response?.status === 403 || err.response?.status === 404) {
+        setTimeout(() => navigate("/bike-services"), 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -86,13 +84,19 @@ const ServiceDetails = () => {
           <p className={`text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}>
             Service not found
           </p>
+          <button
+            onClick={() => navigate("/bike-services")}
+            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Back to Services
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen p-6 lg:ml-16 transition-colors duration-300 ${
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
       isDark ? "bg-gray-900" : "bg-gradient-to-br from-gray-50 to-gray-100"
     }`}>
       <Toaster position="top-right" />
@@ -114,7 +118,7 @@ const ServiceDetails = () => {
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent`}>
+              <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent`}>
                 Service Details
               </h1>
               <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
@@ -137,7 +141,7 @@ const ServiceDetails = () => {
 
               <button
                 onClick={() => navigate(`/bike-services/${id}/edit`)}
-                className="group flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
+                className="group flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-medium"
               >
                 <Edit2 size={18} className="group-hover:rotate-12 transition-transform" />
                 Edit Service
@@ -153,14 +157,14 @@ const ServiceDetails = () => {
               ? "bg-green-500/20 border-green-500/50"
               : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
             : isDark
-            ? "bg-orange-500/20 border-orange-500/50"
+            ? "bg-blue-500/20 border-blue-600/50"
             : "bg-gradient-to-r from-orange-50 to-red-50 border-orange-200"
         }`}>
           <div className="flex items-center justify-center gap-3">
             {service.status === "Paid" ? (
               <CheckCircle size={32} className="text-green-500" />
             ) : (
-              <Clock size={32} className="text-orange-500" />
+              <Clock size={32} className="text-blue-600" />
             )}
             <h2 className={`text-3xl font-bold ${
               service.status === "Paid" ? "text-green-600" : "text-orange-600"
@@ -191,14 +195,14 @@ const ServiceDetails = () => {
 
             <div className="space-y-4">
               <InfoRow
-                icon={<Tag size={18} className="text-purple-500" />}
+                icon={<Tag size={18} className="text-blue-600" />}
                 label="Category"
                 value={service.category?.name}
                 isDark={isDark}
               />
 
               <InfoRow
-                icon={<Wrench size={18} className="text-orange-500" />}
+                icon={<Wrench size={18} className="text-blue-600" />}
                 label="Sub Service"
                 value={service.subService?.name}
                 isDark={isDark}
@@ -241,49 +245,45 @@ const ServiceDetails = () => {
           {/* Cost Breakdown */}
           <div className={`rounded-2xl shadow-xl border-2 p-6 transition-all duration-300 animate-slide-up ${
             isDark
-              ? "bg-gradient-to-br from-green-900/50 to-emerald-900/50 border-green-700/50"
-              : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-100"
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-100"
           }`} style={{ animationDelay: "100ms" }}>
             <h3 className={`flex items-center gap-2 text-xl font-bold mb-6 ${
-              isDark ? "text-green-400" : "text-green-700"
+              isDark ? "text-white" : "text-gray-900"
             }`}>
-              <DollarSign size={24} />
+              <IndianRupee size={24} className="text-green-500" />
               Cost Breakdown
             </h3>
 
             <div className="space-y-4">
               <CostRow
                 label="Parts Cost"
-                amount={service.partsCost}
+                amount={(Number(service.partsCost || 0)).toFixed(2)}
                 isDark={isDark}
               />
 
-              {service.partsGst > 0 && (
-                <CostRow
-                  label={`Parts GST (${service.partsGst}%)`}
-                  amount={(service.partsCost * service.partsGst / 100).toFixed(2)}
-                  isDark={isDark}
-                  isSubItem
-                />
-              )}
+              <CostRow
+                label={`Parts GST (${service.partsGst || 0}%)`}
+                amount={(Number(service.partsCost || 0) * Number(service.partsGst || 0) / 100).toFixed(2)}
+                isDark={isDark}
+                isSubItem
+              />
 
               <CostRow
                 label="Labor Cost"
-                amount={service.laborCost}
+                amount={(Number(service.laborCost || 0)).toFixed(2)}
                 isDark={isDark}
               />
 
-              {service.laborGst > 0 && (
-                <CostRow
-                  label={`Labor GST (${service.laborGst}%)`}
-                  amount={(service.laborCost * service.laborGst / 100).toFixed(2)}
-                  isDark={isDark}
-                  isSubItem
-                />
-              )}
+              <CostRow
+                label={`Labor GST (${service.laborGst || 0}%)`}
+                amount={(Number(service.laborCost || 0) * Number(service.laborGst || 0) / 100).toFixed(2)}
+                isDark={isDark}
+                isSubItem
+              />
 
               <div className={`pt-4 mt-4 border-t-2 ${
-                isDark ? "border-gray-700" : "border-green-200"
+                isDark ? "border-gray-700" : "border-gray-200"
               }`}>
                 <div className="flex items-center justify-between">
                   <span className={`text-lg font-bold ${
@@ -291,8 +291,16 @@ const ServiceDetails = () => {
                   }`}>
                     Total Amount
                   </span>
-                  <span className="text-3xl font-bold text-green-600">
-                    ₹{service.cost}
+                  <span className="text-2xl font-bold text-green-600">
+                    ₹{(
+                      Number(service.cost || 0) ||
+                      (
+                        Number(service.partsCost || 0) +
+                        (Number(service.partsCost || 0) * Number(service.partsGst || 0)) / 100 +
+                        Number(service.laborCost || 0) +
+                        (Number(service.laborCost || 0) * Number(service.laborGst || 0)) / 100
+                      )
+                    ).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -329,16 +337,16 @@ const ServiceDetails = () => {
             />
 
             <InfoCard
-              icon={<Mail size={20} className="text-purple-500" />}
+              icon={<Mail size={20} className="text-blue-600" />}
               label="Email"
               value={service.client?.email}
               isDark={isDark}
             />
 
             <InfoCard
-              icon={<Car size={20} className="text-orange-500" />}
-              label="Vehicle Model"
-              value={service.client?.vehicleModel}
+              icon={<Bike size={20} className="text-blue-600" />}
+              label="Vehicle"
+              value={`${service.client?.bikeBrand || ""} ${service.client?.bikeModel || ""}`.trim()}
               isDark={isDark}
             />
 
@@ -361,7 +369,7 @@ const ServiceDetails = () => {
             <h3 className={`flex items-center gap-2 text-xl font-bold mb-6 ${
               isDark ? "text-white" : "text-gray-900"
             }`}>
-              <ImageIcon size={24} className="text-pink-500" />
+              <ImageIcon size={24} className="text-blue-600" />
               Service Images
             </h3>
 
@@ -390,24 +398,23 @@ const ServiceDetails = () => {
         {/* Action Button */}
         <div className="flex justify-end animate-slide-up" style={{ animationDelay: "400ms" }}>
           <button
-              onClick={() => navigate(`/bill/new`, {
-                state: {
-                  clientId: service.client?.id,
-                  clientName: service.client?.ownerName,
-                  vehicle: service.client?.vehicleModel,
-                  serviceCategory: service.category?.name,
-                  partsCost: service.partsCost,
-                  laborCost: service.laborCost,
-                  partsGst: service.partsGst,
-                  laborGst: service.laborGst,
-                }
-              })}
-              className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-lg"
-            >
-              <Receipt size={20} />
-              Create Invoice
-            </button>
-
+            onClick={() => navigate(`/bill/new`, {
+              state: {
+                bikeId: service.client?.id,
+                clientName: service.client?.ownerName,
+                vehicle: `${service.client?.bikeBrand || ""} ${service.client?.bikeModel || ""}`.trim(),
+                serviceCategory: service.category?.name,
+                partsCost: service.partsCost,
+                laborCost: service.laborCost,
+                partsGst: service.partsGst,
+                laborGst: service.laborGst,
+              }
+            })}
+            className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-semibold"
+          >
+            <Receipt size={20} className="group-hover:scale-110 transition-transform" />
+            Create Invoice
+          </button>
         </div>
       </div>
 
@@ -480,7 +487,7 @@ function InfoRow({ icon, label, value, isDark }) {
           {label}
         </p>
         <p className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
-          {value}
+          {value || "N/A"}
         </p>
       </div>
     </div>

@@ -37,11 +37,17 @@ export const protect = async (req, res, next) => {
        });
      }
 
+     const owner = await prisma.user.findUnique({
+       where: { id: login.ownerId },
+       select: { plan: true },
+     });
+
      req.user = {
-       id: login.staff.id, // actual staff id
+       id: login.staff.id,
        type: "staff",
        role: login.staff.role,
        ownerId: login.ownerId,
+       plan: owner?.plan || "BASIC", // ✅ INHERIT OWNER PLAN
      };
 
      return next();

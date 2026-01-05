@@ -34,6 +34,10 @@ export const registerUser = async (req, res) => {
     const planExpiry = latestPayment?.planExpiry || null;
     const referralCodeUsed = latestPayment?.referralCode || null;
 
+    // ✅ NEW: extract company & phone
+    const companyName = latestPayment?.companyName || null;
+    const phone = latestPayment?.phone || null;
+
     /**
      * =============================================
      * REFERRAL LOOKUP (OPTIONAL)
@@ -86,6 +90,8 @@ export const registerUser = async (req, res) => {
           allowedCrms: [crmType.toUpperCase()],
           plan,
           planExpiry,
+          companyName, // ✅ ADDED
+          phone, // ✅ ADDED
         },
       });
 
@@ -116,7 +122,9 @@ export const registerUser = async (req, res) => {
         myReferralCode,
         plan,
         planExpiry,
-        referredByUserId, // safe even if null
+        referredByUserId,
+        companyName, // ✅ ADDED
+        phone, // ✅ ADDED
       },
     });
 
@@ -133,7 +141,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
 /**
  * =============================================
  * LOGIN USER
@@ -145,106 +152,89 @@ export const loginUser = async (req, res) => {
 
     if (!identifier || !password || !crmType) {
       return res.status(400).json({
-        message: "Email/Username, password, and CRM type are required",
+        message: "Identifier, password and CRM type are required",
       });
     }
 
-    const isEmail = identifier.includes("@");
+    const rawIdentifier = identifier.trim();
+    const isEmail = rawIdentifier.includes("@");
 
-    const user = await prisma.user.findFirst({
-      where: isEmail
-        ? { email: identifier.toLowerCase() }
-        : { username: identifier },
-    });
+    /**
+     * 🚫 BLOCK STAFF EMAILS COMPLETELY
+     * Owner login must NEVER authenticate staff
+     */
+    if (isEmail) {
+      const staffExists = await prisma.carStaffLogin.findUnique({
+        where: { email: rawIdentifier.toLowerCase() },
+        select: { id: true },
+      });
 
-    if (user) {
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-
-      // ✅ CRM restriction applies ONLY to owner
-      if (!user.allowedCrms.includes(crmType.toUpperCase())) {
+      if (staffExists) {
         return res.status(403).json({
-          message: `You do not have access to the ${crmType} CRM`,
+          message:
+            "This email belongs to a staff account. Please login as Staff.",
         });
       }
-
-      const token = generateToken({
-        id: user.id,
-        role: "user",
-        type: "owner",
-        plan: user.plan,
-      });
-
-      return res.status(200).json({
-        message: "Login successful",
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          role: "user",
-          type: "owner",
-          plan: user.plan,
-          allowedCrms: user.allowedCrms,
-          crmType,
-        },
-      });
     }
 
     /**
      * ============================
-     * 2️⃣ TRY STAFF LOGIN (CarStaff)
+     * OWNER LOOKUP ONLY
      * ============================
      */
-    const staffLogin = await prisma.carStaffLogin.findUnique({
-      where: { email: identifier.toLowerCase() },
-      include: {
-        staff: true,
-      },
-    });
+    const user = isEmail
+      ? await prisma.user.findUnique({
+          where: { email: rawIdentifier.toLowerCase() },
+        })
+      : await prisma.user.findUnique({
+          where: { username: rawIdentifier },
+        });
 
-    if (!staffLogin || !staffLogin.isActive || !staffLogin.staff) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isStaffMatch = await bcrypt.compare(password, staffLogin.password);
-
-    if (!isStaffMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (!staff || !staff.isActive) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!user.allowedCrms.includes(crmType.toUpperCase())) {
+      return res.status(403).json({
+        message: `You do not have access to the ${crmType} CRM`,
+      });
     }
 
-    // ❗ Staff does NOT need allowedCrms check
     const token = generateToken({
-      id: staff.id,
-      role: "staff",
-      type: "staff",
-      ownerId: staff.ownerId,
+      id: user.id,
+      type: "owner",
+      role: "user",
+      plan: user.plan,
     });
 
     return res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: staff.id,
-        email: staff.email,
-        role: "staff",
-        type: "staff",
-        ownerId: staff.ownerId,
+        id: user.id,
+        email: user.email,
+        role: "user",
+        type: "owner",
+        plan: user.plan,
+        allowedCrms: user.allowedCrms,
         crmType,
       },
     });
   } catch (error) {
-    console.error("❌ Login Error:", error);
+    console.error("❌ Owner Login Error:", error);
     return res.status(500).json({
-      message: "Internal server error during login",
+      message: "Internal server error",
     });
   }
 };
+
+
+
 
 /**
  * =============================================

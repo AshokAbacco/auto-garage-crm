@@ -24,6 +24,7 @@ import {
 import { useTheme } from "../contexts/ThemeContext";
 
 export default function Layout() {
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const navigate = useNavigate();
@@ -32,7 +33,13 @@ export default function Layout() {
   const [user, setUser] = useState({});
   const [loadingUser, setLoadingUser] = useState(true);
 
-  const isStaff = user?.type === "staff";
+    const isStaff = user?.type === "staff";
+    const userPlan = user?.plan || "BASIC";
+    
+  const canAccessStaff = ["STANDARD", "PREMIUM"].includes(userPlan);
+  const canAccessSalary = ["PREMIUM"].includes(userPlan);
+
+
 
   /* ================================
       LOAD PROFILE (OWNER / STAFF)
@@ -111,18 +118,27 @@ export default function Layout() {
     { to: "/upgrade", label: "Upgrade", icon: Crown },
   ];
 
-  const filteredMenu = menu.filter((item) => {
-    if (!isStaff) return true;
-    return [
-      "/car-dashboard",
-      "/clients",
-      "/services",
-      "/billing",
-      "/reminders",
-      "/reports",
-      "/ocr-scanner",
-    ].includes(item.to);
-  });
+ const filteredMenu = menu.filter((item) => {
+   // STAFF LOGIN RULES (unchanged)
+   if (isStaff) {
+     return [
+       "/car-dashboard",
+       "/clients",
+       "/services",
+       "/billing",
+       "/reminders",
+       "/reports",
+       "/ocr-scanner",
+     ].includes(item.to);
+   }
+
+   // OWNER PLAN RULES
+   if (item.to === "/staff-management" && !canAccessStaff) return false;
+   if (item.to === "/salary-management" && !canAccessSalary) return false;
+
+   return true;
+ });
+
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);

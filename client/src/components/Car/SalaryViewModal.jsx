@@ -10,7 +10,7 @@ import {
   Clock,
 } from "lucide-react";
 
-export default function SalaryViewModal({ salary, onClose }) {
+export default function SalaryViewModal({ salary,companyName, onClose }) {
   const payslipRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -118,14 +118,8 @@ export default function SalaryViewModal({ salary, onClose }) {
                   </div>
                   <div>
                     <h1 className="text-3xl font-black text-black mb-1 tracking-tight">
-                      ABACCO TECH
+                      {companyName || "Garage"}
                     </h1>
-                    <p className="text-sm text-gray-700 font-semibold">
-                      Tech Park, Bangalore, India
-                    </p>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      www.abaccotech.com
-                    </p>
                   </div>
                 </div>
 

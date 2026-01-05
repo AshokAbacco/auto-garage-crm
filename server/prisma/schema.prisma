@@ -31,11 +31,6 @@ enum ServiceStatus {
   CANCELLED
 }
 
-enum UserRole {
-  USER
-  TEAM_MEMBER
-}
-
 model User {
   id           Int     @id @default(autoincrement())
   email        String  @unique
@@ -88,12 +83,14 @@ model User {
   ownedBikeOcrRecords   BikeOcrRecord[] @relation("OwnerBikeOcrRecords")
   createdBikeOcrRecords BikeOcrRecord[] @relation("CreatedBikeOcrRecords")
 
-   // washing 
+  // washing 
   washingClients WashingClient[]
   washTeamsOwned WashTeam[]      @relation("AdminWashTeams")
   // Team member → belongs to one team
   washTeamId     Int?
-  washTeamMember WashTeam? @relation("TeamMember", fields: [washTeamId], references: [id])
+  washTeamMember WashTeam?       @relation("TeamMember", fields: [washTeamId], references: [id])
+  bikeStaffs     BikeStaff[]
+  bikeTeams      BikeTeam[]
 }
 
 //car db schemas
@@ -624,6 +621,57 @@ model BikeServiceMedia {
   createdAt DateTime @default(now())
 }
 
+model BikeStaff {
+  id Int @id @default(autoincrement())
+
+  // 🔗 Owner (Admin/User who created staff)
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 👤 Staff details
+  name String
+  role String
+
+  // 💰 Salary fields
+  baseSalary Float
+  bonus      Float @default(0)
+  leaves     Int   @default(0)
+  deductions Float @default(0)
+
+  // 📅 Status tracking
+  joiningDate DateTime
+  status      String    @default("pending") // pending | paid
+  lastPaid    DateTime?
+
+  // 🔗 Salary history
+  salaryHistory BikeSalaryHistory[]
+
+  // ⏱️ Meta
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bikeTeams BikeTeam[]
+}
+
+model BikeSalaryHistory {
+  id Int @id @default(autoincrement())
+
+  // 🔗 Staff reference
+  bikeStaffId Int
+  staff       BikeStaff @relation(fields: [bikeStaffId], references: [id], onDelete: Cascade)
+
+  // 🗓️ Salary snapshot
+  month      String // "Sep 2025"
+  baseSalary Float
+  bonus      Float
+  deductions Float
+  netSalary  Float
+
+  // 💸 Payment info
+  paidDate DateTime
+
+  createdAt DateTime @default(now())
+}
+
 // Bike TeamUsers login
 
 model BikeTeam {
@@ -664,52 +712,6 @@ model BikeTeamLogin {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model BikeServiceCategory {
-  id   Int    @id @default(autoincrement())
-  name String
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name        String
-  role        String
-  baseSalary  Int
-  bonus       Int
-  deductions  Int
-  leaves      Int
-  joiningDate DateTime
-  status      String    @default("pending") // paid | pending
-  lastPaid    DateTime?
-
-  categoryId Int
-  category   BikeServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  services BikeService[]
-
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  bikeTeams BikeTeam[]
-}
-
-model BikeServiceMedia {
-  id Int @id @default(autoincrement())
-
-  bikeStaffId Int
-  staff       BikeStaff @relation(fields: [bikeStaffId], references: [id], onDelete: Cascade)
-
-  month      String // "Dec 2025"
-  baseSalary Int
-  bonus      Int
-  deductions Int
-  netSalary  Int
-  paidDate   DateTime
-
-  fileName  String?
-  mimeType  String?
-  data      Bytes
-  createdAt DateTime @default(now())
 }
 
 // Washing CRM client schema
@@ -849,17 +851,13 @@ model WashBillingService {
 }
 
 model WashTeam {
-  id   Int    @id @default(autoincrement())
-  name String
-
-  // Display / contact email only
+  id    Int    @id @default(autoincrement())
+  name  String
   email String @unique
 
-  // Admin who created the team
   createdBy Int
   admin     User @relation("AdminWashTeams", fields: [createdBy], references: [id])
 
-  // Team members
   members User[] @relation("TeamMember")
 
   createdAt DateTime @default(now())

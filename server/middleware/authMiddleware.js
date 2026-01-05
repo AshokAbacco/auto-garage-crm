@@ -53,19 +53,19 @@ export const protect = async (req, res, next) => {
      * OWNER AUTH (User table)
      * =====================================
      */
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        username: true,
-        role: true, // always "user"
-        plan: true,
-        parentUserId: true,
-        allowedCrms: true,
-      },
-    });
+  const user = await prisma.user.findUnique({
+  where: { id: decoded.id },
+  select: {
+    id: true,
+    username: true,
+    email: true,
+    role: true,
+    plan: true,
+    referredByUserId: true, // ✅ CORRECT FIELD
+    allowedCrms: true,
+  },
+});
+
 
     if (!user) {
       return res.status(401).json({
@@ -76,8 +76,9 @@ export const protect = async (req, res, next) => {
     // 🔐 Normalize role (important)
     req.user = {
       ...user,
-      role: user.role?.toUpperCase(),
+      role: user.role, // ❌ DO NOT uppercase
     };
+
 
     next();
   } catch (error) {

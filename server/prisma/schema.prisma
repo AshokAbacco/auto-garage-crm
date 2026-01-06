@@ -92,8 +92,6 @@ model User {
   // Team member → belongs to one team
   washTeamId     Int?
   washTeamMember WashTeam?       @relation("TeamMember", fields: [washTeamId], references: [id])
-  bikeStaffs     BikeStaff[]
-  bikeTeams      BikeTeam[]
 }
 
 //car db schemas

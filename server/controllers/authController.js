@@ -31,12 +31,7 @@ export const registerUser = async (req, res) => {
     });
 
     const plan = latestPayment?.plan || "BASIC";
-    const planExpiry = latestPayment?.planExpiry || null;
     const referralCodeUsed = latestPayment?.referralCode || null;
-
-    // ✅ NEW: extract company & phone
-    const companyName = latestPayment?.companyName || null;
-    const phone = latestPayment?.phone || null;
 
     /**
      * =============================================
@@ -61,8 +56,8 @@ export const registerUser = async (req, res) => {
     const phone = latestPayment?.phone || null;
 
     const planExpiry = latestPayment?.planExpiry
-  ? new Date(latestPayment.planExpiry)
-  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      ? new Date(latestPayment.planExpiry)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     // Check duplicates
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
@@ -149,7 +144,7 @@ export const registerUser = async (req, res) => {
  * LOGIN USER
  * =============================================
  */
- 
+
 export const loginUser = async (req, res) => {
   try {
     const { identifier, password, crmType } = req.body;
@@ -237,8 +232,6 @@ export const loginUser = async (req, res) => {
     });
   }
 };
-
-
 
 /**
  * =============================================

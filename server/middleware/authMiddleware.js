@@ -1,4 +1,3 @@
-//
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import prisma from "../models/prismaClient.js";
@@ -9,19 +8,19 @@ export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-if (!authHeader || !authHeader.startsWith("Bearer ")) {
-  return res.status(401).json({ message: "No token provided" });
-}
-
+    // ===============================
+    // TOKEN CHECK
+    // ===============================
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
+    }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    /**
-     * =====================================
-     * CAR STAFF AUTH
-     * =====================================
-     */
+    // ======================================================
+    // CAR STAFF AUTH (inherits owner plan)
+    // ======================================================
     if (decoded.type === "staff") {
       const login = await prisma.carStaffLogin.findUnique({
         where: { id: decoded.id },
@@ -29,35 +28,39 @@ if (!authHeader || !authHeader.startsWith("Bearer ")) {
       });
 
       if (!login || !login.isActive || !login.staff) {
-        return res.status(401).json({
-          message: "Staff not found or inactive",
-        });
+        return res
+          .status(401)
+          .json({ message: "Staff not found or inactive" });
       }
+
+      const owner = await prisma.user.findUnique({
+        where: { id: login.ownerId },
+        select: { plan: true },
+      });
 
       req.user = {
         id: login.staff.id,
         type: "staff",
-        role: "staff",
+        role: login.staff.role || "staff",
         ownerId: login.ownerId,
+        plan: owner?.plan || "BASIC", // ✅ inherit owner plan
       };
 
       return next();
     }
 
-    /**
-     * =====================================
-     * WASH STAFF AUTH
-     * =====================================
-     */
+    // ======================================================
+    // WASH STAFF AUTH
+    // ======================================================
     if (decoded.type === "wash-staff") {
       const staff = await prisma.washStaff.findUnique({
         where: { id: decoded.id },
       });
 
       if (!staff || !staff.isActive) {
-        return res.status(401).json({
-          message: "Wash staff not found or inactive",
-        });
+        return res
+          .status(401)
+          .json({ message: "Wash staff not found or inactive" });
       }
 
       req.user = {
@@ -70,41 +73,33 @@ if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return next();
     }
 
-    /**
-     * =====================================
-     * OWNER / ADMIN AUTH
-     * =====================================
-     */
-    
+    // ======================================================
+    // OWNER / ADMIN / USER AUTH
+    // ======================================================
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        plan: true,
+        allowedCrms: true,
+        referredByUserId: true,
+        parentUserId: true,
+      },
+    });
 
-  /**
- * =====================================
- * OWNER / ADMIN AUTH
- * =====================================
- */
-const user = await prisma.user.findUnique({
-  where: { id: decoded.id },
-  select: {
-    id: true,
-    username: true,
-    email: true,
-    role: true,
-    plan: true,
-    allowedCrms: true,
-  },
-});
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
 
-if (!user) {
-  return res.status(401).json({ message: "User not found" });
-}
+    req.user = {
+      ...user,
+      type: "owner", // ✅ explicit owner type
+    };
 
-req.user = {
-  ...user,
-  type: decoded.type || "owner", // ← IMPORTANT
-};
-
-next();
-
+    return next();
   } catch (error) {
     console.error("❌ Auth Middleware Error:", error);
 

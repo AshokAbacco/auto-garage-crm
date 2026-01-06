@@ -33,6 +33,7 @@ export default function ModernLogin() {
   const [floatingElements, setFloatingElements] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ripples, setRipples] = useState([]);
+  const [loginMode, setLoginMode] = useState("owner");
   const containerRef = useRef(null);
 
   const CRM_CONFIG = {
@@ -79,21 +80,37 @@ export default function ModernLogin() {
         { icon: Settings, text: "Parts Management", color: "text-blue-200" },
       ],
       stats: [
-        { icon: Users, value: "30K+", label: "Active Users", color: "text-blue-400" },
+        {
+          icon: Users,
+          value: "30K+",
+          label: "Active Users",
+          color: "text-blue-400",
+        },
         { icon: Star, value: "4.8", label: "Rating", color: "text-cyan-400" },
-        { icon: Server, value: "99.8%", label: "Uptime", color: "text-blue-300" },
-        { icon: TrendingUp, value: "2.5x", label: "Growth", color: "text-cyan-300" },
+        {
+          icon: Server,
+          value: "99.8%",
+          label: "Uptime",
+          color: "text-blue-300",
+        },
+        {
+          icon: TrendingUp,
+          value: "2.5x",
+          label: "Growth",
+          color: "text-cyan-300",
+        },
       ],
       // Blur effects
       blurEffects: {
         backdrop: "backdrop-blur-xl",
         glassEffect: "bg-white/10 backdrop-blur-lg",
-        cardBlur: "backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
-      }
+        cardBlur:
+          "backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
+      },
     },
 
     wash: {
-      label: "Car Wash",
+      label: "Vehicle Washing",
       icon: Droplets,
       gradient: "from-violet-600 via-purple-500 to-fuchsia-400",
       bgGradient: "from-slate-950 via-purple-950 to-fuchsia-950",
@@ -203,151 +220,58 @@ export default function ModernLogin() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
+
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    const identifier = formData.identifier.trim().toLowerCase();
-
-    const password = formData.password;
-
-    if (!identifier || !password) {
+    if (!formData.identifier || !formData.password) {
       setError("Please fill in all fields");
       setIsLoading(false);
       return;
     }
 
-    const isEmail = identifier.includes("@");
-
-    /**
-     * =========================================
-     * ROLE DETECTION
-     * =========================================
-     */
-    let loginUrl = "";
-    let payload = {};
-
-    // 🟦 CAR CRM
-    if (crmType === "car") {
-      if (isEmail) {
-        // Car Staff OR Owner (backend will decide)
-        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
-        payload = {
-          email: identifier,     // ✅ car staff
-          password,
-        };
-      } else {
-        // Owner only (username)
-        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
-        payload = {
-          identifier,
-          password,
-          crmType: "CAR",
-        };
-      }
+    // 🚫 Staff must use email
+    if (loginMode === "staff" && !formData.identifier.includes("@")) {
+      setError("Staff must login using email address");
+      setIsLoading(false);
+      return;
     }
-
-    // 🟩 BIKE CRM
-    if (crmType === "bike") {
-      if (isEmail) {
-        // Owner only
-        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
-        payload = {
-          identifier,
-          password,
-          crmType: "BIKE",
-        };
-      } else {
-        // Bike Team
-        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
-        payload = {
-          username: identifier,  // ✅ bike team
-          password,
-        };
-      }
-    }
-    if (crmType === "wash") {
-      loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
-      payload = {
-        identifier,
-        password,
-        crmType: "WASH",
-      };
-
-      try {
-        const response = await fetch(loginUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        // ✅ ADMIN LOGIN SUCCESS
-        if (response.ok) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          localStorage.setItem("crmType", "WASH");
-          window.location.href = "/wash-dashboard";
-          return;
-        }
-
-        // 🔁 STAFF FALLBACK (KEEP THIS)
-        if (data.message === "Please use staff login") {
-          const staffRes = await fetch(
-            `${import.meta.env.VITE_API_BASE_URL}/api/teams/wash-staff/login`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ identifier, password }),
-            }
-          );
-
-          const staffData = await staffRes.json();
-
-          if (!staffRes.ok) {
-            setError(staffData.message || "Invalid staff login");
-            return;
-          }
-
-          localStorage.setItem("token", staffData.token);
-          localStorage.setItem("user", JSON.stringify(staffData.user));
-          localStorage.setItem("crmType", "WASH");
-          window.location.href = "/wash-dashboard";
-          return;
-        }
-
-        // ❌ REAL ERROR
-        setError(data.message || "Invalid login");
-        return;
-
-      } catch (err) {
-        console.error(err);
-        setError("Server error");
-        return;
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-
-
-
 
     try {
+      let loginUrl = "";
+      let payload = {};
+
+      // 👷 STAFF LOGIN
+      if (loginMode === "staff") {
+        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
+        payload = {
+          email: formData.identifier.trim().toLowerCase(),
+          password: formData.password,
+          crmType: crmType.toUpperCase(),
+        };
+      }
+
+      // 👤 OWNER LOGIN
+      else {
+        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+        payload = {
+          identifier: formData.identifier.trim(),
+          password: formData.password,
+          crmType,
+        };
+      }
+
       const response = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      let data = {};
-      const text = await response.text();
-
-      if (text) {
-        data = JSON.parse(text);
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         setError(data.message || "Invalid login");
@@ -355,23 +279,24 @@ export default function ModernLogin() {
         return;
       }
 
-
-      // ✅ SAVE SESSION
+      // ✅ SAVE AUTH (ONLY PLACE)
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("crmType", crmType.toUpperCase());
+      localStorage.setItem("crmType", crmType);
 
-      // ✅ REDIRECT
-      window.location.href = `/${crmType}-dashboard`;
+      // ✅ CORRECT REDIRECT
+      if (loginMode === "staff") {
+        window.location.href = `/${crmType}-dashboard`;
+      } else {
+        window.location.href = `/${crmType}-dashboard`;
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError("Server error. Try again later.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
-
-
 
   const IconComponent = currentConfig.icon;
 
@@ -457,10 +382,11 @@ export default function ModernLogin() {
           <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-2 lg:gap-16">
             {/* Left Panel - Information */}
             <div
-              className={`hidden lg:flex flex-col justify-center transition-all duration-700 ${transitioning
-                ? "opacity-0 -translate-x-20 scale-95"
-                : "opacity-100 translate-x-0 scale-100"
-                }`}
+              className={`hidden lg:flex flex-col justify-center transition-all duration-700 ${
+                transitioning
+                  ? "opacity-0 -translate-x-20 scale-95"
+                  : "opacity-100 translate-x-0 scale-100"
+              }`}
             >
               {/* Logo and Title */}
               <div className="mb-10 space-y-1">
@@ -510,8 +436,9 @@ export default function ModernLogin() {
                       key={index}
                       className="relative p-6 transition-all duration-500 border group bg-white/5 backdrop-blur-xl border-white/10 rounded-2xl hover:bg-white/10 hover:scale-105 hover:-translate-y-1"
                       style={{
-                        animation: `fadeInUp 0.6s ease-out ${index * 100
-                          }ms backwards`,
+                        animation: `fadeInUp 0.6s ease-out ${
+                          index * 100
+                        }ms backwards`,
                         boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
                       }}
                     >
@@ -552,8 +479,9 @@ export default function ModernLogin() {
                       key={index}
                       className="relative p-5 text-center transition-all duration-500 border group bg-white/5 backdrop-blur-xl border-white/10 rounded-2xl hover:bg-white/10 hover:scale-110 hover:-translate-y-2"
                       style={{
-                        animation: `fadeInUp 0.6s ease-out ${(index + 4) * 100
-                          }ms backwards`,
+                        animation: `fadeInUp 0.6s ease-out ${
+                          (index + 4) * 100
+                        }ms backwards`,
                         boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
                       }}
                     >
@@ -580,10 +508,11 @@ export default function ModernLogin() {
 
             {/* Right Panel - Login Form */}
             <div
-              className={`flex items-center justify-center transition-all duration-700 ${transitioning
-                ? "opacity-0 translate-x-20 scale-95 rotate-3"
-                : "opacity-100 translate-x-0 scale-100 rotate-0"
-                }`}
+              className={`flex items-center justify-center transition-all duration-700 ${
+                transitioning
+                  ? "opacity-0 translate-x-20 scale-95 rotate-3"
+                  : "opacity-100 translate-x-0 scale-100 rotate-0"
+              }`}
             >
               <div className="w-full max-w-md">
                 {/* Glass Card */}
@@ -634,10 +563,11 @@ export default function ModernLogin() {
                             <button
                               key={key}
                               onClick={() => handleCrmChange(key)}
-                              className={`relative py-3 px-4 rounded-xl font-semibold transition-all duration-500 flex flex-col items-center justify-center space-y-1.5 ${crmType === key
-                                ? "text-white scale-105"
-                                : "text-gray-400 hover:text-gray-200 hover:scale-105"
-                                }`}
+                              className={`relative py-3 px-4 rounded-xl font-semibold transition-all duration-500 flex flex-col items-center justify-center space-y-1.5 ${
+                                crmType === key
+                                  ? "text-white scale-105"
+                                  : "text-gray-400 hover:text-gray-200 hover:scale-105"
+                              }`}
                             >
                               {crmType === key && (
                                 <>
@@ -657,8 +587,9 @@ export default function ModernLogin() {
                                 </>
                               )}
                               <TabIcon
-                                className={`w-5 h-5 relative z-10 transition-transform duration-300 ${crmType === key ? "scale-110" : ""
-                                  }`}
+                                className={`w-5 h-5 relative z-10 transition-transform duration-300 ${
+                                  crmType === key ? "scale-110" : ""
+                                }`}
                               />
                               <span className="relative z-10 text-xs font-bold">
                                 {config.label}
@@ -734,6 +665,33 @@ export default function ModernLogin() {
                           {error}
                         </div>
                       )}
+                      <div className="flex mb-4 bg-white/10 rounded-xl p-1">
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode("owner")}
+                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
+      ${
+        loginMode === "owner"
+          ? "bg-white text-black shadow"
+          : "text-white/70 hover:text-white"
+      }`}
+                        >
+                          Owner Login
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode("staff")}
+                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
+      ${
+        loginMode === "staff"
+          ? "bg-white text-black shadow"
+          : "text-white/70 hover:text-white"
+      }`}
+                        >
+                          Staff Login
+                        </button>
+                      </div>
 
                       {/* Submit Button */}
                       <button
@@ -747,17 +705,25 @@ export default function ModernLogin() {
                         <span className="relative z-10 flex items-center space-x-2">
                           {isLoading ? (
                             <>
-                              <div className="w-5 h-5 border-2 rounded-full border-white/30 border-t-white animate-spin" />
-                              <span>Logging in...</span>
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              <span>
+                                Logging in as{" "}
+                                {loginMode === "staff" ? "Staff" : "Owner"}...
+                              </span>
                             </>
                           ) : (
                             <>
-                              <span>Login to Dashboard</span>
-                              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-2" />
+                              <span>
+                                {loginMode === "staff"
+                                  ? "Login as Staff"
+                                  : "Login to Dashboard"}
+                              </span>
+                              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                             </>
                           )}
                         </span>
-                        <div className="absolute inset-0 transition-transform duration-1000 -translate-x-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:translate-x-full" />
+
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       </button>
                     </form>
 
@@ -773,8 +739,9 @@ export default function ModernLogin() {
                         />
                         <span>Secured with 256-bit encryption</span>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        © 2024 {currentConfig.label} CRM. All rights reserved.
+                      <p className="text-gray-100 text-xs">
+                        © {new Date().getFullYear()} {currentConfig.label} CRM.
+                        All rights reserved. Powered by Moto Desk.
                       </p>
                     </div>
                   </div>
@@ -784,7 +751,7 @@ export default function ModernLogin() {
           </div>
         </div>
 
-        <style >{`
+        <style>{`
           @keyframes float {
             0%,
             100% {

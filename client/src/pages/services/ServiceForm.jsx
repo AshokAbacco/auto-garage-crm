@@ -13,9 +13,20 @@ import {
   FiPlus,
   FiTrash,
   FiPackage,
+  FiClock,
+  FiAlertCircle,
+  FiUserCheck,
+  FiEdit3,
+  FiUpload,
+  FiSend,
+  FiDownload,
+  FiFile,
+  FiX,
+  FiCheck,
+  FiCamera,
 } from "react-icons/fi";
 import { GrUserWorker } from "react-icons/gr";
-import { FaIndianRupeeSign } from "react-icons/fa6";
+import { FaIndianRupeeSign, FaTruck } from "react-icons/fa6";
 
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -47,6 +58,13 @@ export default function ServiceForm() {
     date: "",
     notes: "",
     status: "Pending",
+    priority: "Normal",
+    serviceInDate: "",
+    serviceOutDate: "",
+    expectedDelivery: "",
+    internalNotes: "",
+    assignedMechanic: "",
+    advancePaid: "",
   });
 
   /** 🔹 Sub-service typing state */
@@ -59,20 +77,30 @@ export default function ServiceForm() {
   /** 🔹 Cost breakdown rows */
   const [costItems, setCostItems] = useState([
     {
-      partName: "",
-      partCost: "",
-      partGst: "",
-      laborCost: "",
-      laborGst: "",
+      type: "part",
+      name: "",
+      quantity: 1,
+      unitPrice: "",
+      cgstRate: "",
+      sgstRate: "",
     },
   ]);
+
+  /** 🔹 Mechanic typing state */
+  const [mechanicInput, setMechanicInput] = useState("");
+  const [mechanicSuggestions, setMechanicSuggestions] = useState([]);
+  const [selectedMechanic, setSelectedMechanic] = useState(null);
+  const [showCreateMechanic, setShowCreateMechanic] = useState(false);
+  const [creatingMechanic, setCreatingMechanic] = useState(false);
 
   const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [mechanics, setMechanics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [media, setMedia] = useState([]);
+  const [discount, setDiscount] = useState({ type: "amount", value: "" });
 
   /* ================= LOAD DATA ================= */
 
@@ -120,6 +148,19 @@ export default function ServiceForm() {
     loadTypes();
   }, []);
 
+  useEffect(() => {
+    const loadMechanics = async () => {
+      try {
+        const res = await apiRequest("/api/mechanics");
+        const data = await res.json();
+        if (res.ok) setMechanics(data);
+      } catch (err) {
+        console.error("Error fetching mechanics:", err);
+      }
+    };
+    loadMechanics();
+  }, []);
+
   // Load sub-services when category changes
   useEffect(() => {
     if (form.categoryId) {
@@ -142,6 +183,28 @@ export default function ServiceForm() {
     }
   }, [form.categoryId]);
 
+  // Load mechanics when typing
+  useEffect(() => {
+    if (mechanicInput.trim()) {
+      const loadMechanics = async () => {
+        try {
+          const r = await apiRequest(
+            `/api/mechanics/search?q=${encodeURIComponent(mechanicInput)}`
+          );
+          const data = await r.json();
+          setMechanicSuggestions(Array.isArray(data) ? data : []);
+        } catch (err) {
+          console.error("Error searching mechanics:", err);
+          setMechanicSuggestions([]);
+        }
+      };
+
+      loadMechanics();
+    } else {
+      setMechanicSuggestions([]);
+    }
+  }, [mechanicInput]);
+
   useEffect(() => {
     if (location.state?.customerId) {
       const clientId = location.state.customerId;
@@ -157,68 +220,97 @@ export default function ServiceForm() {
 
   // Load existing service data for editing
   useEffect(() => {
-    if (!id) return; // Fixed: Added early return when no id
+    if (!id) return;
 
     const loadService = async () => {
-      try {
-        const res = await apiRequest(`/api/services/${id}`);
+      const res = await apiRequest(`/api/services/${id}`);
+      const data = await res.json();
 
-        // Check if response is ok before trying to parse JSON
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || "Failed to load service");
-        }
+      setForm({
+        clientId: data.client?.id || "",
+        categoryId: data.category?.id || "",
+        notes: data.notes || "",
+        status: data.status || "Pending",
+        priority: data.priority || "Normal",
 
-        const data = await res.json();
+        serviceInDate: data.serviceInDate
+          ? data.serviceInDate.slice(0, 16)
+          : "",
+        serviceOutDate: data.serviceOutDate
+          ? data.serviceOutDate.slice(0, 16)
+          : "",
+        expectedDelivery: data.expectedDelivery
+          ? data.expectedDelivery.slice(0, 16)
+          : "",
 
-        // Debug log to see what we're getting
-        console.log("Service data:", data);
+        internalNotes: data.internalNotes || "",
+        assignedMechanic: data.assignedMechanic || "",
+        advancePaid: data.advancePaid || "",
+      });
 
-        setForm({
-          clientId: data.client?.id || "",
-          categoryId: data.category?.id || "",
-          date: data.date ? new Date(data.date).toISOString().slice(0, 10) : "",
-          notes: data.notes || "",
-          status: data.status || "Pending",
-        });
+      setMechanicInput(data.assignedMechanic || "");
+      setCostItems(data.serviceCostItems || []);
+      setExistingMedia(data.mediaFiles || []);
 
-        // Load cost items if they exist
-        if (data.costItems && Array.isArray(data.costItems)) {
-          setCostItems(data.costItems);
-        }
-
-        // Load sub-service if it exists
-        if (data.subService) {
-          setSelectedSubService({
-            id: data.subService.id,
-            name: data.subService.name,
-          });
-          setSubServiceInput(data.subService.name || "");
-        }
-
-        // Load client data
-        if (data.client?.id) {
-          const clientRes = await apiRequest(`/api/clients/${data.client.id}`);
-          const clientData = await clientRes.json();
-          if (clientRes.ok) setSelectedClient(clientData);
-        }
-      } catch (err) {
-        console.error("Error loading service:", err);
-        setError(err.message);
+      if (data.subService) {
+        setSelectedSubService(data.subService); // 🔥 important
+        setSubServiceInput(data.subService.name); // 🔥 important
+        setForm((f) => ({
+          ...f,
+          subServiceId: data.subService.id,
+        }));
       }
     };
+
     loadService();
-  }, [id]); // Fixed: Added id dependency
+  }, [id]);
 
   /* ================= COST UTILS ================= */
 
   const num = (v) => (Number.isFinite(+v) ? +v : 0);
 
   const totalAmount = costItems.reduce((sum, i) => {
-    const part = num(i.partCost) + (num(i.partCost) * num(i.partGst)) / 100;
-    const labor = num(i.laborCost) + (num(i.laborCost) * num(i.laborGst)) / 100;
-    return sum + part + labor;
+    const itemTotal = num(i.quantity) * num(i.unitPrice);
+    const cgstAmount = (itemTotal * num(i.cgstRate)) / 100;
+    const sgstAmount = (itemTotal * num(i.sgstRate)) / 100;
+    return sum + itemTotal + cgstAmount + sgstAmount;
   }, 0);
+
+  const partsSubtotal = costItems
+    .filter((item) => item.type === "part")
+    .reduce((sum, i) => {
+      const itemTotal = num(i.quantity) * num(i.unitPrice);
+      const cgstAmount = (itemTotal * num(i.cgstRate)) / 100;
+      const sgstAmount = (itemTotal * num(i.sgstRate)) / 100;
+      return sum + itemTotal + cgstAmount + sgstAmount;
+    }, 0);
+
+  const laborSubtotal = costItems
+    .filter((item) => item.type === "labor")
+    .reduce((sum, i) => {
+      const itemTotal = num(i.quantity) * num(i.unitPrice);
+      const cgstAmount = (itemTotal * num(i.cgstRate)) / 100;
+      const sgstAmount = (itemTotal * num(i.sgstRate)) / 100;
+      return sum + itemTotal + cgstAmount + sgstAmount;
+    }, 0);
+
+  const cgstTotal = costItems.reduce((sum, i) => {
+    const itemTotal = num(i.quantity) * num(i.unitPrice);
+    return sum + (itemTotal * num(i.cgstRate)) / 100;
+  }, 0);
+
+  const sgstTotal = costItems.reduce((sum, i) => {
+    const itemTotal = num(i.quantity) * num(i.unitPrice);
+    return sum + (itemTotal * num(i.sgstRate)) / 100;
+  }, 0);
+
+  const discountAmount =
+    discount.type === "amount"
+      ? num(discount.value)
+      : (totalAmount * num(discount.value)) / 100;
+
+  const grandTotal = totalAmount - discountAmount;
+  const balanceDue = grandTotal - (num(form.advancePaid) || 0);
 
   /* ================= HANDLERS ================= */
 
@@ -231,7 +323,14 @@ export default function ServiceForm() {
   const addCostRow = () =>
     setCostItems((p) => [
       ...p,
-      { partName: "", partCost: "", partGst: "", laborCost: "", laborGst: "" },
+      {
+        type: "part",
+        name: "",
+        quantity: 1,
+        unitPrice: "",
+        cgstRate: "",
+        sgstRate: "",
+      },
     ]);
 
   const removeCostRow = (i) =>
@@ -240,6 +339,18 @@ export default function ServiceForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
+  };
+
+  const handleDiscountChange = (e) => {
+    const { name, value } = e.target;
+    setDiscount((d) => ({ ...d, [name]: value }));
+  };
+
+  const handleMechanicChange = (e) => {
+    const { value } = e.target;
+    setMechanicInput(value);
+    setSelectedMechanic(null);
+    setShowCreateMechanic(false);
   };
 
   // Create a new sub-service
@@ -274,6 +385,37 @@ export default function ServiceForm() {
     }
   };
 
+  // Create a new mechanic
+  const createNewMechanic = async () => {
+    if (!mechanicInput.trim()) return;
+
+    setCreatingMechanic(true);
+    try {
+      const res = await apiRequest("/api/mechanics", {
+        method: "POST",
+        body: JSON.stringify({
+          name: mechanicInput.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        const newMechanic = await res.json();
+        setSelectedMechanic(newMechanic);
+        setMechanicInput(newMechanic.name);
+        setMechanicSuggestions([...mechanicSuggestions, newMechanic]);
+        setShowCreateMechanic(false);
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create mechanic");
+      }
+    } catch (err) {
+      console.error("Error creating mechanic:", err);
+      setError(err.message || "Failed to create mechanic");
+    } finally {
+      setCreatingMechanic(false);
+    }
+  };
+
   /* ================= SUBMIT ================= */
 
   const handleSubmit = async (e) => {
@@ -282,16 +424,32 @@ export default function ServiceForm() {
 
     try {
       if (!form.clientId) throw new Error("Please select a client.");
-      if (!form.date) throw new Error("Please select a date.");
+      if (!form.serviceInDate) {
+        throw new Error("Please select service in date.");
+      }
 
       const formData = new FormData();
 
       formData.append("clientId", form.clientId);
       formData.append("categoryId", form.categoryId);
-      formData.append("date", form.date);
+      const toISO = (v) => (v ? new Date(v).toISOString() : "");
+
+      formData.append("serviceInDate", toISO(form.serviceInDate));
+      formData.append("serviceOutDate", toISO(form.serviceOutDate));
+      formData.append("expectedDelivery", toISO(form.expectedDelivery));
+
       formData.append("notes", form.notes);
       formData.append("status", form.status);
+      formData.append("priority", form.priority);
+      // formData.append("serviceInDate", form.serviceInDate);
+      // formData.append("serviceOutDate", form.serviceOutDate);
+      // formData.append("expectedDelivery", form.expectedDelivery);
+      formData.append("internalNotes", form.internalNotes);
+      formData.append("assignedMechanic", mechanicInput);
       formData.append("cost", totalAmount.toFixed(2));
+      formData.append("discount", discountAmount.toFixed(2));
+      formData.append("advancePaid", form.advancePaid || "0");
+      formData.append("balanceDue", balanceDue.toFixed(2));
 
       if (selectedSubService)
         formData.append("subServiceId", selectedSubService.id);
@@ -299,7 +457,9 @@ export default function ServiceForm() {
 
       formData.append("costItems", JSON.stringify(costItems));
 
-      media.forEach((m) => formData.append("media", m));
+      media.forEach((file) => {
+        formData.append("images", file);
+      });
 
       const res = await fetch(
         `${API_BASE}${id ? `/api/services/${id}` : "/api/services"}`,
@@ -315,31 +475,9 @@ export default function ServiceForm() {
 
       const serviceId = result?.service?.id ?? (id ? id : null);
       if (serviceId) {
-        // Navigate to billing form with service data
         navigate("/billing/new", {
           state: {
-            serviceData: {
-              id: serviceId,
-              clientId: form.clientId,
-              vehicle: `${selectedClient?.vehicleMake || ""} ${
-                selectedClient?.vehicleModel || ""
-              }`,
-              serviceType: form.categoryId
-                ? categories.find((c) => c.id === parseInt(form.categoryId))
-                    ?.name
-                : "",
-              serviceCategory: form.categoryId
-                ? categories.find((c) => c.id === parseInt(form.categoryId))
-                    ?.name
-                : "",
-              serviceSubCategory: selectedSubService?.name || "",
-              serviceNotes: form.notes,
-              partsCost: totalAmount,
-              partsGst: 0, // Calculate if needed
-              laborCost: 0, // Calculate if needed
-              laborGst: 0, // Calculate if needed
-              costItems: costItems,
-            },
+            serviceId: serviceId,
           },
         });
       } else {
@@ -360,7 +498,7 @@ export default function ServiceForm() {
         isDark ? " text-gray-100" : "bg-gray-50 text-gray-900"
       } p-1 lg:ml-16`}
     >
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div
           className={`rounded-2xl p-6 shadow-lg ${
@@ -378,7 +516,7 @@ export default function ServiceForm() {
                 } mt-1 text-sm`}
               >
                 {selectedClient
-                  ? `Adding service for ${selectedClient.fullName}`
+                  ? `Service for ${selectedClient.fullName}`
                   : "Manage your service record easily"}
               </p>
             </div>
@@ -398,34 +536,31 @@ export default function ServiceForm() {
           </div>
         )}
 
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className={`rounded-2xl p-6 shadow-lg space-y-6 ${
+        {/* Service Header with Client Info */}
+        <div
+          className={`rounded-2xl p-6 shadow-lg ${
             isDark ? "bg-gray-800" : "bg-white"
           }`}
         >
-          {/* Client */}
-          <div className="space-y-1">
-            <label className="font-semibold flex items-center gap-2">
-              <FiUser /> Client
-            </label>
-            {selectedClient ? (
-              <div
-                className={`w-full rounded-lg border p-3 ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-gray-50 border-gray-300 text-gray-800"
-                }`}
-              >
-                {selectedClient.fullName} ({selectedClient.regNumber})
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Client & Vehicle Info */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <FiUser /> Client
               </div>
-            ) : (
               <select
                 value={form.clientId}
-                onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-                required
-                className={`w-full rounded-lg border p-3 ${
+                onChange={(e) => {
+                  const clientId = e.target.value;
+                  setForm((f) => ({ ...f, clientId }));
+                  if (clientId) {
+                    const client = clients.find(
+                      (c) => c.id === parseInt(clientId)
+                    );
+                    setSelectedClient(client);
+                  }
+                }}
+                className={`w-full rounded-lg border p-2 text-sm ${
                   isDark
                     ? "bg-gray-700 border-gray-600"
                     : "bg-gray-50 border-gray-300"
@@ -438,45 +573,222 @@ export default function ServiceForm() {
                   </option>
                 ))}
               </select>
-            )}
+              {selectedClient && (
+                <>
+                  <div className="text-lg font-semibold">
+                    {selectedClient.fullName}
+                  </div>
+                  <div className="text-sm text-gray-500 flex items-center gap-1">
+                    <FaTruck /> {selectedClient.vehicleMake}{" "}
+                    {selectedClient.vehicleModel}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {selectedClient.regNumber}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Service Status & Priority */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <FiCheckCircle /> Status
+              </div>
+              <select
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                className={`w-full rounded-lg border p-2 text-sm ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600"
+                    : "bg-gray-50 border-gray-300"
+                }`}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+              </select>
+
+              <div className="flex items-center gap-2 text-sm font-medium mt-4">
+                <FiAlertCircle /> Priority
+              </div>
+              <select
+                name="priority"
+                value={form.priority}
+                onChange={handleChange}
+                className={`w-full rounded-lg border p-2 text-sm ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600"
+                    : "bg-gray-50 border-gray-300"
+                }`}
+              >
+                <option value="Normal">Normal</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+            </div>
+
+            {/* Service Timeline */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <FiClock /> Timeline
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">
+                    In Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="serviceInDate"
+                    value={form.serviceInDate}
+                    onChange={handleChange}
+                    className={`w-full rounded-lg border p-2 text-sm ${
+                      isDark
+                        ? "bg-gray-700 border-gray-600"
+                        : "bg-gray-50 border-gray-300"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">
+                    Out Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="serviceOutDate"
+                    value={form.serviceOutDate}
+                    onChange={handleChange}
+                    className={`w-full rounded-lg border p-2 text-sm ${
+                      isDark
+                        ? "bg-gray-700 border-gray-600"
+                        : "bg-gray-50 border-gray-300"
+                    }`}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">
+                  Expected Delivery
+                </label>
+                <input
+                  type="datetime-local"
+                  name="expectedDelivery"
+                  value={form.expectedDelivery}
+                  onChange={handleChange}
+                  className={`w-full rounded-lg border p-2 text-sm ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600"
+                      : "bg-gray-50 border-gray-300"
+                  }`}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className={`rounded-2xl p-6 shadow-lg space-y-6 ${
+            isDark ? "bg-gray-800" : "bg-white"
+          }`}
+        >
+          {/* Service Category Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Category */}
+            <div className="space-y-1">
+              <label className="font-semibold flex items-center gap-2">
+                <FiTool /> Service Category
+              </label>
+              <select
+                value={form.categoryId}
+                onChange={(e) =>
+                  setForm({ ...form, categoryId: e.target.value })
+                }
+                className={`w-full rounded-lg border p-3 ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600"
+                    : "bg-gray-50 border-gray-300"
+                }`}
+              >
+                <option value="">Select Category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Assigned Mechanic */}
+            <div className="space-y-1">
+              <label className="font-semibold flex items-center gap-2">
+                <GrUserWorker /> Assigned Mechanic
+              </label>
+              <div className="relative">
+                <input
+                  value={mechanicInput}
+                  onChange={handleMechanicChange}
+                  onFocus={() => {
+                    if (mechanicInput.trim() === "") {
+                      setMechanicSuggestions(mechanics);
+                    }
+                  }}
+                  placeholder="Type mechanic name"
+                  className={`w-full rounded-lg border p-3 ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600"
+                      : "bg-gray-50 border-gray-300"
+                  }`}
+                />
+
+                {mechanicSuggestions.length > 0 && (
+                  <div
+                    className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
+                      isDark ? "bg-gray-700" : "bg-white"
+                    } border ${isDark ? "border-gray-600" : "border-gray-200"}`}
+                  >
+                    {mechanicSuggestions.map((m) => (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          setSelectedMechanic(m);
+                          setMechanicInput(m.name);
+                          setMechanicSuggestions([]);
+                        }}
+                        className={`p-3 cursor-pointer ${
+                          isDark ? "hover:bg-gray-600" : "hover:bg-gray-100"
+                        }`}
+                      >
+                        {m.name}
+                      </div>
+                    ))}
+
+                    {mechanicInput.trim() !== "" &&
+                      !mechanicSuggestions.some(
+                        (m) =>
+                          m.name.toLowerCase() === mechanicInput.toLowerCase()
+                      ) && (
+                        <div
+                          onClick={() => setShowCreateMechanic(true)}
+                          className={`p-3 cursor-pointer border-t ${
+                            isDark
+                              ? "border-gray-600 hover:bg-gray-600"
+                              : "border-gray-200 hover:bg-gray-100"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <FiPlus className="text-green-500" />
+                            <span>Create "{mechanicInput.trim()}"</span>
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Date */}
-          <InputField
-            label="Date"
-            icon={<FiCalendar />}
-            name="date"
-            type="date"
-            value={form.date}
-            onChange={handleChange}
-            isDark={isDark}
-            required
-          />
-
-          {/* Category */}
-          <div className="space-y-1">
-            <label className="font-semibold flex items-center gap-2">
-              <FiTool /> Service Category
-            </label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              className={`w-full rounded-lg border p-3 ${
-                isDark
-                  ? "bg-gray-700 border-gray-600"
-                  : "bg-gray-50 border-gray-300"
-              }`}
-            >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* SUB-SERVICE TYPEAHEAD - COMPLETE VERSION */}
+          {/* SUB-SERVICE TYPEAHEAD */}
           <div className="space-y-1">
             <label className="font-semibold flex items-center gap-2">
               <FiTool /> Sub-Service
@@ -490,7 +802,6 @@ export default function ServiceForm() {
                   setSelectedSubService(null);
                   setShowCreateSubService(false);
 
-                  // Only search if we have a category
                   if (form.categoryId && v.trim() !== "") {
                     try {
                       const r = await apiRequest(
@@ -505,7 +816,6 @@ export default function ServiceForm() {
                       setSubServiceSuggestions([]);
                     }
                   } else if (form.categoryId && v.trim() === "") {
-                    // If input is empty but we have a category, show all sub-services
                     try {
                       const r = await apiRequest(
                         `/api/services/sub-services/search?categoryId=${form.categoryId}`
@@ -521,7 +831,6 @@ export default function ServiceForm() {
                   }
                 }}
                 onFocus={() => {
-                  // Load all sub-services for category when field is focused
                   if (form.categoryId && subServiceInput.trim() === "") {
                     apiRequest(
                       `/api/services/sub-services/search?categoryId=${form.categoryId}`
@@ -568,7 +877,6 @@ export default function ServiceForm() {
                     </div>
                   ))}
 
-                  {/* Add option to create new sub-service if no exact match */}
                   {subServiceInput.trim() !== "" &&
                     !subServiceSuggestions.some(
                       (s) =>
@@ -593,75 +901,16 @@ export default function ServiceForm() {
             </div>
           </div>
 
-          {/* Create Sub-Service Modal */}
-          {showCreateSubService && (
-            <div
-              className={`fixed inset-0 z-50 flex items-center justify-center ${
-                isDark ? "bg-black bg-opacity-50" : "bg-black bg-opacity-50"
-              }`}
-            >
-              <div
-                className={`w-full max-w-md p-6 rounded-lg ${
-                  isDark ? "bg-gray-800" : "bg-white"
-                }`}
-              >
-                <h3 className="text-xl font-bold mb-4">
-                  Create New Sub-Service
-                </h3>
-                <div className="mb-4">
-                  <p className="text-sm mb-2">
-                    Are you sure you want to create a new sub-service named "
-                    {subServiceInput.trim()}"?
-                  </p>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateSubService(false)}
-                    className={`px-4 py-2 rounded-lg ${
-                      isDark
-                        ? "bg-gray-700 hover:bg-gray-600 text-white"
-                        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-                    }`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={createNewSubService}
-                    disabled={creatingSubService}
-                    className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                      creatingSubService
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-green-600 hover:bg-green-700"
-                    } text-white`}
-                  >
-                    {creatingSubService ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <FiPlus /> Create
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
+          {/* Internal Notes */}
           <div className="space-y-1">
             <label className="font-semibold flex items-center gap-2">
-              <FiFileText /> Notes
+              <FiEdit3 /> Internal Notes (Staff Only)
             </label>
             <textarea
-              name="notes"
+              name="internalNotes"
               rows={3}
-              placeholder="Enter additional notes or details..."
-              value={form.notes}
+              placeholder="Enter internal notes or special instructions..."
+              value={form.internalNotes}
               onChange={handleChange}
               className={`w-full rounded-lg border p-3 resize-none ${
                 isDark
@@ -671,17 +920,339 @@ export default function ServiceForm() {
             />
           </div>
 
+          {/* COST BREAKDOWN - REDESIGNED */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-xl flex items-center gap-2">
+              <FaIndianRupeeSign /> Cost Breakdown
+            </h3>
+
+            <div className="space-y-3">
+              {costItems.map((row, i) => {
+                const itemTotal = num(row.quantity) * num(row.unitPrice);
+                const cgstAmount = (itemTotal * num(row.cgstRate)) / 100;
+                const sgstAmount = (itemTotal * num(row.sgstRate)) / 100;
+                const rowTotal = itemTotal + cgstAmount + sgstAmount;
+
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-lg overflow-hidden shadow-md ${
+                      isDark ? "bg-gray-700" : "bg-white border border-gray-200"
+                    }`}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`p-2 rounded-lg ${
+                              isDark ? "bg-gray-600" : "bg-gray-100"
+                            }`}
+                          >
+                            <FiPackage
+                              className={
+                                isDark ? "text-gray-300" : "text-gray-600"
+                              }
+                            />
+                          </div>
+                          <span className="font-medium">Item #{i + 1}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeCostRow(i)}
+                          className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          <FiTrash size={16} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                        {/* Item Type */}
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Type
+                          </label>
+                          <select
+                            value={row.type}
+                            onChange={(e) =>
+                              handleCostChange(i, "type", e.target.value)
+                            }
+                            className={`w-full p-2 rounded-lg border text-sm ${
+                              isDark
+                                ? "bg-gray-800 border-gray-600"
+                                : "bg-white border-gray-200"
+                            }`}
+                          >
+                            <option value="part">Part</option>
+                            <option value="labor">Labor</option>
+                          </select>
+                        </div>
+
+                        {/* Item Name - Only show for parts */}
+                        {row.type === "part" && (
+                          <div className="md:col-span-2">
+                            <label className="text-xs text-gray-500 block mb-1">
+                              Name
+                            </label>
+                            <input
+                              placeholder="Item name"
+                              value={row.name}
+                              onChange={(e) =>
+                                handleCostChange(i, "name", e.target.value)
+                              }
+                              className={`w-full p-2 rounded-lg border text-sm ${
+                                isDark
+                                  ? "bg-gray-800 border-gray-600"
+                                  : "bg-white border-gray-200"
+                              }`}
+                            />
+                          </div>
+                        )}
+
+                        {/* Quantity */}
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Qty
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={row.quantity}
+                            onChange={(e) =>
+                              handleCostChange(i, "quantity", e.target.value)
+                            }
+                            className={`w-full p-2 rounded-lg border text-sm ${
+                              isDark
+                                ? "bg-gray-800 border-gray-600"
+                                : "bg-white border-gray-200"
+                            }`}
+                          />
+                        </div>
+
+                        {/* Unit Price */}
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Unit Price
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="0.00"
+                            value={row.unitPrice}
+                            onChange={(e) =>
+                              handleCostChange(i, "unitPrice", e.target.value)
+                            }
+                            className={`w-full p-2 rounded-lg border text-sm ${
+                              isDark
+                                ? "bg-gray-800 border-gray-600"
+                                : "bg-white border-gray-200"
+                            }`}
+                          />
+                        </div>
+
+                        {/* CGST Rate */}
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            CGST %
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={row.cgstRate}
+                            onChange={(e) =>
+                              handleCostChange(i, "cgstRate", e.target.value)
+                            }
+                            className={`w-full p-2 rounded-lg border text-sm ${
+                              isDark
+                                ? "bg-gray-800 border-gray-600"
+                                : "bg-white border-gray-200"
+                            }`}
+                          />
+                        </div>
+
+                        {/* SGST Rate */}
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            SGST %
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={row.sgstRate}
+                            onChange={(e) =>
+                              handleCostChange(i, "sgstRate", e.target.value)
+                            }
+                            className={`w-full p-2 rounded-lg border text-sm ${
+                              isDark
+                                ? "bg-gray-800 border-gray-600"
+                                : "bg-white border-gray-200"
+                            }`}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row Total */}
+                      <div
+                        className={`mt-3 p-2 rounded-lg flex justify-between items-center ${
+                          isDark ? "bg-gray-600" : "bg-gray-100"
+                        }`}
+                      >
+                        <span className="font-medium text-sm">Total</span>
+                        <span className="text-lg font-bold text-green-500">
+                          ₹{rowTotal.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={addCostRow}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md"
+              >
+                <FiPlus /> Add Item
+              </button>
+            </div>
+          </div>
+
+          {/* BILLING SUMMARY - HIGHLIGHTED PANEL */}
+          <div
+            className={`p-6 rounded-xl border-2 border-green-500 ${
+              isDark ? "bg-gray-900" : "bg-green-50"
+            }`}
+          >
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <FiDollarSign /> Billing Summary
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Parts Subtotal</span>
+                  <span className="font-medium">
+                    ₹{partsSubtotal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Labor Subtotal</span>
+                  <span className="font-medium">
+                    ₹{laborSubtotal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">CGST Total</span>
+                  <span className="font-medium">₹{cgstTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">SGST Total</span>
+                  <span className="font-medium">₹{sgstTotal.toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Discount</span>
+                    <span className="font-medium">
+                      -₹{discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Advance Paid</span>
+                    <span className="font-medium">
+                      ₹{num(form.advancePaid || 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="border-t pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Grand Total</span>
+                    <span className="text-2xl font-bold text-green-600">
+                      ₹{grandTotal.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-lg font-semibold">Balance Due</span>
+                    <span className="text-2xl font-bold text-red-600">
+                      ₹{balanceDue.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Discount Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="font-semibold">Discount Type</label>
+              <select
+                name="type"
+                value={discount.type}
+                onChange={handleDiscountChange}
+                className={`w-full rounded-lg border p-3 ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600"
+                    : "bg-gray-50 border-gray-300"
+                }`}
+              >
+                <option value="amount">Fixed Amount</option>
+                <option value="percentage">Percentage (%)</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="font-semibold">Discount Value</label>
+              <input
+                type="number"
+                name="value"
+                value={discount.value}
+                onChange={handleDiscountChange}
+                placeholder="0.00"
+                className={`w-full rounded-lg border p-3 ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600"
+                    : "bg-gray-50 border-gray-300"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Advance Paid */}
+          <div className="space-y-1">
+            <label className="font-semibold">Advance Paid</label>
+            <input
+              type="number"
+              name="advancePaid"
+              value={form.advancePaid}
+              onChange={handleChange}
+              placeholder="0.00"
+              className={`w-full rounded-lg border p-3 ${
+                isDark
+                  ? "bg-gray-700 border-gray-600"
+                  : "bg-gray-50 border-gray-300"
+              }`}
+            />
+          </div>
+
           {/* Media Upload */}
           <div className="space-y-3">
-            <label className="font-semibold">Upload Media (Images/Files)</label>
+            <label className="font-semibold flex items-center gap-2">
+              <FiUpload /> Upload Media (Images/Files)
+            </label>
 
             <input
               type="file"
               multiple
               accept="image/*"
-              capture="environment"
+              capture="environment" // 🔥 opens rear camera on mobile
               onChange={(e) => {
-                const files = Array.from(e.target.files);
+                const files = Array.from(e.target.files || []);
                 setMedia((prev) => [...prev, ...files]);
               }}
               className={`w-full rounded-lg border p-3 ${
@@ -692,7 +1263,7 @@ export default function ServiceForm() {
             />
 
             {media.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                 {media.map((file, index) => (
                   <div
                     key={index}
@@ -710,7 +1281,7 @@ export default function ServiceForm() {
                       }}
                       className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-80 hover:opacity-100"
                     >
-                      X
+                      <FiX />
                     </button>
                   </div>
                 ))}
@@ -718,267 +1289,29 @@ export default function ServiceForm() {
             )}
           </div>
 
-          {/* COST BREAKDOWN - COMPACT DESIGN */}
+          {/* Invoice Actions Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-xl flex items-center gap-2">
-              <FaIndianRupeeSign /> Cost Breakdown
-            </h3>
-
-            <div className="space-y-3">
-              {costItems.map((row, i) => {
-                const partTotal =
-                  num(row.partCost) +
-                  (num(row.partCost) * num(row.partGst)) / 100;
-                const laborTotal =
-                  num(row.laborCost) +
-                  (num(row.laborCost) * num(row.laborGst)) / 100;
-                const rowTotal = partTotal + laborTotal;
-
-                return (
-                  <div
-                    key={i}
-                    className={`rounded-lg overflow-hidden shadow-md ${
-                      isDark ? "bg-gray-700" : "bg-white border border-gray-200"
-                    }`}
-                  >
-                    <div className="p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`p-1.5 rounded-lg ${
-                              isDark ? "bg-gray-600" : "bg-gray-100"
-                            }`}
-                          >
-                            <FiPackage
-                              className={
-                                isDark ? "text-gray-300" : "text-gray-600"
-                              }
-                            />
-                          </div>
-                          <span className="font-medium text-sm">
-                            Item #{i + 1}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeCostRow(i)}
-                          className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
-                        >
-                          <FiTrash size={16} />
-                        </button>
-                      </div>
-
-                      <div className="mb-2">
-                        <input
-                          placeholder="Part Name"
-                          value={row.partName}
-                          onChange={(e) =>
-                            handleCostChange(i, "partName", e.target.value)
-                          }
-                          className={`w-full p-2 rounded-lg border text-sm ${
-                            isDark
-                              ? "bg-gray-800 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-200"
-                          } focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all`}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* Parts Section */}
-                        <div
-                          className={`p-2 rounded-lg ${
-                            isDark ? "bg-gray-800" : "bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <FiPackage className="text-green-500" size={14} />
-                            <h4 className="font-medium text-sm">Parts</h4>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">
-                                Cost
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="0.00"
-                                value={row.partCost}
-                                onChange={(e) =>
-                                  handleCostChange(
-                                    i,
-                                    "partCost",
-                                    e.target.value
-                                  )
-                                }
-                                className={`w-full p-1.5 rounded-lg border text-sm ${
-                                  isDark
-                                    ? "bg-gray-700 border-gray-600"
-                                    : "bg-white border-gray-200"
-                                } focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all`}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">
-                                GST %
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={row.partGst}
-                                onChange={(e) =>
-                                  handleCostChange(i, "partGst", e.target.value)
-                                }
-                                className={`w-full p-1.5 rounded-lg border text-sm ${
-                                  isDark
-                                    ? "bg-gray-700 border-gray-600"
-                                    : "bg-white border-gray-200"
-                                } focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all`}
-                              />
-                            </div>
-                          </div>
-                          <div
-                            className={`mt-2 p-1.5 rounded-lg flex justify-between items-center ${
-                              isDark ? "bg-gray-600" : "bg-gray-100"
-                            }`}
-                          >
-                            <span className="text-xs text-gray-500">Total</span>
-                            <span className="text-sm font-medium text-green-500">
-                              ₹{partTotal.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Labor Section */}
-                        <div
-                          className={`p-2 rounded-lg ${
-                            isDark ? "bg-gray-800" : "bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <GrUserWorker className="text-blue-500" size={14} />
-                            <h4 className="font-medium text-sm">Labor</h4>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">
-                                Cost
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="0.00"
-                                value={row.laborCost}
-                                onChange={(e) =>
-                                  handleCostChange(
-                                    i,
-                                    "laborCost",
-                                    e.target.value
-                                  )
-                                }
-                                className={`w-full p-1.5 rounded-lg border text-sm ${
-                                  isDark
-                                    ? "bg-gray-700 border-gray-600"
-                                    : "bg-white border-gray-200"
-                                } focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all`}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1">
-                                GST %
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={row.laborGst}
-                                onChange={(e) =>
-                                  handleCostChange(
-                                    i,
-                                    "laborGst",
-                                    e.target.value
-                                  )
-                                }
-                                className={`w-full p-1.5 rounded-lg border text-sm ${
-                                  isDark
-                                    ? "bg-gray-700 border-gray-600"
-                                    : "bg-white border-gray-200"
-                                } focus:ring-2 focus:ring-green-500 focus:border-transparent outline-all`}
-                              />
-                            </div>
-                          </div>
-                          <div
-                            className={`mt-2 p-1.5 rounded-lg flex justify-between items-center ${
-                              isDark ? "bg-gray-600" : "bg-gray-100"
-                            }`}
-                          >
-                            <span className="text-xs text-gray-500">Total</span>
-                            <span className="text-sm font-medium text-blue-500">
-                              ₹{laborTotal.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Row Total */}
-                      <div
-                        className={`mt-2 p-2 rounded-lg flex justify-between items-center ${
-                          isDark ? "bg-gray-600" : "bg-gray-100"
-                        }`}
-                      >
-                        <span className="font-medium text-sm">Item Total</span>
-                        <span className="text-lg font-bold text-green-500">
-                          ₹{rowTotal.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Add Item Button - Moved to Bottom */}
-            <div className="flex justify-end mt-4">
+            <h3 className="font-semibold text-lg">Invoice Actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <button
                 type="button"
-                onClick={addCostRow}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
-                <FiPlus /> Add Item
+                <FiSave /> Save as Draft
               </button>
-            </div>
-          </div>
 
-          {/* Status */}
-          <div className="space-y-1">
-            <label className="font-semibold flex items-center gap-2">
-              <FiCheckCircle /> Status
-            </label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className={`rounded-lg border p-3 text-sm ${
-                isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-gray-50 border-gray-300 text-gray-900"
-              }`}
-            >
-              <option value="Pending">Pending</option>
-              <option value="Paid">Paid</option>
-            </select>
-          </div>
-
-          {/* TOTAL */}
-          <div
-            className={`p-6 rounded-xl ${
-              isDark
-                ? "bg-gradient-to-r from-gray-700 to-gray-600"
-                : "bg-gradient-to-r from-gray-50 to-gray-100"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold">Total Amount</span>
-              <span className="text-2xl font-bold text-green-500">
-                ₹{totalAmount.toFixed(2)}
-              </span>
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <FiSend /> Send Invoice
+              </button>
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <FiDownload /> Preview Invoice
+              </button>
             </div>
           </div>
 
@@ -995,36 +1328,120 @@ export default function ServiceForm() {
           </div>
         </form>
       </div>
-    </div>
-  );
-}
 
-/* Helper Input Component */
-function InputField({
-  label,
-  icon,
-  name,
-  type = "text",
-  value,
-  onChange,
-  isDark,
-  required,
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="font-semibold flex items-center gap-2">
-        {icon} {label}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        className={`w-full rounded-lg border p-3 ${
-          isDark ? "bg-gray-700 border-gray-600" : "bg-gray-50 border-gray-300"
-        }`}
-      />
+      {/* Create Sub-Service Modal */}
+      {showCreateSubService && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center ${
+            isDark ? "bg-black bg-opacity-50" : "bg-black bg-opacity-50"
+          }`}
+        >
+          <div
+            className={`w-full max-w-md p-6 rounded-lg ${
+              isDark ? "bg-gray-800" : "bg-white"
+            }`}
+          >
+            <h3 className="text-xl font-bold mb-4">Create New Sub-Service</h3>
+            <div className="mb-4">
+              <p className="text-sm mb-2">
+                Are you sure you want to create a new sub-service named "
+                {subServiceInput.trim()}"?
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCreateSubService(false)}
+                className={`px-4 py-2 rounded-lg ${
+                  isDark
+                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={createNewSubService}
+                disabled={creatingSubService}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                  creatingSubService
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white`}
+              >
+                {creatingSubService ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <FiPlus /> Create
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Mechanic Modal */}
+      {showCreateMechanic && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center ${
+            isDark ? "bg-black bg-opacity-50" : "bg-black bg-opacity-50"
+          }`}
+        >
+          <div
+            className={`w-full max-w-md p-6 rounded-lg ${
+              isDark ? "bg-gray-800" : "bg-white"
+            }`}
+          >
+            <h3 className="text-xl font-bold mb-4">Create New Mechanic</h3>
+            <div className="mb-4">
+              <p className="text-sm mb-2">
+                Are you sure you want to create a new mechanic named "
+                {mechanicInput.trim()}"?
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCreateMechanic(false)}
+                className={`px-4 py-2 rounded-lg ${
+                  isDark
+                    ? "bg-gray-700 hover:bg-gray-600 text-white"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={createNewMechanic}
+                disabled={creatingMechanic}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                  creatingMechanic
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white`}
+              >
+                {creatingMechanic ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <FiPlus /> Create
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

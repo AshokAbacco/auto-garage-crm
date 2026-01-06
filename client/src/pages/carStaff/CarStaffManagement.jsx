@@ -13,12 +13,12 @@ import {
   Shield,
   ShieldAlert,
 } from "lucide-react";
-import { useTheme } from "../contexts/ThemeContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
-import StaffEditModal from "../components/Car/StaffEditModal";
-import StaffViewModal from "../components/Car/StaffViewModal";
-import StaffCreateModal from "../components/Car/StaffCreateModal";
-import StaffLoginCreateModal from "../components/Car/StaffLoginCreateModal";
+import StaffEditModal from "../../components/Car/StaffEditModal";
+import StaffViewModal from "../../components/Car/StaffViewModal";
+import StaffCreateModal from "../../components/Car/StaffCreateModal";
+import StaffLoginCreateModal from "../../components/Car/StaffLoginCreateModal";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -82,24 +82,21 @@ export default function StaffManagement() {
   /* ===============================
       HELPERS
   =============================== */
-  const calculateNetSalary = (s) => {
-    const leaveDeduction = (s.leaves || 0) * (s.deductionPerLeave || 0);
+  const calculateEstimatedSalary = (s) => {
     return (
-      (s.baseSalary || 0) -
-      leaveDeduction -
-      (s.extraDeductions || 0) +
-      (s.bonus || 0)
+      (s.baseSalary || 0) +
+      (s.bonusDefault || 0) -
+      (s.extraDeductionsDefault || 0)
     );
   };
 
-  const getInitials = (name) => {
-    return name
+  const getInitials = (name) =>
+    name
       ?.split(" ")
       .map((n) => n[0])
       .slice(0, 2)
       .join("")
       .toUpperCase();
-  };
 
   const getRandomColor = (name) => {
     const colors = [
@@ -132,11 +129,11 @@ export default function StaffManagement() {
     const activeLogins = staff.filter(
       (s) => s.login && s.login.isActive
     ).length;
-    const totalPayroll = staff.reduce(
-      (acc, curr) => acc + calculateNetSalary(curr),
+    const estimatedPayroll = staff.reduce(
+      (acc, curr) => acc + calculateEstimatedSalary(curr),
       0
     );
-    return { totalStaff, activeLogins, totalPayroll };
+    return { totalStaff, activeLogins, estimatedPayroll };
   }, [staff]);
 
   if (loading) {
@@ -172,7 +169,7 @@ export default function StaffManagement() {
               isDark ? "text-slate-400" : "text-slate-500"
             } mt-2 text-sm`}
           >
-            Overview of your team members, roles, and payroll status.
+            Manage staff profiles and salary configuration (defaults)
           </p>
         </div>
         <button
@@ -205,8 +202,8 @@ export default function StaffManagement() {
           isDark={isDark}
         />
         <StatCard
-          title="Monthly Payroll"
-          value={`₹${stats.totalPayroll.toLocaleString()}`}
+          title="Estimated Monthly Payroll"
+          value={`₹${stats.estimatedPayroll.toLocaleString()}`}
           icon={Wallet}
           color="bg-violet-500"
           isDark={isDark}
@@ -264,8 +261,7 @@ export default function StaffManagement() {
                 <th className="px-6 py-4">Employee</th>
                 <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4 text-center">System Access</th>
-                <th className="px-6 py-4 text-center">Leaves</th>
-                <th className="px-6 py-4 text-right">Net Salary</th>
+                <th className="px-6 py-4 text-right">Estimated Salary</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -281,7 +277,7 @@ export default function StaffManagement() {
                     isDark ? "bg-slate-800" : "bg-slate-50"
                   } transition-colors group`}
                 >
-                  {/* Name Column with Avatar (ID Removed) */}
+                  {/* Name Column with Avatar */}
                   <td className="px-6 py-4 align-middle">
                     <div className="flex items-center gap-3">
                       <div
@@ -379,15 +375,10 @@ export default function StaffManagement() {
                     )}
                   </td>
 
-                  {/* Leaves Column */}
-                  <td className="px-6 py-4 text-center text-slate-600 font-medium text-sm align-middle">
-                    {s.leaves || 0}
-                  </td>
-
                   {/* Salary Column */}
                   <td className="px-6 py-4 text-right align-middle">
                     <span className="font-bold text-green-600">
-                      ₹{calculateNetSalary(s).toLocaleString()}
+                      ₹{calculateEstimatedSalary(s).toLocaleString()}
                     </span>
                   </td>
 

@@ -34,7 +34,7 @@ import bikeInvoiceRoutes from "./routes/bikeInvoiceRoutes.js";
 import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 import carStaffRoutes from "./routes/carStaffRoutes.js";
 import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
-import bikeStaffSalaryRoutes from "./routes/BikestaffSalaryRoutes.js";
+import bikeStaffSalaryRoutes from "./routes/BikeStaffSalaryRoutes.js";
 import bikeMetaRoutes from "./routes/bikeMetaRoutes.js";
 import { protect } from "./middleware/authMiddleware.js";
 
@@ -42,6 +42,12 @@ import { protect } from "./middleware/authMiddleware.js";
 import carRoutes from "./routes/carRoutes.js";
 import staffAuthRoutes from "./routes/staffAuthRoutes.js"
 import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js"
+import serviceApprovalRoutes from "./routes/serviceApprovalRoutes.js";
+import whatsappRoutes from "./routes/whatsappRoutes.js";
+import whatsappWebhookRoutes from "./routes/whatsappWebhookRoutes.js";
+
+
+
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -84,6 +90,7 @@ app.post(
   "/api/payments/razorpay-webhook",
   express.raw({ type: "application/json" })
 );
+app.use("/api/whatsapp", whatsappWebhookRoutes);
 
 /* -----------------------------------------------------
    🧩 Middleware Configuration
@@ -141,6 +148,9 @@ app.use("/api/cars", carRoutes);
 app.use("/api/car-staff", carStaffRoutes);
 app.use("/api/staff-auth", staffAuthRoutes);
 app.use("/api/carstaff-salary", carstaffSalaryRoutes);
+
+app.use("/api", serviceApprovalRoutes);
+app.use("/api", whatsappRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

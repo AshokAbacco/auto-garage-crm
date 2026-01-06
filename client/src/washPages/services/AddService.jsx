@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { IndianRupee, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Package, Trash2, Plus } from "lucide-react";
 
 
 import {
@@ -17,15 +18,12 @@ import {
 
 
 
+
 const API_BASE = "http://localhost:5000";
 
 export default function AddNewServiceForm() {
     // Theme state
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        // Check for saved theme preference or default to light
-        const savedTheme = localStorage.getItem('darkMode');
-        return savedTheme === 'true';
-    });
+
 
     const [clientName, setClientName] = useState("");
     const [serviceData, setServiceData] = useState(null);
@@ -68,27 +66,103 @@ export default function AddNewServiceForm() {
     const [newSubServiceName, setNewSubServiceName] = useState("");
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [showAddSubService, setShowAddSubService] = useState(false);
-    const isProgrammaticUpdate = useRef(false);
+
+    const [discountType, setDiscountType] = useState("FIXED"); // FIXED | PERCENT
+    const [discountValue, setDiscountValue] = useState(0);
+    const [advancePaidInput, setAdvancePaidInput] = useState(0);
+
+    const [items, setItems] = useState([
+        {
+            type: "Part",
+            name: "",
+            qty: 1,
+            price: 0,
+            cgst: 0,
+            sgst: 0,
+        },
+    ]);
+    const updateItem = (index, key, value) => {
+        const updated = [...items];
+        updated[index][key] = value;
+        setItems(updated);
+    };
+
+    const addItem = () => {
+        setItems([
+            ...items,
+            { type: "Part", name: "", qty: 1, price: 0, cgst: 0, sgst: 0 },
+        ]);
+    };
+
+    const removeItem = (index) => {
+        setItems(items.filter((_, i) => i !== index));
+    };
+
+    const itemTotal = (item) => {
+        const base = item.qty * item.price;
+        const tax = base * ((item.cgst + item.sgst) / 100);
+        return base + tax;
+    };
 
 
+    // ===== Billing Summary Calculations =====
+    const partsSubtotalCalc = items
+        .filter(i => i.type === "Part")
+        .reduce((sum, i) => sum + i.qty * i.price, 0);
 
+    const laborSubtotalCalc = items
+        .filter(i => i.type === "Labor")
+        .reduce((sum, i) => sum + i.qty * i.price, 0);
 
+    const cgstTotalCalc = items.reduce(
+        (sum, i) => sum + (i.qty * i.price * i.cgst) / 100,
+        0
+    );
 
+    const sgstTotalCalc = items.reduce(
+        (sum, i) => sum + (i.qty * i.price * i.sgst) / 100,
+        0
+    );
+
+    // ✅ discount FIRST
+    const discount =
+        discountType === "PERCENT"
+            ? (partsSubtotalCalc + laborSubtotalCalc) * (discountValue / 100)
+            : discountValue;
+
+    // ✅ advance paid NEXT
+    const advancePaid = advancePaidInput;
+
+    // ✅ grand total AFTER discount
+    const grandTotalCalc =
+        partsSubtotalCalc +
+        laborSubtotalCalc +
+        cgstTotalCalc +
+        sgstTotalCalc -
+        discount;
+
+    // ✅ balance due LAST
+    const balanceDueCalc = grandTotalCalc - advancePaid;
 
     // Apply theme to document
     useEffect(() => {
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('darkMode', isDarkMode);
-    }, [isDarkMode]);
+        const observer = new MutationObserver(() => {
+            setIsDarkMode(document.documentElement.classList.contains("dark"));
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
+
+        return () => observer.disconnect();
+    }, []);
+    const [isDarkMode, setIsDarkMode] = useState(
+        document.documentElement.classList.contains("dark")
+    );
+
 
     // Toggle theme function
-    const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
-    };
 
     useEffect(() => {
         if (!serviceData || categories.length === 0 || clients.length === 0) return;
@@ -320,6 +394,7 @@ export default function AddNewServiceForm() {
                     </div>
                 </div>
 
+
                 {/* Main Card */}
                 <div className={`p-6 space-y-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm rounded-2xl`}>
 
@@ -356,20 +431,7 @@ export default function AddNewServiceForm() {
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className={`flex items-center gap-2 text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-slate-800'}`}>
-                                <User className="w-4 h-4" />
-                                Edit Client Name
-                            </label>
-                            <input
-                                type="text"
-                                value={clientName}
-                                onChange={(e) => setClientName(e.target.value)}
-                                placeholder="Client name will appear here"
-                                disabled={!selectedClientId}
-                                className={`w-full rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-slate-300'} px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                            />
-                        </div>
+
                     </div>
 
                     {/* Date + Category */}
@@ -422,21 +484,24 @@ export default function AddNewServiceForm() {
                                 value={categoryQuery}
                                 placeholder="Type category name..."
                                 onFocus={() => setShowCategoryDropdown(true)}
-                                onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 150)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "ArrowDown") {
+                                        e.preventDefault();
+                                        setShowCategoryDropdown(true);
+                                    }
+                                    if (e.key === "Escape") {
+                                        setShowCategoryDropdown(false);
+                                    }
+                                }}
                                 onChange={(e) => {
-                                    if (isProgrammaticUpdate.current) return;
-
                                     setCategoryQuery(e.target.value);
                                     setSelectedCategoryId("");
                                     setSelectedSubServiceId("");
                                     setSubServiceQuery("");
                                     setShowCategoryDropdown(true);
                                 }}
-
-                                className={`w-full rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-slate-300'} px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none`}
+                                className="w-full rounded-lg border px-3 py-2.5"
                             />
-
-                            {/* Category Dropdown */}
                             {/* Category Dropdown */}
                             {showCategoryDropdown && (
                                 <div
@@ -452,10 +517,11 @@ export default function AddNewServiceForm() {
                                         .map(c => (
                                             <div
                                                 key={c.id}
-                                                onClick={() => {
+                                                onMouseDown={() => {
                                                     handleCategoryChange(c.id, c.name);
                                                     setShowCategoryDropdown(false);
                                                 }}
+
                                                 className={`px-4 py-2 cursor-pointer ${isDarkMode
                                                     ? 'hover:bg-emerald-600'
                                                     : 'hover:bg-emerald-500'
@@ -509,23 +575,27 @@ export default function AddNewServiceForm() {
                             value={subServiceQuery}
                             placeholder="Type sub-service name..."
                             onFocus={() => setShowSubServiceDropdown(true)}
-                            onBlur={() => setTimeout(() => setShowSubServiceDropdown(false), 150)}
+                            onKeyDown={(e) => {
+                                if (e.key === "ArrowDown") {
+                                    e.preventDefault();
+                                    setShowSubServiceDropdown(true);
+                                }
+                                if (e.key === "Escape") {
+                                    setShowSubServiceDropdown(false);
+                                }
+                            }}
                             onChange={(e) => {
                                 setSubServiceQuery(e.target.value);
                                 setSelectedSubServiceId("");
                                 setShowSubServiceDropdown(true);
                             }}
-                            className={`w-full rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-slate-300'} px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                            className="w-full rounded-lg border px-3 py-2.5"
                         />
 
                         {/* Sub Service Dropdown */}
-                        {/* Sub Service Dropdown */}
-                        {showSubServiceDropdown && (
-                            <div
-                                className={`absolute z-20 w-full mt-1 overflow-auto ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-slate-300'
-                                    } border rounded-lg shadow-lg max-h-48`}
-                            >
-                                {allSubServices
+                        {showSubServiceDropdown && selectedCategoryId && (
+                            <div className="absolute z-20 w-full mt-1 overflow-auto bg-white border rounded-lg shadow-lg max-h-48">
+                                {subServices
                                     .filter(s =>
                                         subServiceQuery
                                             ? s.name.toLowerCase().includes(subServiceQuery.toLowerCase())
@@ -534,40 +604,19 @@ export default function AddNewServiceForm() {
                                     .map(s => (
                                         <div
                                             key={s.id}
-                                            onClick={() => {
-                                                isProgrammaticUpdate.current = true;
-
+                                            onMouseDown={() => {
                                                 setSubServiceQuery(s.name);
                                                 setSelectedSubServiceId(String(s.id));
-
-                                                const category = categories.find(
-                                                    c => c.id === Number(s.categoryId)
-                                                );
-
-                                                if (category) {
-                                                    setSelectedCategoryId(String(category.id));
-                                                    setCategoryQuery(category.name);
-                                                    setSubServices(category.subServices || []);
-                                                }
-
                                                 setShowSubServiceDropdown(false);
-
-                                                setTimeout(() => {
-                                                    isProgrammaticUpdate.current = false;
-                                                }, 0);
                                             }}
-
-
-                                            className={`px-4 py-2 cursor-pointer ${isDarkMode
-                                                ? 'hover:bg-emerald-600'
-                                                : 'hover:bg-emerald-500'
-                                                } hover:text-white`}
+                                            className="px-4 py-2 cursor-pointer hover:bg-emerald-500 hover:text-white"
                                         >
                                             {s.name}
                                         </div>
                                     ))}
                             </div>
                         )}
+
 
                     </div>
 
@@ -585,6 +634,234 @@ export default function AddNewServiceForm() {
                             className={`w-full rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-slate-300'} px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none resize-none`}
                         />
                     </div>
+
+                    {/* Cost Breakdown */}
+                    <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold">
+                            ₹ Cost Breakdown
+                        </h3>
+
+                        {items.map((item, index) => (
+                            <div
+                                key={index}
+                                className="p-4 bg-white border shadow-sm rounded-2xl"
+                            >
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2 font-medium">
+                                        <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-lg">
+                                            <Package className="w-4 h-4 text-gray-600" />
+                                        </div>
+
+                                        Item #{index + 1}
+                                    </div>
+
+                                    <button
+                                        onClick={() => removeItem(index)}
+                                        className="p-2 text-red-500 rounded-lg hover:bg-red-50"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+
+                                </div>
+
+                                {/* Inputs */}
+                                <div className="grid gap-4 md:grid-cols-6">
+
+                                    <div>
+                                        <label className="block mb-1 text-sm">Type</label>
+                                        <select
+                                            value={item.type}
+                                            onChange={(e) =>
+                                                updateItem(index, "type", e.target.value)
+                                            }
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        >
+                                            <option>Part</option>
+                                            <option>Labor</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block mb-1 text-sm">Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Item name"
+                                            value={item.name}
+                                            onChange={(e) =>
+                                                updateItem(index, "name", e.target.value)
+                                            }
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 text-sm">Qty</label>
+                                        <input
+                                            type="number"
+                                            value={item.qty}
+                                            onChange={(e) =>
+                                                updateItem(index, "qty", Number(e.target.value))
+                                            }
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        />
+                                    </div>
+
+
+                                    <div>
+                                        <label className="block mb-1 text-sm">Unit Price</label>
+                                        <input
+                                            type="number"
+                                            value={item.price}
+                                            onChange={(e) =>
+                                                updateItem(index, "price", Number(e.target.value))
+                                            }
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 text-sm">CGST %</label>
+                                        <input
+                                            type="number"
+                                            value={item.cgst}
+                                            onChange={(e) =>
+                                                updateItem(index, "cgst", Number(e.target.value))
+                                            }
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 text-sm">SGST %</label>
+                                        <input
+                                            type="number"
+                                            value={item.sgst}
+                                            onChange={(e) =>
+                                                updateItem(index, "sgst", Number(e.target.value))
+                                            }
+                                            className="w-full px-3 py-2 border rounded-lg"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Total */}
+                                <div className="flex items-center justify-between px-4 py-3 mt-4 rounded-lg bg-gray-50">
+                                    <span className="font-medium">Total</span>
+                                    <span className="text-lg font-bold text-green-600">
+                                        ₹{itemTotal(item).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Add Item */}
+                        <div className="flex justify-end">
+                            <button
+                                onClick={addItem}
+                                className="flex items-center gap-2 px-4 py-2 text-white bg-green-500 rounded-lg hover:bg-green-600"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Item
+                            </button>
+
+                        </div>
+                    </div>
+                    {/* Discount & Advance */}
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {/* Discount */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Discount Type</label>
+                            <select
+                                value={discountType}
+                                onChange={(e) => setDiscountType(e.target.value)}
+                                className="w-full px-3 py-2 border rounded-lg"
+                            >
+                                <option value="FIXED">Fixed Amount</option>
+                                <option value="PERCENT">Percentage (%)</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Discount Value</label>
+                            <input
+                                type="number"
+                                value={discountValue}
+                                onChange={(e) => setDiscountValue(Number(e.target.value))}
+                                placeholder="0.00"
+                                className="w-full px-3 py-2 border rounded-lg"
+                            />
+                        </div>
+
+                        {/* Advance Paid */}
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-medium">Advance Paid</label>
+                            <input
+                                type="number"
+                                value={advancePaidInput}
+                                onChange={(e) => setAdvancePaidInput(Number(e.target.value))}
+                                placeholder="0.00"
+                                className="w-full px-3 py-2 border rounded-lg"
+                            />
+                        </div>
+                    </div>
+
+
+                    {/* Billing Summary */}
+                    <div className="p-6 border-2 border-green-500 rounded-2xl bg-green-50">
+                        <h3 className="flex items-center gap-2 mb-4 text-lg font-semibold">
+                            <IndianRupee className="w-5 h-4 text-emerald-600" />
+                            Billing Summary
+                        </h3>
+
+
+                        <div className="grid gap-6 md:grid-cols-2">
+                            {/* Left Side */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <span>Parts Subtotal</span>
+                                    <span>₹{partsSubtotalCalc.toFixed(2)}</span>
+                                </div>
+
+
+
+                                <div className="flex justify-between">
+                                    <span>CGST Total</span>
+                                    <span>₹{cgstTotalCalc.toFixed(2)}</span>
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <span>SGST Total</span>
+                                    <span>₹{sgstTotalCalc.toFixed(2)}</span>
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <span>Discount</span>
+                                    <span>-₹{discount.toFixed(2)}</span>
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <span>Advance Paid</span>
+                                    <span>₹{advancePaid.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Right Side */}
+                            <div className="text-right">
+                                <div className="text-lg font-semibold">Grand Total</div>
+                                <div className="text-3xl font-bold text-green-600">
+                                    ₹{grandTotalCalc.toFixed(2)}
+                                </div>
+
+                                <div className="mt-4">
+                                    <div className="font-medium">Balance Due</div>
+                                    <div className="text-2xl font-bold text-red-600">
+                                        ₹{balanceDueCalc.toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
 
                     {/* Upload Media */}
                     <div className="space-y-2">
@@ -643,7 +920,7 @@ export default function AddNewServiceForm() {
                         )}
                     </div>
 
-                    {/* Parts Section */}
+                    {/* Parts Section
                     <div className={`p-4 border rounded-lg ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-slate-50 border-slate-200'}`}>
                         <div className="flex items-center gap-2 mb-4">
                             <IndianRupee className={`w-5 h-5 ${isDarkMode ? 'text-gray-300' : 'text-slate-700'}`} />
@@ -690,7 +967,7 @@ export default function AddNewServiceForm() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Status */}
                     <div className="space-y-2">

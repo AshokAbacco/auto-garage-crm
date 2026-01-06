@@ -1,12 +1,35 @@
-A (Category)     | B (Sub-service)        | 
--------------------------------------------
-Basic Wash       |                        |
-Basic Wash       | Foam Wash              | 
-Basic Wash       | Pressure Wash          |
-Basic Wash       | Chain Cleaning         |
-Premium Wash     |                        |
-Premium Wash     | Polishing              |
-Premium Wash     | Wax Coating            |
-Detailing        |                        |
-Detailing        | Interior Cleaning      |
-Detailing        | Exterior Detailing     |
+A (Category)     | B (Sub-service)        
+Basic Wash       |                       
+Basic Wash       | Foam Wash              
+Basic Wash       | Pressure Wash          
+Basic Wash       | Chain Cleaning         
+Premium Wash     |                        
+Premium Wash     | Polishing             
+Premium Wash     | Wax Coating            
+Detailing        |                        
+Detailing        | Interior Cleaning      
+Detailing        | Exterior Detailing     
+Car Wash         |
+Car Wash         | Interior + Exterior Foam Wash
+Car Wash         | Interior + Exterior Ceramic Wash (Bucket Wash)
+Car Wash         | Exterior Pressure Foam Wash
+Car Wash         | Exterior Ceramic Wash (Bucket Wash)
+Car Wash         | Interior + Exterior Foam Wash + Free Air Freshener
+Car Wash         | Interior + Exterior Ceramic Wash + Free Air Freshener (Bucket Wash)
+Car Wash         | Interior + Exterior Foam Wash + Hybrid Ceramic Coat + Free Air Freshener
+Deep Clean       |
+Deep Clean       | Interior Deep Clean + Odor Eliminator
+Deep Clean       | Exterior + Full Interior Deep Clean + Hybrid Ceramic Coat + Odor Eliminator
+Special Car Care |
+Special Car Care | 360 Car Care
+Special Car Care | Before Selling the Car Service
+Special Car Care | Odor Eliminator Service
+Special Car Care | Pet Hair and Smell Removal
+Shine and Coat   |
+Shine and Coat   | Super Shine Hydrophobic Ceramic Wash + Under Body Cleaning
+Luxury Car Care  |
+Luxury Car Care  | Ultimate Luxury Car Care with Super Hydrophobic Wash
+Bike and Scooty  |
+Bike and Scooty  | Bike Exterior Ceramic Wash (Bucket Wash)
+Bike and Scooty  | Bike Pressure Foam Wash
+Bike and Scooty  | Bike Pressure Foam Wash + Hybrid Ceramic Coat + Free Microfiber Cloth

@@ -56,11 +56,14 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    /**
-     * =============================================
-     * DUPLICATE CHECKS
-     * =============================================
-     */
+    const userPlan = latestPayment?.plan || "BASIC";
+    const companyName = latestPayment?.companyName || null;
+    const phone = latestPayment?.phone || null;
+
+    const planExpiry = latestPayment?.planExpiry
+  ? new Date(latestPayment.planExpiry)
+  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    // Check duplicates
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
       prisma.user.findUnique({ where: { username } }),
@@ -88,7 +91,7 @@ export const registerUser = async (req, res) => {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-          plan,
+          plan: userPlan,
           planExpiry,
           companyName, // ✅ ADDED
           phone, // ✅ ADDED
@@ -120,7 +123,7 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
-        plan,
+        plan: userPlan,
         planExpiry,
         referredByUserId,
         companyName, // ✅ ADDED
@@ -146,6 +149,7 @@ export const registerUser = async (req, res) => {
  * LOGIN USER
  * =============================================
  */
+ 
 export const loginUser = async (req, res) => {
   try {
     const { identifier, password, crmType } = req.body;
@@ -218,6 +222,7 @@ export const loginUser = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
         role: "user",
         type: "owner",
         plan: user.plan,
@@ -232,7 +237,6 @@ export const loginUser = async (req, res) => {
     });
   }
 };
-
 
 
 

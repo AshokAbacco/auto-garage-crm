@@ -45,6 +45,23 @@ export default function TeamRegister() {
         fetchTeamInfo();
     }, []);
 
+    const fetchTeamInfo = async () => {
+        try {
+            const res = await api.get("/api/teams/info");
+            setAdminEmail(res.data.admin.email);
+            setUsed(res.data.team.used);
+            setLimit(res.data.team.limit);
+        } catch (err) {
+            setError(err.response?.data?.message || "Access denied");
+        }
+    };
+
+    useEffect(() => {
+        fetchTeamInfo();
+    }, []);
+
+
+
     /* ==============================
        CREATE TEAM MEMBER
     ============================== */
@@ -196,7 +213,9 @@ export default function TeamRegister() {
                         />
 
                         <button
-                            disabled={loading || remaining <= 0 || isBasicPlan}
+                            disabled={loading}
+
+
                             onClick={handleCreate}
                             className={`w-full py-4 rounded-xl text-white font-semibold transition ${loading || remaining <= 0 || isBasicPlan
                                 ? "bg-gray-400 cursor-not-allowed"

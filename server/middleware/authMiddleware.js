@@ -67,6 +67,7 @@ export const protect = async (req, res, next) => {
         email: true,
         role: true,
         plan: true,
+        referredByUserId: true,
         parentUserId: true,
         allowedCrms: true,
       },
@@ -84,6 +85,7 @@ export const protect = async (req, res, next) => {
       type: "owner",
       role: user.role, // keep as-is ("user")
     };
+
 
     next();
   } catch (error) {

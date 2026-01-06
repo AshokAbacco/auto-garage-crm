@@ -89,14 +89,10 @@ export default function UpgradePlans() {
             icon: Crown,
             badge: "BEST VALUE",
             features: [
-                "Everything in Standard",
+                "Priority support",
+                "Export CSV, PDF",
+                "SMS/WhatsApp Alerts",
                 "Team accounts (up to 10)",
-                "Maintenance Alert SMS",
-                "Bulk processing",
-                "Dedicated manager",
-                "Auto Invoice",
-                "Staff Salary Management",
-                "Online Payment Options",
             ],
         },
     ];

@@ -5,6 +5,7 @@ import {
   getTeamInfo,
   getTeams,
   deleteTeam,
+  washStaffLogin,
 } from "../controllers/teamsController.js";
 
 const router = express.Router();
@@ -31,5 +32,6 @@ router.post("/create", protect, adminOnly, createTeam);
 router.get("/info", protect, adminOnly, getTeamInfo);
 router.get("/", protect, adminOnly, getTeams);
 router.delete("/:id", protect, adminOnly, deleteTeam);
+router.post("/wash-staff/login", washStaffLogin);
 
 export default router;

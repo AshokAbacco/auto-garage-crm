@@ -74,22 +74,22 @@ export default function ModernLogin() {
       title: "Rev Up Your Workshop",
       subtitle: "Expert CRM for Two-Wheeler Service Centers",
       features: [
-          { icon: Wrench, text: "Repair Tracking", color: "text-white" },
-          { icon: Users, text: "Customer Profiles", color: "text-blue-100" },
-          { icon: Calendar, text: "Service Reminders", color: "text-cyan-100" },
-          { icon: Settings, text: "Parts Management", color: "text-blue-200" },
+        { icon: Wrench, text: "Repair Tracking", color: "text-white" },
+        { icon: Users, text: "Customer Profiles", color: "text-blue-100" },
+        { icon: Calendar, text: "Service Reminders", color: "text-cyan-100" },
+        { icon: Settings, text: "Parts Management", color: "text-blue-200" },
       ],
       stats: [
-          { icon: Users, value: "30K+", label: "Active Users", color: "text-blue-400" },
-          { icon: Star, value: "4.8", label: "Rating", color: "text-cyan-400" },
-          { icon: Server, value: "99.8%", label: "Uptime", color: "text-blue-300" },
-          { icon: TrendingUp, value: "2.5x", label: "Growth", color: "text-cyan-300" },
+        { icon: Users, value: "30K+", label: "Active Users", color: "text-blue-400" },
+        { icon: Star, value: "4.8", label: "Rating", color: "text-cyan-400" },
+        { icon: Server, value: "99.8%", label: "Uptime", color: "text-blue-300" },
+        { icon: TrendingUp, value: "2.5x", label: "Growth", color: "text-cyan-300" },
       ],
       // Blur effects
       blurEffects: {
-          backdrop: "backdrop-blur-xl",
-          glassEffect: "bg-white/10 backdrop-blur-lg",
-          cardBlur: "backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
+        backdrop: "backdrop-blur-xl",
+        glassEffect: "bg-white/10 backdrop-blur-lg",
+        cardBlur: "backdrop-blur-md bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
       }
     },
 
@@ -203,6 +203,173 @@ export default function ModernLogin() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    const identifier = formData.identifier.trim().toLowerCase();
+
+    const password = formData.password;
+
+    if (!identifier || !password) {
+      setError("Please fill in all fields");
+      setIsLoading(false);
+      return;
+    }
+
+    const isEmail = identifier.includes("@");
+
+    /**
+     * =========================================
+     * ROLE DETECTION
+     * =========================================
+     */
+    let loginUrl = "";
+    let payload = {};
+
+    // 🟦 CAR CRM
+    if (crmType === "car") {
+      if (isEmail) {
+        // Car Staff OR Owner (backend will decide)
+        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
+        payload = {
+          email: identifier,     // ✅ car staff
+          password,
+        };
+      } else {
+        // Owner only (username)
+        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+        payload = {
+          identifier,
+          password,
+          crmType: "CAR",
+        };
+      }
+    }
+
+    // 🟩 BIKE CRM
+    if (crmType === "bike") {
+      if (isEmail) {
+        // Owner only
+        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+        payload = {
+          identifier,
+          password,
+          crmType: "BIKE",
+        };
+      } else {
+        // Bike Team
+        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
+        payload = {
+          username: identifier,  // ✅ bike team
+          password,
+        };
+      }
+    }
+    if (crmType === "wash") {
+      loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+      payload = {
+        identifier,
+        password,
+        crmType: "WASH",
+      };
+
+      try {
+        const response = await fetch(loginUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        // ✅ ADMIN LOGIN SUCCESS
+        if (response.ok) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          localStorage.setItem("crmType", "WASH");
+          window.location.href = "/wash-dashboard";
+          return;
+        }
+
+        // 🔁 STAFF FALLBACK (KEEP THIS)
+        if (data.message === "Please use staff login") {
+          const staffRes = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/api/teams/wash-staff/login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ identifier, password }),
+            }
+          );
+
+          const staffData = await staffRes.json();
+
+          if (!staffRes.ok) {
+            setError(staffData.message || "Invalid staff login");
+            return;
+          }
+
+          localStorage.setItem("token", staffData.token);
+          localStorage.setItem("user", JSON.stringify(staffData.user));
+          localStorage.setItem("crmType", "WASH");
+          window.location.href = "/wash-dashboard";
+          return;
+        }
+
+        // ❌ REAL ERROR
+        setError(data.message || "Invalid login");
+        return;
+
+      } catch (err) {
+        console.error(err);
+        setError("Server error");
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+
+
+
+
+    try {
+      const response = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      let data = {};
+      const text = await response.text();
+
+      if (text) {
+        data = JSON.parse(text);
+      }
+
+      if (!response.ok) {
+        setError(data.message || "Invalid login");
+        setIsLoading(false);
+        return;
+      }
+
+
+      // ✅ SAVE SESSION
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("crmType", crmType.toUpperCase());
+
+      // ✅ REDIRECT
+      window.location.href = `/${crmType}-dashboard`;
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Server error. Try again later.");
+    }
+
+    setIsLoading(false);
   };
 
 const handleSubmit = async (e) => {
@@ -331,7 +498,7 @@ const handleSubmit = async (e) => {
         {ripples.map((ripple) => (
           <div
             key={ripple.id}
-            className="absolute rounded-full opacity-30 pointer-events-none"
+            className="absolute rounded-full pointer-events-none opacity-30"
             style={{
               left: `${ripple.x}%`,
               top: `${ripple.y}%`,
@@ -346,7 +513,7 @@ const handleSubmit = async (e) => {
 
         {/* Mouse Tracking Gradient */}
         <div
-          className="absolute inset-0 opacity-40 transition-all duration-500"
+          className="absolute inset-0 transition-all duration-500 opacity-40"
           style={{
             background: `radial-gradient(circle 800px at ${mousePosition.x}% ${mousePosition.y}%, ${currentConfig.lightAccent}, transparent 70%)`,
           }}
@@ -362,15 +529,14 @@ const handleSubmit = async (e) => {
           }}
         />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-          <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 lg:gap-16">
+        <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+          <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-2 lg:gap-16">
             {/* Left Panel - Information */}
             <div
-              className={`hidden lg:flex flex-col justify-center transition-all duration-700 ${
-                transitioning
-                  ? "opacity-0 -translate-x-20 scale-95"
-                  : "opacity-100 translate-x-0 scale-100"
-              }`}
+              className={`hidden lg:flex flex-col justify-center transition-all duration-700 ${transitioning
+                ? "opacity-0 -translate-x-20 scale-95"
+                : "opacity-100 translate-x-0 scale-100"
+                }`}
             >
               {/* Logo and Title */}
               <div className="mb-10 space-y-1">
@@ -382,31 +548,31 @@ const handleSubmit = async (e) => {
                     }}
                   >
                     <IconComponent className="w-12 h-12 text-white" />
-                    <div className="absolute inset-0 rounded-2xl bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                    <div className="absolute inset-0 transition-opacity duration-300 bg-white opacity-0 rounded-2xl group-hover:opacity-20" />
                   </div>
                   <div className="ml-5">
                     <div className="flex items-center space-x-3">
-                      <h1 className="text-5xl font-black text-white tracking-tight">
+                      <h1 className="text-5xl font-black tracking-tight text-white">
                         {currentConfig.label}
                       </h1>
                       <Sparkles
-                        className="w-7 h-7 text-yellow-400 animate-pulse"
+                        className="text-yellow-400 w-7 h-7 animate-pulse"
                         style={{
                           animation:
                             "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
                         }}
                       />
                     </div>
-                    <p className="text-gray-400 text-sm mt-2 font-medium tracking-wide">
+                    <p className="mt-2 text-sm font-medium tracking-wide text-gray-400">
                       CRM Platform
                     </p>
                   </div>
                 </div>
 
-                <h2 className="text-6xl font-black text-white mb-5 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
+                <h2 className="mb-5 text-6xl font-black leading-tight text-transparent text-white bg-clip-text bg-gradient-to-r from-white to-gray-300">
                   {currentConfig.title}
                 </h2>
-                <p className="text-xl text-gray-300 font-light">
+                <p className="text-xl font-light text-gray-300">
                   {currentConfig.subtitle}
                 </p>
               </div>
@@ -418,21 +584,20 @@ const handleSubmit = async (e) => {
                   return (
                     <div
                       key={index}
-                      className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-500 hover:scale-105 hover:-translate-y-1"
+                      className="relative p-6 transition-all duration-500 border group bg-white/5 backdrop-blur-xl border-white/10 rounded-2xl hover:bg-white/10 hover:scale-105 hover:-translate-y-1"
                       style={{
-                        animation: `fadeInUp 0.6s ease-out ${
-                          index * 100
-                        }ms backwards`,
+                        animation: `fadeInUp 0.6s ease-out ${index * 100
+                          }ms backwards`,
                         boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
                       }}
                     >
                       <div
-                        className="absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 group-hover:opacity-10 transition-opacity duration-500"
+                        className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl bg-gradient-to-br group-hover:opacity-10"
                         style={{
                           background: `linear-gradient(to bottom right, ${currentConfig.accentColor}, transparent)`,
                         }}
                       />
-                      <div className="flex items-start space-x-4 relative z-10">
+                      <div className="relative z-10 flex items-start space-x-4">
                         <div
                           className={`p-3 rounded-xl bg-gradient-to-br ${currentConfig.gradient} opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:rotate-6 group-hover:scale-110`}
                           style={{
@@ -461,26 +626,25 @@ const handleSubmit = async (e) => {
                   return (
                     <div
                       key={index}
-                      className="relative group bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 text-center hover:bg-white/10 transition-all duration-500 hover:scale-110 hover:-translate-y-2"
+                      className="relative p-5 text-center transition-all duration-500 border group bg-white/5 backdrop-blur-xl border-white/10 rounded-2xl hover:bg-white/10 hover:scale-110 hover:-translate-y-2"
                       style={{
-                        animation: `fadeInUp 0.6s ease-out ${
-                          (index + 4) * 100
-                        }ms backwards`,
+                        animation: `fadeInUp 0.6s ease-out ${(index + 4) * 100
+                          }ms backwards`,
                         boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
                       }}
                     >
                       <div
-                        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl group-hover:opacity-100"
                         style={{
                           background: `linear-gradient(to bottom, ${currentConfig.lightAccent}, transparent)`,
                         }}
                       />
                       <div className="relative z-10">
-                        <StatIcon className="w-7 h-7 text-white mx-auto mb-3 opacity-80 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110" />
-                        <div className="text-3xl font-black text-white mb-1 group-hover:scale-110 transition-transform duration-300">
+                        <StatIcon className="mx-auto mb-3 text-white transition-all duration-300 w-7 h-7 opacity-80 group-hover:opacity-100 group-hover:scale-110" />
+                        <div className="mb-1 text-3xl font-black text-white transition-transform duration-300 group-hover:scale-110">
                           {stat.value}
                         </div>
-                        <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">
+                        <div className="text-xs font-medium tracking-wider text-gray-400 uppercase">
                           {stat.label}
                         </div>
                       </div>
@@ -492,15 +656,14 @@ const handleSubmit = async (e) => {
 
             {/* Right Panel - Login Form */}
             <div
-              className={`flex items-center justify-center transition-all duration-700 ${
-                transitioning
-                  ? "opacity-0 translate-x-20 scale-95 rotate-3"
-                  : "opacity-100 translate-x-0 scale-100 rotate-0"
-              }`}
+              className={`flex items-center justify-center transition-all duration-700 ${transitioning
+                ? "opacity-0 translate-x-20 scale-95 rotate-3"
+                : "opacity-100 translate-x-0 scale-100 rotate-0"
+                }`}
             >
               <div className="w-full max-w-md">
                 {/* Glass Card */}
-                <div className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-8 hover:border-white/30 transition-all duration-500">
+                <div className="relative p-8 transition-all duration-500 border shadow-2xl bg-white/10 backdrop-blur-2xl border-white/20 rounded-3xl hover:border-white/30">
                   {/* Glowing Border Effect */}
                   <div
                     className="absolute -inset-0.5 rounded-3xl opacity-30 blur-xl transition-opacity duration-500 group-hover:opacity-50"
@@ -511,8 +674,8 @@ const handleSubmit = async (e) => {
 
                   <div className="relative">
                     {/* Mobile Header */}
-                    <div className="lg:hidden mb-8 text-center">
-                      <div className="inline-flex items-center space-x-3 mb-4">
+                    <div className="mb-8 text-center lg:hidden">
+                      <div className="inline-flex items-center mb-4 space-x-3">
                         <div
                           className={`p-3 rounded-xl bg-gradient-to-br ${currentConfig.gradient} animate-pulse`}
                           style={{
@@ -529,17 +692,17 @@ const handleSubmit = async (e) => {
                     </div>
 
                     {/* Welcome Text */}
-                    <div className="text-center mb-8">
-                      <h3 className="text-3xl font-black text-white mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-100 to-gray-300">
+                    <div className="mb-8 text-center">
+                      <h3 className="mb-2 text-3xl font-black text-transparent text-white bg-clip-text bg-gradient-to-r from-white via-gray-100 to-gray-300">
                         Welcome Back
                       </h3>
-                      <p className="text-gray-300 font-light">
+                      <p className="font-light text-gray-300">
                         Sign in to continue to your dashboard
                       </p>
                     </div>
 
                     {/* CRM Type Selector */}
-                    <div className="mb-8 relative">
+                    <div className="relative mb-8">
                       <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-1.5 grid grid-cols-3 gap-1.5 shadow-xl">
                         {Object.entries(CRM_CONFIG).map(([key, config]) => {
                           const TabIcon = config.icon;
@@ -547,11 +710,10 @@ const handleSubmit = async (e) => {
                             <button
                               key={key}
                               onClick={() => handleCrmChange(key)}
-                              className={`relative py-3 px-4 rounded-xl font-semibold transition-all duration-500 flex flex-col items-center justify-center space-y-1.5 ${
-                                crmType === key
-                                  ? "text-white scale-105"
-                                  : "text-gray-400 hover:text-gray-200 hover:scale-105"
-                              }`}
+                              className={`relative py-3 px-4 rounded-xl font-semibold transition-all duration-500 flex flex-col items-center justify-center space-y-1.5 ${crmType === key
+                                ? "text-white scale-105"
+                                : "text-gray-400 hover:text-gray-200 hover:scale-105"
+                                }`}
                             >
                               {crmType === key && (
                                 <>
@@ -562,7 +724,7 @@ const handleSubmit = async (e) => {
                                     }}
                                   />
                                   <div
-                                    className="absolute inset-0 rounded-xl bg-white opacity-0 animate-pulse"
+                                    className="absolute inset-0 bg-white opacity-0 rounded-xl animate-pulse"
                                     style={{
                                       animation:
                                         "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
@@ -571,11 +733,10 @@ const handleSubmit = async (e) => {
                                 </>
                               )}
                               <TabIcon
-                                className={`w-5 h-5 relative z-10 transition-transform duration-300 ${
-                                  crmType === key ? "scale-110" : ""
-                                }`}
+                                className={`w-5 h-5 relative z-10 transition-transform duration-300 ${crmType === key ? "scale-110" : ""
+                                  }`}
                               />
-                              <span className="text-xs relative z-10 font-bold">
+                              <span className="relative z-10 text-xs font-bold">
                                 {config.label}
                               </span>
                             </button>
@@ -588,11 +749,11 @@ const handleSubmit = async (e) => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                       {/* Email Field */}
                       <div className="group">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block mb-2 text-sm font-semibold text-gray-300">
                           Email or Username
                         </label>
                         <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-all duration-300 group-focus-within:text-white group-focus-within:scale-110" />
+                          <Mail className="absolute w-5 h-5 text-gray-400 transition-all duration-300 -translate-y-1/2 left-4 top-1/2 group-focus-within:text-white group-focus-within:scale-110" />
                           <input
                             type="text"
                             name="identifier"
@@ -611,11 +772,11 @@ const handleSubmit = async (e) => {
 
                       {/* Password Field */}
                       <div className="group">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block mb-2 text-sm font-semibold text-gray-300">
                           Password
                         </label>
                         <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-all duration-300 group-focus-within:text-white group-focus-within:scale-110" />
+                          <Lock className="absolute w-5 h-5 text-gray-400 transition-all duration-300 -translate-y-1/2 left-4 top-1/2 group-focus-within:text-white group-focus-within:scale-110" />
                           <input
                             type={showPassword ? "text" : "password"}
                             name="password"
@@ -632,7 +793,7 @@ const handleSubmit = async (e) => {
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-all duration-300 hover:scale-110"
+                            className="absolute text-gray-400 transition-all duration-300 -translate-y-1/2 right-4 top-1/2 hover:text-white hover:scale-110"
                           >
                             {showPassword ? (
                               <EyeOff className="w-5 h-5" />
@@ -645,7 +806,7 @@ const handleSubmit = async (e) => {
 
                       {/* Error Message */}
                       {error && (
-                        <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-200 text-sm animate-shake">
+                        <div className="p-4 text-sm text-red-200 border bg-red-500/20 border-red-500/50 rounded-xl animate-shake">
                           {error}
                         </div>
                       )}
@@ -712,8 +873,8 @@ const handleSubmit = async (e) => {
                     </form>
 
                     {/* Footer */}
-                    <div className="mt-8 text-center space-y-3">
-                      <div className="flex items-center justify-center space-x-2 text-gray-400 text-sm">
+                    <div className="mt-8 space-y-3 text-center">
+                      <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
                         <Shield
                           className="w-4 h-4 animate-pulse"
                           style={{
@@ -735,7 +896,7 @@ const handleSubmit = async (e) => {
           </div>
         </div>
 
-        <style jsx>{`
+        <style >{`
           @keyframes float {
             0%,
             100% {

@@ -5,6 +5,12 @@ import prisma from "../models/prismaClient.js";
  * Convert a media file record to a data: URI string (defensive for Buffers, Uint8Array, Array, base64 strings).
  * Expects file to have at least: { data, mimeType, type } where data may be Buffer/Uint8Array/Array/string.
  */
+
+function getOwnerUserId(req) {
+  return req.user.type === "staff" ? req.user.ownerId : req.user.id;
+}
+
+
 function toDataUri(file) {
   if (!file) return null;
   const mime = file.mimeType || file.type || "application/octet-stream";
@@ -53,6 +59,15 @@ function toDataUri(file) {
   }
 }
 
+function requireAuth(req, res) {
+  if (!req.user?.id) {
+    res.status(401).json({ message: "Unauthorized" });
+    return false;
+  }
+  return true;
+}
+
+
 /**
  * Map an array of media file records to the API-friendly shape.
  * Ensures `data` is a proper data:<mime>;base64,... string (or null).
@@ -73,59 +88,45 @@ function mapMediaFiles(mediaFiles = []) {
    @access  Private
 ============================================================ */
 export const getServices = async (req, res) => {
+  if (!requireAuth(req, res)) return;
+
   try {
-    // 1) fetch services for the authenticated user only
     const services = await prisma.service.findMany({
-      where: {
-        client: {
-          userId: req.user.id, // Only get services for this user's clients
-        },
-      },
+      where: { client: { userId: getOwnerUserId(req) } },
       include: {
         client: { select: { id: true, fullName: true, regNumber: true } },
-        category: { select: { id: true, name: true } },
-        subService: { select: { id: true, name: true } },
+        category: true,
+        subService: true,
         serviceCostItems: true,
       },
       orderBy: { date: "desc" },
     });
 
-    // 2) fetch media rows for all services in one query
     const serviceIds = services.map((s) => s.id);
-    const mediaRows = serviceIds.length
+    const media = serviceIds.length
       ? await prisma.serviceMedia.findMany({
           where: { serviceId: { in: serviceIds } },
-          select: {
-            id: true,
-            fileName: true,
-            mimeType: true,
-            data: true,
-            serviceId: true,
-          },
         })
       : [];
 
-    // 3) group media by serviceId
-    const mediaByService = mediaRows.reduce((acc, m) => {
+    const mediaByService = media.reduce((acc, m) => {
       (acc[m.serviceId] = acc[m.serviceId] || []).push(m);
       return acc;
     }, {});
 
-    // 4) attach normalized mediaFiles and costItems
-    const formatted = services.map((s) => ({
-      ...s,
-      mediaFiles: mapMediaFiles(mediaByService[s.id] || []),
-      costItems: s.serviceCostItems || [],
-    }));
-
-    return res.json(formatted);
-  } catch (error) {
-    console.error("❌ Error fetching services:", error);
-    return res
-      .status(500)
-      .json({ message: "Error fetching services", error: String(error) });
+    res.json(
+      services.map((s) => ({
+        ...s,
+        mediaFiles: mapMediaFiles(mediaByService[s.id] || []),
+        serviceCostItems: s.serviceCostItems,
+      }))
+    );
+  } catch (err) {
+    console.error("getServices error:", err);
+    res.status(500).json({ message: "Failed to fetch services" });
   }
 };
+
 
 /* ============================================================
    👤 Get All Services by a Specific Client
@@ -143,7 +144,7 @@ export const getServicesByClient = async (req, res) => {
     const client = await prisma.client.findFirst({
       where: {
         id: parseInt(clientId),
-        userId: req.user.id, // Ensure client belongs to current user
+        userId: getOwnerUserId(req), // Ensure client belongs to current user
       },
       include: {
         services: {
@@ -217,21 +218,14 @@ export const getServicesByClient = async (req, res) => {
    @access  Private
 ============================================================ */
 export const getServiceById = async (req, res) => {
+  if (!requireAuth(req, res)) return;
+
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "Invalid service ID" });
 
-    if (!id || isNaN(Number(id))) {
-      return res.status(400).json({ message: "Invalid or missing service ID" });
-    }
-
-    // fetch service and verify it belongs to the authenticated user
     const service = await prisma.service.findFirst({
-      where: {
-        id: parseInt(id),
-        client: {
-          userId: req.user.id, // Ensure service belongs to current user's client
-        },
-      },
+      where: { id, client: { userId: getOwnerUserId(req) } },
       include: {
         client: true,
         category: true,
@@ -240,88 +234,20 @@ export const getServiceById = async (req, res) => {
       },
     });
 
-    if (!service)
-      return res
-        .status(404)
-        .json({ message: "Service not found or access denied" });
+    if (!service) return res.status(404).json({ message: "Service not found" });
 
-    // fetch media for this service
     const media = await prisma.serviceMedia.findMany({
-      where: { serviceId: service.id },
-      select: { id: true, fileName: true, mimeType: true, data: true },
+      where: { serviceId: id },
     });
 
-    // Format the response with all necessary details
-    const modified = {
-      // Basic service details
-      id: service.id,
-      date: service.date,
-      notes: service.notes,
-      partsCost: service.partsCost,
-      partsGst: service.partsGst,
-      laborCost: service.laborCost,
-      laborGst: service.laborGst,
-      cost: service.cost,
-      status: service.status,
-
-      // Include costItems from the relation
-      costItems: service.serviceCostItems || [],
-
-      // Related entities
-      client: {
-        id: service.client.id,
-        fullName: service.client.fullName,
-        phone: service.client.phone,
-        email: service.client.email,
-        address: service.client.address,
-        vehicleMake: service.client.vehicleMake,
-        vehicleModel: service.client.vehicleModel,
-        vehicleYear: service.client.vehicleYear,
-        regNumber: service.client.regNumber,
-        vin: service.client.vin,
-        carImage: service.client.carImage,
-        adImage: service.client.adImage,
-        staffPerson: service.client.staffPerson,
-        receiverName: service.client.receiverName,
-        damageImages: service.client.damageImages,
-        createdAt: service.client.createdAt,
-        updatedAt: service.client.updatedAt,
-        userId: service.client.userId,
-      },
-
-      category: service.category
-        ? {
-            id: service.category.id,
-            name: service.category.name,
-            createdAt: service.category.createdAt,
-            updatedAt: service.category.updatedAt,
-          }
-        : null,
-
-      subService: service.subService
-        ? {
-            id: service.subService.id,
-            name: service.subService.name,
-            categoryId: service.subService.categoryId,
-            createdAt: service.subService.createdAt,
-            updatedAt: service.subService.updatedAt,
-          }
-        : null,
-
-      // Media files
+    res.json({
+      ...service,
+      serviceCostItems: service.serviceCostItems,
       mediaFiles: mapMediaFiles(media),
-
-      // Timestamps
-      createdAt: service.createdAt,
-      updatedAt: service.updatedAt,
-    };
-
-    res.json(modified);
-  } catch (error) {
-    console.error("❌ Error fetching service:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching service", error: String(error) });
+    });
+  } catch (err) {
+    console.error("getServiceById error:", err);
+    res.status(500).json({ message: "Failed to fetch service" });
   }
 };
 
@@ -329,6 +255,71 @@ export const getServiceById = async (req, res) => {
    ➕ Create a New Service (with GST fields)
    @route   POST /api/services
    @access  Private
+============================================================ *
+
+import prisma from "../models/prismaClient.js";
+
+/* ============================================================
+   🛡️ SAFE DATE PARSER (CRITICAL FIX)
+============================================================ */
+function parseDate(value) {
+  if (!value) return null;
+
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+
+  return d;
+}
+
+/* ============================================================
+   🧮 COST CALCULATION HELPER
+============================================================ */
+function calculateTotals(costItems = []) {
+  let partsCost = 0;
+  let laborCost = 0;
+  let cgstTotal = 0;
+  let sgstTotal = 0;
+
+  const normalizedItems = costItems.map((item) => {
+    const qty = Number(item.quantity) || 1;
+    const price = Number(item.unitPrice) || 0;
+    const lineTotal = qty * price;
+
+    const cgstRate = Number(item.cgstRate) || 0;
+    const sgstRate = Number(item.sgstRate) || 0;
+
+    const cgst = (lineTotal * cgstRate) / 100;
+    const sgst = (lineTotal * sgstRate) / 100;
+
+    if (item.type === "part") partsCost += lineTotal;
+    if (item.type === "labor") laborCost += lineTotal;
+
+    cgstTotal += cgst;
+    sgstTotal += sgst;
+
+    return {
+      type: item.type,
+      name: item.name || "",
+      quantity: qty,
+      unitPrice: price,
+      cgstRate,
+      sgstRate,
+      totalCost: lineTotal + cgst + sgst,
+    };
+  });
+
+  return {
+    partsCost,
+    laborCost,
+    cgstTotal,
+    sgstTotal,
+    totalCost: partsCost + laborCost + cgstTotal + sgstTotal,
+    normalizedItems,
+  };
+}
+
+/* ============================================================
+   ➕ CREATE SERVICE
 ============================================================ */
 export const createService = async (req, res) => {
   try {
@@ -337,127 +328,96 @@ export const createService = async (req, res) => {
       categoryId,
       subServiceId,
       notes,
-      date,
-      partsCost,
-      laborCost,
-      partsGst,
-      laborGst,
-      cost,
-      status,
+      serviceInDate,
+      serviceOutDate,
+      expectedDelivery,
+      internalNotes,
+      assignedMechanic,
+      priority,
+      advancePaid,
       costItems,
     } = req.body;
 
-    if (!clientId || !date) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!clientId || !serviceInDate) {
+      return res
+        .status(400)
+        .json({ message: "Client and service in date are required" });
     }
 
-    // Verify the client belongs to the authenticated user
+    const inDate = parseDate(serviceInDate);
+    const outDate = parseDate(serviceOutDate);
+    const expectedDate = parseDate(expectedDelivery);
+
+    if (!inDate) {
+      return res
+        .status(400)
+        .json({ message: "Invalid service in date format" });
+    }
+
+    const ownerUserId = getOwnerUserId(req);
+
     const client = await prisma.client.findFirst({
       where: {
         id: parseInt(clientId),
-        userId: req.user.id, // Ensure client belongs to current user
+        userId: ownerUserId, // ✅ FIX
       },
     });
 
+
     if (!client) {
-      return res.status(403).json({
-        message: "You are not authorized to create a service for this client",
-      });
+      return res.status(403).json({ message: "Unauthorized client access" });
     }
 
-    // Handle costItems if provided
-    let parsedCostItems = [];
-    let totalParts = 0,
-      totalLabor = 0,
-      totalGst = 0;
-
+    let parsedItems = [];
     if (costItems) {
-      try {
-        parsedCostItems =
-          typeof costItems === "string" ? JSON.parse(costItems) : costItems;
-
-        // Calculate totals from costItems
-        totalParts = parsedCostItems.reduce(
-          (sum, item) => sum + (parseFloat(item.partCost) || 0),
-          0
-        );
-        totalLabor = parsedCostItems.reduce(
-          (sum, item) => sum + (parseFloat(item.laborCost) || 0),
-          0
-        );
-        totalGst = parsedCostItems.reduce((sum, item) => {
-          const partGst =
-            ((parseFloat(item.partCost) || 0) *
-              (parseFloat(item.partGst) || 0)) /
-            100;
-          const laborGst =
-            ((parseFloat(item.laborCost) || 0) *
-              (parseFloat(item.laborGst) || 0)) /
-            100;
-          return sum + partGst + laborGst;
-        }, 0);
-      } catch (e) {
-        console.error("Error parsing costItems:", e);
-        return res.status(400).json({ message: "Invalid costItems format" });
-      }
-    } else {
-      // Use legacy fields
-      const pCost = parseFloat(partsCost || 0);
-      const lCost = parseFloat(laborCost || 0);
-      const pGst = parseFloat(partsGst || 0);
-      const lGst = parseFloat(laborGst || 0);
-
-      totalParts = pCost;
-      totalLabor = lCost;
-      totalGst = (pCost * pGst) / 100 + (lCost * lGst) / 100;
+      parsedItems =
+        typeof costItems === "string" ? JSON.parse(costItems) : costItems;
     }
 
-    const computedCost =
-      cost !== undefined && cost !== null
-        ? parseFloat(cost)
-        : totalParts + totalLabor + totalGst;
+    const totals = calculateTotals(parsedItems);
 
-    // Create the service
+    // ✅ CREATE SERVICE FIRST
     const service = await prisma.service.create({
       data: {
-        date: new Date(date),
-        partsCost: totalParts,
-        partsGst: totalParts > 0 ? (totalGst / totalParts) * 100 : 0,
-        laborCost: totalLabor,
-        laborGst: totalLabor > 0 ? (totalGst / totalLabor) * 100 : 0,
-        cost: computedCost,
-        status: status || "Pending",
+        date: inDate,
+        serviceInDate: inDate,
+        serviceOutDate: outDate,
+        expectedDelivery: expectedDate,
+
         notes: notes || null,
+        internalNotes: internalNotes || null,
+        priority: priority || "Normal",
+        advancePaid: Number(advancePaid) || 0,
+        assignedMechanic: assignedMechanic || null,
+        partsCost: totals.partsCost,
+        laborCost: totals.laborCost,
+        cost: totals.totalCost,
+
+        status: "Pending",
+
         clientId: parseInt(clientId),
         categoryId: categoryId ? parseInt(categoryId) : null,
         subServiceId: subServiceId ? parseInt(subServiceId) : null,
       },
     });
 
-    // Create cost items if provided
-    if (parsedCostItems.length > 0) {
+    // ✅ SAVE COST ITEMS
+    if (totals.normalizedItems.length) {
       await prisma.serviceCostItem.createMany({
-        data: parsedCostItems.map((item) => ({
+        data: totals.normalizedItems.map((item) => ({
           serviceId: service.id,
-          partName: item.partName || "",
-          partCost: parseFloat(item.partCost) || 0,
-          partGst: parseFloat(item.partGst) || 0,
-          laborCost: parseFloat(item.laborCost) || 0,
-          laborGst: parseFloat(item.laborGst) || 0,
-          totalCost:
-            (parseFloat(item.partCost) || 0) +
-            ((parseFloat(item.partCost) || 0) *
-              (parseFloat(item.partGst) || 0)) /
-              100 +
-            (parseFloat(item.laborCost) || 0) +
-            ((parseFloat(item.laborCost) || 0) *
-              (parseFloat(item.laborGst) || 0)) /
-              100,
+          type: item.type,
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          cgstRate: item.cgstRate,
+          sgstRate: item.sgstRate,
+          totalCost: item.totalCost,
         })),
       });
     }
 
-    // Save media to DB as binary
+    // 🔥 FIX: SAVE MEDIA FILES ON CREATE
     if (req.files?.length) {
       for (const file of req.files) {
         await prisma.serviceMedia.create({
@@ -471,155 +431,77 @@ export const createService = async (req, res) => {
       }
     }
 
-    // Fetch the created service with cost items
-    const createdService = await prisma.service.findUnique({
-      where: { id: service.id },
-      include: {
-        serviceCostItems: true,
-      },
-    });
-
-    const media = await prisma.serviceMedia.findMany({
-      where: { serviceId: service.id },
-    });
-
-    res.status(201).json({
+    return res.status(201).json({
       message: "Service created successfully",
-      service: {
-        ...createdService,
-        mediaFiles: mapMediaFiles(media),
-      },
+      service,
     });
   } catch (error) {
-    console.error("Error creating service:", error);
-    res
-      .status(500)
-      .json({ message: "Error creating service", error: String(error) });
+    console.error("❌ createService error:", error);
+    return res.status(500).json({ message: "Error creating service" });
   }
 };
 
+
 /* ============================================================
-   ✏️ Update Existing Service (with GST fields)
-   @route   PUT /api/services/:id
-   @access  Private
+   ✏️ UPDATE SERVICE
 ============================================================ */
 export const updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id || isNaN(Number(id))) {
-      return res.status(400).json({ message: "Invalid service ID" });
-    }
 
-    // Verify the service belongs to the authenticated user
-    const existingService = await prisma.service.findFirst({
+    const existing = await prisma.service.findFirst({
       where: {
         id: parseInt(id),
-        client: {
-          userId: req.user.id, // Ensure service belongs to current user's client
-        },
+        client: { userId: getOwnerUserId(req) },
       },
     });
 
-    if (!existingService) {
-      return res
-        .status(404)
-        .json({ message: "Service not found or access denied" });
+    if (!existing) {
+      return res.status(404).json({ message: "Service not found" });
     }
 
     const {
-      clientId,
       categoryId,
       subServiceId,
       notes,
-      date,
-      partsCost,
-      laborCost,
-      partsGst,
-      laborGst,
-      cost,
-      status,
+      serviceInDate,
+      serviceOutDate,
+      expectedDelivery,
+      internalNotes,
+      assignedMechanic,
+      priority,
+      advancePaid,
       costItems,
     } = req.body;
 
-    // If changing client, verify the new client belongs to the authenticated user
-    if (clientId && parseInt(clientId) !== existingService.clientId) {
-      const client = await prisma.client.findFirst({
-        where: {
-          id: parseInt(clientId),
-          userId: req.user.id, // Ensure new client belongs to current user
-        },
-      });
+    const inDate = parseDate(serviceInDate);
+    const outDate = parseDate(serviceOutDate);
+    const expectedDate = parseDate(expectedDelivery);
 
-      if (!client) {
-        return res.status(403).json({
-          message:
-            "You are not authorized to assign this service to the specified client",
-        });
-      }
-    }
-
-    // Handle costItems if provided
-    let parsedCostItems = [];
-    let totalParts = 0,
-      totalLabor = 0,
-      totalGst = 0;
-
+    let parsedItems = [];
     if (costItems) {
-      try {
-        parsedCostItems =
-          typeof costItems === "string" ? JSON.parse(costItems) : costItems;
-
-        // Calculate totals from costItems
-        totalParts = parsedCostItems.reduce(
-          (sum, item) => sum + (parseFloat(item.partCost) || 0),
-          0
-        );
-        totalLabor = parsedCostItems.reduce(
-          (sum, item) => sum + (parseFloat(item.laborCost) || 0),
-          0
-        );
-        totalGst = parsedCostItems.reduce((sum, item) => {
-          const partGst =
-            ((parseFloat(item.partCost) || 0) *
-              (parseFloat(item.partGst) || 0)) /
-            100;
-          const laborGst =
-            ((parseFloat(item.laborCost) || 0) *
-              (parseFloat(item.laborGst) || 0)) /
-            100;
-          return sum + partGst + laborGst;
-        }, 0);
-      } catch (e) {
-        console.error("Error parsing costItems:", e);
-        return res.status(400).json({ message: "Invalid costItems format" });
-      }
-    } else {
-      // Use legacy fields
-      const pCost = parseFloat(partsCost || 0);
-      const lCost = parseFloat(laborCost || 0);
-      const pGst = parseFloat(partsGst || 0);
-      const lGst = parseFloat(laborGst || 0);
-
-      totalParts = pCost;
-      totalLabor = lCost;
-      totalGst = (pCost * pGst) / 100 + (lCost * lGst) / 100;
+      parsedItems =
+        typeof costItems === "string" ? JSON.parse(costItems) : costItems;
     }
 
-    const computedCost =
-      cost !== undefined && cost !== null
-        ? parseFloat(cost)
-        : totalParts + totalLabor + totalGst;
+    const totals = calculateTotals(parsedItems);
 
     const updateData = {
-      date: date ? new Date(date) : undefined,
-      partsCost: totalParts,
-      partsGst: totalParts > 0 ? (totalGst / totalParts) * 100 : 0,
-      laborCost: totalLabor,
-      laborGst: totalLabor > 0 ? (totalGst / totalLabor) * 100 : 0,
-      cost: computedCost,
-      status,
-      notes: notes || undefined,
-      clientId: clientId ? parseInt(clientId) : undefined,
+      date: inDate || undefined,
+      serviceInDate: inDate || undefined,
+      serviceOutDate: outDate || undefined,
+      expectedDelivery: expectedDate || undefined,
+
+      notes: notes ?? undefined,
+      internalNotes: internalNotes ?? undefined,
+      assignedMechanic: assignedMechanic ?? undefined,
+      priority: priority ?? undefined,
+      advancePaid: advancePaid !== undefined ? Number(advancePaid) : undefined,
+
+      partsCost: totals.partsCost,
+      laborCost: totals.laborCost,
+      cost: totals.totalCost,
+
       categoryId: categoryId ? parseInt(categoryId) : undefined,
       subServiceId: subServiceId ? parseInt(subServiceId) : undefined,
     };
@@ -628,47 +510,37 @@ export const updateService = async (req, res) => {
       (k) => updateData[k] === undefined && delete updateData[k]
     );
 
-    // Update the service
-    const updatedService = await prisma.service.update({
+    const service = await prisma.service.update({
       where: { id: parseInt(id) },
       data: updateData,
     });
 
-    // If costItems provided, update them
-    if (parsedCostItems.length > 0) {
-      // Delete existing cost items
-      await prisma.serviceCostItem.deleteMany({
-        where: { serviceId: parseInt(id) },
-      });
+    // 🔄 REPLACE COST ITEMS
+    await prisma.serviceCostItem.deleteMany({
+      where: { serviceId: service.id },
+    });
 
-      // Create new cost items
+    if (totals.normalizedItems.length) {
       await prisma.serviceCostItem.createMany({
-        data: parsedCostItems.map((item) => ({
-          serviceId: parseInt(id),
-          partName: item.partName || "",
-          partCost: parseFloat(item.partCost) || 0,
-          partGst: parseFloat(item.partGst) || 0,
-          laborCost: parseFloat(item.laborCost) || 0,
-          laborGst: parseFloat(item.laborGst) || 0,
-          totalCost:
-            (parseFloat(item.partCost) || 0) +
-            ((parseFloat(item.partCost) || 0) *
-              (parseFloat(item.partGst) || 0)) /
-              100 +
-            (parseFloat(item.laborCost) || 0) +
-            ((parseFloat(item.laborCost) || 0) *
-              (parseFloat(item.laborGst) || 0)) /
-              100,
+        data: totals.normalizedItems.map((item) => ({
+          serviceId: service.id,
+          type: item.type,
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          cgstRate: item.cgstRate,
+          sgstRate: item.sgstRate,
+          totalCost: item.totalCost,
         })),
       });
     }
 
-    // Save uploaded files
+    // 🔥 FIX: SAVE MEDIA FILES ON UPDATE
     if (req.files?.length) {
       for (const file of req.files) {
         await prisma.serviceMedia.create({
           data: {
-            serviceId: updatedService.id,
+            serviceId: service.id,
             fileName: file.originalname,
             mimeType: file.mimetype,
             data: file.buffer,
@@ -677,32 +549,14 @@ export const updateService = async (req, res) => {
       }
     }
 
-    // Fetch the updated service with cost items
-    const serviceWithItems = await prisma.service.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        serviceCostItems: true,
-      },
-    });
-
-    const media = await prisma.serviceMedia.findMany({
-      where: { serviceId: updatedService.id },
-    });
-
-    res.json({
-      message: "Service updated successfully",
-      service: {
-        ...serviceWithItems,
-        mediaFiles: mapMediaFiles(media),
-      },
-    });
+    return res.json({ message: "Service updated successfully", service });
   } catch (error) {
-    console.error("Error updating service:", error);
-    res
-      .status(500)
-      .json({ message: "Error updating service", error: String(error) });
+    console.error("❌ updateService error:", error);
+    return res.status(500).json({ message: "Error updating service" });
   }
 };
+
+
 
 /* ============================================================
    🗑️ Delete Service
@@ -721,7 +575,7 @@ export const deleteService = async (req, res) => {
       where: {
         id: parseInt(id),
         client: {
-          userId: req.user.id, // Ensure service belongs to current user's client
+          userId: getOwnerUserId(req), // Ensure service belongs to current user's client
         },
       },
     });
@@ -806,6 +660,8 @@ export const searchSubServices = async (req, res) => {
 
 // Add this new function to create a sub-service
 export const createSubService = async (req, res) => {
+  console.log("SERVICE CREATE USER:", req.user);
+  console.log("OWNER USER ID:", getOwnerUserId(req));
   try {
     const { name, categoryId } = req.body;
 
@@ -858,8 +714,8 @@ export const getServiceForBilling = async (req, res) => {
       where: {
         id: parseInt(id),
         client: {
-          userId: req.user.id
-        }
+          userId: getOwnerUserId(req),
+        },
       },
       include: {
         client: {
@@ -868,21 +724,21 @@ export const getServiceForBilling = async (req, res) => {
             fullName: true,
             regNumber: true,
             vehicleMake: true,
-            vehicleModel: true
-          }
+            vehicleModel: true,
+          },
         },
         category: {
           select: {
-            name: true
-          }
+            name: true,
+          },
         },
         subService: {
           select: {
-            name: true
-          }
+            name: true,
+          },
         },
-        serviceCostItems: true
-      }
+        serviceCostItems: true,
+      },
     });
 
     if (!service) {
@@ -891,7 +747,7 @@ export const getServiceForBilling = async (req, res) => {
 
     res.json({
       ...service,
-      costItems: service.serviceCostItems
+      costItems: service.serviceCostItems,
     });
   } catch (error) {
     console.error("Error fetching service for billing:", error);

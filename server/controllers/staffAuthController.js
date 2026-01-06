@@ -70,28 +70,17 @@ export const loginStaff = async (req, res) => {
       });
     }
 
-    const isEmail = identifier.includes("@");
-
-    const login = await prisma.carStaffLogin.findFirst({
-      where: {
-        email: isEmail ? identifier.toLowerCase().trim() : undefined,
-      },
+    /**
+     * 1️⃣ Find staff login record
+     */
+    const login = await prisma.carStaffLogin.findUnique({
+      where: { email: email.toLowerCase().trim() },
       include: {
         staff: true,
       },
     });
 
-    // If identifier is phone, resolve via staff
-    const finalLogin = login ?? (await prisma.carStaffLogin.findFirst({
-      where: {
-        staff: {
-          phone: identifier.trim(),
-        },
-      },
-      include: { staff: true },
-    }));
-
-    if (!finalLogin || !finalLogin.isActive) {
+    if (!login || !login.isActive || !login.staff) {
       return res.status(401).json({
         message: "Invalid credentials or inactive staff",
       });
@@ -99,12 +88,26 @@ export const loginStaff = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, finalLogin.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
     }
 
+    /**
+     * 3️⃣ Fetch owner plan (for UI permissions)
+     */
+    const owner = await prisma.user.findUnique({
+      where: { id: login.ownerId },
+      select: { plan: true, companyName: true },
+    });
+
+    /**
+     * 4️⃣ Issue JWT
+     * IMPORTANT: id = carStaffLogin.id (NOT staff.id)
+     */
     const token = jwt.sign(
       {
-        id: finalLogin.id,
+        id: login.id, // ✅ MUST match protect middleware
         type: "staff",
         ownerId: finalLogin.ownerId,
       },
@@ -116,12 +119,14 @@ export const loginStaff = async (req, res) => {
       message: "Staff login successful",
       token,
       user: {
-        id: finalLogin.staff.id,
-        name: finalLogin.staff.name,
-        role: finalLogin.staff.role,
+        id: login.staff.id, // actual staff ID (frontend use)
         type: "staff",
-        ownerId: finalLogin.ownerId,
-        crmType: "car",
+        role: login.staff.role,
+        ownerId: login.ownerId,
+        name: login.staff.name,
+        email: login.email,
+        plan: owner?.plan || "BASIC",
+        companyName: owner?.companyName || null,
       },
     });
   } catch (error) {
@@ -129,8 +134,6 @@ export const loginStaff = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 export const createStaffLogin = async (req, res) => {
   try {

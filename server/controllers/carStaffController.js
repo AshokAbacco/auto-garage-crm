@@ -1,10 +1,10 @@
 // server/controllers/carStaffController.js
-import bcrypt from "bcryptjs";
 import prisma from "../models/prismaClient.js";
 import PLAN_LIMITS from "../config/planLimits.js";
+
 /**
  * =============================================
- * CREATE STAFF (HR PROFILE ONLY)
+ * CREATE STAFF (HR PROFILE + SALARY RULES)
  * =============================================
  */
 export const createStaff = async (req, res) => {
@@ -19,10 +19,10 @@ export const createStaff = async (req, res) => {
       phone,
       joinDate,
       baseSalary,
-      bonus,
-      leaves,
       deductionPerLeave,
-      extraDeductions,
+      bonusDefault,
+      extraDeductionsDefault,
+      includeInPayroll,
     } = req.body;
 
     if (!name) {
@@ -36,11 +36,14 @@ export const createStaff = async (req, res) => {
         role,
         phone,
         joinDate: joinDate ? new Date(joinDate) : undefined,
+
+        // Salary rules (DEFAULTS)
         baseSalary: Number(baseSalary || 0),
-        bonus: Number(bonus || 0),
-        leaves: Number(leaves || 0),
         deductionPerLeave: Number(deductionPerLeave || 0),
-        extraDeductions: Number(extraDeductions || 0),
+        bonusDefault: Number(bonusDefault || 0),
+        extraDeductionsDefault: Number(extraDeductionsDefault || 0),
+        includeInPayroll:
+          includeInPayroll !== undefined ? includeInPayroll : true,
       },
     });
 
@@ -84,7 +87,7 @@ export const listStaff = async (req, res) => {
 
 /**
  * =============================================
- * UPDATE STAFF INFO (HR + LOGIN INFO)
+ * UPDATE STAFF (HR PROFILE + SALARY RULES)
  * =============================================
  */
 export const updateStaff = async (req, res) => {
@@ -95,17 +98,17 @@ export const updateStaff = async (req, res) => {
       name,
       role,
       phone,
-      email, // 👈 coming from edit modal
-      baseSalary,
-      bonus,
-      leaves,
-      deductionPerLeave,
-      extraDeductions,
+      email, // optional (login email)
       joinDate,
+      baseSalary,
+      deductionPerLeave,
+      bonusDefault,
+      extraDeductionsDefault,
+      includeInPayroll,
     } = req.body;
 
-    // 1️⃣ Update staff profile
-    const staff = await prisma.carStaff.updateMany({
+    // 1️⃣ Update staff profile & salary rules
+    const updated = await prisma.carStaff.updateMany({
       where: {
         id: Number(id),
         ownerId: req.user.id,
@@ -114,16 +117,25 @@ export const updateStaff = async (req, res) => {
         name,
         role,
         phone,
-        baseSalary: Number(baseSalary),
-        bonus: Number(bonus),
-        leaves: Number(leaves),
-        deductionPerLeave: Number(deductionPerLeave),
-        extraDeductions: Number(extraDeductions),
         joinDate: joinDate ? new Date(joinDate) : undefined,
+
+        baseSalary: baseSalary !== undefined ? Number(baseSalary) : undefined,
+        deductionPerLeave:
+          deductionPerLeave !== undefined
+            ? Number(deductionPerLeave)
+            : undefined,
+        bonusDefault:
+          bonusDefault !== undefined ? Number(bonusDefault) : undefined,
+        extraDeductionsDefault:
+          extraDeductionsDefault !== undefined
+            ? Number(extraDeductionsDefault)
+            : undefined,
+        includeInPayroll:
+          includeInPayroll !== undefined ? includeInPayroll : undefined,
       },
     });
 
-    if (staff.count === 0) {
+    if (updated.count === 0) {
       return res.status(404).json({ message: "Staff not found" });
     }
 
@@ -144,7 +156,6 @@ export const updateStaff = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 /**
  * =============================================
@@ -187,7 +198,7 @@ export const toggleStaffStatus = async (req, res) => {
     const ownerId = req.user.id;
     const staffId = Number(req.params.id);
 
-    // 1️⃣ Find staff
+    // 1️⃣ Find staff with login
     const staff = await prisma.carStaff.findFirst({
       where: { id: staffId, ownerId },
       include: { login: true },
@@ -204,7 +215,7 @@ export const toggleStaffStatus = async (req, res) => {
       const activeLoginCount = await prisma.carStaffLogin.count({
         where: {
           ownerId,
-          isActive: true, // ✅ CORRECT MODEL
+          isActive: true,
         },
       });
 
@@ -236,7 +247,3 @@ export const toggleStaffStatus = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-
-

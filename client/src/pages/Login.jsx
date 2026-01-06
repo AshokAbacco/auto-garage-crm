@@ -33,6 +33,7 @@ export default function ModernLogin() {
   const [floatingElements, setFloatingElements] = useState([]);
   const [particles, setParticles] = useState([]);
   const [ripples, setRipples] = useState([]);
+  const [loginMode, setLoginMode] = useState("owner");
   const containerRef = useRef(null);
 
   const CRM_CONFIG = {
@@ -93,7 +94,7 @@ export default function ModernLogin() {
     },
 
     wash: {
-      label: "Car Wash",
+      label: "Vehicle Washing",
       icon: Droplets,
       gradient: "from-violet-600 via-purple-500 to-fuchsia-400",
       bgGradient: "from-slate-950 via-purple-950 to-fuchsia-950",
@@ -370,6 +371,81 @@ export default function ModernLogin() {
 
     setIsLoading(false);
   };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
+
+  if (!formData.identifier || !formData.password) {
+    setError("Please fill in all fields");
+    setIsLoading(false);
+    return;
+  }
+
+  // 🚫 Staff must use email
+  if (loginMode === "staff" && !formData.identifier.includes("@")) {
+    setError("Staff must login using email address");
+    setIsLoading(false);
+    return;
+  }
+
+  try {
+    let loginUrl = "";
+    let payload = {};
+
+    // 👷 STAFF LOGIN
+    if (loginMode === "staff") {
+      loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
+      payload = {
+        email: formData.identifier.trim().toLowerCase(),
+        password: formData.password,
+      };
+    }
+
+    // 👤 OWNER LOGIN
+    else {
+      loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+      payload = {
+        identifier: formData.identifier.trim(),
+        password: formData.password,
+        crmType,
+      };
+    }
+
+    const response = await fetch(loginUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || "Invalid login");
+      setIsLoading(false);
+      return;
+    }
+
+    // ✅ SAVE AUTH (ONLY PLACE)
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("crmType", crmType);
+
+    // ✅ CORRECT REDIRECT
+    if (loginMode === "staff") {
+      window.location.href = `/${crmType}-dashboard`;
+    } else {
+      window.location.href = `/${crmType}-dashboard`;
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("Server error. Try again later.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
 
 
@@ -734,6 +810,33 @@ export default function ModernLogin() {
                           {error}
                         </div>
                       )}
+                      <div className="flex mb-4 bg-white/10 rounded-xl p-1">
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode("owner")}
+                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
+      ${
+        loginMode === "owner"
+          ? "bg-white text-black shadow"
+          : "text-white/70 hover:text-white"
+      }`}
+                        >
+                          Owner Login
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode("staff")}
+                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
+      ${
+        loginMode === "staff"
+          ? "bg-white text-black shadow"
+          : "text-white/70 hover:text-white"
+      }`}
+                        >
+                          Staff Login
+                        </button>
+                      </div>
 
                       {/* Submit Button */}
                       <button
@@ -747,17 +850,25 @@ export default function ModernLogin() {
                         <span className="relative z-10 flex items-center space-x-2">
                           {isLoading ? (
                             <>
-                              <div className="w-5 h-5 border-2 rounded-full border-white/30 border-t-white animate-spin" />
-                              <span>Logging in...</span>
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              <span>
+                                Logging in as{" "}
+                                {loginMode === "staff" ? "Staff" : "Owner"}...
+                              </span>
                             </>
                           ) : (
                             <>
-                              <span>Login to Dashboard</span>
-                              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-2" />
+                              <span>
+                                {loginMode === "staff"
+                                  ? "Login as Staff"
+                                  : "Login to Dashboard"}
+                              </span>
+                              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                             </>
                           )}
                         </span>
-                        <div className="absolute inset-0 transition-transform duration-1000 -translate-x-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:translate-x-full" />
+
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                       </button>
                     </form>
 
@@ -773,8 +884,9 @@ export default function ModernLogin() {
                         />
                         <span>Secured with 256-bit encryption</span>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        © 2024 {currentConfig.label} CRM. All rights reserved.
+                      <p className="text-gray-100 text-xs">
+                        © {new Date().getFullYear()} {currentConfig.label} CRM.
+                        All rights reserved. Powered by Moto Desk.
                       </p>
                     </div>
                   </div>

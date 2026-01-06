@@ -37,11 +37,17 @@ export const protect = async (req, res, next) => {
        });
      }
 
+     const owner = await prisma.user.findUnique({
+       where: { id: login.ownerId },
+       select: { plan: true },
+     });
+
      req.user = {
-       id: login.staff.id, // actual staff id
+       id: login.staff.id,
        type: "staff",
        role: login.staff.role,
        ownerId: login.ownerId,
+       plan: owner?.plan || "BASIC", // ✅ INHERIT OWNER PLAN
      };
 
      return next();
@@ -53,19 +59,19 @@ export const protect = async (req, res, next) => {
      * OWNER AUTH (User table)
      * =====================================
      */
-  const user = await prisma.user.findUnique({
-  where: { id: decoded.id },
-  select: {
-    id: true,
-    username: true,
-    email: true,
-    role: true,
-    plan: true,
-    referredByUserId: true, // ✅ CORRECT FIELD
-    allowedCrms: true,
-  },
-});
-
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        plan: true,
+        referredByUserId: true,
+        parentUserId: true,
+        allowedCrms: true,
+      },
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -73,10 +79,11 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // 🔐 Normalize role (important)
+    // ✅ FIX: explicitly set type = "owner"
     req.user = {
       ...user,
-      role: user.role, // ❌ DO NOT uppercase
+      type: "owner",
+      role: user.role, // keep as-is ("user")
     };
 
 

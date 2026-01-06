@@ -100,6 +100,13 @@ export default function VehicleInfoSection({
         setBrandInput(form.vehicleMake || "");
     }, [form.vehicleMake]);
 
+    // useEffect(() => {
+    //   console.log("PLAN:", userPlan);
+    //   console.log("INPUT:", brandInput);
+    //   console.log("MATCHES:", filteredMakes.length);
+    // }, [brandInput, filteredMakes, userPlan]);
+
+
     // Filter BRAND suggestions (only Standard/Premium)
     useEffect(() => {
         if (!brandInput || userPlan === "BASIC") {

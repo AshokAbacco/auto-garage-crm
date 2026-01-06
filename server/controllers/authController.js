@@ -20,14 +20,29 @@ export const registerUser = async (req, res) => {
     const emailLower = email.toLowerCase().trim();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔥 FETCH LATEST PAYMENT (SOURCE OF TRUTH)
+    /**
+     * =============================================
+     * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
+     * =============================================
+     */
     const latestPayment = await prisma.payment.findFirst({
       where: { email: emailLower },
       orderBy: { createdAt: "desc" },
     });
+
+    const plan = latestPayment?.plan || "BASIC";
+    const planExpiry = latestPayment?.planExpiry || null;
     const referralCodeUsed = latestPayment?.referralCode || null;
 
-    // 🔍 Find referrer user (if referral code exists)
+    // ✅ NEW: extract company & phone
+    const companyName = latestPayment?.companyName || null;
+    const phone = latestPayment?.phone || null;
+
+    /**
+     * =============================================
+     * REFERRAL LOOKUP (OPTIONAL)
+     * =============================================
+     */
     let referredByUserId = null;
 
     if (referralCodeUsed) {
@@ -64,10 +79,6 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: emailLower },
-    });
-
     /**
      * =============================================
      * CASE 1 — USER EXISTS (EMAIL FROM PAYMENT)
@@ -82,6 +93,8 @@ export const registerUser = async (req, res) => {
           allowedCrms: [crmType.toUpperCase()],
           plan: userPlan,
           planExpiry,
+          companyName, // ✅ ADDED
+          phone, // ✅ ADDED
         },
       });
 
@@ -112,6 +125,9 @@ export const registerUser = async (req, res) => {
         myReferralCode,
         plan: userPlan,
         planExpiry,
+        referredByUserId,
+        companyName, // ✅ ADDED
+        phone, // ✅ ADDED
       },
     });
 
@@ -128,7 +144,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
 /**
  * =============================================
  * LOGIN USER
@@ -141,50 +156,63 @@ export const loginUser = async (req, res) => {
 
     if (!identifier || !password || !crmType) {
       return res.status(400).json({
-        message: "Email/Username, password, and CRM type are required",
+        message: "Identifier, password and CRM type are required",
       });
     }
 
-    const isEmail = identifier.includes("@");
+    const rawIdentifier = identifier.trim();
+    const isEmail = rawIdentifier.includes("@");
 
-    // 🔑 Find OWNER user
-    const user = await prisma.user.findFirst({
-      where: isEmail
-        ? { email: identifier.toLowerCase().trim() }
-        : { username: identifier.trim() },
-    });
+    /**
+     * 🚫 BLOCK STAFF EMAILS COMPLETELY
+     * Owner login must NEVER authenticate staff
+     */
+    if (isEmail) {
+      const staffExists = await prisma.carStaffLogin.findUnique({
+        where: { email: rawIdentifier.toLowerCase() },
+        select: { id: true },
+      });
 
-    // ❌ No owner found
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      if (staffExists) {
+        return res.status(403).json({
+          message:
+            "This email belongs to a staff account. Please login as Staff.",
+        });
+      }
     }
 
-    // 🔐 Verify password
+    /**
+     * ============================
+     * OWNER LOOKUP ONLY
+     * ============================
+     */
+    const user = isEmail
+      ? await prisma.user.findUnique({
+          where: { email: rawIdentifier.toLowerCase() },
+        })
+      : await prisma.user.findUnique({
+          where: { username: rawIdentifier },
+        });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // 🚫 Block team members from owner login
-    if (user.role !== "user") {
-      return res.status(403).json({
-        message: "Please use staff login",
-      });
-    }
-
-    // 🚫 CRM access check (OWNER only)
     if (!user.allowedCrms.includes(crmType.toUpperCase())) {
       return res.status(403).json({
         message: `You do not have access to the ${crmType} CRM`,
       });
     }
 
-
-    // 🔐 Generate JWT
     const token = generateToken({
       id: user.id,
-      role: "user",
       type: "owner",
+      role: "user",
       plan: user.plan,
     });
 
@@ -203,9 +231,9 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Login Error:", error);
+    console.error("❌ Owner Login Error:", error);
     return res.status(500).json({
-      message: "Internal server error during login",
+      message: "Internal server error",
     });
   }
 };

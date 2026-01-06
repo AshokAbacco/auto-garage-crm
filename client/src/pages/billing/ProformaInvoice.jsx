@@ -13,7 +13,7 @@ export default function InvoicePreview() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 max-w-7xl lg:ml-[5%]">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Proforma Invoice (Preview)</h1>

@@ -11,9 +11,6 @@ import { protect } from "../middleware/authMiddleware.js";
 import { ownerOnly } from "../middleware/ownerOnly.js";
 import { requirePlan } from "../middleware/planMiddleware.js";
 
-
-
-
 const router = express.Router();
 
 /**
@@ -30,7 +27,5 @@ router.get("/", protect, ownerOnly, listStaff);
 router.put("/:id", protect, ownerOnly, updateStaff);
 router.delete("/:id", protect, ownerOnly, deleteStaff);
 router.patch("/:id/toggle", protect, ownerOnly, toggleStaffStatus);
-
-
 
 export default router;

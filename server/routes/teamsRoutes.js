@@ -1,3 +1,4 @@
+// teamsRoutes.js
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import {
@@ -15,23 +16,26 @@ const router = express.Router();
  * ADMIN CHECK (role === "user")
  * ==============================
  */
-const adminOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== "user") {
-    return res.status(403).json({ message: "Admin access only" });
+const ownerOnly = (req, res, next) => {
+  if (!req.user || req.user.type !== "owner") {
+    return res.status(403).json({ message: "Owner only" });
   }
   next();
 };
+
 
 /**
  * ==============================
  * /api/teams (ADMIN ONLY)
  * ==============================
  */
+router.get("/info", protect, ownerOnly, getTeamInfo);
+router.post("/create", protect, ownerOnly, createTeam);
+router.get("/", protect, ownerOnly, getTeams);
+router.delete("/:id", protect, ownerOnly, deleteTeam);
 
-router.post("/create", protect, adminOnly, createTeam);
-router.get("/info", protect, adminOnly, getTeamInfo);
-router.get("/", protect, adminOnly, getTeams);
-router.delete("/:id", protect, adminOnly, deleteTeam);
+
+// staff login (NO AUTH)
 router.post("/wash-staff/login", washStaffLogin);
 
 export default router;

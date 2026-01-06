@@ -1,4 +1,3 @@
-
 import bcrypt from "bcryptjs";
 import prisma from "../models/prismaClient.js";
 import { generateToken } from "../utils/generateToken.js";
@@ -10,35 +9,18 @@ import { generateToken } from "../utils/generateToken.js";
  */
 const TEAM_LIMITS = {
   BASIC: 1,       // admin only
-  STANDARD: 3,    // admin + 2
-  PREMIUM: 10     // admin + 9
+  STANDARD: 3,    // admin + 2 staff
+  PREMIUM: 10     // admin + 9 staff
 };
 
 /**
  * ==============================
- * HELPER → GENERATE UNIQUE USERNAME
- * ==============================
- */
-const generateUniqueUsername = async (base) => {
-  let username = base;
-  let counter = 1;
-
-  while (await prisma.user.findUnique({ where: { username } })) {
-    username = `${base}${counter}`;
-    counter++;
-  }
-
-  return username;
-};
-
-/**
- * ==============================
- * CREATE TEAM MEMBER (ADMIN)
+ * CREATE WASH STAFF (ADMIN)
  * ==============================
  */
 export const createTeam = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { email, password, username } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password required" });
@@ -46,15 +28,15 @@ export const createTeam = async (req, res) => {
 
     const emailLower = email.toLowerCase().trim();
 
-    // ❌ Prevent duplicate users
-    const existingUser = await prisma.user.findUnique({
+    // ❌ Prevent duplicate staff
+    const existingStaff = await prisma.washStaff.findUnique({
       where: { email: emailLower },
     });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    if (existingStaff) {
+      return res.status(400).json({ message: "Staff already exists" });
     }
 
-    // ✅ Get or create ONE team for admin
+    // ✅ Get or create admin's wash team
     let team = await prisma.washTeam.findFirst({
       where: { createdBy: req.user.id },
       include: { members: true },
@@ -64,20 +46,14 @@ export const createTeam = async (req, res) => {
       team = await prisma.washTeam.create({
         data: {
           name: "My Wash Team",
-          email: req.user.email, // ✅ ADMIN EMAIL ONLY
+          email: req.user.email, // ADMIN EMAIL ONLY
           createdBy: req.user.id,
         },
         include: { members: true },
       });
     }
 
-    // ✅ Plan limits
-    const TEAM_LIMITS = {
-      BASIC: 1,
-      STANDARD: 3,
-      PREMIUM: 10,
-    };
-
+    // ✅ Plan limit check
     const limit = TEAM_LIMITS[req.user.plan] || 1;
     const used = team.members.length + 1; // admin included
 
@@ -85,36 +61,21 @@ export const createTeam = async (req, res) => {
       return res.status(403).json({ message: "Team limit reached" });
     }
 
-    // ✅ Create team member
+    // ✅ Create wash staff
     const hashedPassword = await bcrypt.hash(password, 10);
-    const myReferralCode =
-      "TEAM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const user = await prisma.user.create({
+    const staff = await prisma.washStaff.create({
       data: {
         email: emailLower,
         username,
         password: hashedPassword,
-        role: "team",
-        plan: "BASIC",
-        allowedCrms: ["WASH"],
         washTeamId: team.id,
-        myReferralCode,
       },
     });
 
-    console.log("✅ USER CREATED:", user);
-
-    const verifyUser = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-
-    console.log("🔍 VERIFY USER IN DB:", verifyUser);
-
-
     return res.status(201).json({
-      message: "Team member created successfully",
-      user,
+      message: "Wash staff created successfully",
+      staff,
     });
   } catch (error) {
     console.error("❌ Create Team Error:", error);
@@ -129,7 +90,6 @@ export const createTeam = async (req, res) => {
   }
 };
 
-
 /**
  * ==============================
  * GET TEAM INFO (ADMIN)
@@ -137,9 +97,11 @@ export const createTeam = async (req, res) => {
  */
 export const getTeamInfo = async (req, res) => {
   try {
-    if (!req.user || req.user.role !== "user") {
-      return res.status(403).json({ message: "Admin only" });
-    }
+     if (req.user.type !== "owner") {
+        return res.status(403).json({ message: "Admin only" });
+      }
+
+
 
     const admin = await prisma.user.findUnique({
       where: { id: req.user.id },
@@ -156,10 +118,14 @@ export const getTeamInfo = async (req, res) => {
 
     return res.json({
       admin,
-      team: { used, limit },
+      team: {
+        id: team?.id || null,
+        used,
+        limit,
+      },
     });
-  } catch (err) {
-    console.error("❌ Team Info Error:", err);
+  } catch (error) {
+    console.error("❌ Team Info Error:", error);
     return res.status(500).json({ message: "Failed to load team info" });
   }
 };
@@ -212,19 +178,18 @@ export const deleteTeam = async (req, res) => {
 
     const team = await prisma.washTeam.findUnique({
       where: { id: teamId },
-      include: { members: true },
     });
 
     if (!team || team.createdBy !== req.user.id) {
       return res.status(404).json({ message: "Team not found" });
     }
 
-    // Delete team users
-    await prisma.user.deleteMany({
+    // ✅ Delete wash staff
+    await prisma.washStaff.deleteMany({
       where: { washTeamId: teamId },
     });
 
-    // Delete team record
+    // ✅ Delete team
     await prisma.washTeam.delete({
       where: { id: teamId },
     });
@@ -238,7 +203,7 @@ export const deleteTeam = async (req, res) => {
 
 /**
  * ==============================
- * WASH TEAM LOGIN
+ * WASH STAFF LOGIN
  * ==============================
  */
 export const washStaffLogin = async (req, res) => {
@@ -246,44 +211,48 @@ export const washStaffLogin = async (req, res) => {
     const { identifier, password } = req.body;
 
     if (!identifier || !password) {
-      return res.status(400).json({ message: "Email/Username and password required" });
+      return res
+        .status(400)
+        .json({ message: "Email/Username and password required" });
     }
 
-    const user = await prisma.user.findFirst({
+    const staff = await prisma.washStaff.findFirst({
       where: {
         OR: [
           { email: identifier.toLowerCase().trim() },
           { username: identifier.trim() },
         ],
-        role: "team",
-        allowedCrms: { has: "WASH" },
+        isActive: true,
+      },
+      include: {
+        team: true,
       },
     });
 
-    if (!user) {
+    if (!staff) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, staff.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const token = generateToken({
-      id: user.id,
-      role: "team",
-      type: "staff",
+      id: staff.id,
+      type: "wash-staff",
+      teamId: staff.washTeamId,
     });
 
     return res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: "team",
-        crmType: "WASH",
+        id: staff.id,
+        email: staff.email,
+        username: staff.username,
+        type: "wash-staff",
+        teamId: staff.washTeamId,
       },
     });
   } catch (error) {

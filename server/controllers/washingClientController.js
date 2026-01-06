@@ -30,7 +30,20 @@ const washingClientSchema = z.object({
  */
 export const getWashingClients = async (req, res) => {
   try {
+    let where = {};
+
+    // OWNER → all own clients
+    if (req.user.type === "owner") {
+      where.userId = req.user.id;
+    }
+
+    // WASH STAFF → team-based clients
+    if (req.user.type === "wash-staff") {
+      where.washTeamId = req.user.teamId;
+    }
+
     const clients = await prisma.washingClient.findMany({
+      where,
       orderBy: { createdAt: "desc" },
     });
 
@@ -72,23 +85,34 @@ export const createWashingClient = async (req, res) => {
   try {
     const parsed = washingClientSchema.parse(req.body);
 
-    const client = await prisma.washingClient.create({
-      data: {
-        ...parsed,
-        userId: req.user?.id ?? null,
-      }
+    const data = {
+      ...parsed,
+    };
 
-    });
+    // OWNER creates client
+    if (req.user.type === "owner") {
+      data.userId = req.user.id;
+    }
+
+    // WASH STAFF creates client
+    if (req.user.type === "wash-staff") {
+      data.washTeamId = req.user.teamId;
+    }
+
+    const client = await prisma.washingClient.create({ data });
 
     res.status(201).json(client);
   } catch (err) {
     console.error("createWashingClient error:", err);
+
     if (err?.errors) {
       return res.status(400).json({ error: err.errors });
     }
+
     res.status(500).json({ message: "Failed to create washing client" });
   }
 };
+
 
 /**
  * ===========================

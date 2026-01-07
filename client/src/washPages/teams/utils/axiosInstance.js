@@ -1,6 +1,6 @@
-// client/src/utils/axiosInstance.js
+// utils/axiosInstance.js
 import axios from "axios";
- 
+
 const api = axios.create({
   baseURL: "http://localhost:5000",
   headers: {
@@ -8,34 +8,45 @@ const api = axios.create({
   },
 });
 
-// 🔐 Attach token to every request
+/* ==============================
+   REQUEST INTERCEPTOR
+   Attach JWT token
+============================== */
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
- 
-// 🚨 Handle ALL 401 cases safely
+
+/* ==============================
+   RESPONSE INTERCEPTOR
+   Handle auth safely
+============================== */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      console.warn("🔒 Unauthorized → logging out");
- 
+    const status = error.response?.status;
+    const message = error.response?.data?.message;
+
+    // ✅ ONLY logout when token is invalid or expired
+    if (status === 401 && message === "Invalid token") {
       localStorage.removeItem("token");
-      localStorage.removeItem("loggedIn");
       localStorage.removeItem("user");
- 
+      localStorage.removeItem("crmType");
+
       window.location.href = "/login";
     }
- 
+
+    // ❌ DO NOT logout on 403 (Admin only, permission issues)
     return Promise.reject(error);
   }
 );
- 
+
 export default api;

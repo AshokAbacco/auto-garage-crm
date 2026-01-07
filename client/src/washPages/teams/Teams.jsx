@@ -38,36 +38,26 @@ export default function TeamRegister() {
                 setUsed(res.data.team.used);
                 setLimit(res.data.team.limit);
             } catch (err) {
-                setError(err.response?.data?.message || "Access denied");
+                setError(
+                    err.response?.data?.message ||
+                    "You are not authorized to view team info"
+                );
             }
         };
 
         fetchTeamInfo();
     }, []);
 
-    const fetchTeamInfo = async () => {
-        try {
-            const res = await api.get("/api/teams/info");
-            setAdminEmail(res.data.admin.email);
-            setUsed(res.data.team.used);
-            setLimit(res.data.team.limit);
-        } catch (err) {
-            setError(err.response?.data?.message || "Access denied");
-        }
-    };
-
-    useEffect(() => {
-        fetchTeamInfo();
-    }, []);
-
-
-
     /* ==============================
-       CREATE TEAM MEMBER
+       CREATE WASH STAFF
     ============================== */
     const handleCreate = async () => {
         if (!email || !password) {
             setError("Email and password are required");
+            return;
+        }
+
+        if (remaining <= 0 || isBasicPlan) {
             return;
         }
 
@@ -76,7 +66,7 @@ export default function TeamRegister() {
             setError("");
 
             await api.post("/api/teams/create", {
-                username,
+                username: username || null,
                 email,
                 password,
             });
@@ -87,7 +77,9 @@ export default function TeamRegister() {
                 navigate("/admin/teams");
             }, 1500);
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to create team member");
+            setError(
+                err.response?.data?.message || "Failed to create wash staff account"
+            );
         } finally {
             setLoading(false);
         }
@@ -111,7 +103,7 @@ export default function TeamRegister() {
                     >
                         <CheckCircle className="mx-auto text-green-500" size={48} />
                         <h3 className="mt-4 text-xl font-bold">
-                            Team Member Created
+                            Wash Staff Created
                         </h3>
                         <p className="mt-2 text-sm opacity-70">Redirecting…</p>
                     </div>
@@ -134,7 +126,7 @@ export default function TeamRegister() {
                             <UserPlus className="text-white" size={36} />
                         </div>
                         <h2 className="mt-4 text-3xl font-bold">
-                            Create Team Account
+                            Create Wash Staff
                         </h2>
                     </div>
 
@@ -150,8 +142,8 @@ export default function TeamRegister() {
                         <div className="flex gap-3 p-4 mb-6 text-sm text-yellow-800 bg-yellow-100 rounded-xl">
                             <AlertTriangle size={18} />
                             <span>
-                                Your current plan does not support team members.
-                                Upgrade your plan to add users.
+                                Your current plan does not support wash staff.
+                                Please upgrade your plan.
                             </span>
                         </div>
                     )}
@@ -213,16 +205,14 @@ export default function TeamRegister() {
                         />
 
                         <button
-                            disabled={loading}
-
-
+                            disabled={loading || remaining <= 0 || isBasicPlan}
                             onClick={handleCreate}
                             className={`w-full py-4 rounded-xl text-white font-semibold transition ${loading || remaining <= 0 || isBasicPlan
                                 ? "bg-gray-400 cursor-not-allowed"
                                 : "bg-gradient-to-r from-[#023067] to-[#045aa8] hover:scale-[1.02]"
                                 }`}
                         >
-                            {loading ? "Creating..." : "Create Team Account"}
+                            {loading ? "Creating..." : "Create Wash Staff"}
                         </button>
                     </div>
                 </div>

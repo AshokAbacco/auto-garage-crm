@@ -86,12 +86,10 @@ model User {
   bikeStaffs            BikeStaff[]
   bikeTeams             BikeTeam[]
 
-  // washing 
+  // washing (ADMIN)
   washingClients WashingClient[]
   washTeamsOwned WashTeam[]      @relation("AdminWashTeams")
   // Team member → belongs to one team
-  washTeamId     Int?
-  washTeamMember WashTeam?       @relation("TeamMember", fields: [washTeamId], references: [id])
 }
 
 //car db schemas
@@ -763,6 +761,7 @@ model WashingClient {
   washingServices WashingService[]
   washBillings    WashBilling[]
   invoices        Invoice[]
+  washTeamId      Int? // WASH TEAM
 }
 
 model WashingServiceCategory {
@@ -883,12 +882,25 @@ model WashBillingService {
 model WashTeam {
   id    Int    @id @default(autoincrement())
   name  String
-  email String @unique
+  email String // admin email only
 
   createdBy Int
   admin     User @relation("AdminWashTeams", fields: [createdBy], references: [id])
 
-  members User[] @relation("TeamMember")
+  members WashStaff[]
 
+  createdAt DateTime @default(now())
+}
+
+model WashStaff {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  username String?
+  password String
+
+  washTeamId Int
+  team       WashTeam @relation(fields: [washTeamId], references: [id])
+
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 }

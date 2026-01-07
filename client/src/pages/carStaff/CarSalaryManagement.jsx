@@ -78,6 +78,49 @@ export default function SalaryManagement() {
     loadProfile(); 
   }, [month, year]);
 
+  const handleDownloadReport = () => {
+    if (!salaries.length) {
+      alert("No salary data to download");
+      return;
+    }
+
+    const headers = [
+      "Staff Name",
+      "Base Salary",
+      "Leaves",
+      "Bonus",
+      "Deductions",
+      "Net Salary",
+      "Status",
+      "Paid At",
+    ];
+
+    const rows = salaries.map((s) => [
+      s.staff.name,
+      s.baseSalary,
+      s.leaves,
+      s.bonus,
+      s.extraDeductions,
+      s.netSalary,
+      s.status,
+      s.paidAt ? new Date(s.paidAt).toLocaleDateString("en-IN") : "",
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${v}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Salary_Report_${month}_${year}.csv`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
   /* ================= GENERATE / UPDATE ================= */
   const handleGenerate = async ({ createPayload, updatePayload }) => {
     if (Object.keys(createPayload).length > 0) {
@@ -198,6 +241,8 @@ export default function SalaryManagement() {
             onMonthChange={setMonth}
             onYearChange={setYear}
             onGenerate={() => setShowPrepare(true)}
+            onDownload={handleDownloadReport}
+            disabled={!salaries.length}
           />
         </div>
 

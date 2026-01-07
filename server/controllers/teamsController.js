@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import prisma from "../models/prismaClient.js";
 import { generateToken } from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
+
 
 /**
  * ==============================
@@ -208,20 +210,17 @@ export const deleteTeam = async (req, res) => {
  */
 export const washStaffLogin = async (req, res) => {
   try {
-    const { identifier, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!identifier || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email/Username and password required" });
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
     }
 
     const staff = await prisma.washStaff.findFirst({
       where: {
-        OR: [
-          { email: identifier.toLowerCase().trim() },
-          { username: identifier.trim() },
-        ],
+        email: email.toLowerCase().trim(),
         isActive: true,
       },
       include: {
@@ -230,29 +229,36 @@ export const washStaffLogin = async (req, res) => {
     });
 
     if (!staff) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, staff.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken({
-      id: staff.id,
-      type: "wash-staff",
-      teamId: staff.washTeamId,
-    });
+    const token = jwt.sign(
+      {
+        id: staff.id,
+        type: "wash-staff",
+        teamId: staff.washTeamId,
+        crmType: "WASH",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     return res.status(200).json({
-      message: "Login successful",
+      message: "Wash staff login successful",
       token,
       user: {
         id: staff.id,
-        email: staff.email,
-        username: staff.username,
         type: "wash-staff",
+        name: staff.name,
+        role: "team",
+        email: staff.email,
         teamId: staff.washTeamId,
+        crmType: "wash",
       },
     });
   } catch (error) {
@@ -260,3 +266,4 @@ export const washStaffLogin = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+

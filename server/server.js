@@ -90,14 +90,18 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow mobile apps & server-to-server
-      if (!origin) return callback(null, true);
+      // ✅ Allow mobile apps, Postman, curl, server-to-server (no origin)
+      if (!origin) {
+        return callback(null, true);
+      }
 
+      // ✅ Allow known browser frontends
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("Not allowed by CORS"));
+      // ✅ IMPORTANT: do NOT block API clients
+      return callback(null, true);
     },
   })
 );

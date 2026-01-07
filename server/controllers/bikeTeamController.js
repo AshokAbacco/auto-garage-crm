@@ -61,22 +61,18 @@ export const createBikeTeamMember = async (req, res) => {
 
 export const bikeTeamLogin = async (req, res) => {
   try {
-    // ✅ THIS LINE (you asked about this)
-    const { identifier, password } = req.body;
+    const { identifier, email, password } = req.body;
+    const loginIdentifier = identifier || email;
 
-    if (!identifier || !password) {
+    if (!loginIdentifier || !password) {
       return res.status(400).json({
         message: "Username/Email and password are required",
       });
     }
 
-    // ✅ THIS QUERY (you asked about this)
     const login = await prisma.bikeTeamLogin.findFirst({
       where: {
-        OR: [
-          { username: identifier },
-          { email: identifier },
-        ],
+        OR: [{ username: loginIdentifier }, { email: loginIdentifier }],
       },
       include: {
         team: true,
@@ -92,7 +88,6 @@ export const bikeTeamLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // 🔐 Generate token
     const token = jwt.sign(
       {
         id: login.id,
@@ -104,28 +99,31 @@ export const bikeTeamLogin = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({
+    return res.json({
       success: true,
       token,
       user: {
         type: "bike_team",
-        teamId: login.team.id,
-        ownerId: login.team.ownerId,
+        role: "team", // ✅ UI FIX (already discussed)
 
-        // 🔑 FOR UI (TOP NAVBAR)
+        ownerId: login.team.ownerId,
+        teamId: login.team.id,
+
+        jobRole: login.team.role, // Mechanic / Manager
+
         username: login.username,
         email: login.email,
         displayName: login.team.name,
-
-        role: login.team.role, // Mechanic / Manager
+        crmType: "bike",
       },
     });
-
   } catch (err) {
     console.error("bikeTeamLogin error:", err);
     return res.status(500).json({ message: "Login failed" });
   }
 };
+
+
 
 export const getBikeTeamList = async (req, res) => {
   try {

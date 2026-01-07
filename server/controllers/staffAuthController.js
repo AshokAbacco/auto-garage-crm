@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import prisma from "../models/prismaClient.js";
 import PLAN_LIMITS from "../config/planLimits.js";
 
-
 export const loginStaff = async (req, res) => {
   try {
     const { email, password, crmType } = req.body;
@@ -66,9 +65,7 @@ export const loginStaff = async (req, res) => {
       message: "Staff login successful",
       token,
       user: {
-        id: finalLogin.staff.id,
-        name: finalLogin.staff.name,
-        role: finalLogin.staff.role,
+        id: login.staff.id,
         type: "staff",
         role: login.staff.role,
         ownerId: login.ownerId,
@@ -85,8 +82,6 @@ export const loginStaff = async (req, res) => {
   }
 };
 
-
-
 export const createStaffLogin = async (req, res) => {
   try {
     if (req.user.type !== "owner") {
@@ -94,52 +89,102 @@ export const createStaffLogin = async (req, res) => {
     }
 
     const ownerId = req.user.id;
-    const teamId = Number(req.params.staffId);
-    const { username, password } = req.body;
+    const staffId = Number(req.params.staffId);
+    const { email, password } = req.body;
 
-    const team = await prisma.bikeTeam.findFirst({
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    /**
+     * 1️⃣ Verify staff belongs to THIS owner
+     */
+    const staff = await prisma.carStaff.findFirst({
       where: {
-        id: teamId,
+        id: staffId,
         ownerId,
       },
-      include: { login: true },
+      include: {
+        login: true,
+      },
     });
 
-    if (!team) {
-      return res.status(404).json({ message: "Team member not found" });
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
     }
 
-    if (team.login) {
-      return res.status(400).json({ message: "Login already exists" });
+    if (staff.login) {
+      return res.status(400).json({
+        message: "Login already exists for this staff",
+      });
     }
 
+    /**
+     * 2️⃣ Check ACTIVE staff login limit (PLAN)
+     */
+    const activeLoginCount = await prisma.carStaffLogin.count({
+      where: {
+        ownerId,
+        isActive: true,
+      },
+    });
+
+    const allowedUsers = PLAN_LIMITS[req.user.plan];
+    const maxStaffLogins = allowedUsers - 1; // owner excluded
+
+    if (activeLoginCount >= maxStaffLogins) {
+      return res.status(400).json({
+        message:
+          "Active staff login limit reached. Deactivate another login or upgrade your plan.",
+      });
+    }
+
+    /**
+     * 3️⃣ Prevent duplicate email globally
+     */
+    const emailExists = await prisma.carStaffLogin.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (emailExists) {
+      return res.status(400).json({
+        message: "Email already in use",
+      });
+    }
+
+    /**
+     * 4️⃣ Create staff login
+     */
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const login = await prisma.bikeTeamLogin.create({
+    const login = await prisma.carStaffLogin.create({
       data: {
-        bikeTeamId: teamId,
-        username,
+        staffId,
+        ownerId,
+        email: email.toLowerCase(),
         password: hashedPassword,
       },
     });
 
     return res.status(201).json({
-      message: "Bike team login created",
+      message: "Staff login created successfully",
       login: {
         id: login.id,
-        username: login.username,
+        email: login.email,
         isActive: login.isActive,
       },
     });
   } catch (error) {
-    console.error("❌ Create Bike Team Login Error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("❌ Create Staff Login Error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const getStaffProfile = async (req, res) => {
   try {
-    if (req.user.type !== "bike_team") {
+    if (req.user.type !== "staff") {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -163,8 +208,8 @@ export const getStaffProfile = async (req, res) => {
       },
     });
 
-    if (!login) {
-      return res.status(404).json({ message: "Profile not found" });
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
     }
 
     return res.status(200).json({
@@ -177,7 +222,7 @@ export const getStaffProfile = async (req, res) => {
       type: "staff",
     });
   } catch (error) {
-    console.error("❌ Bike Team Profile Error:", error);
-    res.status(500).json({ message: "Failed to load profile" });
+    console.error("❌ STAFF PROFILE ERROR:", error);
+    return res.status(500).json({ message: "Failed to load staff profile" });
   }
 };

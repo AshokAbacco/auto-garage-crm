@@ -35,7 +35,9 @@ import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 import carStaffRoutes from "./routes/carStaffRoutes.js";
 import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
 import bikeStaffSalaryRoutes from "./routes/BikeStaffSalaryRoutes.js";
+import staffRoutes from './routes/bikeStaffRoutes.js';
 import bikeMetaRoutes from "./routes/bikeMetaRoutes.js";
+import bikeTeamRoutes from "./routes/bikeTeamRoutes.js";
 import { protect } from "./middleware/authMiddleware.js";
 
 
@@ -138,7 +140,9 @@ app.use("/api/bike-invoices", protect, bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
 app.use("/api/bike-ocr", bikeOCRRoutes);
 app.use("/api/bike-staff-salary", protect, bikeStaffSalaryRoutes);
+app.use('/api/staff', staffRoutes); 
 app.use("/api/bikes-meta", bikeMetaRoutes);
+app.use("/api/bikes-team",  bikeTeamRoutes);
 
 
 

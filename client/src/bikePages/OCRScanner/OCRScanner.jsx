@@ -130,17 +130,20 @@ const OCRScanner = () => {
     const fetchHistory = async () => {
       if (!bikeClientId) return;
 
-
       try {
         const data = await loadHistory(bikeClientId);
-        setHistoryData(data);
+
+        // ✅ FIX: always set array
+        setHistoryData(Array.isArray(data) ? data : data?.records || []);
       } catch (err) {
         console.error("Error loading OCR history:", err);
+        setHistoryData([]);
       }
     };
 
     fetchHistory();
   }, [bikeClientId]);
+
 
 
   // ----------------------------------------------------------

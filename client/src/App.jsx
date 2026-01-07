@@ -95,6 +95,8 @@ import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProte
 import Teams from "./washPages/teams/Teams.jsx";
 import TeamLogin from "./bikePages/TeamAccounts/TeamLogin.jsx";
 import TeamRegister from "./bikePages/TeamAccounts/TeamRegister.jsx";
+import StaffSalaryContainer from "./bikePages/StaffSalary/StaffSalaryContainer.jsx";
+
 function App() {
   return (
     <ThemeProvider>
@@ -200,7 +202,7 @@ function App() {
           <Route path="bike-reports" element={<Report />} />
           <Route path="bike-plan" element={<Plans />} />
           <Route path="bike-reference" element={<Reference />} />
-          {/* <Route path="bike-upgrade" element={<UpgradePlans />} /> */}
+          <Route path="/bike-plans" element={<Upgrade />} />
           <Route path="/bike-ocr-scanner" element={<OCRScanner />} />
           <Route path="/editclient/:id" element={<AddClients />} />
           <Route path="/editclient/new" element={<AddClients />} />
@@ -211,36 +213,22 @@ function App() {
           <Route path="/bill/new" element={<AddBilling />} />
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
-          {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
+
+           
           {/* ================= SALARY MODULE ================= */}
           <Route path="/salary-login" element={<SalaryLogin />} />
+          <Route path="/team-register" element={<TeamRegister />} />
           <Route path="/salary-register" element={<SalaryRegister />} />
 
-          <Route element={<SalaryProtectedRoute />}>
-            <Route path="/salary-manage" element={<SalaryPage />} />
-          </Route>
+         
+            {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
+            <Route path="/salary-manage" element={<StaffSalaryContainer />} />
+          
         </Route>
 
         {/* Washing CRM Routes */}
-        <Route path="/" element={<WashingLayout />}>
-          <Route path="/wash-dashboard" element={<WashDashboard />} />
-          <Route path="/washing-clients" element={<Client />} />
-          <Route path="/washing-services" element={<Service />} />
-          <Route path="/washing-billing" element={<Bill />} />
-          <Route path="/washing-reports" element={<Repor />} />
-          <Route path="/washing-reference" element={<Referenc />} />
-          <Route path="/washing-upgrade" element={<Upgra />} />
-          <Route path="/washing-alerts" element={<SMSalert />} />
-          <Route path="/addclient" element={<Newclient />} />
-          <Route path="/add-service" element={<NewService />} />
-          <Route path="/washing-plan" element={<Plan />} />
-          <Route path="/create-invoice" element={<NewInvoice />} />
-          <Route path="/add-subservice" element={<NewSubService />} />
-          <Route path="/washProfile" element={<WashingProfile />} />
-          <Route path="/bike-plans" element={<Upgrade />} />
-          <Route path="/team-register" element={<TeamRegister />} />
-        </Route>
-        <Route path="/team-login" element={<TeamLogin />} />
+        
+         
 
         {/* ================= WASHING CRM ================= */}
         <Route element={<WashingLayout />}>
@@ -264,9 +252,8 @@ function App() {
           <Route path="/teams" element={<Teams />} />
 
           <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
-
           <Route path="/billing/create-invoice" element={<NewInvoice />} />
-
+          <Route path="/team-login" element={<TeamLogin />} />
           <Route
             path="/billing/create-invoice/:serviceId"
             element={<NewInvoice />}

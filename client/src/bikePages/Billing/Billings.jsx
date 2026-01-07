@@ -11,7 +11,8 @@ import {
   FiClock,
   FiTrendingUp,
   FiAlertCircle,
-  FiRefreshCw
+  FiRefreshCw,
+  FiDollarSign,
 } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
 import { Toaster, toast } from "react-hot-toast";
@@ -48,7 +49,8 @@ export default function BillingList() {
     return invoices.filter(inv =>
       inv.invoiceNumber?.toLowerCase().includes(query.toLowerCase()) ||
       inv.bike?.ownerName?.toLowerCase().includes(query.toLowerCase()) ||
-      inv.bike?.regNumber?.toLowerCase().includes(query.toLowerCase())
+      inv.bike?.regNumber?.toLowerCase().includes(query.toLowerCase()) ||
+      inv.serviceCategory?.toLowerCase().includes(query.toLowerCase())
     );
   }, [query, invoices]);
 
@@ -67,22 +69,30 @@ export default function BillingList() {
   };
 
   // Calculate stats
-  const totalInvoices = invoices.length;
-  const paidInvoices = invoices.filter(inv => inv.status === "Paid").length;
-  const pendingInvoices = invoices.filter(inv => inv.status === "Pending").length;
-  const totalRevenue = useMemo(() => {
-    return invoices
-      .filter(inv =>
-        ["paid", "Paid", "PAID", "Completed"].includes(inv.status)
-      )
-      .reduce((sum, inv) => {
-        const amount = String(inv.grandTotal || "0")
-          .replace(/,/g, "")   // remove commas
-          .replace(/₹/g, ""); // remove currency if any
+  const stats = useMemo(() => {
+    const totalInvoices = invoices.length;
+    const paidInvoices = invoices.filter(inv => inv.status === "Paid").length;
+    const pendingInvoices = invoices.filter(inv => inv.status === "Pending").length;
+    
+    const totalRevenue = invoices
+      .filter(inv => ["paid", "Paid", "PAID", "Completed"].includes(inv.status))
+      .reduce((sum, inv) => sum + Number(inv.grandTotal || 0), 0);
 
-        return sum + Number(amount);
-      }, 0)
-      .toFixed(2);
+    const totalPending = invoices
+      .filter(inv => inv.status === "Pending")
+      .reduce((sum, inv) => sum + Number(inv.balanceDue || inv.grandTotal || 0), 0);
+
+    const totalAdvance = invoices
+      .reduce((sum, inv) => sum + Number(inv.advancePaid || 0), 0);
+
+    return {
+      totalInvoices,
+      paidInvoices,
+      pendingInvoices,
+      totalRevenue: totalRevenue.toFixed(2),
+      totalPending: totalPending.toFixed(2),
+      totalAdvance: totalAdvance.toFixed(2),
+    };
   }, [invoices]);
 
   return (
@@ -133,33 +143,33 @@ export default function BillingList() {
             Total Invoices
           </p>
           <h2 className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
-            {totalInvoices}
+            {stats.totalInvoices}
           </h2>
         </div>
 
-        {/* Pending Invoices */}
+        {/* Pending Payments */}
         <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
           isDark
-            ? "bg-gray-800 border-gray-700 hover:border-blue-600/50"
-            : "bg-white border-gray-100 hover:border-blue-600/30"
+            ? "bg-gray-800 border-gray-700 hover:border-orange-600/50"
+            : "bg-white border-gray-100 hover:border-orange-600/30"
         }`}>
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-xl ${
-              isDark ? "bg-blue-500/20" : "bg-blue-50"
+              isDark ? "bg-orange-500/20" : "bg-orange-50"
             }`}>
-              <FiClock size={24} className="text-blue-600" />
+              <FiClock size={24} className="text-orange-600" />
             </div>
-            <FiAlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-blue-600 transition-colors`} />
+            <FiAlertCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-orange-600 transition-colors`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Pending Payments
+            Pending Amount
           </p>
-          <h2 className="text-3xl font-bold text-blue-600">
-            {pendingInvoices}
+          <h2 className="text-2xl font-bold text-orange-600">
+            ₹{stats.totalPending}
           </h2>
         </div>
 
-        {/* Paid Invoices */}
+        {/* Paid Revenue */}
         <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
           isDark
             ? "bg-gray-800 border-gray-700 hover:border-green-500/50"
@@ -174,32 +184,32 @@ export default function BillingList() {
             <FiCheckCircle size={20} className={`${isDark ? "text-gray-500" : "text-gray-400"} group-hover:text-green-500 transition-colors`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Paid Invoices
+            Total Revenue
           </p>
-          <h2 className="text-3xl font-bold text-green-500">
-            {paidInvoices}
+          <h2 className="text-2xl font-bold text-green-500">
+            ₹{stats.totalRevenue}
           </h2>
         </div>
 
-        {/* Total Revenue */}
+        {/* Total Advance */}
         <div className={`group rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 ${
           isDark
-            ? "bg-gradient-to-br from-blue-900/50 to-indigo-900/50 border-blue-700/50 hover:border-blue-500/50"
-            : "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 hover:border-blue-500/30"
+            ? "bg-gradient-to-br from-purple-900/50 to-indigo-900/50 border-purple-700/50 hover:border-purple-500/50"
+            : "bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 hover:border-purple-500/30"
         }`}>
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-xl ${
-              isDark ? "bg-blue-500/30" : "bg-blue-100"
+              isDark ? "bg-purple-500/30" : "bg-purple-100"
             }`}>
-              <IndianRupee size={24} className="text-blue-600" />
+              <FiDollarSign size={24} className="text-purple-600" />
             </div>
-            <FiTrendingUp size={20} className={`${isDark ? "text-blue-400" : "text-blue-500"} group-hover:scale-110 transition-transform`} />
+            <FiTrendingUp size={20} className={`${isDark ? "text-purple-400" : "text-purple-500"} group-hover:scale-110 transition-transform`} />
           </div>
           <p className={`text-sm mb-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-            Total Revenue
+            Total Advance
           </p>
-          <h2 className="text-3xl font-bold text-blue-600">
-            ₹{totalRevenue}
+          <h2 className="text-2xl font-bold text-purple-600">
+            ₹{stats.totalAdvance}
           </h2>
         </div>
       </div>
@@ -212,7 +222,7 @@ export default function BillingList() {
           }`} size={20} />
           <input
             type="text"
-            placeholder="Search by invoice number, owner name, or registration..."
+            placeholder="Search by invoice number, owner, registration, or category..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -324,9 +334,12 @@ function InvoiceCard({ invoice, isDark, index, onView, onEdit, onDelete }) {
       ? "bg-green-500/20 text-green-400 border-green-500/50"
       : "bg-green-100 text-green-700 border-green-200",
     Pending: isDark
-      ? "bg-blue-500/20 text-blue-400 border-blue-600/50"
-      : "bg-blue-100 text-blue-700 border-blue-200",
+      ? "bg-orange-500/20 text-orange-400 border-orange-600/50"
+      : "bg-orange-100 text-orange-700 border-orange-200",
   };
+
+  const hasBalance = invoice.balanceDue > 0;
+  const hasAdvance = invoice.advancePaid > 0;
 
   return (
     <div
@@ -346,7 +359,7 @@ function InvoiceCard({ invoice, isDark, index, onView, onEdit, onDelete }) {
 
       {/* Invoice Info */}
       <div className="flex-1 space-y-2 min-w-0">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h2 className={`text-xl font-bold ${
             isDark ? "text-white" : "text-gray-900"
           }`}>
@@ -366,15 +379,44 @@ function InvoiceCard({ invoice, isDark, index, onView, onEdit, onDelete }) {
             {invoice.bike?.ownerName}
           </p>
           <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            {invoice.bike?.regNumber}
+            {invoice.bike?.regNumber} {invoice.vehicle && `• ${invoice.vehicle}`}
           </p>
         </div>
 
         {invoice.serviceCategory && (
-          <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-            {invoice.serviceCategory}
-          </p>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 rounded text-xs ${
+              isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 text-purple-700"
+            }`}>
+              {invoice.serviceCategory}
+            </span>
+            {invoice.serviceSubCategory && (
+              <span className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                • {invoice.serviceSubCategory}
+              </span>
+            )}
+          </div>
         )}
+
+        {/* Payment Details */}
+        <div className="flex items-center gap-4 text-xs">
+          {hasAdvance && (
+            <div className={`flex items-center gap-1 ${
+              isDark ? "text-blue-400" : "text-blue-600"
+            }`}>
+              <FiDollarSign size={12} />
+              <span>Advance: ₹{Number(invoice.advancePaid).toFixed(2)}</span>
+            </div>
+          )}
+          {hasBalance && invoice.status === "Pending" && (
+            <div className={`flex items-center gap-1 ${
+              isDark ? "text-orange-400" : "text-orange-600"
+            }`}>
+              <FiAlertCircle size={12} />
+              <span>Due: ₹{Number(invoice.balanceDue).toFixed(2)}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Amount and Actions */}

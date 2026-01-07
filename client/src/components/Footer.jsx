@@ -201,20 +201,26 @@ const Footer = () => {
             ></div>
           </div>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10">
-            {/* Bottom Section with Bouncing Links - Fixed Position */}
-            <div
-              className={`pt-6  flex flex-col justify-between items-center space-y-3 gap-3 md:space-y-0`}
-            >
-              <p
-                className={`text-sm ${
-                  isDark ? "text-gray-200" : "text-gray-900"
-                } text-center md:text-left`}
-              >
-                © {new Date().getFullYear()} The Motor Desk. All rights reserved.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-                {/* <Link
+                {/* Logo - Top Center */}
+                <div className="relative z-10 pt-6 flex justify-center">
+                <div className="w-20 h-20 sm:w-28 sm:h-18 rounded-2xl   overflow-hidden">
+                    <img
+                    src="/Logos/transLogo.png"
+                    alt="Motor Desk Logo"
+                    className="w-full h-full object-contain"
+                    />
+                </div>
+                </div>
+
+
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10">
+                    {/* Bottom Section with Bouncing Links - Fixed Position */}
+                    <div className={`  flex flex-col justify-between items-center space-y-3 gap-3 md:space-y-0`}>
+                        <p className={`text-sm ${isDark ? 'text-gray-200' : 'text-gray-900'} text-center md:text-left`}>
+                            © {new Date().getFullYear()} Moter Desk by Abacco Technology. All rights reserved.
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+                            {/* <Link
                                 to="/terms"
                                 className={`policy-link text-sm font-medium px-2 py-1 rounded ${isDark ? 'text-blue-300 hover:text-blue-200 hover:bg-blue-900/30' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-100'
                                     } transition-all duration-300`}

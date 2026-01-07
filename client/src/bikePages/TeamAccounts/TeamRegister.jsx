@@ -18,23 +18,28 @@ export default function TeamRegister() {
   const [error, setError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  useEffect(() => {
-    const fetchInfo = async () => {
-      try {
-        const res = await api.get("/api/user/team/info");
-        setAdminEmail(res.data.adminEmail);
-        setUsed(res.data.used);
-        setLimit(res.data.limit);
-      } catch (err) {
-        setError(err.response?.data?.message || "Team access not allowed");
-      }
-    };
-    fetchInfo();
-  }, []);
+useEffect(() => {
+  const fetchInfo = async () => {
+    try {
+      const res = await api.get("/api/bikes-team/info");
+
+      setAdminEmail(res.data.adminEmail);
+      setUsed(res.data.used);
+      setLimit(res.data.limit);
+    } catch (err) {
+      console.error("Team info error:", err);
+      setError("Failed to fetch admin/team info");
+    }
+  };
+
+  fetchInfo();
+}, []);
+
+
 
   const handleCreate = async () => {
-    if (!email || !password) {
-      setError("Email and password are required");
+    if (!username || !email || !password) {
+      setError("Username, email and password are required");
       return;
     }
 
@@ -42,18 +47,23 @@ export default function TeamRegister() {
     setError("");
 
     try {
-      await api.post("/api/user/team/create", { username, email, password });
+      await api.post("/api/bikes-team/create", {
+        name: username,
+        username,
+        email,
+        password,
+        role: "Mechanic",
+        phone: "",
+      });
+
       setShowSuccessModal(true);
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        navigate("/login");
-      }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create team account");
+      setError(err.response?.data?.message || "Failed to create team");
     } finally {
       setLoading(false);
     }
   };
+
 
   const remainingSlots = limit - used;
   const usagePercentage = (used / limit) * 100;
@@ -200,15 +210,7 @@ export default function TeamRegister() {
               )}
             </button>
           </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <p className={`text-center text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
-              Already created?{" "}
-              <button onClick={() => navigate("/team-login")} className="text-[#023067] hover:text-[#045aa8] font-semibold hover:underline transition-colors duration-200">
-                Go to Login
-              </button>
-            </p>
-          </div>
+ 
         </div>
       </div>
     </>

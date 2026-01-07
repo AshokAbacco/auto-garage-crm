@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { FiPrinter, FiDownload, FiBarChart2, FiFileText, FiRefreshCw } from "react-icons/fi";
+import { FiPrinter, FiDownload, FiBarChart2, FiFileText, FiRefreshCw,FiUsers } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
 import BikeAnalyticsView from "./BikeAnalyticsView";
 import BikeReportsList from "./BikeReportsList";
+import BikeClientsReport from "./BikeClientsReport";
+
 import { Toaster, toast } from "react-hot-toast";
 
 export default function BikeReports() {
@@ -17,56 +19,67 @@ export default function BikeReports() {
 
   const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
+const fetchData = async () => {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
 
-      const [invoicesRes, clientsRes, servicesRes] = await Promise.all([
-        fetch(`${base}/api/bike-invoices`, { headers }),
-        fetch(`${base}/api/bikes`, { headers }),
-        fetch(`${base}/api/bike-services`, { headers }),
-      ]);
+    const [invoicesRes, clientsRes, servicesRes] = await Promise.all([
+      fetch(`${base}/api/bike-invoices`, { headers }),
+      fetch(`${base}/api/bikes`, { headers }),
+      fetch(`${base}/api/bike-services`, { headers }),
+    ]);
 
-      const [invoicesData, clientsData, servicesData] = await Promise.all([
-        invoicesRes.json(),
-        clientsRes.json(),
-        servicesRes.json(),
-      ]);
+    const [invoicesData, clientsData, servicesData] = await Promise.all([
+      invoicesRes.json(),
+      clientsRes.json(),
+      servicesRes.json(),
+    ]);
 
-      setInvoices(invoicesData || []);
-      setClients(clientsData.data || []);
-      setServices(servicesData.services || servicesData || []);
+    // ✅ SAFE DATA NORMALIZATION
+    const safeInvoices = Array.isArray(invoicesData) ? invoicesData : [];
 
-      const paidInvoices = invoicesData.filter(i => i.status === "Paid");
-      const pendingInvoices = invoicesData.filter(i => i.status === "Pending");
+    const safeClients = Array.isArray(clientsData)
+      ? clientsData
+      : clientsData?.data || [];
 
-      const revenueSummary = {
-        totalRevenue: invoicesData.reduce((s, i) => s + Number(i.grandTotal || 0), 0),
+    const safeServices = Array.isArray(servicesData?.services)
+      ? servicesData.services
+      : Array.isArray(servicesData)
+      ? servicesData
+      : [];
+
+    // ✅ SET STATE ONLY ONCE
+    setInvoices(safeInvoices);
+    setClients(safeClients);
+    setServices(safeServices);
+
+    const paidInvoices = safeInvoices.filter(i => i.status === "Paid");
+    const pendingInvoices = safeInvoices.filter(i => i.status === "Pending");
+
+    setSummary({
+      revenueSummary: {
+        totalRevenue: safeInvoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0),
         paidRevenue: paidInvoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0),
         pendingRevenue: pendingInvoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0),
-      };
+      },
+      serviceSummary: {
+        totalServices: safeServices.length,
+        completedServices: safeServices.filter(s => s.status === "Paid").length,
+        pendingServices: safeServices.filter(s => s.status === "Pending").length,
+      },
+    });
 
-      const serviceSummary = {
-        totalServices: servicesData.length,
-        completedServices: servicesData.filter(s => s.status === "Paid").length,
-        pendingServices: servicesData.filter(s => s.status === "Pending").length,
-        averageServiceCost:
-          servicesData.reduce((s, x) => s + Number(x.cost || 0), 0) /
-          (servicesData.length || 1),
-      };
-
-      setSummary({ revenueSummary, serviceSummary });
-      toast.success("Reports loaded successfully");
-
-    } catch (err) {
-      setError("Failed to load bike reports");
-      toast.error("Failed to load reports");
-    } finally {
-      setLoading(false); 
-    }
-  };
+    toast.success("Reports loaded successfully");
+  } catch (err) {
+    console.error(err);
+    setError("Failed to load bike reports");
+    toast.error("Failed to load reports");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchData();
@@ -156,6 +169,21 @@ export default function BikeReports() {
             <FiFileText size={20} />
             Reports
           </button>
+
+          <button
+            onClick={() => toggleMode("clients")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
+              mode === "clients"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105"
+                : isDark
+                ? "text-gray-400 hover:text-white hover:bg-gray-700"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            }`}
+          >
+            <FiUsers size={20} />
+            Clients
+          </button>
+
         </div>
 
         {/* Action Buttons */}
@@ -197,24 +225,34 @@ export default function BikeReports() {
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="animate-fade-in">
-        {mode === "analytics" ? (
-          <BikeAnalyticsView
-            invoices={invoices}
-            services={services}
-            clients={clients}
-            isDark={isDark}
-          />
-        ) : (
-          <BikeReportsList
-            invoices={invoices}
-            clients={clients}
-            services={services}
-            isDark={isDark}
-          />
-        )}
-      </div>
+{/* Content Area */}
+<div className="animate-fade-in">
+  {mode === "analytics" && (
+    <BikeAnalyticsView
+      invoices={invoices}
+      services={services}
+      clients={clients}
+      isDark={isDark}
+    />
+  )}
+
+  {mode === "reports" && (
+    <BikeReportsList
+      invoices={invoices}
+      clients={clients}
+      services={services}
+      isDark={isDark}
+    />
+  )}
+
+  {mode === "clients" && (
+    <BikeClientsReport
+      clients={clients}
+      isDark={isDark}
+    />
+  )}
+</div>
+
     </div>
   );
 }

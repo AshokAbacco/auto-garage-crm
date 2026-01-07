@@ -1,3 +1,4 @@
+// server/middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import prisma from "../models/prismaClient.js";
@@ -17,6 +18,21 @@ export const protect = async (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    /**
+     * =====================================
+     * 🧑‍🔧 BIKE TEAM AUTH
+     * =====================================
+     */
+    if (decoded.type === "bike_team") {
+      req.user = {
+        id: decoded.id,
+        type: "bike_team",
+        ownerId: decoded.ownerId,
+        teamId: decoded.teamId,
+      };
+      return next();
+    }
 
     // ======================================================
     // CAR STAFF AUTH (inherits owner plan)
@@ -73,9 +89,11 @@ export const protect = async (req, res, next) => {
       return next();
     }
 
-    // ======================================================
-    // OWNER / ADMIN / USER AUTH
-    // ======================================================
+    /**
+     * =====================================
+     * 👑 OWNER AUTH (User table)
+     * =====================================
+     */
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: {
@@ -96,7 +114,7 @@ export const protect = async (req, res, next) => {
 
     req.user = {
       ...user,
-      type: "owner", // ✅ explicit owner type
+      type: "owner", // 🔑 VERY IMPORTANT
     };
 
     return next();

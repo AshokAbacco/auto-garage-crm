@@ -19,7 +19,7 @@ const OCRHistory = ({ isDark, historyData, onDelete, onClear }) => {
                     <FiClock size={18} />
                     {showHistory
                         ? "Hide History"
-                        : `Show History (${historyData.length})`}
+                        : `Show History (${Array.isArray(historyData) ? historyData.length : 0})`}
                 </button>
             </div>
 
@@ -52,7 +52,14 @@ const OCRHistory = ({ isDark, historyData, onDelete, onClear }) => {
                                 </div>
                             </div>
                             <button
-                                onClick={onClear}
+                                  onClick={() => {
+                                    const confirmed = window.confirm(
+                                    "Are you sure you want to clear all OCR history for this bike?"
+                                    );
+                                    if (confirmed) {
+                                    onClear();
+                                    }
+                                }}
                                 className="bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-xl font-semibold flex items-center gap-2 border border-white/30"
                             >
                                 <FiTrash2 size={18} /> Clear All
@@ -141,7 +148,14 @@ const OCRHistory = ({ isDark, historyData, onDelete, onClear }) => {
 
                                                 {/* Delete */}
                                                 <button
-                                                    onClick={() => onDelete(item.id)}
+                                                    onClick={() => {
+                                                        const confirmed = window.confirm(
+                                                        "Are you sure you want to delete this OCR record? This action cannot be undone."
+                                                        );
+                                                        if (confirmed) {
+                                                        onDelete(item.id);
+                                                        }
+                                                    }}
                                                     className={`p-3 rounded-xl transition-all ${isDark
                                                         ? "bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-700"
                                                         : "bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"

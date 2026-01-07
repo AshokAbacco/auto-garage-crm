@@ -56,8 +56,8 @@ export const registerUser = async (req, res) => {
     const phone = latestPayment?.phone || null;
 
     const planExpiry = latestPayment?.planExpiry
-      ? new Date(latestPayment.planExpiry)
-      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  ? new Date(latestPayment.planExpiry)
+  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     // Check duplicates
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
@@ -144,7 +144,7 @@ export const registerUser = async (req, res) => {
  * LOGIN USER
  * =============================================
  */
-
+ 
 export const loginUser = async (req, res) => {
   try {
     const { identifier, password, crmType } = req.body;

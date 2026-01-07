@@ -1,57 +1,66 @@
 import prisma from "../models/prismaClient.js";
 
 /* ============================
-   CREATE STAFF
+   CREATE SALARY ENTRY
 ============================ */
 export const createBikeStaff = async (req, res) => {
   try {
     const {
-      name,
-      role,
-      baseSalary,
+      staffId,
+      annualSalary,
       bonus = 0,
       leaves = 0,
       deductions = 0,
-      joiningDate,
       status = "pending"
     } = req.body;
 
-    const staff = await prisma.bikeStaff.create({
+    // Verify staff exists and belongs to user
+    const staff = await prisma.staff.findUnique({
+      where: { id: Number(staffId) },
+    });
+
+    if (!staff || staff.userId !== req.user.id) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    const salaryEntry = await prisma.bikeStaff.create({
       data: {
-        name,
-        role,
-        baseSalary: Number(baseSalary),
+        staffId: Number(staffId),
+        annualSalary: Number(annualSalary),
         bonus: Number(bonus),
         leaves: Number(leaves),
         deductions: Number(deductions),
-        joiningDate: new Date(joiningDate),
         status,
-        userId: req.user.id
-        // ❌ DO NOT send createdDate / createdAt
-        // ✅ Prisma auto handles createdAt
-      }
+        userId: req.user.id,
+      },
+      include: {
+        staff: true,
+      },
     });
 
-    res.json(staff);
+    res.json(salaryEntry);
   } catch (err) {
     console.error("createBikeStaff error:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
-
 /* ============================
-   GET ALL STAFF
+   GET ALL SALARY ENTRIES
 ============================ */
 export const getBikeStaff = async (req, res) => {
   try {
-    const staff = await prisma.bikeStaff.findMany({
+    await autoManageSalaryStatus();
+
+    const salaries = await prisma.bikeStaff.findMany({
       where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" }
+      include: {
+        staff: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
 
-    // ✅ ALWAYS return array
-    res.json(Array.isArray(staff) ? staff : []);
+    res.json(salaries);
   } catch (err) {
     console.error("getBikeStaff error:", err);
     res.status(500).json([]);
@@ -59,16 +68,33 @@ export const getBikeStaff = async (req, res) => {
 };
 
 /* ============================
-   UPDATE STAFF
+   UPDATE SALARY ENTRY
 ============================ */
 export const updateBikeStaff = async (req, res) => {
   try {
-    const staff = await prisma.bikeStaff.update({
+    const {
+      annualSalary,
+      bonus,
+      leaves,
+      deductions,
+    } = req.body;
+
+    const salary = await prisma.bikeStaff.update({
       where: { id: Number(req.params.id) },
-      data: req.body
+      data: {
+        annualSalary: Number(annualSalary),
+        bonus: Number(bonus),
+        leaves: Number(leaves),
+        deductions: Number(deductions),
+      },
+      include: {
+        staff: true,
+      },
     });
-    res.json(staff);
+
+    res.json(salary);
   } catch (err) {
+    console.error("updateBikeStaff error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -78,69 +104,72 @@ export const updateBikeStaff = async (req, res) => {
 ============================ */
 export const payBikeStaffSalary = async (req, res) => {
   try {
-    const staff = await prisma.bikeStaff.findUnique({
-      where: { id: Number(req.params.id) }
+    const salary = await prisma.bikeStaff.findUnique({
+      where: { id: Number(req.params.id) },
     });
 
-    if (!staff) {
-      return res.status(404).json({ message: "Staff not found" });
+    if (!salary) {
+      return res.status(404).json({ message: "Salary entry not found" });
     }
 
-    // 1️⃣ Calculate net salary
+    // ===== Salary Calculation =====
     const DAYS_IN_YEAR = 365;
+    const perDaySalary = salary.annualSalary / DAYS_IN_YEAR;
+    const leaveDeduction = Math.round(perDaySalary * salary.leaves);
+    const monthlySalary = Math.round(salary.annualSalary / 12);
 
-    const annualSalary = staff.baseSalary * 12;
-    const perDaySalary = annualSalary / DAYS_IN_YEAR;
-    const leaveDeduction = perDaySalary * staff.leaves;
-
-    const netSalary =
-      staff.baseSalary + staff.bonus - leaveDeduction;
-
+    const netSalary = Math.round(
+      monthlySalary + salary.bonus - leaveDeduction
+    );
 
     const today = new Date();
     const month = today.toLocaleString("default", {
       month: "short",
-      year: "numeric"
+      year: "numeric",
     });
 
-    // 2️⃣ Save to salary history
-    await prisma.bikeSalaryHistory.create({
-      data: {
-        bikeStaffId: staff.id,
+    // ===== Check existing history (HOLD) =====
+    const existingHistory = await prisma.bikeSalaryHistory.findFirst({
+      where: {
+        bikeStaffId: salary.id,
         month,
-        baseSalary: staff.baseSalary,
-        bonus: staff.bonus,
-        deductions: Math.round(leaveDeduction),
-        netSalary,
-        paidDate: today
-      }
+      },
     });
 
-    // 3️⃣ Mark CURRENT record as paid (freeze it)
+    if (existingHistory) {
+      // 🔄 HOLD → PAID
+      await prisma.bikeSalaryHistory.update({
+        where: { id: existingHistory.id },
+        data: {
+          baseSalary: monthlySalary,
+          bonus: salary.bonus,
+          deductions: leaveDeduction,
+          netSalary,
+          paidDate: today,
+        },
+      });
+    } else {
+      // ✅ Paid before day 6 → create PAID history
+      await prisma.bikeSalaryHistory.create({
+        data: {
+          bikeStaffId: salary.id,
+          month,
+          baseSalary: monthlySalary,
+          bonus: salary.bonus,
+          deductions: leaveDeduction,
+          netSalary,
+          paidDate: today,
+        },
+      });
+    }
+
+    // ===== Update salary status =====
     await prisma.bikeStaff.update({
-      where: { id: staff.id },
+      where: { id: salary.id },
       data: {
         status: "paid",
-        lastPaid: today
-      }
-    });
-
-    // 4️⃣ CREATE NEXT MONTH ENTRY (RESET VALUES)
-    await prisma.bikeStaff.create({
-      data: {
-        userId: staff.userId,
-        name: staff.name,
-        role: staff.role,
-
-        baseSalary: staff.baseSalary, // ✅ SAME
-        bonus: 0,                     // ✅ RESET
-        leaves: 0,                    // ✅ RESET
-        deductions: 0,                // ✅ RESET
-
-        status: "pending",
-        joiningDate: staff.joiningDate,
-        createdAt: new Date()
-      }
+        lastPaid: today,
+      },
     });
 
     res.json({ success: true });
@@ -152,46 +181,172 @@ export const payBikeStaffSalary = async (req, res) => {
 
 
 /* ============================
-   SALARY HISTORY
+   AUTO MANAGE SALARY STATUS
 ============================ */
-export const getBikeSalaryHistory = async (req, res) => {
-  try {
-    const history = await prisma.bikeSalaryHistory.findMany({
-      where: { bikeStaffId: Number(req.params.id) },
-      orderBy: { paidDate: "desc" }
+export const autoManageSalaryStatus = async () => {
+  const now = new Date();
+  const currentDay = now.getDate();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const currentMonthLabel = now.toLocaleString("default", {
+    month: "short",
+    year: "numeric",
+  });
+
+  const salaryList = await prisma.bikeStaff.findMany();
+
+  for (const salary of salaryList) {
+
+    /* =========================
+       RESET FOR NEW MONTH
+       (PAID OR UNPAID)
+    ========================= */
+    if (salary.lastUpdatedMonth !== `${currentMonth}-${currentYear}`) {
+      await prisma.bikeStaff.update({
+        where: { id: salary.id },
+        data: {
+          status: "pending",
+          bonus: 0,
+          leaves: 0,
+          deductions: 0,
+          lastPaid: null,
+          lastUpdatedMonth: `${currentMonth}-${currentYear}`,
+        },
+      });
+    }
+
+    /* =========================
+       HOLD LOGIC (UNPAID AFTER DAY 5)
+    ========================= */
+    if (currentDay < 6) continue;
+
+    // If already paid this month → skip hold
+    if (salary.status === "paid") continue;
+
+    const existingHistory = await prisma.bikeSalaryHistory.findFirst({
+      where: {
+        bikeStaffId: salary.id,
+        month: currentMonthLabel,
+      },
     });
-    res.json(history);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+
+    if (existingHistory) continue;
+
+    const monthlySalary = Math.round(salary.annualSalary / 12);
+    const netSalary = Math.round(
+      monthlySalary + salary.bonus - salary.deductions
+    );
+
+    await prisma.bikeSalaryHistory.create({
+      data: {
+        bikeStaffId: salary.id,
+        month: currentMonthLabel,
+        baseSalary: monthlySalary,
+        bonus: salary.bonus,
+        deductions: salary.deductions,
+        netSalary,
+        paidDate: null, // HOLD
+      },
+    });
   }
 };
 
 
 /* ============================
-   DELETE SALARY (ONLY PENDING)
+   SALARY HISTORY
+============================ */
+export const getBikeSalaryHistory = async (req, res) => {
+  try {
+    // Note: req.params.id is the staffId (from Staff table), not bikeStaff id
+    const staffId = Number(req.params.id);
+    
+    // Get all salary entries for this staff
+    const salaryEntries = await prisma.bikeStaff.findMany({
+      where: { staffId },
+    });
+
+    if (salaryEntries.length === 0) {
+      return res.json([]);
+    }
+
+    // Get history for all salary entries of this staff
+    const bikeStaffIds = salaryEntries.map(entry => entry.id);
+    
+    const history = await prisma.bikeSalaryHistory.findMany({
+      where: {
+        bikeStaffId: {
+          in: bikeStaffIds,
+        },
+      },
+      orderBy: { paidDate: "desc" },
+    });
+
+    res.json(history);
+  } catch (err) {
+    console.error("getBikeSalaryHistory error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* ============================
+   DELETE SALARY ENTRY
 ============================ */
 export const deleteBikeStaff = async (req, res) => {
   try {
-    const staff = await prisma.bikeStaff.findUnique({
-      where: { id: Number(req.params.id) }
+    const salaryId = Number(req.params.id);
+
+    const salary = await prisma.bikeStaff.findUnique({
+      where: { id: salaryId },
+      include: {
+        salaryHistory: true,
+      },
     });
 
-    if (!staff) {
+    if (!salary) {
       return res.status(404).json({ message: "Salary record not found" });
     }
 
-    // ❌ BLOCK delete if not pending
-    if (staff.status !== "pending") {
-      return res.status(400).json({
-        message: "Only pending salary can be deleted"
-      });
+    // Pending → always allowed
+    if (salary.status === "pending") {
+      await prisma.bikeStaff.delete({ where: { id: salaryId } });
+      return res.json({ success: true });
     }
 
-    await prisma.bikeStaff.delete({
-      where: { id: staff.id }
-    });
+    // Paid → conditional delete
+    if (salary.status === "paid") {
+      if (!salary.lastPaid) {
+        return res.status(400).json({
+          message: "Paid record missing payment date",
+        });
+      }
 
-    res.json({ success: true });
+      const lastPaidDate = new Date(salary.lastPaid);
+      const now = new Date();
+
+      const sameMonth =
+        lastPaidDate.getMonth() === now.getMonth() &&
+        lastPaidDate.getFullYear() === now.getFullYear();
+
+      if (!sameMonth) {
+        return res.status(400).json({
+          message: "Paid salary can only be deleted in the same month",
+        });
+      }
+
+      // Remove salary history first
+      await prisma.bikeSalaryHistory.deleteMany({
+        where: { bikeStaffId: salaryId },
+      });
+
+      await prisma.bikeStaff.delete({ where: { id: salaryId } });
+
+      return res.json({ success: true });
+    }
+
+    return res.status(400).json({
+      message: "This salary record cannot be deleted",
+    });
   } catch (err) {
     console.error("deleteBikeStaff error:", err);
     res.status(500).json({ message: err.message });

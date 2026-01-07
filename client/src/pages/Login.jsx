@@ -1,5 +1,6 @@
 //login.jsx
 import React, { useState, useEffect, useRef } from "react";
+
 import {
   Car,
   Bike,
@@ -221,8 +222,6 @@ export default function ModernLogin() {
     if (error) setError("");
   };
 
-  
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -247,12 +246,40 @@ export default function ModernLogin() {
 
       // 👷 STAFF LOGIN
       if (loginMode === "staff") {
-        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
-        payload = {
-          email: formData.identifier.trim().toLowerCase(),
-          password: formData.password,
-          crmType: crmType.toUpperCase(),
-        };
+        // 🚿 WASH STAFF LOGIN
+        if (crmType === "wash") {
+          loginUrl = `${
+            import.meta.env.VITE_API_BASE_URL
+          }/api/teams/wash-staff/login`;
+          payload = {
+            email: formData.identifier.trim().toLowerCase(),
+            password: formData.password,
+          };
+        }
+
+        // 🚗 CAR STAFF LOGIN
+        else if (crmType === "car") {
+          loginUrl = `${
+            import.meta.env.VITE_API_BASE_URL
+          }/api/staff-auth/login`;
+          payload = {
+            email: formData.identifier.trim().toLowerCase(),
+            password: formData.password,
+            crmType: "CAR",
+          };
+        }
+
+        // 🏍 BIKE STAFF / FUTURE STAFF (UNCHANGED FALLBACK)
+        else {
+          loginUrl = `${
+            import.meta.env.VITE_API_BASE_URL
+          }/api/staff-auth/login`;
+          payload = {
+            email: formData.identifier.trim().toLowerCase(),
+            password: formData.password,
+            crmType: crmType.toUpperCase(),
+          };
+        }
       }
 
       // 👤 OWNER LOGIN
@@ -665,31 +692,82 @@ export default function ModernLogin() {
                           {error}
                         </div>
                       )}
-                      <div className="flex mb-4 bg-white/10 rounded-xl p-1">
+                      <div className="relative flex w-full p-1 bg-gray-900 rounded-xl border border-white/10 shadow-2xl">
+                        {/* 1. THE GLOWING BACKGROUND (The Slider) */}
+                        <div
+                          className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-lg shadow-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+        ${
+          loginMode === "staff"
+            ? "translate-x-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-teal-500/25" // Staff Color (Green/Teal)
+            : "translate-x-0 bg-gradient-to-r from-violet-600 to-indigo-600 shadow-indigo-500/25" // Owner Color (Purple/Indigo)
+        }`}
+                        >
+                          {/* Adds a subtle sheen effect on top of the gradient */}
+                          <div className="absolute inset-0 bg-white/10 rounded-lg"></div>
+                        </div>
+
+                        {/* 2. OWNER BUTTON */}
                         <button
                           type="button"
                           onClick={() => setLoginMode("owner")}
-                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
-      ${
-        loginMode === "owner"
-          ? "bg-white text-black shadow"
-          : "text-white/70 hover:text-white"
-      }`}
+                          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold tracking-wide transition-colors duration-300
+        ${
+          loginMode === "owner"
+            ? "text-white drop-shadow-md"
+            : "text-gray-500 hover:text-gray-300"
+        }`}
                         >
-                          Owner Login
+                          {/* Crown Icon */}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`transition-transform duration-300 ${
+                              loginMode === "owner" ? "scale-110" : "scale-100"
+                            }`}
+                          >
+                            <path d="m2 4 3 12h14l3-12-6 7-4-3-4 3-6-7z" />
+                          </svg>
+                          Owner
                         </button>
 
+                        {/* 3. STAFF BUTTON */}
                         <button
                           type="button"
                           onClick={() => setLoginMode("staff")}
-                          className={`flex-1 py-2 rounded-lg font-semibold transition-all
-      ${
-        loginMode === "staff"
-          ? "bg-white text-black shadow"
-          : "text-white/70 hover:text-white"
-      }`}
+                          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold tracking-wide transition-colors duration-300
+        ${
+          loginMode === "staff"
+            ? "text-white drop-shadow-md"
+            : "text-gray-500 hover:text-gray-300"
+        }`}
                         >
-                          Staff Login
+                          {/* ID Badge Icon */}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`transition-transform duration-300 ${
+                              loginMode === "staff" ? "scale-110" : "scale-100"
+                            }`}
+                          >
+                            <rect width="18" height="12" x="3" y="8" rx="2" />
+                            <path d="M12 11v6" />
+                            <path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                          Staff
                         </button>
                       </div>
 

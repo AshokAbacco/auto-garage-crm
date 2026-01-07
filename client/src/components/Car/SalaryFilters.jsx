@@ -1,4 +1,4 @@
-import { Calendar, Sparkles, ChevronDown } from "lucide-react";
+import { Calendar, Sparkles, ChevronDown, TrendingUp } from "lucide-react";
 
 const MONTHS = [
   { label: "January", value: 1 },
@@ -21,6 +21,8 @@ export default function SalaryFilters({
   onMonthChange,
   onYearChange,
   onGenerate,
+  onDownload,
+  disabled,
 }) {
   return (
     <div className="flex flex-col sm:flex-row items-end gap-4 w-full">
@@ -68,13 +70,27 @@ export default function SalaryFilters({
       </div>
 
       {/* Action Button */}
-      <div className="w-full sm:w-auto sm:ml-auto">
+      <div className="w-full flex gap-4 sm:w-auto sm:ml-auto">
         <button
           onClick={onGenerate}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
         >
           <Sparkles className="w-4 h-4" />
           <span>Generate / Prepare</span>
+        </button>
+        <button
+          onClick={onDownload}
+          disabled={disabled}
+          className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all
+    ${
+      disabled
+        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+        : "bg-green-600 hover:bg-green-700 text-white shadow-emerald-500/30"
+    }
+  `}
+        >
+          <TrendingUp className="w-4 h-4" />
+          Download Report
         </button>
       </div>
     </div>

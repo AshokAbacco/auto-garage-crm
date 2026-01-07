@@ -351,7 +351,7 @@ export default function StaffManagement() {
                       }`}
                     >
                       <Calendar size={14} className="opacity-70" />
-                      <span>{formatDate(s.created)}</span>
+                      <span>{formatDate(s.createdAt || s.joinDate)}</span>
                     </div>
                   </td>
 

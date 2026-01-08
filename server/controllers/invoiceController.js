@@ -13,13 +13,21 @@ function getOwnerUserId(req) {
 ============================================================ */
 export const getInvoices = async (req, res) => {
   try {
+    const ownerUserId = getOwnerUserId(req);
+
     const invoices = await prisma.invoice.findMany({
       where: {
-        client: {
-          userId: getOwnerUserId(req),
-        },
+        ownerUserId, // ✅ DIRECT & CORRECT
       },
       include: {
+        ownerUser: {
+          select: {
+            companyName: true,
+            email: true,
+            phone: true,
+            // gstNumber: true,
+          },
+        },
         client: {
           select: {
             id: true,
@@ -50,6 +58,7 @@ export const getInvoices = async (req, res) => {
 };
 
 
+
 /* ============================================================
    📄 Get Invoice by ID
    @route   GET /api/invoices/:id
@@ -58,6 +67,7 @@ export const getInvoices = async (req, res) => {
 export const getInvoiceById = async (req, res) => {
   try {
     const { id } = req.params;
+    const ownerUserId = getOwnerUserId(req);
 
     if (!id || isNaN(Number(id))) {
       return res.status(400).json({ message: "Invalid invoice ID" });
@@ -66,11 +76,18 @@ export const getInvoiceById = async (req, res) => {
     const invoice = await prisma.invoice.findFirst({
       where: {
         id: Number(id),
-        client: {
-          userId: getOwnerUserId(req),
-        },
+        ownerUserId, // ✅ DIRECT & CORRECT
       },
       include: {
+        ownerUser: {
+          select: {
+            companyName: true,
+            email: true,
+            phone: true,
+            // gstNumber: true,
+            // address: true,
+          },
+        },
         client: {
           select: {
             id: true,
@@ -105,7 +122,6 @@ export const getInvoiceById = async (req, res) => {
   }
 };
 
-
 /* ============================================================
    ➕ Create Invoice
    @route   POST /api/invoices
@@ -128,6 +144,9 @@ export const createInvoice = async (req, res) => {
       costItems,
     } = req.body;
 
+    const ownerUserId = getOwnerUserId(req);
+    const createdById = req.user?.id ?? null;
+
     /* =======================
        Validation
     ======================= */
@@ -147,17 +166,16 @@ export const createInvoice = async (req, res) => {
     const client = await prisma.client.findFirst({
       where: {
         id: Number(clientId),
-        userId: getOwnerUserId(req),
+        userId: ownerUserId,
       },
     });
-
 
     if (!client) {
       return res.status(403).json({ message: "Unauthorized client" });
     }
 
     /* =======================
-       Calculate totals (SAME AS BILLING FORM)
+       Calculate totals
     ======================= */
     let grandTotal = 0;
 
@@ -193,6 +211,10 @@ export const createInvoice = async (req, res) => {
       data: {
         invoiceNumber: `INV-${Date.now()}`,
         clientId: Number(clientId),
+
+        ownerUserId,
+        createdById,
+
         vehicle: vehicle || null,
         mechanic: mechanic || null,
 
@@ -232,7 +254,6 @@ export const createInvoice = async (req, res) => {
   }
 };
 
-
 /* ============================================================
    ✏️ Update Invoice
    @route   PUT /api/invoices/:id
@@ -241,6 +262,7 @@ export const createInvoice = async (req, res) => {
 export const updateInvoice = async (req, res) => {
   try {
     const { id } = req.params;
+    const ownerUserId = getOwnerUserId(req);
 
     if (!id || isNaN(Number(id))) {
       return res.status(400).json({ message: "Invalid invoice ID" });
@@ -249,13 +271,12 @@ export const updateInvoice = async (req, res) => {
     const existing = await prisma.invoice.findFirst({
       where: {
         id: Number(id),
-        client: { userId: getOwnerUserId(req) },
+        ownerUserId, // ✅ CORRECT
       },
     });
 
-
     if (!existing) {
-      return res.status(404).json({ message: "Invoice not found" });
+      return res.status(404).json({ message: "Invoice not found or access denied" });
     }
 
     const {
@@ -304,21 +325,18 @@ export const updateInvoice = async (req, res) => {
 
     const finalAmount = Math.floor(grandTotal - Number(discount || 0));
 
-    /* =======================
-       Update Invoice
-    ======================= */
     await prisma.invoice.update({
       where: { id: Number(id) },
       data: {
         clientId: clientId ? Number(clientId) : existing.clientId,
-        vehicle: vehicle || existing.vehicle,
-        mechanic: mechanic || existing.mechanic,
+        vehicle: vehicle ?? existing.vehicle,
+        mechanic: mechanic ?? existing.mechanic,
 
         discount: Number(discount || 0),
         grandTotal: finalAmount,
 
-        paymentMode: paymentMode || existing.paymentMode,
-        status: status || existing.status,
+        paymentMode: paymentMode ?? existing.paymentMode,
+        status: status ?? existing.status,
         paidAt: status === "Paid" ? new Date() : existing.paidAt,
         dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
 
@@ -336,7 +354,7 @@ export const updateInvoice = async (req, res) => {
       where: { invoiceId: Number(id) },
     });
 
-    if (normalizedItems.length > 0) {
+    if (normalizedItems.length) {
       await prisma.invoiceCostItem.createMany({
         data: normalizedItems,
       });
@@ -345,6 +363,14 @@ export const updateInvoice = async (req, res) => {
     const updated = await prisma.invoice.findUnique({
       where: { id: Number(id) },
       include: {
+        ownerUser: {
+          select: {
+            companyName: true,
+            email: true,
+            phone: true,
+            gstNumber: true,
+          },
+        },
         client: true,
         invoiceCostItems: true,
       },
@@ -363,7 +389,6 @@ export const updateInvoice = async (req, res) => {
   }
 };
 
-
 /* ============================================================
    🗑️ Delete Invoice
    @route   DELETE /api/invoices/:id
@@ -372,38 +397,34 @@ export const updateInvoice = async (req, res) => {
 export const deleteInvoice = async (req, res) => {
   try {
     const { id } = req.params;
+    const ownerUserId = getOwnerUserId(req);
 
     if (!id || isNaN(Number(id))) {
       return res.status(400).json({ message: "Invalid invoice ID" });
     }
 
-    // Check that the invoice belongs to a client of the authenticated user
     const invoice = await prisma.invoice.findFirst({
       where: {
-        id: parseInt(id),
-        client: {
-          userId: getOwnerUserId(req), // Ensure invoice belongs to current user's client
-        },
+        id: Number(id),
+        ownerUserId, // ✅ CORRECT
       },
     });
 
     if (!invoice) {
-      return res
-        .status(404)
-        .json({ message: "Invoice not found or access denied" });
+      return res.status(404).json({ message: "Invoice not found or access denied" });
     }
 
-    // Delete the invoice (cascade will delete related cost items)
     await prisma.invoice.delete({
-      where: { id: parseInt(id) },
+      where: { id: Number(id) },
     });
 
     res.status(200).json({ message: "🗑️ Invoice deleted successfully" });
   } catch (error) {
     console.error("❌ Error deleting invoice:", error);
-    res
-      .status(500)
-      .json({ message: "Error deleting invoice", error: String(error) });
+    res.status(500).json({
+      message: "Error deleting invoice",
+      error: String(error),
+    });
   }
 };
 
@@ -560,10 +581,13 @@ export const createInvoiceFromService = async (req, res) => {
       return res.status(400).json({ message: "Invalid service ID" });
     }
 
+    const ownerUserId = getOwnerUserId(req);
+    const createdById = req.user?.id ?? null;
+
     const service = await prisma.service.findFirst({
       where: {
         id: Number(id),
-        client: { userId: getOwnerUserId(req) },
+        client: { userId: ownerUserId },
       },
       include: {
         client: true,
@@ -579,14 +603,14 @@ export const createInvoiceFromService = async (req, res) => {
         .json({ message: "Service not found or access denied" });
     }
 
-    if (!service.serviceCostItems || service.serviceCostItems.length === 0) {
+    if (!service.serviceCostItems.length) {
       return res.status(400).json({
         message: "Service has no cost items to generate invoice",
       });
     }
 
     /* =======================
-       Recalculate totals (IMPORTANT)
+       Calculate totals
     ======================= */
     let grandTotal = 0;
 
@@ -609,21 +633,20 @@ export const createInvoiceFromService = async (req, res) => {
       };
     });
 
-    const invoiceNumber = `INV-${Date.now()}`;
-
     /* =======================
        Create Invoice
     ======================= */
     const invoice = await prisma.invoice.create({
       data: {
-        invoiceNumber,
+        invoiceNumber: `INV-${Date.now()}`,
         clientId: service.clientId,
-        userId: getOwnerUserId(req),
+
+        ownerUserId,
+        createdById,
 
         vehicle: `${service.client.vehicleMake} ${service.client.vehicleModel}`,
         mechanic: service.mechanic || null,
 
-        tax: 0,
         discount: 0,
         grandTotal,
 
@@ -667,5 +690,6 @@ export const createInvoiceFromService = async (req, res) => {
     });
   }
 };
+
 
 

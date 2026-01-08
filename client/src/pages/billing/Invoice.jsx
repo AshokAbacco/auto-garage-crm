@@ -134,7 +134,9 @@ export default function Invoice({ previewData }) {
     ? { ...previewData, invoiceCostItems: previewData?.costItems || [] }
     : invoice || {};
   // const owner = isPreview ? previewData?.userProfile : userProfile;
-  const owner = previewData?.userProfile || userProfile;
+  // const owner = previewData?.userProfile || userProfile;
+  const owner = isPreview ? previewData?.userProfile : invoiceData?.ownerUser;
+
 
   const c = invoiceData?.client || {};
   const items = invoiceData?.invoiceCostItems || [];

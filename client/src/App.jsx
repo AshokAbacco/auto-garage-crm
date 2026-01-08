@@ -9,7 +9,7 @@ import PricingPage from "./payment/PricingPage.jsx";
 import ScrollToTop from "./components/ScrollToTop.jsx";
 /* Auth / App */
 
-import Login from "./pages/Login.jsx";
+import Login from "./pages/Login/Login.jsx";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
@@ -214,21 +214,16 @@ function App() {
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
 
-           
           {/* ================= SALARY MODULE ================= */}
           <Route path="/salary-login" element={<SalaryLogin />} />
           <Route path="/team-register" element={<TeamRegister />} />
           <Route path="/salary-register" element={<SalaryRegister />} />
 
-         
-            {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
-            <Route path="/salary-manage" element={<StaffSalaryContainer />} />
-          
+          {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
+          <Route path="/salary-manage" element={<StaffSalaryContainer />} />
         </Route>
 
         {/* Washing CRM Routes */}
-        
-         
 
         {/* ================= WASHING CRM ================= */}
         <Route element={<WashingLayout />}>

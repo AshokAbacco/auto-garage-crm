@@ -57,7 +57,6 @@ router.post("/create-subscription", async (req, res) => {
   try {
     const { plan, billingPeriod, customer } = req.body || {};
 
-    /* ---------------- VALIDATION ---------------- */
     if (!plan?.name || typeof plan.numericPrice !== "number") {
       return res.status(400).json({
         success: false,
@@ -86,7 +85,6 @@ router.post("/create-subscription", async (req, res) => {
       });
     }
 
-    /* ---------------- PLAN NORMALIZATION ---------------- */
     const rawPlanName = plan.name.toLowerCase().trim().replace(/\s+/g, "");
 
     const razorpayPlanId = RAZORPAY_PLAN_MAP[rawPlanName];
@@ -104,8 +102,6 @@ router.post("/create-subscription", async (req, res) => {
       premium: PlanType.PREMIUM,
     };
 
-    // const prismaPlan = prismaPlanMap[rawName];
-
     if (!prismaPlan) {
       return res.status(400).json({
         success: false,
@@ -113,20 +109,17 @@ router.post("/create-subscription", async (req, res) => {
       });
     }
 
-    /* ---------------- CHECK UPGRADE ---------------- */
     const existingPayments = await prisma.payment.findMany({
       where: { email: customer.email.toLowerCase() },
     });
 
     const isUpgrade = existingPayments.length > 0;
 
-    /* ---------------- TRIAL LOGIC ---------------- */
     let startAt;
     if (!isUpgrade && useTrial) {
       startAt = Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000);
     }
 
-    /* ---------------- RAZORPAY SUBSCRIPTION ---------------- */
     const totalCount = billingPeriod === "monthly" ? 12 : 1;
 
     const subscriptionPayload = {
@@ -154,15 +147,15 @@ router.post("/create-subscription", async (req, res) => {
       });
     }
 
-    /* ---------------- SAVE TO DB ---------------- */
     const payment = await prisma.payment.create({
       data: {
         customerName: customer.name,
         companyName: customer.companyName || null,
         email: customer.email.toLowerCase(),
         phone: customer.phone,
+        address: customer.address || null, // ✅ ADD THIS
 
-        plan: prismaPlan, // ✅ ENUM FIX
+        plan: prismaPlan,
         billingPeriod,
         amount: Number(plan.numericPrice),
 
@@ -194,9 +187,218 @@ router.post("/create-subscription", async (req, res) => {
   }
 });
 
+// router.post("/create-subscription", async (req, res) => {
+//   try {
+//     const { plan, billingPeriod, customer } = req.body || {};
+
+//     if (!plan?.name || typeof plan.numericPrice !== "number") {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Invalid plan data",
+//       });
+//     }
+
+//     if (!["monthly", "yearly"].includes(billingPeriod)) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Invalid billing period",
+//       });
+//     }
+
+//     if (!customer?.email || !customer?.name || !customer?.phone) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Invalid customer data",
+//       });
+//     }
+
+//     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+//       return res.status(500).json({
+//         success: false,
+//         error: "Razorpay keys missing",
+//       });
+//     }
+
+//     const rawPlanName = plan.name.toLowerCase().trim().replace(/\s+/g, "");
+
+//     const razorpayPlanId = RAZORPAY_PLAN_MAP[rawPlanName];
+//     const prismaPlan = PRISMA_PLAN_MAP[rawPlanName];
+
+//     if (!razorpayPlanId || !prismaPlan) {
+//       return res.status(400).json({
+//         success: false,
+//         error: `Invalid plan name: ${plan.name}`,
+//       });
+//     }
+//     const prismaPlanMap = {
+//       basic: PlanType.BASIC,
+//       standard: PlanType.STANDARD,
+//       premium: PlanType.PREMIUM,
+//     };
+
+//     if (!prismaPlan) {
+//       return res.status(400).json({
+//         success: false,
+//         error: `Invalid plan enum '${plan.name}'`,
+//       });
+//     }
+
+//     const existingPayments = await prisma.payment.findMany({
+//       where: { email: customer.email.toLowerCase() },
+//     });
+
+//     const isUpgrade = existingPayments.length > 0;
+
+//     let startAt;
+//     if (!isUpgrade && useTrial) {
+//       startAt = Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000);
+//     }
+
+//     const totalCount = billingPeriod === "monthly" ? 12 : 1;
+
+//     const subscriptionPayload = {
+//       plan_id: razorpayPlanId,
+//       total_count: totalCount,
+//       quantity: 1,
+//       customer_notify: 1,
+//       notes: {
+//         planName: plan.name,
+//         customerEmail: customer.email,
+//         customerPhone: customer.phone,
+//       },
+//     };
+
+//     if (startAt) subscriptionPayload.start_at = startAt;
+
+//     let subscription;
+//     try {
+//       subscription = await razorpay.subscriptions.create(subscriptionPayload);
+//     } catch (err) {
+//       console.error("Razorpay error:", err);
+//       return res.status(502).json({
+//         success: false,
+//         error: err?.error?.description || "Razorpay subscription failed",
+//       });
+//     }
+
+//     const payment = await prisma.payment.create({
+//       data: {
+//         customerName: customer.name,
+//         companyName: customer.companyName || null,
+//         email: customer.email.toLowerCase(),
+//         phone: customer.phone,
+
+// 	gstNumber: customer.gstNumber || null,
+// 	address: customer.address || null,
+
+//         plan: prismaPlan,
+//         billingPeriod,
+//         amount: Number(plan.numericPrice),
+
+//         referralCode: customer.referenceCode || null,
+        
+
+//         subscriptionId: subscription.id,
+//         isTrial: !!startAt,
+//         status: startAt ? "TRIAL" : "PENDING",
+//         trialEndDate: startAt ? new Date(startAt * 1000) : null,
+//         nextBillingDate: startAt ? new Date(startAt * 1000) : null,
+//       },
+//     });
+
+//     return res.json({
+//       success: true,
+//       subscription,
+//       razorpayKey: process.env.RAZORPAY_KEY_ID,
+//       isTrial: !!startAt,
+//       trialEndDate: startAt ? new Date(startAt * 1000) : null,
+//       paymentRecordId: payment.id,
+//     });
+//   } catch (err) {
+//     console.error("CREATE SUBSCRIPTION ERROR →", err);
+//     return res.status(500).json({
+//       success: false,
+//       error: err.message || "Internal Server Error",
+//     });
+//   }
+// });
+
+
+
 /* =========================================================
    2️⃣ VERIFY PAYMENT (LOCALHOST / DEV)
 ========================================================= */
+// router.post("/verify-payment-localhost", async (req, res) => {
+//   try {
+//     const { subscriptionId, paymentId } = req.body;
+
+//     if (!subscriptionId || !paymentId) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "subscriptionId & paymentId required",
+//       });
+//     }
+
+//     const subscription = await razorpay.subscriptions.fetch(subscriptionId);
+
+//     if (subscription.status === "active") {
+//       const record = await prisma.payment.findUnique({
+//         where: { subscriptionId },
+//       });
+
+//       if (!record) {
+//         return res.status(404).json({
+//           success: false,
+//           error: "Subscription not found",
+//         });
+//       }
+
+//       const paidAt = new Date();
+//       const nextBillingDate = addInterval(paidAt, record.billingPeriod);
+
+//      const updated = await prisma.$transaction(async (tx) => {
+//         const payment = await tx.payment.update({
+//           where: { subscriptionId },
+//           data: {
+//             status: "ACTIVE",
+//             isTrial: false,
+//             paidAt,
+//             paymentId,
+//             nextBillingDate,
+//             expiryDate: nextBillingDate,
+//           },
+//         });
+
+//         // 🔥 UPDATE USER PLAN
+//         await tx.user.update({
+//           where: { email: payment.email },
+//           data: {
+//             plan: payment.plan,
+//             planExpiry: nextBillingDate,
+//             companyName: payment.companyName || undefined,
+//             phone: payment.phone || undefined,
+//           },
+//         });
+
+//         return payment;
+//       });
+
+//       return res.json({ success: true, updated });
+//     }
+
+//     return res.json({
+//       success: false,
+//       error: "Subscription not active yet",
+//     });
+//   } catch (err) {
+//     console.error("verify-payment-localhost error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       error: err.message,
+//     });
+//   }
+// });
+
 router.post("/verify-payment-localhost", async (req, res) => {
   try {
     const { subscriptionId, paymentId } = req.body;
@@ -210,56 +412,62 @@ router.post("/verify-payment-localhost", async (req, res) => {
 
     const subscription = await razorpay.subscriptions.fetch(subscriptionId);
 
-    if (subscription.status === "active") {
-      const record = await prisma.payment.findUnique({
-        where: { subscriptionId },
+    if (subscription.status !== "active") {
+      return res.json({
+        success: false,
+        error: "Subscription not active yet",
       });
-
-      if (!record) {
-        return res.status(404).json({
-          success: false,
-          error: "Subscription not found",
-        });
-      }
-
-      const paidAt = new Date();
-      const nextBillingDate = addInterval(paidAt, record.billingPeriod);
-
-     const updated = await prisma.$transaction(async (tx) => {
-        const payment = await tx.payment.update({
-          where: { subscriptionId },
-          data: {
-            status: "ACTIVE",
-            isTrial: false,
-            paidAt,
-            paymentId,
-            nextBillingDate,
-            expiryDate: nextBillingDate,
-          },
-        });
-
-        // 🔥 UPDATE USER PLAN
-        await tx.user.update({
-          where: { email: payment.email },
-          data: {
-            plan: payment.plan,
-            planExpiry: nextBillingDate,
-            companyName: payment.companyName || undefined,
-            phone: payment.phone || undefined,
-          },
-        });
-
-        return payment;
-      });
-
-
-      return res.json({ success: true, updated });
     }
 
-    return res.json({
-      success: false,
-      error: "Subscription not active yet",
+    const record = await prisma.payment.findUnique({
+      where: { subscriptionId },
     });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: "Subscription not found",
+      });
+    }
+
+    const paidAt = new Date();
+    const nextBillingDate = addInterval(paidAt, record.billingPeriod);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // 1️⃣ Update payment
+      const payment = await tx.payment.update({
+        where: { subscriptionId },
+        data: {
+          status: "ACTIVE",
+          isTrial: false,
+          paidAt,
+          paymentId,
+          nextBillingDate,
+          expiryDate: nextBillingDate,
+        },
+      });
+
+      // 2️⃣ Update user (PLAN + COMPANY DATA)
+      await tx.user.update({
+        where: { email: payment.email },
+        data: {
+          plan: payment.plan,
+          planExpiry: nextBillingDate,
+
+          // Keep latest company info
+          companyName: payment.companyName || undefined,
+          phone: payment.phone || undefined,
+
+          // 🔥 Sync legal identity
+          gstNumber: payment.gstNumber || undefined,
+          address: payment.address || undefined,
+        },
+      });
+
+      return payment;
+    });
+
+    return res.json({ success: true, updated });
   } catch (err) {
     console.error("verify-payment-localhost error:", err);
     return res.status(500).json({
@@ -387,7 +595,6 @@ router.post("/razorpay-webhook", async (req, res) => {
             phone: record.phone || undefined,
           },
         });
-
 
         console.log("DB updated to ACTIVE for:", sub.id);
       } else {

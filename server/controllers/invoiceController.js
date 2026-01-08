@@ -25,7 +25,8 @@ export const getInvoices = async (req, res) => {
             companyName: true,
             email: true,
             phone: true,
-            // gstNumber: true,
+            gstNumber: true,
+            address: true,
           },
         },
         client: {
@@ -34,6 +35,7 @@ export const getInvoices = async (req, res) => {
             fullName: true,
             phone: true,
             email: true,
+            address: true,
             regNumber: true,
             vehicleMake: true,
             vehicleModel: true,
@@ -84,8 +86,8 @@ export const getInvoiceById = async (req, res) => {
             companyName: true,
             email: true,
             phone: true,
-            // gstNumber: true,
-            // address: true,
+            gstNumber: true,
+            address: true,
           },
         },
         client: {
@@ -93,6 +95,7 @@ export const getInvoiceById = async (req, res) => {
             id: true,
             fullName: true,
             phone: true,
+            address: true,
             email: true,
             regNumber: true,
             vehicleMake: true,
@@ -145,7 +148,11 @@ export const createInvoice = async (req, res) => {
     } = req.body;
 
     const ownerUserId = getOwnerUserId(req);
-    const createdById = req.user?.id ?? null;
+
+    // 👇 FIX
+    const createdById =
+      req.user.type === "staff" ? req.user.ownerId : req.user.id;
+
 
     /* =======================
        Validation
@@ -582,7 +589,11 @@ export const createInvoiceFromService = async (req, res) => {
     }
 
     const ownerUserId = getOwnerUserId(req);
-    const createdById = req.user?.id ?? null;
+
+    // 👇 FIX
+    const createdById =
+      req.user.type === "staff" ? req.user.ownerId : req.user.id;
+
 
     const service = await prisma.service.findFirst({
       where: {

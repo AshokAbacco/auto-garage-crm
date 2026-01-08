@@ -1,3 +1,4 @@
+//SalaryViewModal.jsx
 import React, { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -8,9 +9,20 @@ import {
   Loader2,
   CheckCircle2,
   Clock,
+  Phone,
+  Mail,
+  MapPin,
 } from "lucide-react";
 
-export default function SalaryViewModal({ salary,companyName, onClose }) {
+const formatMonthYear = (month, year) => {
+  if (!month || !year) return "";
+  return new Date(year, month - 1).toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
+export default function SalaryViewModal({ salary, companyProfile, onClose }) {
   const payslipRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -24,9 +36,6 @@ export default function SalaryViewModal({ salary,companyName, onClose }) {
       minimumFractionDigits: 0,
     }).format(amount || 0);
   };
-
-
-
 
   const formatDate = (date) =>
     date
@@ -117,52 +126,78 @@ export default function SalaryViewModal({ salary,companyName, onClose }) {
                     <Building2 size={36} strokeWidth={2.5} />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-black text-black mb-1 tracking-tight">
-                      {companyName || "Garage"}
+                    <h1 className="text-2xl font-black text-black mb-1 tracking-tight">
+                      {companyProfile?.companyName || "Garage"}
                     </h1>
+
+                    <div className="mt-2 max-w-[420px] space-y-1 text-xs text-gray-700 leading-relaxed">
+                      {companyProfile?.phone && (
+                        <div className="flex items-start gap-2">
+                          <Phone className="w-3.5 h-3.5 mt-0.5 text-gray-600" />
+                          <span className="break-words">
+                            {companyProfile.phone}
+                          </span>
+                        </div>
+                      )}
+
+                      {companyProfile?.email && (
+                        <div className="flex items-start gap-2">
+                          <Mail className="w-3.5 h-3.5 mt-0.5 text-gray-600" />
+                          <span className="break-words">
+                            {companyProfile.email}
+                          </span>
+                        </div>
+                      )}
+
+                      {companyProfile?.address && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-3.5 h-3.5 mt-0.5 text-gray-600 flex-shrink-0" />
+                          <span className="break-words max-w-[380px]">
+                            {companyProfile.address}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Right: Payslip Title & Status */}
                 <div className="text-right">
-                  <h2 className="text-4xl font-black text-black mb-2 tracking-tight">
+                  <h2 className="text-3xl font-black text-black mb-2 tracking-tight">
                     PAYSLIP
                   </h2>
-                  <p className="text-base text-gray-700 font-bold mb-3">
-                    {salary.month} {salary.year}
+                  <p className="text-md text-gray-700 font-semibold mb-3">
+                    Payroll Month:{" "}
+                    <span className="">
+                      {formatMonthYear(salary.month, salary.year)}
+                    </span>
                   </p>
 
                   {/* Status Badge */}
-                  {salary.status === "PAID" ? (
-                    <div
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      marginTop: "8px",
+                    }}
+                  >
+                    <span
                       style={{
-                        backgroundColor: "#16a34a",
+                        backgroundColor:
+                          salary.status === "PAID" ? "#16a34a" : "#f97316",
                         color: "#ffffff",
                         padding: "8px 18px",
                         borderRadius: "20px",
                         fontWeight: "700",
                         fontSize: "12px",
                         letterSpacing: "0.5px",
-                      }}
-                    >
-                      PAID
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        backgroundColor: "#f97316",
-                        color: "#ffffff",
-                        padding: "8px 18px",
-                        borderRadius: "20px",
-                        fontWeight: "700",
-                        fontSize: "12px",
                         display: "inline-block",
-                        letterSpacing: "0.5px",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      PENDING
-                    </div>
-                  )}
+                      {salary.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             </header>

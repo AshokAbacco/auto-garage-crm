@@ -445,6 +445,7 @@ model Payment {
 
   referralCode String?
   gstNumber    String?
+  address      String?
 
   paymentId String? @unique
   orderId   String? @unique

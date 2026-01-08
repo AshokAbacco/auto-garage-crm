@@ -204,17 +204,14 @@ export default function ModernPricingPage() {
 
       {/* Pricing Cards */}
       <section className="relative z-10 px-4 pb-10 sm:px-6">
-        <div
-          className={`max-w-4xl mx-auto gap-3
-    ${activePlans.length === 1
-              ? "flex justify-center"
-              : activePlans.length === 2
-                ? "grid grid-cols-1 md:grid-cols-2 justify-center"
-                : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            }
-  `}
-        >
-
+        <div className={`max-w-6xl mx-auto gap-6
+          ${activePlans.length === 1
+            ? "flex justify-center"
+            : activePlans.length === 2
+              ? "grid grid-cols-1 md:grid-cols-2 justify-center"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          }
+        `}>
           {activePlans.map((plan) => (
             <div
               key={plan.id}

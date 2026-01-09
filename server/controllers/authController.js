@@ -240,6 +240,13 @@ export const loginUser = async (req, res) => {
  */
 export const getProfile = async (req, res) => {
   try {
+    // 🔒 BLOCK TEAM ACCESS
+    if (req.user.type !== "owner") {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -247,14 +254,17 @@ export const getProfile = async (req, res) => {
         username: true,
         email: true,
         role: true,
-        plan: true, // ⭐ RETURN PLAN
+        plan: true,
+        companyName: true,
         profileImage: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.status(200).json(user);
   } catch (error) {
@@ -262,6 +272,7 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ message: "Error fetching profile" });
   }
 };
+
 
 /**
  * =============================================

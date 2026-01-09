@@ -202,19 +202,23 @@ export const autoManageSalaryStatus = async () => {
        RESET FOR NEW MONTH
        (PAID OR UNPAID)
     ========================= */
-    if (salary.lastUpdatedMonth !== `${currentMonth}-${currentYear}`) {
-      await prisma.bikeStaff.update({
-        where: { id: salary.id },
-        data: {
-          status: "pending",
-          bonus: 0,
-          leaves: 0,
-          deductions: 0,
-          lastPaid: null,
-          lastUpdatedMonth: `${currentMonth}-${currentYear}`,
-        },
-      });
-    }
+  if (
+  salary.lastUpdatedMonth !== `${currentMonth}-${currentYear}` &&
+  salary.status === "paid"
+) {
+  await prisma.bikeStaff.update({
+    where: { id: salary.id },
+    data: {
+      bonus: 0,
+      leaves: 0,
+      deductions: 0,
+      status: "pending",
+      lastPaid: null,
+      lastUpdatedMonth: `${currentMonth}-${currentYear}`,
+    },
+  });
+}
+
 
     /* =========================
        HOLD LOGIC (UNPAID AFTER DAY 5)

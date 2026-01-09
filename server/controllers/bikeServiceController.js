@@ -30,11 +30,9 @@ export const getBikeServices = async (req, res) => {
 
     const role = String(req.user.role).toLowerCase();
 
-    const whereCondition =
-      role === "user"
-        ? { ownerUserId }                      // 👑 admin → all team services
-        : { ownerUserId, createdById: req.user.id }; // 👤 team → own only
-
+    const whereCondition = {
+        ownerUserId,
+      };
 
     const services = await prisma.bikeService.findMany({
       where: whereCondition,
@@ -115,10 +113,10 @@ export const getBikeServicesByClient = async (req, res) => {
 
     const role = String(req.user.role).toLowerCase();
 
-    const whereCondition =
-      role === "user"
-        ? { clientId, ownerUserId }
-        : { clientId, ownerUserId, createdById: req.user.id };
+    const whereCondition = {
+      clientId,
+      ownerUserId,
+    };
 
     const services = await prisma.bikeService.findMany({
       where: whereCondition,
@@ -151,10 +149,7 @@ export const getBikeServiceById = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const service = await prisma.bikeService.findFirst({
-      where:
-        role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
       include: {
         client: true,
         category: true,
@@ -505,10 +500,7 @@ export const updateBikeService = async (req, res) => {
        VERIFY SERVICE
     ===================================================== */
     const existingService = await prisma.bikeService.findFirst({
-      where:
-        role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
     });
 
     if (!existingService) {
@@ -776,10 +768,7 @@ export const deleteBikeService = async (req, res) => {
     });
 
     const result = await prisma.bikeService.deleteMany({
-      where:
-        role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
     });
 
     if (result.count === 0) {

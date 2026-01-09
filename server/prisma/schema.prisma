@@ -95,9 +95,11 @@ model User {
   washingClients WashingClient[]
   washTeams      WashTeam[]      @relation("AdminWashTeams")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  staffs    Staff[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  staffs               Staff[]
+  washingStaffs        WashingStaff[]
+  washingStaffSalaries WashingStaffSalary[]
 }
 
 //car db schemas
@@ -974,6 +976,7 @@ model WashTeam {
   createdAt DateTime @default(now())
 }
 
+// team accounts
 model WashStaff {
   id       Int     @id @default(autoincrement())
   email    String  @unique
@@ -984,5 +987,59 @@ model WashStaff {
   team       WashTeam @relation(fields: [washTeamId], references: [id])
 
   isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// salary pages
+
+model WashingStaff {
+  id           Int     @id @default(autoincrement())
+  name         String
+  email        String?
+  phone        String?
+  address      String?
+  role         String
+  annualSalary Int
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  salaries  WashingStaffSalary[]
+  createdAt DateTime             @default(now())
+}
+
+model WashingStaffSalary {
+  id      Int          @id @default(autoincrement())
+  staffId Int
+  staff   WashingStaff @relation(fields: [staffId], references: [id])
+
+  annualSalary Int
+  bonus        Int @default(0)
+  leaves       Int @default(0)
+  deductions   Int @default(0)
+
+  status           String    @default("pending") // pending | paid
+  lastPaid         DateTime?
+  lastUpdatedMonth String?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  history   WashingSalaryHistory[]
+  createdAt DateTime               @default(now())
+}
+
+model WashingSalaryHistory {
+  id                   Int                @id @default(autoincrement())
+  washingStaffSalaryId Int
+  washingStaffSalary   WashingStaffSalary @relation(fields: [washingStaffSalaryId], references: [id])
+
+  month      String // "Jan 2026"
+  baseSalary Int
+  bonus      Int
+  deductions Int
+  netSalary  Int
+  paidDate   DateTime?
+
   createdAt DateTime @default(now())
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../../contexts/ThemeContext";
 import {
   Users,
   PlusCircle,
@@ -16,8 +16,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
-import api from "../../utils/axiosInstance";
-import AddEditStaffModal from "./AddEditStaffModal";
+import api from "../../../utils/axiosInstance";
+import AddEditStaffModal from "./AddEditWashStaffModal";
 
 const StaffManagement = () => {
   const { isDark } = useTheme();
@@ -36,7 +36,7 @@ const StaffManagement = () => {
   const fetchStaff = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/staff");
+      const res = await api.get("/api/washing-staff");
       setStaff(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load staff");
@@ -47,7 +47,7 @@ const StaffManagement = () => {
 
   const fetchSalaryStats = async () => {
     try {
-      const res = await api.get("/api/bike-staff-salary");
+      const res = await api.get("/api/washing-staff-salary");
       const salaryData = Array.isArray(res.data) ? res.data : [];
       setSalaryStats({
         pending: salaryData.filter((s) => s.status === "pending").length,
@@ -58,27 +58,36 @@ const StaffManagement = () => {
     }
   };
 
-  const handleSaveStaff = async (formData) => {
-    try {
-      if (selectedStaff) {
-        await api.put(`/api/staff/${selectedStaff.id}`, formData);
-        toast.success("Staff updated successfully");
-      } else {
-        await api.post("/api/staff", formData);
-        toast.success("Staff added successfully");
-      }
-      fetchStaff();
-      setShowAddModal(false);
-      setSelectedStaff(null);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save staff");
+const handleSaveStaff = async (formData) => {
+  try {
+    if (selectedStaff) {
+      // ✅ UPDATE WASHING STAFF
+      await api.put(
+        `/api/washing-staff/${selectedStaff.id}`,
+        formData
+      );
+      toast.success("Staff updated successfully");
+    } else {
+      // ✅ CREATE WASHING STAFF
+      await api.post("/api/washing-staff", formData);
+      toast.success("Staff added successfully");
     }
-  };
+
+    fetchStaff();
+    setShowAddModal(false);
+    setSelectedStaff(null);
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message || "Failed to save staff"
+    );
+  }
+};
+
 
   const handleDeleteStaff = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
     try {
-      await api.delete(`/api/staff/${id}`);
+      await api.delete(`/api/washing-staff/${id}`);
       toast.success("Staff deleted successfully");
       fetchStaff();
     } catch (err) {
@@ -198,6 +207,7 @@ const StaffManagement = () => {
       {showAddModal && (
         <AddEditStaffModal
           staff={selectedStaff}
+          staffList={staff} 
           onClose={() => {
             setShowAddModal(false);
             setSelectedStaff(null);

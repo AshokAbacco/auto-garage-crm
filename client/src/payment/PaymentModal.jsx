@@ -38,6 +38,7 @@ const PaymentModal = ({
     companyName: "",
     email: "",
     phone: "",
+    address: "",
     referenceCode: "",
     gstNumber: "", // Added GST number field
   });
@@ -130,8 +131,9 @@ const PaymentModal = ({
         companyName: userData.companyName || "",
         email: userData.email || "",
         phone: userData.phone || "",
+        address: userData.address || "",
         referenceCode: "",
-        gstNumber: ""
+        gstNumber: "",
       });
     }
   }, [isUpgradePage, userData]);
@@ -422,6 +424,13 @@ const PaymentModal = ({
       type: "text",
       icon: FaBuilding,
       placeholder: "Acme Inc.",
+    },
+    {
+      key: "address",
+      label: "Business Address",
+      type: "text",
+      icon: FaBuilding,
+      placeholder: "Full business address",
     },
     {
       key: "email",

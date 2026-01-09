@@ -1,6 +1,6 @@
 //login.jsx
 import React, { useState, useEffect, useRef } from "react";
-
+import { Capacitor } from "@capacitor/core";
 import {
   Car,
   Bike,
@@ -21,9 +21,10 @@ import {
   Zap,
   Sparkles,
 } from "lucide-react";
-import PublicLayout from "../components/PublicLayout";
+import PublicLayout from "../../components/PublicLayout";
 
 export default function ModernLogin() {
+  const isAndroid = Capacitor.getPlatform() === "android";
   const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -221,7 +222,6 @@ export default function ModernLogin() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();

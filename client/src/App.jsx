@@ -9,7 +9,7 @@ import PricingPage from "./payment/PricingPage.jsx";
 import ScrollToTop from "./components/ScrollToTop.jsx";
 /* Auth / App */
 
-import Login from "./pages/Login.jsx";
+import Login from "./pages/Login/Login.jsx";
 import Layout from "./components/Layout.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
@@ -218,8 +218,6 @@ function App() {
         </Route>
 
         {/* Washing CRM Routes */}
-        
-         
 
         {/* ================= WASHING CRM ================= */}
         <Route element={<WashingLayout />}>

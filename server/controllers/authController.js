@@ -9,10 +9,141 @@ import { generateToken } from "../utils/generateToken.js";
  * REGISTER USER
  * =============================================
  */
+// export const registerUser = async (req, res) => {
+//   try {
+//     const { username, email, password, crmType } = req.body;
+
+//     if (!username || !email || !password || !crmType) {
+//       return res.status(400).json({ message: "All fields are required" });
+//     }
+
+//     const emailLower = email.toLowerCase().trim();
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     /**
+//      * =============================================
+//      * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
+//      * =============================================
+//      */
+//     const latestPayment = await prisma.payment.findFirst({
+//       where: { email: emailLower },
+//       orderBy: { createdAt: "desc" },
+//     });
+
+//     const plan = latestPayment?.plan || "BASIC";
+//     const referralCodeUsed = latestPayment?.referralCode || null;
+
+//     /**
+//      * =============================================
+//      * REFERRAL LOOKUP (OPTIONAL)
+//      * =============================================
+//      */
+//     let referredByUserId = null;
+
+//     if (referralCodeUsed) {
+//       const referrer = await prisma.user.findUnique({
+//         where: { myReferralCode: referralCodeUsed },
+//         select: { id: true },
+//       });
+
+//       if (referrer) {
+//         referredByUserId = referrer.id;
+//       }
+//     }
+
+//     const userPlan = latestPayment?.plan || "BASIC";
+//     const companyName = latestPayment?.companyName || null;
+//     const phone = latestPayment?.phone || null;
+
+//     const planExpiry = latestPayment?.planExpiry
+//   ? new Date(latestPayment.planExpiry)
+//   : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+//     // Check duplicates
+//     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
+//       prisma.user.findUnique({ where: { email: emailLower } }),
+//       prisma.user.findUnique({ where: { username } }),
+//     ]);
+
+//     if (
+//       existingUserByUsername &&
+//       (!existingUserByEmail ||
+//         existingUserByUsername.id !== existingUserByEmail.id)
+//     ) {
+//       return res.status(400).json({
+//         message: "This username is already taken.",
+//       });
+//     }
+
+//     /**
+//      * =============================================
+//      * CASE 1 — USER EXISTS (EMAIL FROM PAYMENT)
+//      * =============================================
+//      */
+//     if (existingUserByEmail) {
+//       const updatedUser = await prisma.user.update({
+//         where: { email: emailLower },
+//         data: {
+//           username,
+//           password: hashedPassword,
+//           allowedCrms: [crmType.toUpperCase()],
+//           plan: userPlan,
+//           planExpiry,
+//           companyName, // ✅ ADDED
+//           phone, // ✅ ADDED
+//         },
+//       });
+
+//       const token = generateToken(updatedUser);
+
+//       return res.status(200).json({
+//         message: "Registration completed successfully",
+//         token,
+//         user: updatedUser,
+//       });
+//     }
+
+//     /**
+//      * =============================================
+//      * CASE 2 — NEW USER
+//      * =============================================
+//      */
+//     const myReferralCode =
+//       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+//     const newUser = await prisma.user.create({
+//       data: {
+//         username,
+//         email: emailLower,
+//         password: hashedPassword,
+//         role: "user",
+//         allowedCrms: [crmType.toUpperCase()],
+//         myReferralCode,
+//         plan: userPlan,
+//         planExpiry,
+//         referredByUserId,
+//         companyName, // ✅ ADDED
+//         phone, // ✅ ADDED
+//       },
+//     });
+
+//     const token = generateToken(newUser);
+
+//     return res.status(201).json({
+//       message: "User registered successfully",
+//       token,
+//       user: newUser,
+//     });
+//   } catch (error) {
+//     console.error("❌ Registration Error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 export const registerUser = async (req, res) => {
   try {
     const { username, email, password, crmType } = req.body;
 
+    /* ---------- BASIC VALIDATION ---------- */
     if (!username || !email || !password || !crmType) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -20,24 +151,36 @@ export const registerUser = async (req, res) => {
     const emailLower = email.toLowerCase().trim();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    /**
-     * =============================================
-     * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
-     * =============================================
-     */
+    /* =================================================
+       FETCH LATEST PAYMENT (SINGLE SOURCE OF TRUTH)
+    ================================================= */
     const latestPayment = await prisma.payment.findFirst({
       where: { email: emailLower },
       orderBy: { createdAt: "desc" },
     });
 
-    const plan = latestPayment?.plan || "BASIC";
-    const referralCodeUsed = latestPayment?.referralCode || null;
+    if (!latestPayment) {
+      return res.status(400).json({
+        message:
+          "No payment found for this email. Please complete payment first.",
+      });
+    }
 
-    /**
-     * =============================================
-     * REFERRAL LOOKUP (OPTIONAL)
-     * =============================================
-     */
+    /* ---------- EXTRACT FROM PAYMENT ---------- */
+    const userPlan = latestPayment.plan || "BASIC";
+    const companyName = latestPayment.companyName || null;
+    const phone = latestPayment.phone || null;
+    const gstNumber = latestPayment.gstNumber || null;
+    const address = latestPayment.address || null;
+    const referralCodeUsed = latestPayment.referralCode || null;
+
+    const planExpiry = latestPayment.expiryDate
+      ? new Date(latestPayment.expiryDate)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    /* =================================================
+       REFERRAL LOOKUP (OPTIONAL)
+    ================================================= */
     let referredByUserId = null;
 
     if (referralCodeUsed) {
@@ -46,19 +189,10 @@ export const registerUser = async (req, res) => {
         select: { id: true },
       });
 
-      if (referrer) {
-        referredByUserId = referrer.id;
-      }
+      if (referrer) referredByUserId = referrer.id;
     }
 
-    const userPlan = latestPayment?.plan || "BASIC";
-    const companyName = latestPayment?.companyName || null;
-    const phone = latestPayment?.phone || null;
-
-    const planExpiry = latestPayment?.planExpiry
-  ? new Date(latestPayment.planExpiry)
-  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    // Check duplicates
+    /* ---------- DUPLICATE CHECK ---------- */
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
       prisma.user.findUnique({ where: { username } }),
@@ -74,11 +208,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    /**
-     * =============================================
-     * CASE 1 — USER EXISTS (EMAIL FROM PAYMENT)
-     * =============================================
-     */
+    /* =================================================
+       CASE 1 — USER ALREADY EXISTS (FROM PAYMENT EMAIL)
+    ================================================= */
     if (existingUserByEmail) {
       const updatedUser = await prisma.user.update({
         where: { email: emailLower },
@@ -88,8 +220,12 @@ export const registerUser = async (req, res) => {
           allowedCrms: [crmType.toUpperCase()],
           plan: userPlan,
           planExpiry,
-          companyName, // ✅ ADDED
-          phone, // ✅ ADDED
+
+          // 🔥 PAYMENT → USER SYNC
+          companyName,
+          phone,
+          gstNumber,
+          address,
         },
       });
 
@@ -102,11 +238,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    /**
-     * =============================================
-     * CASE 2 — NEW USER
-     * =============================================
-     */
+    /* =================================================
+       CASE 2 — BRAND NEW USER
+    ================================================= */
     const myReferralCode =
       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -118,11 +252,15 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
+        referredByUserId,
+
+        // 🔥 PAYMENT → USER SYNC
         plan: userPlan,
         planExpiry,
-        referredByUserId,
-        companyName, // ✅ ADDED
-        phone, // ✅ ADDED
+        companyName,
+        phone,
+        gstNumber,
+        address,
       },
     });
 
@@ -138,6 +276,7 @@ export const registerUser = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 /**
  * =============================================
@@ -361,21 +500,147 @@ export const verifyToken = async (req, res) => {
  * DELETE ACCOUNT
  * =============================================
  */
+// export const deleteAccount = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     await prisma.payment.deleteMany({
+//       where: { email: req.user.email },
+//     });
+
+//     await prisma.user.delete({
+//       where: { id: userId },
+//     });
+
+//     res.status(200).json({ message: "Account deleted successfully" });
+//   } catch (error) {
+//     console.error("❌ Delete Account Error:", error);
+//     return res.status(500).json({ message: "Failed to delete account" });
+//   }
+// };
+
 export const deleteAccount = async (req, res) => {
+  const userId = req.user.id;
+  const email = req.user.email?.toLowerCase();
+
   try {
-    const userId = req.user.id;
-
-    await prisma.payment.deleteMany({
-      where: { email: req.user.email },
+    /* =========================
+       CAR CRM (NO TRANSACTION)
+    ========================= */
+    const clients = await prisma.client.findMany({
+      where: { userId },
+      select: { id: true },
     });
+    const clientIds = clients.map((c) => c.id);
 
-    await prisma.user.delete({
-      where: { id: userId },
+    if (clientIds.length) {
+      await prisma.serviceCostItem.deleteMany({
+        where: { service: { clientId: { in: clientIds } } },
+      });
+      await prisma.serviceMedia.deleteMany({
+        where: { service: { clientId: { in: clientIds } } },
+      });
+      await prisma.service.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.reminder.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.ocrRecord.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.invoiceCostItem.deleteMany({
+        where: { invoice: { clientId: { in: clientIds } } },
+      });
+      await prisma.invoice.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.client.deleteMany({
+        where: { id: { in: clientIds } },
+      });
+    }
+
+    /* =========================
+       WASH CRM (MAIN PROBLEM)
+    ========================= */
+    const washTeams = await prisma.washTeam.findMany({
+      where: { createdBy: userId },
+      select: { id: true },
     });
+    const washTeamIds = washTeams.map((t) => t.id);
 
-    res.status(200).json({ message: "Account deleted successfully" });
+    if (washTeamIds.length) {
+      await prisma.washStaff.deleteMany({
+        where: { washTeamId: { in: washTeamIds } },
+      });
+      await prisma.washTeam.deleteMany({
+        where: { id: { in: washTeamIds } },
+      });
+    }
+
+    const washingClients = await prisma.washingClient.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const washingClientIds = washingClients.map((c) => c.id);
+
+    if (washingClientIds.length) {
+      await prisma.washBillingService.deleteMany({
+        where: {
+          washingService: {
+            clientId: { in: washingClientIds },
+          },
+        },
+      });
+      await prisma.washingServiceMedia.deleteMany({
+        where: {
+          washingService: {
+            clientId: { in: washingClientIds },
+          },
+        },
+      });
+      await prisma.washingService.deleteMany({
+        where: { clientId: { in: washingClientIds } },
+      });
+      await prisma.washBilling.deleteMany({
+        where: { washingClientId: { in: washingClientIds } },
+      });
+      await prisma.washingClient.deleteMany({
+        where: { id: { in: washingClientIds } },
+      });
+    }
+
+    /* =========================
+       BIKE / STAFF / PAYMENTS
+    ========================= */
+    await prisma.carStaffSalary.deleteMany({ where: { ownerId: userId } });
+    await prisma.carStaffLogin.deleteMany({ where: { ownerId: userId } });
+    await prisma.carStaff.deleteMany({ where: { ownerId: userId } });
+
+    await prisma.bikeSalaryHistory.deleteMany({
+      where: { bikeStaff: { userId } },
+    });
+    await prisma.bikeStaff.deleteMany({ where: { userId } });
+    await prisma.staff.deleteMany({ where: { userId } });
+
+    await prisma.payment.deleteMany({ where: { email } });
+
+    /* =========================
+       USER (SHORT TRANSACTION)
+    ========================= */
+    await prisma.$transaction([prisma.user.delete({ where: { id: userId } })]);
+
+    return res.json({ success: true, message: "Account deleted successfully" });
   } catch (error) {
     console.error("❌ Delete Account Error:", error);
-    return res.status(500).json({ message: "Failed to delete account" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete account",
+      code: error.code,
+    });
   }
 };
+
+
+
+

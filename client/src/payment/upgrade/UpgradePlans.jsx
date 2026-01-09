@@ -43,11 +43,14 @@ export default function UpgradePlans() {
             ? "http://localhost:5000"
             : "https://auto-garage-crm-zrxc.onrender.com";
 
-        const response = await fetch(`${API}/api/payments/user-plan/${user.email}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `${API}/api/payments/user-plan/${user.email}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = await response.json();
         if (data.success && data.payment) {
@@ -193,7 +196,10 @@ export default function UpgradePlans() {
 
   const handlePlanSelect = (plan) => {
     // Check if trying to select current plan
-    if (currentPlan && currentPlan.plan.toLowerCase() === plan.name.toLowerCase()) {
+    if (
+      currentPlan &&
+      currentPlan.plan.toLowerCase() === plan.name.toLowerCase()
+    ) {
       alert("You are already subscribed to this plan!");
       return;
     }
@@ -212,7 +218,9 @@ export default function UpgradePlans() {
 
   // Check if a plan is the current active plan
   const isCurrentPlan = (plan) => {
-    return currentPlan && currentPlan.plan.toLowerCase() === plan.name.toLowerCase();
+    return (
+      currentPlan && currentPlan.plan.toLowerCase() === plan.name.toLowerCase()
+    );
   };
 
   if (loading) {
@@ -226,7 +234,7 @@ export default function UpgradePlans() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
+      className={`min-h-screen transition-colors duration-300 lg:ml-20 ${
         isDark ? " text-white" : " text-gray-900"
       }`}
     >
@@ -338,30 +346,6 @@ export default function UpgradePlans() {
               }`}
             >
               Car Plans
-            </button>
-            <button
-              onClick={() => setPlanType("bike")}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                planType === "bike"
-                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg"
-                  : isDark
-                  ? "bg-gray-800 text-gray-300 border border-gray-700"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Bike Plans
-            </button>
-            <button
-              onClick={() => setPlanType("washing")}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                planType === "washing"
-                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg"
-                  : isDark
-                  ? "bg-gray-800 text-gray-300 border border-gray-700"
-                  : "bg-gray-200 text-gray-700"
-              }`}
-            >
-              Washing Plans
             </button>
           </div>
         </div>

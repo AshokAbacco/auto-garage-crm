@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, History, Calendar, IndianRupee, TrendingUp, Search, Sparkles } from "lucide-react";
-import api from "../../utils/axiosInstance";
+import api from "../../../utils/axiosInstance";
 
 const SalaryHistoryModal = ({ staff, onClose, isDark }) => {
   const [history, setHistory] = useState([]);
@@ -15,7 +15,7 @@ const SalaryHistoryModal = ({ staff, onClose, isDark }) => {
   const fetchHistory = async () => {
     try {
       setLoadingHistory(true);
-      const res = await api.get(`/api/bike-staff-salary/${staff.id}/history`);
+      const res = await api.get(`/api/washing-staff-salary/${staff.id}/history`);
       setHistory(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error fetching history:", err);

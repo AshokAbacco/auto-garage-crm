@@ -30,13 +30,17 @@ export const createTeam = async (req, res) => {
 
     const emailLower = email.toLowerCase().trim();
 
-    // ❌ Prevent duplicate staff
-    const existingStaff = await prisma.washStaff.findUnique({
+     // ✅ BLOCK DUPLICATE TEAM ACCOUNT (MOST IMPORTANT)
+    const existingUser = await prisma.user.findUnique({
       where: { email: emailLower },
     });
-    if (existingStaff) {
-      return res.status(400).json({ message: "Staff already exists" });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "This employee already has a team account",
+      });
     }
+
 
     // ✅ Get or create admin's wash team
     let team = await prisma.washTeam.findFirst({

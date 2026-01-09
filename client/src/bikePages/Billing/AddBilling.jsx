@@ -33,6 +33,7 @@ export default function AddBilling() {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const location = useLocation();
+  const previewData = location.state;
   const navigate = useNavigate();
   const serviceData = location.state || null;
   
@@ -41,7 +42,8 @@ export default function AddBilling() {
   const [allServices, setAllServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+  const [selectedBike, setSelectedBike] = useState(null);
+
   const [form, setForm] = useState({
     invoiceNumber: generateInvoiceNumber(),
     date: new Date().toISOString().split("T")[0],
@@ -60,6 +62,15 @@ export default function AddBilling() {
   const [invoiceItems, setInvoiceItems] = useState([
     { type: "Part", name: "", quantity: 1, unitPrice: 0, cgst: 9, sgst: 9 }
   ]);
+
+  useEffect(() => {
+  if (!previewData) return;
+
+  setForm(previewData.form);
+  setInvoiceItems(previewData.invoiceItems);
+  setSelectedBike(previewData.bike);
+}, [previewData]);
+
 
   /* LOAD BIKE OWNERS */
   useEffect(() => {
@@ -113,12 +124,15 @@ export default function AddBilling() {
         data.forEach(service => {
           if (service.client && !map.has(service.client.id)) {
             map.set(service.client.id, true);
-            uniqueClients.push({
+           uniqueClients.push({
               id: service.client.id,
               ownerName: service.client.ownerName,
+              phone: service.client.phone,          // ✅ ADD
               regNumber: service.client.regNumber,
-              vehicleModel: service.client.bikeModel
+              bikeBrand: service.client.bikeBrand,  // ✅ ADD
+              bikeModel: service.client.bikeModel   // ✅ FIX KEY
             });
+
           }
         });
 
@@ -420,12 +434,15 @@ export default function AddBilling() {
 
             <div className="grid md:grid-cols-3 gap-6">
               <Select
-                label="Bike Owner"
-                icon={<FiUser />}
-                value={form.bikeId}
-                onChange={(e) => setForm({ ...form, bikeId: e.target.value })}
-                isDark={isDark}
-              >
+                  label="Bike Owner"
+                  value={form.bikeId}
+                  onChange={(e) => {
+                    const bike = clients.find(c => c.id === Number(e.target.value));
+                    setForm({ ...form, bikeId: e.target.value });
+                    setSelectedBike(bike); // ✅ ADD THIS
+                  }}
+>
+
                 <option value="">Select Bike Owner</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>
@@ -762,6 +779,27 @@ export default function AddBilling() {
 
           {/* Actions */}
           <div className="flex gap-4 animate-slide-down" style={{ animationDelay: "350ms" }}>
+            <button
+              type="button"
+               onClick={() =>
+                  navigate("/bike-billing/preview", {
+                    state: {
+                      form,
+                      invoiceItems,
+                      calculations,
+                      bike: selectedBike // ✅ REQUIRED
+                    }
+                  })
+                }
+              className="flex-1 flex items-center justify-center gap-2 px-8 py-4 
+                        bg-white border-2 border-blue-500 text-blue-600 
+                        rounded-xl font-semibold text-lg
+                        hover:bg-blue-50 transition-all"
+            >
+              <FiFileText size={20} />
+              Preview Invoice
+            </button>
+
             <button
               type="submit"
               disabled={loading}

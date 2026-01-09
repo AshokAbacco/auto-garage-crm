@@ -86,6 +86,12 @@ export default function WashingLayoutPage() {
             roles: ["user"],
         },
         {
+            to: "/washing-salary-management",
+            label: "Salary Management",
+            icon: Network,
+            roles: ["user"],
+        },
+        {
             to: "/teams",
             label: "Team",
             icon: UsersRound,

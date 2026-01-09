@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../../contexts/ThemeContext";
 import {
   Search,
   History,
@@ -12,12 +12,15 @@ import {
   IndianRupee,
   Sparkles,
   Wallet,
+  ChevronDown,
+  ChevronUp,
+  FileText,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
-import api from "../../utils/axiosInstance";
-import AddSalaryModal from "./AddStaff";
-import SalaryHistoryModal from "./SalaryHistory";
-import PayslipModal from "./Components/PayslipModal";
+import api from "../../../utils/axiosInstance";
+import AddSalaryModal from "./AddWashSalaryModal";
+import SalaryHistoryModal from "./WashSalaryHistory";
+import PayslipModal from "./WashPayslipModal";
 
 const DAYS_IN_YEAR = 365;
 
@@ -48,11 +51,10 @@ const SalaryManagement = () => {
   const [selectedSalary, setSelectedSalary] = useState(null);
   const [showPayslip, setShowPayslip] = useState(false);
   const [payslipSalary, setPayslipSalary] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   useEffect(() => {
     fetchSalaries();
-    fetchCurrentUser();
   }, []);
 
   const onViewPayslip = (salary) => {
@@ -60,20 +62,10 @@ const SalaryManagement = () => {
     setShowPayslip(true);
   };
 
-
-  const fetchCurrentUser = async () => {
-  try {
-    const res = await api.get("/api/auth/profile");
-    setCurrentUser(res.data);
-  } catch (err) {
-    console.error("Failed to load user profile");
-  }
-};
-
   const fetchSalaries = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/bike-staff-salary");
+      const res = await api.get("/api/washing-staff-salary");
       setSalaries(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load salaries");
@@ -85,7 +77,7 @@ const SalaryManagement = () => {
   const handlePaySalary = async (salaryId) => {
     if (!window.confirm("Are you sure you want to mark this salary as paid?")) return;
     try {
-      await api.post(`/api/bike-staff-salary/${salaryId}/pay`);
+      await api.post(`/api/washing-staff-salary/${salaryId}/pay`);
       toast.success("Salary marked as paid successfully");
       fetchSalaries();
     } catch (err) {
@@ -96,7 +88,7 @@ const SalaryManagement = () => {
   const handleDeleteSalary = async (salaryId, staffName) => {
     if (!window.confirm(`Are you sure you want to delete salary record for ${staffName}?`)) return;
     try {
-      await api.delete(`/api/bike-staff-salary/${salaryId}`);
+      await api.delete(`/api/washing-staff-salary/${salaryId}`);
       toast.success("Salary record deleted successfully");
       fetchSalaries();
     } catch (err) {
@@ -104,8 +96,51 @@ const SalaryManagement = () => {
     }
   };
 
-  const filteredSalaries = salaries.filter((s) =>
-    [s.staff?.name, s.staff?.role].join(" ").toLowerCase().includes(searchQuery.toLowerCase())
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedSalaries = (salaries) => {
+    if (!sortConfig.key) return salaries;
+    
+    return [...salaries].sort((a, b) => {
+      let aValue, bValue;
+      
+      switch(sortConfig.key) {
+        case 'name':
+          aValue = a.staff?.name || '';
+          bValue = b.staff?.name || '';
+          break;
+        case 'role':
+          aValue = a.staff?.role || '';
+          bValue = b.staff?.role || '';
+          break;
+        case 'netSalary':
+          aValue = calculateNetSalary(a);
+          bValue = calculateNetSalary(b);
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const filteredSalaries = getSortedSalaries(
+    salaries.filter((s) =>
+      [s.staff?.name, s.staff?.role].join(" ").toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   const pendingCount = salaries.filter((s) => s.status === "pending").length;
@@ -176,7 +211,7 @@ const SalaryManagement = () => {
         </div>
       </div>
 
-      {/* Salary Cards */}
+      {/* Table */}
       {loading ? (
         <div className="text-center py-16">
           <div className="relative inline-flex">
@@ -199,26 +234,54 @@ const SalaryManagement = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredSalaries.map((s, index) => (
-            <SalaryCard
-              key={s.id}
-              salary={s}
-              isDark={isDark}
-              index={index}
-              onPay={() => handlePaySalary(s.id)}
-              onEdit={() => {
-                setSelectedSalary(s);
-                setShowAddModal(true);
-              }}
-              onDelete={() => handleDeleteSalary(s.id, s.staff?.name)}
-              onViewHistory={() => {
-                setSelectedSalary(s);
-                setShowHistoryModal(true);
-              }}
-              onViewPayslip={onViewPayslip}
-            />
-          ))}
+        <div className={`rounded-2xl border overflow-hidden ${
+          isDark ? "bg-gray-800/50 border-gray-700" : "bg-white border-gray-200"
+        }`}>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className={`border-b ${isDark ? "bg-gray-800/80 border-gray-700" : "bg-gray-50 border-gray-200"}`}>
+                  <SortableHeader label="Employee" sortKey="name" sortConfig={sortConfig} onSort={handleSort} isDark={isDark} />
+                  <SortableHeader label="Role" sortKey="role" sortConfig={sortConfig} onSort={handleSort} isDark={isDark} />
+                  <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    Monthly Salary
+                  </th>
+                  <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    Bonus
+                  </th>
+                  <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    Deductions
+                  </th>
+                  <SortableHeader label="Net Salary" sortKey="netSalary" sortConfig={sortConfig} onSort={handleSort} isDark={isDark} />
+                  <SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={handleSort} isDark={isDark} />
+                  <th className={`px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-200"}`}>
+                {filteredSalaries.map((salary, index) => (
+                  <TableRow
+                    key={salary.id}
+                    salary={salary}
+                    isDark={isDark}
+                    index={index}
+                    onPay={() => handlePaySalary(salary.id)}
+                    onEdit={() => {
+                      setSelectedSalary(salary);
+                      setShowAddModal(true);
+                    }}
+                    onDelete={() => handleDeleteSalary(salary.id, salary.staff?.name)}
+                    onViewHistory={() => {
+                      setSelectedSalary(salary);
+                      setShowHistoryModal(true);
+                    }}
+                    onViewPayslip={onViewPayslip}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -248,11 +311,9 @@ const SalaryManagement = () => {
       {showPayslip && (
         <PayslipModal
           salary={payslipSalary}
-          user={currentUser}
           onClose={() => setShowPayslip(false)}
         />
       )}
-
 
       <style jsx>{`
         @keyframes slideDown {
@@ -282,7 +343,6 @@ const StatCard = ({ icon, label, value, color, isDark }) => {
   return (
     <div
       className={`group relative p-5 rounded-2xl border bg-gradient-to-br overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer ${colors[color]}`}
-      style={{ animation: `slideUp 0.5s ease-out forwards` }}
     >
       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500"></div>
       <div className="relative flex items-center justify-between mb-4">
@@ -298,146 +358,181 @@ const StatCard = ({ icon, label, value, color, isDark }) => {
   );
 };
 
-const SalaryCard = ({ salary, isDark, index, onPay, onEdit, onDelete, onViewHistory,onViewPayslip    }) => {
+const SortableHeader = ({ label, sortKey, sortConfig, onSort, isDark }) => {
+  const isActive = sortConfig.key === sortKey;
+  
+  return (
+    <th 
+      onClick={() => onSort(sortKey)}
+      className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors ${
+        isDark ? "text-gray-400 hover:text-gray-300" : "text-gray-600 hover:text-gray-800"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {label}
+        <div className="flex flex-col">
+          <ChevronUp 
+            size={12} 
+            className={`-mb-1 transition-colors ${isActive && sortConfig.direction === 'asc' ? 'text-blue-500' : 'text-gray-400'}`}
+          />
+          <ChevronDown 
+            size={12} 
+            className={`-mt-1 transition-colors ${isActive && sortConfig.direction === 'desc' ? 'text-blue-500' : 'text-gray-400'}`}
+          />
+        </div>
+      </div>
+    </th>
+  );
+};
+
+const TableRow = ({ salary, isDark, index, onPay, onEdit, onDelete, onViewHistory, onViewPayslip }) => {
   const netSalary = calculateNetSalary(salary);
   const monthlySalary = salary.annualSalary ? Math.round(salary.annualSalary / 12) : 0;
   const deduction = calculateDeductions(salary.annualSalary, salary.leaves);
 
-  const statusColors = {
-    pending: isDark
-      ? "from-orange-600/20 to-orange-800/20 border-orange-500/40 text-orange-400"
-      : "from-orange-50 to-orange-100 border-orange-300 text-orange-700",
-    paid: isDark
-      ? "from-green-600/20 to-green-800/20 border-green-500/40 text-green-400"
-      : "from-green-50 to-green-100 border-green-300 text-green-700",
-  };
-
   return (
-    <div
-      className={`group relative p-6 rounded-2xl border backdrop-blur-sm overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${
-        isDark
-          ? "bg-gradient-to-br from-gray-800/90 to-gray-900/90 border-gray-700 hover:border-emerald-500/50"
-          : "bg-white/90 border-gray-200 hover:border-emerald-400/50 hover:shadow-emerald-100"
+    <tr 
+      className={`transition-all duration-200 ${
+        isDark ? "hover:bg-gray-700/50" : "hover:bg-gray-50"
       }`}
-      style={{ animation: `slideUp 0.5s ease-out ${index * 0.05}s backwards` }}
+      style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s backwards` }}
     >
-      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 rounded-full -translate-y-20 translate-x-20 group-hover:scale-150 transition-transform duration-700"></div>
-
-      {/* Header */}
-      <div className="relative flex items-start justify-between mb-5">
+      {/* Employee */}
+      <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md">
             {salary.staff?.name?.charAt(0).toUpperCase() || "?"}
           </div>
           <div>
-            <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"} group-hover:text-emerald-500 transition-colors`}>
+            <p className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
               {salary.staff?.name || "Unknown"}
-            </h3>
-            <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>{salary.staff?.role || "No role"}</p>
+            </p>
+            {salary.status === "paid" && salary.lastPaid && (
+              <p className={`text-xs flex items-center gap-1 mt-0.5 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+                <Calendar size={12} />
+                {new Date(salary.lastPaid).toLocaleDateString()}
+              </p>
+            )}
           </div>
         </div>
+      </td>
 
-        {/* Status Badge */}
-        <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold border bg-gradient-to-br shadow-sm ${statusColors[salary.status]}`}>
-          {salary.status === "paid" ? "✓ Paid" : "⏱ Pending"}
+      {/* Role */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+          {salary.staff?.role || "No role"}
         </span>
-      </div>
+      </td>
 
-      {/* Salary Details */}
-      <div className="relative space-y-3 mb-5">
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "Monthly Salary", value: `₹${monthlySalary.toLocaleString()}`, color: "text-gray-600" },
-            { label: "Bonus", value: `+₹${salary.bonus.toLocaleString()}`, color: "text-green-600" },
-            { label: `Leaves (${salary.leaves} days)`, value: `-₹${deduction.toLocaleString()}`, color: "text-red-600" },
-            { label: "Per Day", value: `₹${Math.round(calculatePerDaySalary(salary.annualSalary))}`, color: "text-gray-500" },
-          ].map((item, i) => (
-            <div key={i} className={`p-3 rounded-xl ${isDark ? "bg-white/5" : "bg-gray-50"} transition-all hover:scale-105`}>
-              <p className={`text-xs mb-1 ${isDark ? "text-gray-500" : "text-gray-600"}`}>{item.label}</p>
-              <p className={`font-bold ${item.color}`}>{item.value}</p>
-            </div>
-          ))}
+      {/* Monthly Salary */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center gap-1">
+          <IndianRupee size={14} className={isDark ? "text-gray-400" : "text-gray-500"} />
+          <span className={`font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+            {monthlySalary.toLocaleString()}
+          </span>
         </div>
-      </div>
+      </td>
+
+      {/* Bonus */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className="text-green-600 font-medium">
+          +₹{salary.bonus.toLocaleString()}
+        </span>
+      </td>
+
+      {/* Deductions */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div>
+          <span className="text-red-600 font-medium">
+            -₹{deduction.toLocaleString()}
+          </span>
+          <p className={`text-xs mt-0.5 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
+            {salary.leaves} days leave
+          </p>
+        </div>
+      </td>
 
       {/* Net Salary */}
-      <div
-        className={`relative p-4 rounded-xl border mb-5 bg-gradient-to-br ${
-          isDark ? "from-emerald-500/20 to-emerald-700/20 border-emerald-500/40" : "from-emerald-50 to-emerald-100 border-emerald-300"
-        }`}
-      >
-        <p className={`text-xs mb-1 font-medium ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Net Salary</p>
-        <div className="flex items-center gap-2">
-          <IndianRupee className="text-emerald-600" size={24} />
-          <p className="text-3xl font-bold text-emerald-600">{netSalary.toLocaleString()}</p>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center gap-1">
+          <IndianRupee size={16} className="text-emerald-600" />
+          <span className="text-lg font-bold text-emerald-600">
+            {netSalary.toLocaleString()}
+          </span>
         </div>
-      </div>
+      </td>
 
-      {/* Action Buttons */}
-      <div className="relative flex items-center gap-2">
-        <button
-          onClick={onViewHistory}
-          className={`flex-1 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
-            isDark ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-          }`}
-        >
-          <History size={16} className="inline mr-1" />
-          History
-        </button>
+      {/* Status */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+          salary.status === "paid"
+            ? isDark ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-700"
+            : isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-700"
+        }`}>
+          {salary.status === "paid" ? "✓ Paid" : "⏱ Pending"}
+        </span>
+      </td>
 
-        {salary.status === "pending" && (
+      {/* Actions */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center justify-center gap-2">
           <button
-            onClick={onPay}
-            className={`flex-1 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 ${
-              isDark ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-green-50 text-green-600 hover:bg-green-100"
+            onClick={onViewHistory}
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+              isDark ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-blue-50 text-blue-600 hover:bg-blue-100"
             }`}
+            title="View History"
           >
-            <CheckCircle size={16} className="inline mr-1" />
-            Pay
+            <History size={16} />
           </button>
-          
-        )}
-        {salary.status === "paid" && (
+
+          {salary.status === "pending" && (
             <button
-              onClick={() => onViewPayslip(salary)}
-              className={`flex-1 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                isDark
-                  ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                  : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+              onClick={onPay}
+              className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                isDark ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-green-50 text-green-600 hover:bg-green-100"
               }`}
+              title="Mark as Paid"
             >
-              📄 Pay Slip
+              <CheckCircle size={16} />
             </button>
           )}
 
+          {salary.status === "paid" && (
+            <button
+              onClick={() => onViewPayslip(salary)}
+              className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                isDark ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+              }`}
+              title="View Payslip"
+            >
+              <FileText size={16} />
+            </button>
+          )}
 
-        <button
-          onClick={onEdit}
-          className={`p-2.5 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${
-            isDark ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-          }`}
-        >
-          <Edit2 size={16} className="group-hover:rotate-12 transition-transform" />
-        </button>
+          <button
+            onClick={onEdit}
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+              isDark ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+            }`}
+            title="Edit"
+          >
+            <Edit2 size={16} />
+          </button>
 
-        <button
-          onClick={onDelete}
-          className={`p-2.5 rounded-xl transition-all duration-300 hover:scale-110 hover:rotate-12 active:scale-95 ${
-            isDark ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : "bg-red-50 text-red-600 hover:bg-red-100"
-          }`}
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-
-      {/* Last Paid Date */}
-      {salary.status === "paid" && salary.lastPaid && (
-        <div className={`mt-4 pt-4 border-t text-xs flex items-center gap-2 ${isDark ? "border-gray-700 text-gray-500" : "border-gray-200 text-gray-600"}`}>
-          <Calendar size={14} />
-          Paid on {new Date(salary.lastPaid).toLocaleDateString()}
+          <button
+            onClick={onDelete}
+            className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+              isDark ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : "bg-red-50 text-red-600 hover:bg-red-100"
+            }`}
+            title="Delete"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
-      )}
-    </div>
+      </td>
+    </tr>
   );
 };
 

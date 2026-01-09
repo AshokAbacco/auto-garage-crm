@@ -88,14 +88,12 @@ import BillingInvoice from "./washPages/billing/BillingInvoice.jsx";
 import NewSubService from "./washPages/services/AddService.jsx";
 import Billing from "./washPages/billing/Billing.jsx";
 import Upgrade from "./bikePages/Upgrade/Upgrade.jsx";
-import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
-import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
-import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
-import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
 import Teams from "./washPages/teams/Teams.jsx";
 import TeamLogin from "./bikePages/TeamAccounts/TeamLogin.jsx";
 import TeamRegister from "./bikePages/TeamAccounts/TeamRegister.jsx";
 import StaffSalaryContainer from "./bikePages/StaffSalary/StaffSalaryContainer.jsx";
+import InvoicePreview from "./bikePages/Billing/InvoicePreview.jsx";
+import WashStaffSalaryContainer from "./washPages/salaryPages/WashStaffSalaryContainer.jsx";
 
 function App() {
   return (
@@ -213,13 +211,9 @@ function App() {
           <Route path="/bill/new" element={<AddBilling />} />
           <Route path="/bill/:id/edit" element={<AddBilling />} />
           <Route path="/bill/:id" element={<InvoiceBill />} />
+          <Route path="/bike-billing/preview" element={<InvoicePreview />} />
 
-          {/* ================= SALARY MODULE ================= */}
-          <Route path="/salary-login" element={<SalaryLogin />} />
           <Route path="/team-register" element={<TeamRegister />} />
-          <Route path="/salary-register" element={<SalaryRegister />} />
-
-          {/* <Route path="/salary-manage" element={<SalaryPage />} /> */}
           <Route path="/salary-manage" element={<StaffSalaryContainer />} />
         </Route>
 
@@ -244,15 +238,12 @@ function App() {
           <Route path="addclient" element={<Newclient />} />
           <Route path="/addclient/:id" element={<Newclient />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/washing-salary-management" element={<WashStaffSalaryContainer />} />
           <Route path="/teams" element={<Teams />} />
-
           <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
           <Route path="/billing/create-invoice" element={<NewInvoice />} />
           <Route path="/team-login" element={<TeamLogin />} />
-          <Route
-            path="/billing/create-invoice/:serviceId"
-            element={<NewInvoice />}
-          />
+          <Route path="/billing/create-invoice/:serviceId" element={<NewInvoice />} />
         </Route>
 
         {/* ================= FALLBACK ================= */}

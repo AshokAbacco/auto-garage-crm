@@ -11,10 +11,9 @@ export const getBikeInvoices = async (req, res) => {
 
    const role = String(req.user.role).toLowerCase();
 
-    const whereCondition =
-      role === "user"
-        ? { ownerUserId }
-        : { ownerUserId, createdById: req.user.id };
+    const whereCondition = {
+      ownerUserId,
+    };
 
 
     const invoices = await prisma.bikeInvoice.findMany({
@@ -77,11 +76,7 @@ export const getBikeInvoiceById = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const invoice = await prisma.bikeInvoice.findFirst({
-     where:
-      role === "user"
-        ? { id, ownerUserId }
-        : { id, ownerUserId, createdById: req.user.id },
-
+     where: { id, ownerUserId },
       include: {
         bike: true,
         bikeServices: true,
@@ -179,13 +174,8 @@ export const createBikeInvoice = async (req, res) => {
        BIKE OWNERSHIP CHECK
     =============================== */
    const bike = await prisma.bike.findFirst({
-      where:
-        role === "user"
-          ? { id: Number(bikeId), ownerUserId }
-          : { id: Number(bikeId), ownerUserId, createdById: req.user.id },
+      where: { id: Number(bikeId), ownerUserId },
     });
-
-
     if (!bike) {
       return res.status(403).json({ message: "Unauthorized bike access" });
     }
@@ -199,10 +189,7 @@ export const createBikeInvoice = async (req, res) => {
 
     if (serviceId) {
       const service = await prisma.bikeService.findFirst({
-        where:
-          role === "user"
-            ? { id: Number(serviceId), ownerUserId }
-            : { id: Number(serviceId), ownerUserId, createdById: req.user.id },
+        where: { id: Number(serviceId), ownerUserId },
         select: {
           discount: true,
           discountType: true,
@@ -353,10 +340,7 @@ export const updateBikeInvoice = async (req, res) => {
 
     /* 🔒 VERIFY OWNERSHIP */
     const invoice = await prisma.bikeInvoice.findFirst({
-      where:
-        role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
     });
 
     if (!invoice) {
@@ -463,10 +447,7 @@ export const deleteBikeInvoice = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const invoice = await prisma.bikeInvoice.findFirst({
-      where:
-        role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
     });
 
     if (!invoice) {

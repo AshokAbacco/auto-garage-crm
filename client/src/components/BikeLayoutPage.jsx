@@ -90,7 +90,7 @@ const menu = [
   },
   {
     to: "/salary-manage",
-    label: "Salary Management",
+    label: "Staff Management",
     icon: Package,
     roles: ["owner"],
   },
@@ -378,15 +378,10 @@ const logout = () => {
                 </button>
 
                 {/* Dropdown Menu */}
-                {openProfileMenu && (
+                {openProfileMenu && user?.type === "owner" && (
                   <div
-                    className={`
-                      absolute right-0 mt-3 w-48 rounded-xl shadow-lg border p-3 z-50
-                      ${
-                        isDark
-                          ? "bg-gray-800 border-gray-700"
-                          : "bg-white border-gray-200"
-                      }
+                    className={`absolute right-0 mt-3 w-48 rounded-xl shadow-lg border p-3 z-50
+                      ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}
                     `}
                   >
                     <button
@@ -394,19 +389,15 @@ const logout = () => {
                         routerNavigate("/bike-profile");
                         setOpenProfileMenu(false);
                       }}
-                      className={`
-                        w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
-                        ${
-                          isDark
-                            ? "text-gray-200 hover:bg-gray-700"
-                            : "text-gray-800 hover:bg-blue-50"
-                        }
+                      className={`w-full text-left px-3 py-2 rounded-lg font-medium
+                        ${isDark ? "text-gray-200 hover:bg-gray-700" : "text-gray-800 hover:bg-blue-50"}
                       `}
                     >
                       Profile
                     </button>
                   </div>
                 )}
+
               </div>
             </div>
           </div>

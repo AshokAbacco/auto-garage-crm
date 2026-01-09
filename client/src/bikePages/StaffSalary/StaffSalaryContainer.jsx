@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
-import { Users, DollarSign } from "lucide-react";
+import { Users, IndianRupee } from "lucide-react";
 import StaffManagement from "./EmpManagement";
 import SalaryManagement from "./SalaryPage";
 
@@ -10,28 +10,28 @@ const StaffSalaryContainer = () => {
 
   const tabs = [
     { id: "staff", label: "Staff", icon: Users },
-    { id: "salary", label: "Salary Management", icon: DollarSign },
+    { id: "salary", label: "Salary Management", icon: IndianRupee },
   ];
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
-        isDark ? "bg-gray-900" : "bg-gray-50"
+      className={`min-h-screen transition-colors duration-500 ${
+        isDark ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" : "bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50"
       }`}
     >
       {/* Top Navigation Tabs */}
       <div
-        className={`sticky top-0 z-40 backdrop-blur-md transition-colors duration-300 ${
-          isDark ? "bg-gray-900/95 border-gray-800" : "bg-white/95 border-gray-200"
-        } border-b`}
+        className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-300 ${
+          isDark ? "bg-gray-900/80 border-gray-700/50" : "bg-white/80 border-gray-200/50"
+        }`}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex gap-4 overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`group relative flex items-center gap-2 px-6 py-4 font-medium transition-all duration-300 whitespace-nowrap ${
+                className={`group relative flex items-center gap-2.5 px-6 py-4 font-semibold transition-all duration-300 whitespace-nowrap ${
                   activeTab === id
                     ? isDark
                       ? "text-blue-400"
@@ -42,15 +42,18 @@ const StaffSalaryContainer = () => {
                 }`}
               >
                 <Icon
-                  size={18}
+                  size={20}
                   className={`transition-all duration-300 ${
-                    activeTab === id ? "scale-110 rotate-3" : "group-hover:scale-105"
+                    activeTab === id ? "scale-110 rotate-6" : "group-hover:scale-105 group-hover:rotate-3"
                   }`}
                 />
-                <span>{label}</span>
+                <span className="tracking-wide">{label}</span>
                 {activeTab === id && (
                   <div
-                    className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-blue-500 animate-slideIn`}
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 rounded-t-full shadow-lg shadow-blue-500/50"
+                    style={{
+                      animation: "slideIn 0.3s ease-out"
+                    }}
                   />
                 )}
               </button>
@@ -60,34 +63,19 @@ const StaffSalaryContainer = () => {
       </div>
 
       {/* Content */}
-      <div className="animate-fadeIn">
+      <div style={{ animation: "fadeIn 0.4s ease-in-out" }}>
         {activeTab === "staff" && <StaffManagement />}
         {activeTab === "salary" && <SalaryManagement />}
       </div>
 
-      {/* Custom Animations */}
       <style jsx>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         @keyframes slideIn {
-          from {
-            transform: scaleX(0);
-          }
-          to {
-            transform: scaleX(1);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-in-out;
-        }
-        .animate-slideIn {
-          animation: slideIn 0.3s ease-in-out;
+          from { transform: scaleX(0); opacity: 0; }
+          to { transform: scaleX(1); opacity: 1; }
         }
       `}</style>
     </div>

@@ -105,11 +105,9 @@ export const getBikes = async (req, res) => {
 
    const role = String(req.user.role).toLowerCase();
 
-    const whereCondition =
-      role === "user"
-        ? { ownerUserId }                     // 👑 admin → all team data
-        : { ownerUserId, createdById: req.user.id }; // 👤 team → own only
-
+    const whereCondition = {
+      ownerUserId: ownerUserId,
+    };
 
     const bikes = await prisma.bike.findMany({
       where: whereCondition,
@@ -134,10 +132,7 @@ export const getBikeById = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const bike = await prisma.bike.findFirst({
-      where:
-      role === "user"
-        ? { id, ownerUserId }
-        : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId }
     });
 
     if (!bike) {
@@ -163,10 +158,7 @@ export const updateBike = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const result = await prisma.bike.updateMany({
-      where:
-      role === "user"
-        ? { id, ownerUserId }
-        : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
       data: {
         ownerName: data.fullName,
         phone: data.phone,
@@ -225,13 +217,8 @@ export const deleteBike = async (req, res) => {
     }
 
     const result = await prisma.bike.deleteMany({
-
-      where:
-        role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
-
-          });
+      where: { id, ownerUserId }
+    });
 
     if (result.count === 0) {
       return res.status(403).json({

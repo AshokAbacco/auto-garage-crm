@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, ChevronDown, IndianRupee, Gift, CalendarX, TrendingDown, Calculator } from "lucide-react";
 import { toast } from "react-hot-toast";
-import api from "../../utils/axiosInstance";
+import api from "../../../utils/axiosInstance";
 
 const DAYS_IN_YEAR = 365;
 
@@ -19,19 +19,18 @@ const calculateDeductions = (annualSalary, leaves) => {
 const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
   const [staffList, setStaffList] = useState([]);
   const [formData, setFormData] = useState({
-    staffId: "",
-    annualSalary: "",
-    bonus: "",
-    leaves: "",
-    deductions: ""
+    staffId: salary?.staffId || "",
+    bonus: salary?.bonus || 0,
+    leaves: salary?.leaves || 0,
   });
-
   const [selectedStaffData, setSelectedStaffData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [existingSalaries, setExistingSalaries] = useState([]);
 
-  useEffect(() => {
+    useEffect(() => {
     fetchStaff();
-  }, []);
+    fetchSalaries();
+    }, []);
 
   useEffect(() => {
     if (formData.staffId) {
@@ -44,12 +43,21 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
 
   const fetchStaff = async () => {
     try {
-      const res = await api.get("/api/staff");
+      const res = await api.get("/api/washing-staff");
       setStaffList(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       toast.error("Failed to load staff list");
     }
   };
+
+  const fetchSalaries = async () => {
+    try {
+        const res = await api.get("/api/washing-staff-salary");
+        setExistingSalaries(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+        toast.error("Failed to load salary records");
+    }
+ };
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -77,11 +85,21 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
         status: "pending",
       };
 
+      const alreadyHasSalary = existingSalaries.some(
+        (s) => s.staffId === Number(formData.staffId)
+        );
+
+        if (!salary && alreadyHasSalary) {
+        toast.error("Salary already added for this employee");
+        return;
+      }
+
+
       if (salary) {
-        await api.put(`/api/bike-staff-salary/${salary.id}`, payload);
+        await api.put(`/api/washing-staff-salary/${salary.id}`, payload);
         toast.success("Salary entry updated successfully");
       } else {
-        await api.post("/api/bike-staff-salary", payload);
+        await api.post("/api/washing-staff-salary", payload);
         toast.success("Salary entry added successfully");
       }
 
@@ -155,9 +173,14 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
               >
                 <option value="">-- Select Staff --</option>
                 {staffList.map((staff) => (
-                  <option key={staff.id} value={staff.id}>
-                    {staff.name} - {staff.role}
-                  </option>
+                  <option
+                    key={staff.id}
+                    value={staff.id}
+                    disabled={existingSalaries.some(s => s.staffId === staff.id)}
+                    >
+                    {staff.name} - {staff.email}  
+                </option>
+
                 ))}
               </select>
               <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-gray-500" : "text-gray-400"}`} size={20} />
@@ -267,11 +290,12 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
                 <IndianRupee size={20} />
                 {netSalary.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
               </div>
+              
             </div>
           </div>
 
           {/* Calculation Note */}
-          {selectedStaffData && (
+          {/* {selectedStaffData && (
             <div
               className={`p-4 rounded-2xl text-sm ${
                 isDark ? "bg-blue-500/10 text-blue-400 border-2 border-blue-500/30" : "bg-blue-50 text-blue-700 border-2 border-blue-200"
@@ -292,7 +316,7 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
                 </p>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Buttons */}
           <div className="flex gap-3 pt-2">

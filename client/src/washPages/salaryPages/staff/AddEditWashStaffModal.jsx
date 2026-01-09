@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X, User, Mail, Phone, MapPin, IndianRupee, Briefcase } from "lucide-react";
 
-const AddEditStaffModal = ({ staff, onClose, onSave, isDark }) => {
+const AddEditStaffModal = ({ staff, staffList = [], onClose, onSave, isDark }) => {
   const [formData, setFormData] = useState({
     name: staff?.name || "",
     email: staff?.email || "",
@@ -15,13 +15,29 @@ const AddEditStaffModal = ({ staff, onClose, onSave, isDark }) => {
     setFormData({ ...formData, [field]: value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      annualSalary: Number(formData.annualSalary),
-    });
-  };
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  const name = formData.name.trim().toLowerCase();
+  const email = formData.email?.trim().toLowerCase();
+
+  const isDuplicate = staffList.some((s) =>
+    s.id !== staff?.id && // allow edit of same staff
+    s.name?.trim().toLowerCase() === name &&
+    s.email?.trim().toLowerCase() === email
+  );
+
+  if (isDuplicate) {
+    alert("Employee with same Name and Email already exists");
+    return;
+  }
+
+  onSave({
+    ...formData,
+    annualSalary: Number(formData.annualSalary),
+  });
+};
+
 
   return (
     <div

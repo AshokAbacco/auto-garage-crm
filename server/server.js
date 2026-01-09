@@ -26,6 +26,8 @@ import washingClientRoutes from "./routes/washingRoutes.js";
 import washingServiceRoutes from "./routes/washingserviceRoutes.js";
 import washBillingRoutes from "./routes/washInvoiceRoutes.js";
 import teamsRoutes from "./routes/teamsRoutes.js"; // adjust path if needed
+import washingStaffRoutes from "./routes/washingStaffRoutes.js";
+import washingStaffSalaryRoutes from "./routes/washingStaffSalaryRoutes.js";
 
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
@@ -47,9 +49,6 @@ import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js"
 import serviceApprovalRoutes from "./routes/serviceApprovalRoutes.js";
 import whatsappRoutes from "./routes/whatsappRoutes.js";
 import whatsappWebhookRoutes from "./routes/whatsappWebhookRoutes.js";
-
-
-
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -173,11 +172,14 @@ app.use("/api/ocr", ocrRoutes);
 app.use("/api/dashboard", carDashboardRoutes);
 app.use("/api/referral", referralRoutes);
 
-//washing crm related routes
+//washing washing related routes
 app.use("/api/washing-clients", washingClientRoutes);
 app.use("/api/washing-services", washingServiceRoutes);
 app.use("/api/wash-billing", washBillingRoutes);
 app.use("/api/teams", teamsRoutes);
+app.use("/api/washing-staff", washingStaffRoutes);
+app.use("/api/washing-staff-salary", washingStaffSalaryRoutes);
+
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

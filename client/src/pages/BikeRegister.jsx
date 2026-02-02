@@ -344,9 +344,9 @@ const BikeRegister = () => {
                         required
                         className={`w-full pl-12 pr-12 py-4 rounded-xl border-2 transition-all duration-300 ${
                           focusedInput === 'password'
-                            ? 'border-green-500 shadow-lg shadow-green-500/20 scale-[1.01]'
+                            ? 'bg-white/5 border-green-500 shadow-lg shadow-green-500/20 scale-[1.01]'
                             : 'bg-white/5 border-white/10'
-                        } focus:outline-none focus:border-green-500 text-white placeholder-gray-100`}
+                        } focus:outline-none text-white placeholder-gray-300`}
                       />
                       <button
                         type="button"

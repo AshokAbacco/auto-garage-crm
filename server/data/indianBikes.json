@@ -2,39 +2,1044 @@
   {
     "make": "HONDA",
     "slug": "honda",
-    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Honda_Logo.svg",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Logo.png",
     "models": [
       {
-        "name": "Activa",
-        "slug": "activa",
-        "thumbnailUrl": "https://www.vhv.rs/dpng/d/471-4717101_honda-activa-transparent-images-honda-activa-new-model.png",
-        "heroUrl": "https://www.pngarts.com/files/11/Blue-Activa-Transparent-Images.png",
-        "yearVariants": {
-          "2024": {
-            "thumbnailUrl": "https://centralization-images.s3.ap-south-1.amazonaws.com/2_BIKE_Website_75a1cd08e0.png",
-            "heroUrl": "https://images.timesdrive.in/photo/msid-151054468,thumbsize-566229/151054468.jpg"
-          }
-        }
+        "name": "Honda Activa 110",
+        "slug": "honda-activa-110",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%20110.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%20110.webp"
       },
       {
-        "name": "Shine",
-        "slug": "shine",
-        "thumbnailUrl": "https://images.timesdrive.in/thumb/msid-151180034,thumbsize-489279,width-450,height-254,resizemode-75/151180034.jpg",
-        "heroUrl": "https://www.srivasavihonda.com/wp-content/uploads/2020/06/Shine-125-BS6.png"
+        "name": "Honda Activa 125",
+        "slug": "honda-activa-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%20125.avif"
+      },
+      {
+        "name": "Honda Activa 6G",
+        "slug": "honda-activa-6g",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%206G.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%206G.avif"
+      },
+      {
+        "name": "Honda Activa 7G",
+        "slug": "honda-activa-7g",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%207G.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%207G.avif"
+      },
+      {
+        "name": "Honda Activa EV",
+        "slug": "honda-activa-ev",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%20EV.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Activa%20EV.avif"
+      },
+      {
+        "name": "Honda CB1000 Hornet SP",
+        "slug": "honda-cb1000-hornet-sp",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB1000%20Hornet%20SP.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB1000%20Hornet%20SP.jpg"
+      },
+      {
+        "name": "Honda CB125 Hornet",
+        "slug": "honda-cb125-hornet",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB125%20Hornet.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB125%20Hornet.jpg"
+      },
+      {
+        "name": "Honda CB300F",
+        "slug": "honda-cb300f",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB300F.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB300F.avif"
+      },
+      {
+        "name": "Honda CB350",
+        "slug": "honda-cb350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB350.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB350.avif"
+      },
+      {
+        "name": "Honda CB350RS",
+        "slug": "honda-cb350rs",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB350RS.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB350RS.jpg"
+      },
+      {
+        "name": "Honda CB750 Hornet",
+        "slug": "honda-cb750-hornet",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB750%20Hornet.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20CB750%20Hornet.avif"
+      },
+      {
+        "name": "Honda Dio 125",
+        "slug": "honda-dio-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Dio%20125.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Dio%20125.png"
+      },
+      {
+        "name": "Honda Hornet",
+        "slug": "honda-hornet",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Hornet.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Hornet.avif"
+      },
+      {
+        "name": "Honda Hness CB350",
+        "slug": "honda-hness-cb350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20H%E2%80%99ness%20CB350.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20H%E2%80%99ness%20CB350.avif"
+      },
+      {
+        "name": "Honda Livo",
+        "slug": "honda-livo",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Livo.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Livo.avif"
+      },
+      {
+        "name": "Honda NX200",
+        "slug": "honda-nx200",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20NX200.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20NX200.webp"
+      },
+      {
+        "name": "Honda PCX160",
+        "slug": "honda-pcx160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20PCX160.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20PCX160.png"
+      },
+      {
+        "name": "Honda SP 125",
+        "slug": "honda-sp-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20SP%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20SP%20125.avif"
+      },
+      {
+        "name": "Honda SP 160",
+        "slug": "honda-sp-160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20SP%20160.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20SP%20160.webp"
+      },
+      {
+        "name": "Honda Shine",
+        "slug": "honda-shine",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Shine.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Shine.avif"
+      },
+      {
+        "name": "Honda Unicorn",
+        "slug": "honda-unicorn",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Unicorn.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20Unicorn.jpg"
+      },
+      {
+        "name": "Honda X-ADV 750",
+        "slug": "honda-x-adv-750",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20X-ADV%20750.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20X-ADV%20750.avif"
+      },
+      {
+        "name": "Honda XL750 Transalp",
+        "slug": "honda-xl750-transalp",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20XL750%20Transalp.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Honda%20Motors/Honda%20Motors/Honda%20XL750%20Transalp.jpg"
+      }
+    ]
+  },
+
+  {
+    "make": "HERO",
+    "slug": "hero",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20logo.png",
+    "models": [
+      {
+        "name": "Harley Davidson X440 T",
+        "slug": "harley-davidson-x440-t",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Harley-Davidson%20X440%20T.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Harley-Davidson%20X440%20T.avif"
+      },
+      {
+        "name": "Harley Davidson X440",
+        "slug": "harley-davidson-x440",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Harley-Davidson%20X440.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Harley-Davidson%20X440.jpg"
+      },
+      {
+        "name": "Hero Destini 110",
+        "slug": "hero-destini-110",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Destini%20110.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Destini%20110.jpg"
+      },
+      {
+        "name": "Hero Glamour X 125",
+        "slug": "hero-glamour-x-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Glamour%20X%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Glamour%20X%20125.avif"
+      },
+      {
+        "name": "Hero Glamour",
+        "slug": "hero-glamour",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Glamour.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Glamour.webp"
+      },
+      {
+        "name": "Hero HF 100",
+        "slug": "hero-hf-100",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20HF%20100.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20HF%20100.avif"
+      },
+      {
+        "name": "Hero HF Deluxe",
+        "slug": "hero-hf-deluxe",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20HF%20Deluxe.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20HF%20Deluxe.avif"
+      },
+      {
+        "name": "Hero Karizma XMR",
+        "slug": "hero-karizma-xmr",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Karizma%20XMR.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Karizma%20XMR.avif"
+      },
+      {
+        "name": "Hero Maverick 440",
+        "slug": "hero-maverick-440",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Maverick%20440.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Maverick%20440.avif"
+      },
+      {
+        "name": "Hero Passion Plus",
+        "slug": "hero-passion-plus",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Passion%20Plus.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Passion%20Plus.jpg"
+      },
+      {
+        "name": "Hero Pleasure Plus",
+        "slug": "hero-pleasure-plus",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Pleasure%20Plus.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Pleasure%20Plus.avif"
+      },
+      {
+        "name": "Hero Splendor Plus XTEC 2.0",
+        "slug": "hero-splendor-plus-xtec-2.0", 
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Splendor%20Plus%20XTEC%202.0.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Splendor%20Plus%20XTEC%202.0.webp"
+      },
+      {
+        "name": "Hero Splendor Plus",
+        "slug": "hero-splendor-plus",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Splendor%20Plus.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Splendor%20Plus.png"
+      },
+      {
+        "name": "Hero Super Splendor XTEC",
+        "slug": "hero-super-splendor-xtec",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Super%20Splendor%20XTEC.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Super%20Splendor%20XTEC.avif"
+      },
+      {
+        "name": "Hero Vida V2 Plus",
+        "slug": "hero-vida-v2-plus",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Vida%20V2%20Plus.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Vida%20V2%20Plus.jpg"
+      },
+      {
+        "name": "Hero Vida VX2",
+        "slug": "hero-vida-vx2",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Vida%20VX2.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Vida%20VX2.jpg"
+      },
+      { 
+        "name": "Hero XPulse 200 4V",
+        "slug": "hero-xpulse-200-4v",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20XPulse%20200%204V.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20XPulse%20200%204V.avif"
+      },
+      { 
+        "name": "Hero XPulse 210 Dakar Edition",
+        "slug": "hero-xpulse-210-dakar-edition",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20XPulse%20210%20Dakar%20Edition.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20XPulse%20210%20Dakar%20Edition.png"
+      },
+      { 
+        "name": "Hero XPulse 210",
+        "slug": "hero-xpulse-210",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20XPulse%20210.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20XPulse%20210.jpg"
+      },
+      { 
+        "name": "Hero Xoom 110",
+        "slug": "hero-xoom-110",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xoom%20110.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xoom%20110.avif"
+      },
+      { 
+        "name": "Hero Xoom 125",
+        "slug": "hero-xoom-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xoom%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xoom%20125.avif"
+      },
+      { 
+        "name": "Hero Xoom 160",
+        "slug": "hero-xoom-160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xoom%20160.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xoom%20160.jpg"
+      },
+      { 
+        "name": "Hero Xtreme 125R",
+        "slug": "hero-xtreme-125r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20125R.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20125R.webp"
+      },
+      { 
+        "name": "Hero Xtreme 160R 4V",
+        "slug": "hero-xtreme-160r-4v",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20160R%204V.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20160R%204V.webp"
+      },
+      { 
+        "name": "Hero Xtreme 160R",
+        "slug": "hero-xtreme-160r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20160R.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20160R.avif"
+      },
+      { 
+        "name": "Hero Xtreme 250R",
+        "slug": "hero-xtreme-250r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20250R.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Hero%20MotoCorp/Hero%20Xtreme%20250R.avif"
+      }
+
+    ]
+  },
+
+  {
+    "make": "Bajaj Auto",
+    "slug": "bajaj-auto",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj-Logo.png",
+    "models": [
+      {
+        "name": "Bajaj Avenger Cruise 220",
+        "slug": "bajaj-avenger-cruise-220",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Avenger%20Cruise%20220.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Avenger%20Cruise%20220.webp"
+      },
+      {
+        "name": "Bajaj Avenger Street 160",
+        "slug": "bajaj-avenger-street-160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Avenger%20Street%20160.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Avenger%20Street%20160.webp"
+      },
+      {
+        "name": "Bajaj CT 110 X",
+        "slug": "bajaj-ct-110-x",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20CT%20110%20X.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20CT%20110%20X.avif"
+      },
+      {
+        "name": "Bajaj CT 125",
+        "slug": "bajaj-ct-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20CT%20125.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20CT%20125.webp"
+      },
+      {
+        "name": "Bajaj Chetak",
+        "slug": "bajaj-chetak",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Chetak%20(Electric).jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Chetak%20(Electric).jpg"
+      },
+      {
+        "name": "Bajaj Dominar 250",
+        "slug": "bajaj-dominar-250",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Dominar%20250.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Dominar%20250.webp"
+      },
+      {
+        "name": "Bajaj Platina 100",
+        "slug": "bajaj-platina-100",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Platina%20100.jpeg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Platina%20100.jpeg"
+      },
+      {
+        "name": "Bajaj Freedom 125",
+        "slug": "bajaj-freedom-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Freedom%20125.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Freedom%20125.webp"
+      },
+      {
+        "name": "Bajaj Pulsar 125",
+        "slug": "bajaj-pulsar-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20125.avif"
+      },
+      {
+        "name": "Bajaj Pulsar 150",
+        "slug": "bajaj-pulsar-150",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20150.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20150.jpg"
+      },
+      {
+        "name": "Bajaj Pulsar N160",
+        "slug": "bajaj-pulsar-n160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20N160.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20N160.webp"
+      },
+      {
+        "name": "Bajaj Pulsar NS200",
+        "slug": "bajaj-pulsar-ns200",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20NS200.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20NS200.avif"
+      },
+      {
+        "name": "Bajaj Pulsar NS400Z",
+        "slug": "bajaj-pulsar-ns400z",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20NS400Z.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Bajaj%20Pulsar%20NS400Z.png"
+      },
+      {
+        "name": "Pulsar F250",
+        "slug": "pulsar-f250",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Pulsar%20F250.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Bajaj%20Auto/Pulsar%20F250.webp"
+      }
+      
+    ]
+  },
+
+  {
+    "make": "Royal Enfield",
+    "slug": "royal-enfield",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Royal%20Enfield%20Logo.jpg",
+    "models": [
+      {
+        "name": "Bear 650",
+        "slug": "bear-650",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Bear%20650.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Bear%20650.avif"
+      },
+      {
+        "name": "Bullet 350",
+        "slug": "bullet-350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Bullet%20350.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Bullet%20350.jpg"
+      },
+      {
+        "name": "Classic 350",
+        "slug": "classic-350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Classic%20350.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Classic%20350.avif"
+      },
+      {
+        "name": "Classic 650",
+        "slug": "classic-650",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Classic%20650.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Classic%20650.webp"
+      },
+      {
+        "name": "Continental GT 650",
+        "slug": "continental-gt-650",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Continental%20GT%20650.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Continental%20GT%20650.jpg"
+      },
+      {
+        "name": "Goan Classic 350",
+        "slug": "goan-classic-350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Goan%20Classic%20350.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Goan%20Classic%20350.webp"
+      },
+      {
+        "name": "Guerrilla 450",
+        "slug": "guerrilla-450",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Guerrilla%20450.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Guerrilla%20450.avif"
+      },
+      {
+        "name": "Himalayan 450",
+        "slug": "himalayan-450",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Himalayan%20450.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Himalayan%20450.avif"
+      },
+      {
+        "name": "Hunter 350",
+        "slug": "hunter-350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Hunter%20350.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Hunter%20350.avif"
+      },
+      {
+        "name": "Interceptor 650",
+        "slug": "interceptor-650",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Interceptor%20650.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Interceptor%20650.avif"
+      },
+      {
+        "name": "Meteor 350",
+        "slug": "meteor-350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Meteor%20350.jpeg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Meteor%20350.jpeg"
+      },
+      {
+        "name": "Scram 440",
+        "slug": "scram-440",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Scram%20440.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Scram%20440.jpg"
+      },
+      {
+        "name": "Shotgun 650",
+        "slug": "shotgun-650",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Shotgun%20650.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Shotgun%20650.avif"
+      },
+      {
+        "name": "Super Meteor 650",
+        "slug": "Super-Meteor-650",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Super%20Meteor%20650.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Royal%20Enfield/Super%20Meteor%20650.webp"
+      }
+    ]
+  },
+
+  {
+    "make": "TVS Motor",
+    "slug": "tvs-motor",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Motor%20Logo.png",
+    "models": [
+      {
+        "name": "TVS Apache RR",
+        "slug": "tvs-apache-rr",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RR%20310.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RR%20310.jpg"
+      },
+      {
+        "name": "TVS Apache RTR 160 4V",
+        "slug": "tvs-apache-rtr-160-4V",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20160%204V.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20160%204V.avif"
+      },
+      {
+        "name": "TVS Apache RTR 160",
+        "slug": "tvs-apache-rtr-160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20160.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20160.avif"
+      },
+      {
+        "name": "TVS Apache RTR 180",
+        "slug": "tvs-apache-rtr-180",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20180.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20180.webp"
+      },
+      {
+        "name": "TVS Apache RTR 200 4V",
+        "slug": "tvs-apache-rtr-200-4V",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20200%204V.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20200%204V.avif"
+      },
+      {
+        "name": "TVS Apache RTR 310",
+        "slug": "tvs-apache-rtr-310",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20310.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTR%20310.avif"
+      },
+      {
+        "name": "TVS Apache RTX 300",
+        "slug": "tvs-apache-rtx-300",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTX%20300.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Apache%20RTX%20300.jpg"
+      },
+      {
+        "name": "TVS Jupiter 110",
+        "slug": "tvs-jupiter-110",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Jupiter%20110.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Jupiter%20110.webp"
+      },
+      {
+        "name": "TVS Jupiter 125",
+        "slug": "tvs-jupiter-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Jupiter%20125.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Jupiter%20125.webp"
+      },
+      {
+        "name": "TVS NTorq 125",
+        "slug": "tvs-ntorq-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20NTorq%20125.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20NTorq%20125.webp"
+      },
+      {
+        "name": "TVS NTorq 150",
+        "slug": "tvs-ntorq-150",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20NTorq%20150.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20NTorq%20150.webp"
+      },
+      {
+        "name": "TVS Radeon",
+        "slug": "tvs-radeon",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Radeon.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Radeon.avif"
+      },
+      {
+        "name": "TVS Raider 125",
+        "slug": "tvs-raider-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Raider%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Raider%20125.avif"
+      },
+      {
+        "name": "TVS Orbiter",
+        "slug": "tvs-orbiter",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Orbiter.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Orbiter.avif"
+      },
+      {
+        "name": "TVS Ronin 225",
+        "slug": "tvs-ronin-225",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Ronin%20225.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Ronin%20225.avif"
+      },
+      {
+        "name": "TVS Scooty Pep",
+        "slug": "tvs-scooty-pep",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Scooty%20Pep.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Scooty%20Pep.jpg"
+      },
+      {
+        "name": "TVS Sport",
+        "slug": "tvs-sport",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Sport.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Sport.jpg"
+      },
+      {
+        "name": "TVS Star City Plus",
+        "slug": "tvs-star-city-plus",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Star%20City%20Plus.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Star%20City%20Plus.jpg"
+      },
+      {
+        "name": "TVS X EV",
+        "slug": "tvs-x-ev",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20X%20EV.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20X%20EV.avif"
+      },
+      {
+        "name": "TVS XL100",
+        "slug": "tvs-xl100",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20XL100.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20XL100.avif"
+      },
+      {
+        "name": "TVS Zest 110",
+        "slug": "tvs-zest-110",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Zest%20110.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20Zest%20110.avif"
+      },
+      {
+        "name": "TVS iQube Electric",
+        "slug": "tvs-iqube-electric",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20iQube.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/TVS%20Motor/TVS%20iQube.avif"
       }
     ]
   },
   {
-    "make": "HERO",
-    "slug": "hero",
-    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Hero_MotoCorp_Logo.svg/2560px-Hero_MotoCorp_Logo.svg.png",
+    "make": "Benelli Bikes",
+    "slug": "benelli-bikes",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/benelli%20logo.jpg",
     "models": [
       {
-        "name": "Splendor",
-        "slug": "splendor",
-        "thumbnailUrl": "https://e7.pngegg.com/pngimages/279/593/png-clipart-hero-honda-splendor-hero-motocorp-motorcycle-gurugram-motorcycle-car-india-thumbnail.png",
-        "heroUrl": "https://www.heromotocorp.com/content/dam/hero-commerce/in/en/products/practical/content-fragments/splendor-plus/assets/updated-image/feature/features-bg-web.png"
+        "name": "Benelli 302 S",
+        "slug": "benelli-302-s",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20302%20S.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20302%20S.avif"
+      },
+      {
+        "name": "Benelli 302R",
+        "slug": "benelli-302r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20302R.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20302R.avif"
+      },
+      {
+        "name": "Benelli 502C",
+        "slug": "benelli-502c",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20502C.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20502C.jpg"
+      },
+      {
+        "name": "Benelli Leoncino 500",
+        "slug": "benelli-leoncino-500",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20Leoncino%20500.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20Leoncino%20500.avif"
+      },
+      {
+        "name": "Benelli Leoncino 800",
+        "slug": "benelli-leoncino-800",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20Leoncino%20800.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20Leoncino%20800.png"
+      },
+      {
+        "name": "Benelli TRK 502",
+        "slug": "benelli-trk-502",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20TRK%20502.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20TRK%20502.webp"
+      },
+      {
+        "name": "Benelli TRK 502X",
+        "slug": "benelli-trk-502x",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20TRK%20502X.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Benelli%20Bikes/Benelli%20Bikes/Benelli%20TRK%20502X.avif"
+      }
+      
+    ]
+  },
+  {
+    "make": "Jawa Motors",
+    "slug": "jawa-motors",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/jawa%20logo.webp",
+    "models": [
+      {
+        "name": "Jawa 350",
+        "slug": "jawa-350",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%20350.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%20350.jpg"
+      },
+      {
+        "name": "Jawa 42 Bobber",
+        "slug": "jawa-42-bobber",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%2042%20Bobber.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%2042%20Bobber.jpg"
+      },
+      {
+        "name": "Jawa 42 FJ",
+        "slug": "jawa-42-fj",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%2042%20FJ.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%2042%20FJ.avif"
+      },
+      {
+        "name": "Jawa 42",
+        "slug": "jawa-42",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%2042.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%2042.avif"
+      },
+      {
+        "name": "Jawa Perak",
+        "slug": "jawa-perak",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%20Perak.jpeg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Jawa%20Motors/Jawa%20Motors/Jawa%20Perak.jpeg"
+      }
+         
+      
+    ]
+  },
+  {
+    "make": "KTM Bikes",
+    "slug": "ktm-bikes",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20Logo.png",
+    "models": [
+      {
+        "name": "KTM 125 Duke",
+        "slug": "ktm-125-duke",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20125%20Duke.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20125%20Duke.webp"
+      },
+      {
+        "name": "KTM 1290 Super Adventure S",
+        "slug": "ktm-1290-super-adventure-s",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%201290%20Super%20Adventure%20S.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%201290%20Super%20Adventure%20S.webp"
+      },
+      {
+        "name": "KTM 1390 Super Duke R",
+        "slug": "ktm-1390-super-duke-r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%201390%20Super%20Duke%20R.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%201390%20Super%20Duke%20R.avif"
+      },
+      {
+        "name": "KTM 160 Duke",
+        "slug": "ktm-160-duke",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20160%20Duke.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20160%20Duke.avif"
+      },
+      {
+        "name": "KTM 200 Duke",
+        "slug": "ktm-200-duke",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20200%20Duke.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20200%20Duke.png"
+      },
+      {
+        "name": "KTM 250 Adventure",
+        "slug": "ktm-250-adventure",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20250%20Adventure.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20250%20Adventure.avif"
+      },
+      {
+        "name": "KTM 250 Duke",
+        "slug": "ktm-250-duke",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20250%20Duke.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20250%20Duke.avif"
+      },
+      {
+        "name": "KTM 390 Adventure X",
+        "slug": "ktm-390-adventure-x",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Adventure%20X.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Adventure%20X.webp"
+      },
+      {
+        "name": "KTM 390 Adventure",
+        "slug": "ktm-390-adventure",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Adventure.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Adventure.webp"
+      },
+      {
+        "name": "KTM 390 Duke",
+        "slug": "ktm-390-duke",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Duke.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Duke.avif"
+      },
+      {
+        "name": "KTM 390 Enduro R",
+        "slug": "ktm-390-enduro-r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Enduro%20R.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20390%20Enduro%20R.avif"
+      },
+      {
+        "name": "KTM 450 SX-F",
+        "slug": "ktm-450-sx-f",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20450%20SX-F.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20450%20SX-F.webp"
+      },
+      {
+        "name": "KTM 890 Adventure R",
+        "slug": "ktm-890-adventure-r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20890%20Adventure%20R.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20890%20Adventure%20R.webp"
+      },
+      {
+        "name": "KTM 890 Duke",
+        "slug": "ktm-890-duke",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20890%20Duke.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20890%20Duke.avif"
+      },
+      {
+        "name": "KTM RC 125",
+        "slug": "ktm-rc-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20125.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20125.webp"
+      },
+      {
+        "name": "KTM RC 160",
+        "slug": "ktm-rc-160",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20160.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20160.jpg"
+      },
+      {
+        "name": "KTM RC 200",
+        "slug": "ktm-rc-200",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20200.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20200.png"
+      },
+      {
+        "name": "KTM RC 390",
+        "slug": "ktm-rc-390",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20390.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20RC%20390.webp"
+      },
+      {
+        "name": "KTM SX",
+        "slug": "ktm-sx",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20SX.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/KTM%20Bikes/KTM%20SX.jpg"
+      }
+      
+    ]
+  },
+  {
+    "make": "Suzuki Motors",
+    "slug": "suzuki-motors",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki-Logo.png",
+    "models": [
+      {
+        "name": "Suzuki Access 125",
+        "slug": "suzuki-access-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Access%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Access%20125.avif"
+      },
+      {
+        "name": "Suzuki Avenis 125",
+        "slug": "suzuki-avenis-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Avenis%20125.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Avenis%20125.jpg"
+      },
+      {
+        "name": "Suzuki Burgman Electric",
+        "slug": "suzuki-burgman-electric",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Burgman%20Electric.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Burgman%20Electric.webp"
+      },
+      {
+        "name": "Suzuki Burgman Street 125",
+        "slug": "suzuki-burgman-street-125",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Burgman%20Street%20125.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Burgman%20Street%20125.avif"
+      },
+      {
+        "name": "Suzuki E-ACCESS",
+        "slug": "suzuki-e-access",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20E-ACCESS.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20E-ACCESS.jpg"
+      },
+      {
+        "name": "Suzuki GSX-8R",
+        "slug": "suzuki-gsx-8r",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20GSX-8R.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20GSX-8R.png"
+      },
+      {
+        "name": "Suzuki Gixxer 250",
+        "slug": "suzuki-gixxer-250",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer%20250.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer%20250.webp"
+      },
+      {
+        "name": "Suzuki Gixxer SF 250",
+        "slug": "suzuki-gixxer-sf-250",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer%20SF%20250.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer%20SF%20250.jpg"
+      },
+      {
+        "name": "Suzuki Gixxer SF",
+        "slug": "suzuki-gixxer-sf",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer%20SF.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer%20SF.png"
+      },
+      {
+        "name": "Suzuki Gixxer",
+        "slug": "suzuki-gixxer",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Gixxer.jpg"
+      },
+      {
+        "name": "Suzuki Hayabusa",
+        "slug": "suzuki-hayabusa",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Hayabusa.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20Hayabusa.jpg"
+      },
+      {
+        "name": "Suzuki V-Strom 800DE",
+        "slug": "suzuki-v-strom-800de",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20V-Strom%20800DE.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20V-Strom%20800DE.jpg"
+      },
+      {
+        "name": "Suzuki V-Strom SX",
+        "slug": "suzuki-v-strom-sx",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20V-Strom%20SX.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Suzuki%20Motors/Suzuki%20V-Strom%20SX.avif"
       }
     ]
+  },
+  {
+    "make": "Yamaha Bikes",
+    "slug": "yamaha-bikes",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/yamaha%20LOGO.gif",
+    "models": [
+      {
+        "name": "Yamaha Aerox 155",
+        "slug": "yamaha-aerox-155",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20Aerox%20155.png",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20Aerox%20155.png"
+      },
+      {
+        "name": "Yamaha EC-06",
+        "slug": "yamaha-ec-06",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20EC-06.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20EC-06.avif"
+      },
+      {
+        "name": "Yamaha FZ X",
+        "slug": "yamaha-fz-x",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ%20X.jpeg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ%20X.jpeg"
+      },
+      {
+        "name": "Yamaha FZ-RAVE",
+        "slug": "yamaha-fz-rave",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ-RAVE.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ-RAVE.webp"
+      },
+      {
+        "name": "Yamaha FZ-S Fi",
+        "slug": "yamaha-fz-s-fi",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ-S%20Fi.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ-S%20Fi.webp"
+      },
+      {
+        "name": "Yamaha FZ-S Hybrid",
+        "slug": "yamaha-fz-s-hybrid",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ-S%20Hybrid.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZ-S%20Hybrid.webp"
+      },
+      {
+        "name": "Yamaha FZS-FI V4",
+        "slug": "yamaha-fzs-fi-v4",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZS-FI%20V4.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20FZS-FI%20V4.avif"
+      },
+      {
+        "name": "Yamaha Fascino 125 Fi Hybrid",
+        "slug": "yamaha-fascino-125-fi-hybrid",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20Fascino%20125%20Fi%20Hybrid.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20Fascino%20125%20Fi%20Hybrid.webp"
+      },
+      {
+        "name": "Yamaha MT-03",
+        "slug": "yamaha-mt-03",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20MT-03.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20MT-03.avif"
+      },
+      {
+        "name": "Yamaha MT-15",
+        "slug": "yamaha-mt-15",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20MT-15.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20MT-15.avif"
+      },
+      {
+        "name": "Yamaha NMax 155",
+        "slug": "yamaha-nmax-155",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20NMax%20155.jpg",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20NMax%20155.jpg"
+      },
+      {
+        "name": "Yamaha R15 V4",
+        "slug": "yamaha-r15-v4",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20R15%20V4.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20R15%20V4.webp"
+      },
+      {
+        "name": "Yamaha R15S",
+        "slug": "yamaha-r15s",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20R15S.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20R15S.avif"
+      },
+      {
+        "name": "Yamaha R3",
+        "slug": "yamaha-r3",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20R3.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20R3.webp"
+      },
+      {
+        "name": "Yamaha RayZR 125 Fi Hybrid",
+        "slug": "yamaha-rayzr-125-fi-hybrid",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20RayZR%20125%20Fi%20Hybrid.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20RayZR%20125%20Fi%20Hybrid.webp"
+      },
+      {
+        "name": "Yamaha RayZR Street Rally 125 Fi Hybrid",
+        "slug": "yamaha-rayzr-street-rally-125-fi-hybrid",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20RayZR%20Street%20Rally%20125%20Fi%20Hybrid.webp",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20RayZR%20Street%20Rally%20125%20Fi%20Hybrid.webp"
+      },
+      {
+        "name": "Yamaha XSR 155",
+        "slug": "yamaha-xsr-155",
+        "thumbnailUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20XSR%20155.avif",
+        "heroUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/bike-garage/Yamaha/Yamaha%20XSR%20155.avif"
+      } 
+      
+    ]
   }
+
+
 ]

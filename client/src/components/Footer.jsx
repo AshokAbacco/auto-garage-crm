@@ -201,16 +201,17 @@ const Footer = () => {
             ></div>
           </div>
 
-                {/* Logo - Top Center */}
-                <div className="relative z-10 pt-6 flex justify-center">
-                <div className="w-20 h-20 sm:w-28 sm:h-18 rounded-2xl   overflow-hidden">
+            {/* Logo - Top Center */}
+            <div className="relative z-10 pt-6 flex justify-center">
+                <div className="w-20 h-20 sm:w-28 sm:h-18 rounded-2xl overflow-hidden">
                     <img
-                    src="/Logos/transLogo.png"
+                    src={isDark ? "/Logos/dark3.png" : "/Logos/transLogo.png"}
                     alt="Motor Desk Logo"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain transition-all duration-300"
                     />
                 </div>
-                </div>
+            </div>
+
 
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10">

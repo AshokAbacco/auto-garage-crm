@@ -28,10 +28,24 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
 
   const [selectedStaffData, setSelectedStaffData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [salaryList, setSalaryList] = useState([]);
 
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  // Initialize form data when editing
+  useEffect(() => {
+    if (salary) {
+      setFormData({
+        staffId: salary.staffId?.toString() || "",
+        annualSalary: salary.annualSalary?.toString() || "",
+        bonus: salary.bonus?.toString() || "0",
+        leaves: salary.leaves?.toString() || "0",
+        deductions: salary.deductions?.toString() || "0"
+      });
+    }
+  }, [salary]);
 
   useEffect(() => {
     if (formData.staffId) {
@@ -42,14 +56,27 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
     }
   }, [formData.staffId, staffList]);
 
-  const fetchStaff = async () => {
-    try {
-      const res = await api.get("/api/staff");
-      setStaffList(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      toast.error("Failed to load staff list");
-    }
-  };
+const fetchStaff = async () => {
+  try {
+    const staffRes = await api.get("/api/staff");
+    const salaryRes = await api.get("/api/bike-staff-salary");
+
+    const allStaff = Array.isArray(staffRes.data) ? staffRes.data : [];
+    const allSalaries = Array.isArray(salaryRes.data) ? salaryRes.data : [];
+
+    const staffIdsWithSalary = allSalaries.map(s => s.staffId);
+
+    // remove staff who already have salary
+    const filteredStaff = allStaff.filter(
+      staff => !staffIdsWithSalary.includes(staff.id)
+    );
+
+    setStaffList(filteredStaff);
+  } catch (err) {
+    toast.error("Failed to load staff list");
+  }
+};
+
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -68,13 +95,13 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
       const payload = {
         staffId: Number(formData.staffId),
         annualSalary: selectedStaffData?.annualSalary || 0,
-        bonus: Number(formData.bonus),
-        leaves: Number(formData.leaves),
+        bonus: Number(formData.bonus) || 0,
+        leaves: Number(formData.leaves) || 0,
         deductions: calculateDeductions(
           selectedStaffData?.annualSalary || 0,
           formData.leaves
         ),
-        status: "pending",
+        status: salary?.status || "pending",
       };
 
       if (salary) {
@@ -97,7 +124,7 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
   const perDaySalary = selectedStaffData ? calculatePerDaySalary(selectedStaffData.annualSalary) : 0;
   const deductions = selectedStaffData ? calculateDeductions(selectedStaffData.annualSalary, formData.leaves) : 0;
   const monthlySalary = selectedStaffData ? selectedStaffData.annualSalary / 12 : 0;
-  const netSalary = monthlySalary + Number(formData.bonus) - deductions;
+  const netSalary = monthlySalary + Number(formData.bonus || 0) - deductions;
 
   return (
     <div
@@ -284,11 +311,11 @@ const AddSalaryModal = ({ salary, onClose, onSave, isDark }) => {
               <div className="space-y-1 ml-6">
                 <p>
                   Net Salary = Monthly Salary (₹{monthlySalary.toLocaleString("en-IN", { maximumFractionDigits: 0 })}) 
-                  + Bonus (₹{Number(formData.bonus).toLocaleString()}) 
+                  + Bonus (₹{Number(formData.bonus || 0).toLocaleString()}) 
                   - Leave Deduction (₹{deductions.toLocaleString()})
                 </p>
                 <p>
-                  Leave Deduction = Per Day Salary (₹{perDaySalary.toFixed(2)}) × Leaves ({formData.leaves})
+                  Leave Deduction = Per Day Salary (₹{perDaySalary.toFixed(2)}) × Leaves ({formData.leaves || 0})
                 </p>
               </div>
             </div>

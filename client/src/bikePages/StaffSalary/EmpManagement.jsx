@@ -195,17 +195,19 @@ const StaffManagement = () => {
         </div>
       )}
 
-      {showAddModal && (
-        <AddEditStaffModal
-          staff={selectedStaff}
-          onClose={() => {
-            setShowAddModal(false);
-            setSelectedStaff(null);
-          }}
-          onSave={handleSaveStaff}
-          isDark={isDark}
-        />
-      )}
+    {showAddModal && (
+      <AddEditStaffModal
+        staff={selectedStaff}
+        staffList={staff}   // ✅ FIXED HERE
+        onClose={() => {
+          setShowAddModal(false);
+          setSelectedStaff(null);
+        }}
+        onSave={handleSaveStaff}
+        isDark={isDark}
+      />
+    )}
+
 
       <style jsx>{`
         @keyframes slideDown {

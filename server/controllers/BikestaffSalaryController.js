@@ -23,6 +23,7 @@ export const createBikeStaff = async (req, res) => {
       return res.status(404).json({ message: "Staff not found" });
     }
 
+    const today = new Date();
     const salaryEntry = await prisma.bikeStaff.create({
       data: {
         staffId: Number(staffId),
@@ -32,6 +33,7 @@ export const createBikeStaff = async (req, res) => {
         deductions: Number(deductions),
         status,
         userId: req.user.id,
+        lastUpdatedMonth: `${today.getMonth()}-${today.getFullYear()}`,
       },
       include: {
         staff: true,
@@ -164,15 +166,19 @@ export const payBikeStaffSalary = async (req, res) => {
     }
 
     // ===== Update salary status =====
-    await prisma.bikeStaff.update({
+    const updatedSalary = await prisma.bikeStaff.update({
       where: { id: salary.id },
       data: {
         status: "paid",
         lastPaid: today,
+        lastUpdatedMonth: `${today.getMonth()}-${today.getFullYear()}`,
+      },
+      include: {
+        staff: true,
       },
     });
 
-    res.json({ success: true });
+    res.json(updatedSalary);
   } catch (err) {
     console.error("payBikeStaffSalary error:", err);
     res.status(500).json({ message: err.message });

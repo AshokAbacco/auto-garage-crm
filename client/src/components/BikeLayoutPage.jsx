@@ -152,7 +152,7 @@ const logout = () => {
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
-          ${sidebarExpanded ? "w-64" : "w-16"}
+          ${sidebarExpanded ? "w-64" : "w-18"}
           lg:translate-x-0
           ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"

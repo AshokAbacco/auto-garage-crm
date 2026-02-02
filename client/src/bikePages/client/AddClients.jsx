@@ -86,6 +86,8 @@ export default function AddClients() {
   const [brandSelected, setBrandSelected] = useState(false);
 
   // ========== LOAD EXISTING CLIENT (EDIT MODE) ==========
+
+
   useEffect(() => {
     if (location?.state?.clientData) {
       const c = location.state.clientData;
@@ -166,18 +168,26 @@ export default function AddClients() {
   }, [form.adImage, form.carImage]);
 
   useEffect(() => {
-  if (form.vehicleMake && form.vehicleModel) {
+    if (!form.vehicleMake || !form.vehicleModel) return;
+    if (!bikeModels.length) return;
+
     const timer = setTimeout(() => {
-      fetchBikeImage(
-        form.vehicleMake,
-        form.vehicleModel,
-        form.vehicleYear
-      );
-    }, 500); // debounce
+      const bestMatch = findBestModelMatch(form.vehicleModel, bikeModels);
+
+      if (bestMatch) {
+        // only fetch image — do NOT touch input value
+        fetchBikeImage(
+          form.vehicleMake,
+          bestMatch.name,
+          form.vehicleYear
+        );
+      }
+    }, 400);
 
     return () => clearTimeout(timer);
-  }
-}, [form.vehicleMake, form.vehicleModel, form.vehicleYear]);
+  }, [form.vehicleMake, form.vehicleModel, form.vehicleYear, bikeModels]);
+
+
 
 useEffect(() => {
   const loadBikeMakes = async () => {
@@ -208,26 +218,34 @@ useEffect(() => {
 // }, [form.vehicleMake]);
 
 useEffect(() => {
+  // If input empty → reset everything
   if (!form.vehicleMake) {
     setSelectedBikeMake(null);
     setBikeModels([]);
+    setBrandSelected(false);
     return;
   }
 
-  // find selected brand (for logo)
-  const found = bikeMakes.find(
-    (b) => b.make.toLowerCase() === form.vehicleMake.toLowerCase()
-  );
+  // ✅ Only auto-detect brand while typing (NOT after selection)
+  if (!brandSelected) {
+    const found = bikeMakes.find(
+      (b) =>
+        normalizeBrand(b.make) === normalizeBrand(form.vehicleMake)
+    );
 
-  setSelectedBikeMake(found || null);
+    if (found) {
+      setSelectedBikeMake(found);
+    } else {
+      setSelectedBikeMake(null);
+    }
+  }
 
-  // fetch related models
+  // ✅ Fetch models only when brand is finalized
   const fetchModels = async () => {
     try {
       const res = await api.get("/api/bikes-meta/local-models", {
         params: { make: form.vehicleMake },
       });
-
       setBikeModels(res.data.models || []);
     } catch (err) {
       console.error("Failed to load models", err);
@@ -236,7 +254,7 @@ useEffect(() => {
   };
 
   fetchModels();
-}, [form.vehicleMake, bikeMakes]);
+}, [form.vehicleMake, bikeMakes, brandSelected]);
 
 useEffect(() => {
   if (!brandSelected || !form.vehicleMake) return;
@@ -254,6 +272,62 @@ useEffect(() => {
 
   fetchModels();
 }, [brandSelected, form.vehicleMake]);
+
+// Normalize text: remove extra words, symbols, lowercase
+const normalizeBrand = (str = "") =>
+  str
+    .toLowerCase()
+    .replace(/ltd|limited|company|co|motor|motors|corp|corporation/g, "")
+    .replace(/[^a-z0-9 ]/g, "")
+    .trim();
+
+// Smart matcher: checks ANY word match
+const isBrandMatch = (input, brand) => {
+  const inputNorm = normalizeBrand(input);
+  const brandNorm = normalizeBrand(brand);
+
+  if (!inputNorm) return false;
+
+  // Exact match
+  if (inputNorm === brandNorm) return true;
+
+  // Allow single-letter match safely
+  return brandNorm.startsWith(inputNorm);
+};
+
+
+// Normalize model text
+const normalizeModel = (str = "") =>
+  str
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+// Smart match typed model against available models
+const findBestModelMatch = (typed, models) => {
+  if (!typed || !models.length) return null;
+
+  const t = normalizeModel(typed);
+
+  // Exact match first
+  let exact = models.find(
+    (m) => normalizeModel(m.name) === t
+  );
+  if (exact) return exact;
+
+  // Partial contains match
+  let partial = models.find(
+    (m) => normalizeModel(m.name).includes(t)
+  );
+  if (partial) return partial;
+
+  // Word-based match (Aerox 155 matches Yamaha Aerox 155)
+  const words = t.split(" ");
+  return models.find((m) =>
+    words.every((w) => normalizeModel(m.name).includes(w))
+  );
+};
 
   // ========== OCR AUTOFILL FUNCTIONS ==========
   const handleScanButtonClick = () => {
@@ -659,237 +733,253 @@ const fetchBikeImage = async (make, model, year) => {
         </div>
 
         {/* Vehicle Information */}
-<div
-  className={`p-6 rounded-2xl shadow-lg border transition-all duration-300 ${
-    isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
-  }`}
->
-  <h2
-    className={`text-2xl font-bold mb-6 flex items-center gap-2 ${
-      isDark ? "text-white" : "text-gray-900"
-    }`}
-  >
-    <Bike size={24} className="text-blue-500" />
-    Vehicle Details
-  </h2>
+      <div
+        className={`p-6 rounded-2xl shadow-lg border transition-all duration-300 ${
+          isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+        }`}
+      >
+        <h2
+          className={`text-2xl font-bold mb-6 flex items-center gap-2 ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
+          <Bike size={24} className="text-blue-500" />
+          Vehicle Details
+        </h2>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {/* ================= VEHICLE MAKE + BRAND ================= */}
-    <div className="space-y-3">
-      {/* Vehicle Make Input */}
-      <InputField
-        label="Vehicle Make"
-        value={form.vehicleMake}
-        onChange={(e) => {
-          setForm({ ...form, vehicleMake: e.target.value });
-          setShowBrandList(true);
-          setBrandSelected(false);
-          setBikeModels([]);
-          setSelectedBikeMake(null);
-        }}
-        placeholder="Enter brand name"
-        isDark={isDark}
-        required
-      />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* ================= VEHICLE MAKE + BRAND ================= */}
+          <div className="space-y-3">
+            {/* Vehicle Make Input */}
+            <InputField
+              label="Vehicle Make"
+              value={form.vehicleMake}
+              onChange={(e) => {
+                setForm({ ...form, vehicleMake: e.target.value });
+                setShowBrandList(true);
+                setBrandSelected(false);
+                setBikeModels([]);
+                setSelectedBikeMake(null);
+              }}
+              placeholder="Enter brand name"
+              isDark={isDark}
+              required
+            />
+            
 
-      {/* ✅ Selected Brand Logo (ALWAYS visible after selection) */}
-      {selectedBikeMake && (
-        <div className="flex items-center gap-3 mt-2">
-          <img
-            src={selectedBikeMake.logoUrl}
-            alt={selectedBikeMake.make}
-            className="h-12 object-contain"
-          />
-          <span
-            className={`text-sm font-semibold ${
-              isDark ? "text-gray-200" : "text-gray-700"
-            }`}
-          >
-            {selectedBikeMake.make}
-          </span>
-        </div>
-      )}
-
-      {/* ================= SELECT BRAND LIST ================= */}
-      {showBrandList && !brandSelected && bikeMakes.length > 0 && (
-        <div className="mt-3">
-          <p className="text-sm font-semibold mb-2">Select Make</p>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {bikeMakes
-              .filter((b) =>
-                b.make
-                  .toLowerCase()
-                  .includes(form.vehicleMake.toLowerCase())
-              )
-              .map((brand) => (
-                <button
-                  key={brand.slug}
-                  type="button"
-                  onClick={() => {
-                    setForm((prev) => ({
-                      ...prev,
-                      vehicleMake: brand.make,
-                    }));
-                    setSelectedBikeMake(brand);
-                    setBrandSelected(true);
-                    setShowBrandList(false);
-                  }}
-                  className={`border rounded-xl p-4 transition text-center ${
-                    isDark
-                      ? "border-gray-600 hover:border-green-400"
-                      : "hover:border-green-500"
+            {/* ✅ Selected Brand Logo (ALWAYS visible after selection) */}
+            {selectedBikeMake && (
+              <div className="flex items-center gap-3 mt-2">
+                <img
+                  src={selectedBikeMake.logoUrl}
+                  alt={selectedBikeMake.make}
+                  className="h-12 object-contain"
+                />
+                <span
+                  className={`text-sm font-semibold ${
+                    isDark ? "text-gray-200" : "text-gray-700"
                   }`}
                 >
-                  <img
-                    src={brand.logoUrl}
-                    alt={brand.make}
-                    className="h-12 mx-auto object-contain mb-2"
-                  />
-                  <p className="text-sm font-medium">{brand.make}</p>
-                </button>
-              ))}
+                  {selectedBikeMake.make}
+                </span>
+              </div>
+            )}
+
+            {/* ================= SELECT BRAND LIST ================= */}
+            {showBrandList && !brandSelected && bikeMakes.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-semibold mb-2">Select Make</p>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {bikeMakes.filter((b) =>
+                      isBrandMatch(form.vehicleMake, b.make)
+                    )
+                    .map((brand) => (
+                      <button
+                        key={brand.slug}
+                        type="button"
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            vehicleMake: brand.make,
+                          }));
+                          setSelectedBikeMake(brand);
+                          setBrandSelected(true);
+                          setShowBrandList(false);
+                        }}
+                        className={`border rounded-xl p-4 transition text-center ${
+                          isDark
+                            ? "border-gray-600 hover:border-green-400"
+                            : "hover:border-green-500"
+                        }`}
+                      >
+                        <img
+                          src={brand.logoUrl}
+                          alt={brand.make}
+                          className="h-12 mx-auto object-contain mb-2"
+                        />
+                        <p className="text-sm font-medium">{brand.make}</p>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* ================= MODEL SELECTION ================= */}
+            {brandSelected &&
+              bikeModels.length > 0 &&
+              !bikeModels.some(
+                m => m.name.toLowerCase() === form.vehicleModel.toLowerCase()
+              ) && (
+              <div className="mt-6">
+                <p className="text-sm font-semibold mb-3">Choose Model</p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {bikeModels
+                    .filter((model) =>
+                      model.name
+                        .toLowerCase()
+                        .includes(form.vehicleModel.toLowerCase())
+                    )
+                    .map((model) => (
+                      <button
+                        key={model.slug}
+                        type="button"
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            vehicleModel: model.name,
+                          }));
+                        }}
+                        className={`border rounded-xl p-4 text-center transition ${
+                          form.vehicleModel === model.name
+                            ? "border-green-500 ring-2 ring-green-400"
+                            : isDark
+                            ? "border-gray-600 hover:border-green-400"
+                            : "hover:border-green-400"
+                        }`}
+                      >
+                        <img
+                          src={model.thumbnailUrl}
+                          alt={model.name}
+                          className="h-16 mx-auto object-contain mb-2"
+                        />
+                        <p className="text-sm font-medium">{model.name}</p>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ================= VEHICLE MODEL INPUT ================= */}
+          <InputField
+            label="Vehicle Model"
+            value={form.vehicleModel}
+            onChange={(e) =>
+              setForm({ ...form, vehicleModel: e.target.value })
+            }
+            placeholder={
+              bikeModels.length > 0
+                ? "Select model above or type manually"
+                : "Enter vehicle model"
+            }
+            isDark={isDark}
+            required
+          />
+
+
+          {/* ================= YEAR ================= */}
+          <InputField
+            icon={<Calendar size={18} />}
+            iconColor="text-orange-500"
+            label="Year"
+            name="vehicleYear"
+            value={form.vehicleYear}
+            onChange={(e) =>
+              setForm({ ...form, vehicleYear: e.target.value })
+            }
+            placeholder="e.g., 2020"
+            isDark={isDark}
+            type="number"
+            min="1900"
+            max={new Date().getFullYear() + 1}
+          />
+
+          {/* ================= REG NUMBER ================= */}
+          <InputField
+            icon={<Hash size={18} />}
+            iconColor="text-purple-500"
+            label="Registration Number"
+            name="regNumber"
+            value={form.regNumber}
+            onChange={(e) =>
+              setForm({ ...form, regNumber: e.target.value })
+            }
+            placeholder="e.g., MH12AB1234"
+            isDark={isDark}
+            required
+          />
+
+          {/* ================= VIN ================= */}
+          <InputField
+            icon={<Hash size={18} />}
+            iconColor="text-pink-500"
+            label="VIN / Chassis Number"
+            name="vin"
+            value={form.vin}
+            onChange={(e) =>
+              setForm({ ...form, vin: e.target.value })
+            }
+            placeholder="Enter VIN"
+            isDark={isDark}
+          />
+
+          {/* ================= COLOR ================= */}
+          <InputField
+            icon={<Palette size={18} />}
+            iconColor="text-cyan-500"
+            label="Color"
+            name="color"
+            value={form.color}
+            onChange={(e) =>
+              setForm({ ...form, color: e.target.value })
+            }
+            placeholder="e.g., Black"
+            isDark={isDark}
+          />
+
+          {/* ================= FUEL TYPE ================= */}
+          <div className="space-y-2">
+            <label
+              className={`flex items-center gap-2 text-sm font-semibold ${
+                isDark ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
+              <Droplet size={18} className="text-green-500" />
+              Fuel Type
+            </label>
+
+            <select
+              name="fuel"
+              value={form.fuel}
+              onChange={(e) =>
+                setForm({ ...form, fuel: e.target.value })
+              }
+              className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all duration-200 ${
+                isDark
+                  ? "bg-gray-700 border-gray-600 text-white focus:ring-green-500"
+                  : "bg-white border-gray-300 text-gray-900 focus:ring-green-400"
+              }`}
+            >
+              <option value="">Select Fuel Type</option>
+              <option value="Petrol">Petrol</option>
+              <option value="Electric">Electric</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="CNG">CNG</option>
+            </select>
           </div>
         </div>
-      )}
-
-      {/* ================= MODEL SELECTION ================= */}
-      {brandSelected && bikeModels.length > 0 && (
-        <div className="mt-6">
-          <p className="text-sm font-semibold mb-3">Choose Model</p>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {bikeModels.map((model) => (
-              <button
-                key={model.slug}
-                type="button"
-                onClick={() => {
-                  setForm((prev) => ({
-                    ...prev,
-                    vehicleModel: model.name,
-                  }));
-                }}
-                className={`border rounded-xl p-4 text-center transition ${
-                  form.vehicleModel === model.name
-                    ? "border-green-500 ring-2 ring-green-400"
-                    : isDark
-                    ? "border-gray-600 hover:border-green-400"
-                    : "hover:border-green-400"
-                }`}
-              >
-                <img
-                  src={model.thumbnailUrl}
-                  alt={model.name}
-                  className="h-16 mx-auto object-contain mb-2"
-                />
-                <p className="text-sm font-medium">{model.name}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-
-    {/* ================= VEHICLE MODEL INPUT ================= */}
-    <InputField
-      label="Vehicle Model"
-      value={form.vehicleModel}
-      placeholder="Select model above"
-      isDark={isDark}
-    />
-
-    {/* ================= YEAR ================= */}
-    <InputField
-      icon={<Calendar size={18} />}
-      iconColor="text-orange-500"
-      label="Year"
-      name="vehicleYear"
-      value={form.vehicleYear}
-      onChange={(e) =>
-        setForm({ ...form, vehicleYear: e.target.value })
-      }
-      placeholder="e.g., 2020"
-      isDark={isDark}
-      type="number"
-      min="1900"
-      max={new Date().getFullYear() + 1}
-    />
-
-    {/* ================= REG NUMBER ================= */}
-    <InputField
-      icon={<Hash size={18} />}
-      iconColor="text-purple-500"
-      label="Registration Number"
-      name="regNumber"
-      value={form.regNumber}
-      onChange={(e) =>
-        setForm({ ...form, regNumber: e.target.value })
-      }
-      placeholder="e.g., MH12AB1234"
-      isDark={isDark}
-      required
-    />
-
-    {/* ================= VIN ================= */}
-    <InputField
-      icon={<Hash size={18} />}
-      iconColor="text-pink-500"
-      label="VIN / Chassis Number"
-      name="vin"
-      value={form.vin}
-      onChange={(e) =>
-        setForm({ ...form, vin: e.target.value })
-      }
-      placeholder="Enter VIN"
-      isDark={isDark}
-    />
-
-    {/* ================= COLOR ================= */}
-    <InputField
-      icon={<Palette size={18} />}
-      iconColor="text-cyan-500"
-      label="Color"
-      name="color"
-      value={form.color}
-      onChange={(e) =>
-        setForm({ ...form, color: e.target.value })
-      }
-      placeholder="e.g., Black"
-      isDark={isDark}
-    />
-
-    {/* ================= FUEL TYPE ================= */}
-    <div className="space-y-2">
-      <label
-        className={`flex items-center gap-2 text-sm font-semibold ${
-          isDark ? "text-gray-300" : "text-gray-700"
-        }`}
-      >
-        <Droplet size={18} className="text-green-500" />
-        Fuel Type
-      </label>
-
-      <select
-        name="fuel"
-        value={form.fuel}
-        onChange={(e) =>
-          setForm({ ...form, fuel: e.target.value })
-        }
-        className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all duration-200 ${
-          isDark
-            ? "bg-gray-700 border-gray-600 text-white focus:ring-green-500"
-            : "bg-white border-gray-300 text-gray-900 focus:ring-green-400"
-        }`}
-      >
-        <option value="">Select Fuel Type</option>
-        <option value="Petrol">Petrol</option>
-        <option value="Electric">Electric</option>
-        <option value="Hybrid">Hybrid</option>
-        <option value="CNG">CNG</option>
-      </select>
-    </div>
-  </div>
-</div>
+      </div>
 
 
         {/* Notes */}

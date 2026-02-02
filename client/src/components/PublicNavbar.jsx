@@ -69,11 +69,17 @@ export default function PublicNavbar() {
                    <Link to="/" className="flex items-center gap-3 group">
                         <div className="relative">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl  flex items-center justify-center   group-hover:shadow-indigo-500/60 transition-all overflow-hidden">
-                            <img
+                            {/* <img
                                 src="Logos/logo3.png"
                                 alt="Motor Desk Logo"
                                 className="w-full h-full object-cover"
+                            /> */}
+                            <img
+                                src={isDark ? "/Logos/darkL.png" : "/Logos/logo3.png"}
+                                alt="Motor Desk Logo"
+                                className="w-full h-full object-contain"
                             />
+
                             </div>
 
                          </div>

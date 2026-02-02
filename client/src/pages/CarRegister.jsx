@@ -470,13 +470,12 @@ const CarRegister = () => {
                         onFocus={() => setFocusedInput('password')}
                         onBlur={() => setFocusedInput('')}
                         required
-                        className={`w-full pl-12 pr-12 py-4 rounded-xl border-2 transition-all duration-300 ${focusedInput === 'password'
-                            ? 'border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]'
-                            : isDark
-                              ? 'bg-white/5 border-white/10 focus:border-indigo-500'
-                              : 'bg-white/50 border-gray-200 focus:border-indigo-500'
-                          } focus:outline-none ${isDark ? 'text-white placeholder-gray-100' : 'text-gray-900 placeholder-gray-400'
-                          }`}
+                        className={`w-full pl-12 pr-12 py-4 rounded-xl border-2 transition-all duration-300 ${
+                          focusedInput === 'password'
+                            ? 'bg-white/5 border-indigo-500 shadow-lg shadow-indigo-500/20 scale-[1.01]'
+                            : 'bg-white/5 border-white/10'
+                        } focus:outline-none text-white placeholder-gray-300`}
+
                       />
                       <button
                         type="button"

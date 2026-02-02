@@ -159,11 +159,14 @@ export default function ModernPricingPage() {
       icon: Crown,
       badge: "BEST VALUE",
       features: [
-        "Unlimited uploads",
-        "Priority support",
-        "Export CSV, PDF",
-        "SMS/WhatsApp Alerts",
+        "Everything in Standard",
         "Team accounts (up to 10)",
+        "Maintenance Alert SMS",
+        "Bulk processing",
+        "Dedicated manager",
+        "Auto Invoice",
+        "Staff Salary Management",
+        "Online Payment Options",
       ],
     },
   ];

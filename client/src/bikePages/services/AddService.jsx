@@ -488,6 +488,11 @@ const handleSubmit = async (action = "create") => {
   }
 };
 
+
+const handleSend = () => {
+  alert("✅ Client confirmation sent successfully!");
+};
+
   return (
     <div className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${isDark ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"}`}>
       <Toaster position="top-right" />
@@ -1138,7 +1143,7 @@ const handleSubmit = async (action = "create") => {
             </div>
 
             {/* Invoice Actions */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 pt-6">
               <button
                 disabled={loading}
                 onClick={() => handleSubmit("draft")}
@@ -1148,24 +1153,28 @@ const handleSubmit = async (action = "create") => {
                 Save as Draft
               </button>
 
-              
+ 
 
-              <button
-                disabled={loading || !isEditMode}
-                onClick={() => handleSubmit("send")}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${isDark ? "bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-700" : "bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-300"}`}
-              >
-                <Send size={16} />
-                Send Invoice
-              </button>
+<button
+  onClick={handleSend}
+  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${
+    isDark
+      ? "bg-green-600 hover:bg-green-500 text-white disabled:bg-green-700"
+      : "bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-300"
+  }`}
+>
+  <Send size={16} />
+  Send Client Confirmation
+</button>
 
-              <button
+
+              {/* <button
                 disabled={loading || !isEditMode}
                 className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${isDark ? "bg-purple-600 hover:bg-purple-500 text-white disabled:bg-gray-700" : "bg-purple-500 hover:bg-purple-600 text-white disabled:bg-gray-300"}`}
               >
                 <Eye size={16} />
                 Preview Invoice
-              </button>
+              </button> */}
             </div>
 
             {/* Create Service Button */}

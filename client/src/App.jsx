@@ -1,5 +1,5 @@
 // src/App.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 /* Public */
@@ -94,8 +94,13 @@ import TeamRegister from "./bikePages/TeamAccounts/TeamRegister.jsx";
 import StaffSalaryContainer from "./bikePages/StaffSalary/StaffSalaryContainer.jsx";
 import InvoicePreview from "./bikePages/Billing/InvoicePreview.jsx";
 import WashStaffSalaryContainer from "./washPages/salaryPages/WashStaffSalaryContainer.jsx";
+import Data from "./pages/Data/data.jsx";
 
 function App() {
+  useEffect(() => {
+    document.body.style.paddingTop = "env(safe-area-inset-top)";
+    document.body.style.paddingBottom = "env(safe-area-inset-bottom)";
+  }, []);
   return (
     <ThemeProvider>
       <ScrollToTop />
@@ -157,6 +162,7 @@ function App() {
           <Route path="/reference" element={<Reference />} />
           <Route path="/upgrade" element={<UpgradePlans />} />
           <Route path="/billing/preview" element={<ProformaInvoice />} />
+          <Route path="/dynamic-data" element={<Data />} />
           <Route path="/staff-management" element={<StaffManagement />} />
           <Route path="/salary-management" element={<SalaryManagement />} />
         </Route>
@@ -238,12 +244,18 @@ function App() {
           <Route path="addclient" element={<Newclient />} />
           <Route path="/addclient/:id" element={<Newclient />} />
           <Route path="/billing" element={<Billing />} />
-          <Route path="/washing-salary-management" element={<WashStaffSalaryContainer />} />
+          <Route
+            path="/washing-salary-management"
+            element={<WashStaffSalaryContainer />}
+          />
           <Route path="/teams" element={<Teams />} />
           <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
           <Route path="/billing/create-invoice" element={<NewInvoice />} />
           <Route path="/team-login" element={<TeamLogin />} />
-          <Route path="/billing/create-invoice/:serviceId" element={<NewInvoice />} />
+          <Route
+            path="/billing/create-invoice/:serviceId"
+            element={<NewInvoice />}
+          />
         </Route>
 
         {/* ================= FALLBACK ================= */}

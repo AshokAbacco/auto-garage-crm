@@ -105,7 +105,7 @@ export default function BillingList() {
             if (inv.status?.toLowerCase() === "overdue") acc.overdue++;
             return acc;
           },
-          { total: 0, paid: 0, pending: 0, overdue: 0, totalAmount: 0 }
+          { total: 0, paid: 0, pending: 0, overdue: 0, totalAmount: 0 },
         );
         setStats(calculatedStats);
       } catch (err) {
@@ -173,7 +173,7 @@ export default function BillingList() {
     );
 
   return (
-    <div className={`min-h-screen`}>
+    <div className={`min-h-screen lg:ml-16`}>
       <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
         {/* Compact Header */}
         <div
@@ -343,7 +343,7 @@ export default function BillingList() {
                                 day: "2-digit",
                                 month: "short",
                                 year: "numeric",
-                              }
+                              },
                             )}
                           </p>
                         </div>
@@ -405,7 +405,7 @@ export default function BillingList() {
                             {inv.dueDate
                               ? new Date(inv.dueDate).toLocaleDateString(
                                   "en-IN",
-                                  { day: "2-digit", month: "short" }
+                                  { day: "2-digit", month: "short" },
                                 )
                               : "—"}
                           </p>

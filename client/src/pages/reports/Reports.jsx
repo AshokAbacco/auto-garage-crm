@@ -8,7 +8,7 @@ import ClientsReport from "./ClientsReport";
 export default function Reports() {
   const { isDark } = useTheme();
   const [mode, setMode] = useState(
-    localStorage.getItem("reportMode") || "analytics"
+    localStorage.getItem("reportMode") || "analytics",
   );
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
@@ -90,7 +90,7 @@ export default function Reports() {
   if (loading) {
     return (
       <div
-        className={`flex items-center justify-center min-h-screen ${
+        className={`flex items-center lg:ml-16 justify-center min-h-screen ${
           isDark ? "bg-gray-900" : "bg-white"
         }`}
       >
@@ -109,7 +109,7 @@ export default function Reports() {
   }
 
   return (
-    <div className={`min-h-screen ${isDark ? "" : ""}`}>
+    <div className={`min-h-screen lg:ml-16 ${isDark ? "" : ""}`}>
       <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
         {/* Header */}
         <div className="mb-8 ">
@@ -140,8 +140,8 @@ export default function Reports() {
                   mode === "analytics"
                     ? "bg-blue-900 text-white shadow-md"
                     : isDark
-                    ? "text-gray-300 hover:bg-gray-700 border border-gray-600"
-                    : "text-gray-700 hover:bg-gray-50 border border-gray-300"
+                      ? "text-gray-300 hover:bg-gray-700 border border-gray-600"
+                      : "text-gray-700 hover:bg-gray-50 border border-gray-300"
                 }`}
               >
                 Analytics
@@ -152,8 +152,8 @@ export default function Reports() {
                   mode === "reports"
                     ? "bg-blue-900 text-white shadow-md"
                     : isDark
-                    ? "text-gray-300 hover:bg-gray-700 border border-gray-600"
-                    : "text-gray-700 hover:bg-gray-50 border border-gray-300"
+                      ? "text-gray-300 hover:bg-gray-700 border border-gray-600"
+                      : "text-gray-700 hover:bg-gray-50 border border-gray-300"
                 }`}
               >
                 Reports
@@ -164,8 +164,8 @@ export default function Reports() {
                   mode === "clients"
                     ? "bg-blue-900 text-white shadow-md"
                     : isDark
-                    ? "text-gray-300 hover:bg-gray-700 border border-gray-600"
-                    : "text-gray-700 hover:bg-gray-50 border border-gray-300"
+                      ? "text-gray-300 hover:bg-gray-700 border border-gray-600"
+                      : "text-gray-700 hover:bg-gray-50 border border-gray-300"
                 }`}
               >
                 Clients

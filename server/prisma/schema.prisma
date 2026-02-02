@@ -37,6 +37,13 @@ enum ItemType {
   Labor
 }
 
+enum DynamicColumnType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+}
+
 model User {
   id           Int     @id @default(autoincrement())
   email        String  @unique
@@ -105,6 +112,7 @@ model User {
   staffs               Staff[]
   washingStaffs        WashingStaff[]
   washingStaffSalaries WashingStaffSalary[]
+  dynamicTables        DynamicTable[]
 }
 
 //car db schemas
@@ -464,6 +472,46 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DynamicTable {
+  id        String   @id @default(uuid())
+  name      String
+  userId    Int
+  createdAt DateTime @default(now())
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns DynamicColumn[]
+  rows    DynamicRow[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model DynamicColumn {
+  id        String            @id @default(uuid())
+  tableId   String
+  name      String
+  type      DynamicColumnType
+  required  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  table DynamicTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+}
+
+model DynamicRow {
+  id        String   @id @default(uuid())
+  tableId   String
+  data      Json // 🔥 flexible user data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  table DynamicTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([tableId])
 }
 
 // Bike Tables

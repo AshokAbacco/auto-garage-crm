@@ -99,7 +99,7 @@ export default function ServicesList() {
     (sum, s) =>
       sum +
       (Number(s.cost) || Number(s.partsCost || 0) + Number(s.laborCost || 0)),
-    0
+    0,
   );
 
   if (error)
@@ -114,7 +114,7 @@ export default function ServicesList() {
     );
 
   return (
-    <div className={`min-h-screen ${isDark ? "" : ""}`}>
+    <div className={`min-h-screen lg:ml-16 ${isDark ? "" : ""}`}>
       <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
         {/* Header */}
         <div
@@ -287,8 +287,8 @@ export default function ServicesList() {
                 s.status === "Pending"
                   ? "bg-red-600 text-white"
                   : s.status === "Paid"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-600 text-white";
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-600 text-white";
 
               return (
                 <div

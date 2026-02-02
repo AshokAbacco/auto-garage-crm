@@ -6,6 +6,10 @@
   --sidebar-width: 250px;
 }
 
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
 /* Force dark input background and text color in dark mode */
 .dark input,
 .dark textarea,

@@ -9,11 +9,13 @@ import {
     Calendar, CreditCard, Bell, Settings
 } from "lucide-react";
 import Footer from "../components/Footer.jsx";
+import WatchDemo from "../components/WatchDemo.jsx";
 
 export default function LandingPage() {
     const navigate = useNavigate();
     const { isDark } = useTheme();
     const [activeFeature, setActiveFeature] = useState(0);
+    const [openDemo, setOpenDemo] = useState(false);
 
     // Auto-rotate features
     useEffect(() => {
@@ -126,14 +128,18 @@ export default function LandingPage() {
                             </button>
 
                             <button
-                                className={`px-8 py-4 rounded-xl border-2 font-semibold transition-all flex items-center gap-3 ${isDark
-                                    ? 'border-gray-700 hover:bg-gray-800 text-white'
-                                    : 'border-gray-300 hover:bg-white text-gray-900 shadow-sm'
-                                    }`}
-                            >
-                                <Play className="w-5 h-5" />
-                                <span>Watch Demo</span>
+                                className="group px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-3"
+                                onClick={() => setOpenDemo(true)}
+                                >
+                                Watch Demo
                             </button>
+                            
+
+                            {/* Demo Modal */}
+                            <WatchDemo
+                                isOpen={openDemo}
+                                onClose={() => setOpenDemo(false)}
+                            />
                         </div>
 
                         <div className="flex items-center gap-8 ">

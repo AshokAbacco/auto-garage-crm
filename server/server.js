@@ -48,6 +48,10 @@ import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js";
 import serviceApprovalRoutes from "./routes/serviceApprovalRoutes.js";
 import whatsappRoutes from "./routes/whatsappRoutes.js";
 import whatsappWebhookRoutes from "./routes/whatsappWebhookRoutes.js";
+import dynamicTableRoutes from "./routes/dynamic-table.routes.js";
+import dynamicColumnRoutes from "./routes/dynamic-column.routes.js";
+import dynamicRowRoutes from "./routes/dynamic-row.routes.js";
+import dynamicReadRoutes from "./routes/dynamic-read.routes.js";
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -171,6 +175,11 @@ app.use("/api/carstaff-salary", carstaffSalaryRoutes);
 app.use("/api", serviceApprovalRoutes);
 app.use("/api", whatsappRoutes);
 
+app.use("/api/dynamic-tables", dynamicTableRoutes);
+app.use("/api/dynamic-columns", dynamicColumnRoutes);
+app.use("/api/dynamic-rows", dynamicRowRoutes);
+app.use("/api/dynamic", dynamicReadRoutes);
+
 /* -----------------------------------------------------
    🚀 Mount API Routes
 ----------------------------------------------------- */
@@ -187,11 +196,6 @@ app.use("/api/ocr", ocrRoutes);
 // app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/dashboard", carDashboardRoutes);
 app.use("/api/referral", referralRoutes);
-
-
-
-
-
 
 //washing washing related routes
 app.use("/api/washing-clients", washingClientRoutes);

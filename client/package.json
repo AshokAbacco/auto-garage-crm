@@ -32,7 +32,8 @@
     "recharts": "^3.1.2",
     "tesseract.js": "^6.0.1",
     "three": "^0.180.0",
-    "wrench": "^1.5.9"
+    "wrench": "^1.5.9",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.61",

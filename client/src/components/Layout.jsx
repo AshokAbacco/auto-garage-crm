@@ -20,11 +20,11 @@ import {
   UserRoundPlus,
   Wallet,
   UserRoundCog,
+  Database,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
 export default function Layout() {
-  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const navigate = useNavigate();
@@ -33,13 +33,11 @@ export default function Layout() {
   const [user, setUser] = useState({});
   const [loadingUser, setLoadingUser] = useState(true);
 
-    const isStaff = user?.type === "staff";
-    const userPlan = user?.plan || "BASIC";
-    
+  const isStaff = user?.type === "staff";
+  const userPlan = user?.plan || "BASIC";
+
   const canAccessStaff = ["STANDARD", "PREMIUM"].includes(userPlan);
   const canAccessSalary = ["PREMIUM"].includes(userPlan);
-
-
 
   /* ================================
       LOAD PROFILE (OWNER / STAFF)
@@ -113,32 +111,37 @@ export default function Layout() {
     { to: "/ocr-scanner", label: "OCR Scanner", icon: FileText },
     { to: "/staff-management", label: "Staff Management", icon: UserRoundPlus },
     { to: "/salary-management", label: "Salary Management", icon: Wallet },
+    { to: "/dynamic-data", label: "Data", icon: Database },
     { to: "/plan", label: "Your Plan", icon: IndianRupee },
     { to: "/reference", label: "Reference", icon: Network },
     { to: "/upgrade", label: "Upgrade", icon: Crown },
   ];
 
- const filteredMenu = menu.filter((item) => {
-   // STAFF LOGIN RULES (unchanged)
-   if (isStaff) {
-     return [
-       "/car-dashboard",
-       "/clients",
-       "/services",
-       "/billing",
-       "/reminders",
-       "/reports",
-       "/ocr-scanner",
-     ].includes(item.to);
-   }
+  const filteredMenu = menu.filter((item) => {
+    // STAFF LOGIN RULES (unchanged)
+    if (isStaff) {
+      return [
+        "/car-dashboard",
+        "/clients",
+        "/services",
+        "/billing",
+        "/reminders",
+        "/reports",
+        "/ocr-scanner",
+      ].includes(item.to);
+    }
 
-   // OWNER PLAN RULES
-   if (item.to === "/staff-management" && !canAccessStaff) return false;
-   if (item.to === "/salary-management" && !canAccessSalary) return false;
+    // OWNER PLAN RULES
+    if (
+      (item.to === "/staff-management" || item.to === "/data") &&
+      !canAccessStaff
+    )
+      return false;
 
-   return true;
- });
+    if (item.to === "/salary-management" && !canAccessSalary) return false;
 
+    return true;
+  });
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);

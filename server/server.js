@@ -37,15 +37,14 @@ import bikeReminderRoutes from "./routes/bikeRemindersRoutes.js";
 import carStaffRoutes from "./routes/carStaffRoutes.js";
 import bikeOCRRoutes from "./routes/BikeOCRRoutes.js";
 import bikeStaffSalaryRoutes from "./routes/BikeStaffSalaryRoutes.js";
-import staffRoutes from './routes/bikeStaffRoutes.js';
+import staffRoutes from "./routes/bikeStaffRoutes.js";
 import bikeMetaRoutes from "./routes/bikeMetaRoutes.js";
 import bikeTeamRoutes from "./routes/bikeTeamRoutes.js";
 import { protect } from "./middleware/authMiddleware.js";
 
-
 import carRoutes from "./routes/carRoutes.js";
-import staffAuthRoutes from "./routes/staffAuthRoutes.js"
-import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js"
+import staffAuthRoutes from "./routes/staffAuthRoutes.js";
+import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js";
 import serviceApprovalRoutes from "./routes/serviceApprovalRoutes.js";
 import whatsappRoutes from "./routes/whatsappRoutes.js";
 import whatsappWebhookRoutes from "./routes/whatsappWebhookRoutes.js";
@@ -67,7 +66,7 @@ const allowedOrigins = [
   "https://themotordesk.com",
   "https://www.themotordesk.com",
 
-  "https://tm04xn0p-5173.inc1.devtunnels.ms",
+  "https://xkdtp4zp-5173.inc1.devtunnels.ms",
   "https://86w0932d-5173.inc1.devtunnels.ms",
 ];
 
@@ -102,14 +101,13 @@ app.use(
       // ✅ IMPORTANT: do NOT block API clients
       return callback(null, true);
     },
-  })
+  }),
 );
-
 
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
-  express.raw({ type: "application/json" })
+  express.raw({ type: "application/json" }),
 );
 app.use("/api/whatsapp", whatsappWebhookRoutes);
 
@@ -138,7 +136,7 @@ app.get("/api/health", (req, res) =>
     status: "ok",
     environment: NODE_ENV,
     timestamp: new Date().toISOString(),
-  })
+  }),
 );
 app.use(helmet());
 
@@ -159,11 +157,9 @@ app.use("/api/bike-invoices", protect, bikeInvoiceRoutes);
 app.use("/api/bike-reminders", bikeReminderRoutes);
 app.use("/api/bike-ocr", bikeOCRRoutes);
 app.use("/api/bike-staff-salary", protect, bikeStaffSalaryRoutes);
-app.use('/api/staff', staffRoutes); 
+app.use("/api/staff", staffRoutes);
 app.use("/api/bikes-meta", bikeMetaRoutes);
-app.use("/api/bikes-team",  bikeTeamRoutes);
-
-
+app.use("/api/bikes-team", bikeTeamRoutes);
 
 //car company names and models
 app.use("/api/cars", carRoutes);
@@ -199,7 +195,6 @@ app.use("/api/wash-billing", washBillingRoutes);
 app.use("/api/teams", teamsRoutes);
 app.use("/api/washing-staff", washingStaffRoutes);
 app.use("/api/washing-staff-salary", washingStaffSalaryRoutes);
-
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

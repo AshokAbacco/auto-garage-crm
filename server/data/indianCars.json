@@ -2,7 +2,7 @@
   {
     "make": "TATA",
     "slug": "tata",
-    "logoUrl": "https://images.seeklogo.com/logo-png/53/1/tata-logo-png_seeklogo-536643.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/tata.png",
     "models": [
       {
         "name": "Nexon",
@@ -201,7 +201,7 @@
   {
     "make": "MAHINDRA",
     "slug": "mahindra",
-    "logoUrl": "https://images.seeklogo.com/logo-png/61/1/mahindra-auto-logo-png_seeklogo-613492.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/mahindra.png",
     "models": [
       {
         "name": "Scorpio",
@@ -352,7 +352,7 @@
   {
     "make": "MARUTI SUZUKI",
     "slug": "maruti-suzuki",
-    "logoUrl": "https://images.seeklogo.com/logo-png/13/1/suzuki-logo-png_seeklogo-134277.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/maruti_suzuki.png",
     "models": [
       {
         "name": "Swift",
@@ -551,7 +551,7 @@
   {
     "make": "HYUNDAI",
     "slug": "hyundai",
-    "logoUrl": "https://images.seeklogo.com/logo-png/30/1/hyundai-logo-png_seeklogo-309777.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/hyundai.png",
     "models": [
       {
         "name": "Creta",
@@ -858,7 +858,7 @@
   {
     "make": "KIA",
     "slug": "kia",
-    "logoUrl": "https://images.seeklogo.com/logo-png/39/1/kia-new-2021-logo-png_seeklogo-394641.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/kia.png",
     "models": [
       {
         "name": "Seltos",
@@ -961,7 +961,7 @@
   {
     "make": "TOYOTA",
     "slug": "toyota",
-    "logoUrl": "https://images.seeklogo.com/logo-png/14/1/toyota-logo-png_seeklogo-141411.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/toyota.png",
     "models": [
       {
         "name": "Fortuner",
@@ -1208,7 +1208,7 @@
   {
     "make": "HONDA",
     "slug": "honda",
-    "logoUrl": "https://images.seeklogo.com/logo-png/27/1/honda-logo-png_seeklogo-271495.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/honda.png",
     "models": [
       {
         "name": "City",
@@ -1371,7 +1371,7 @@
   {
     "make": "NISSAN",
     "slug": "nissan",
-    "logoUrl": "https://images.seeklogo.com/logo-png/9/1/nissan-logo-png_seeklogo-99770.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/nissan.png",
     "models": [
       {
         "name": "Magnite",
@@ -1546,7 +1546,7 @@
   {
     "make": "RENAULT",
     "slug": "renault",
-    "logoUrl": "https://images.seeklogo.com/logo-png/11/1/renault-logo-png_seeklogo-117490.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/renault.png",
     "models": [
       {
         "name": "Kwid",
@@ -1673,7 +1673,7 @@
   {
     "make": "SKODA",
     "slug": "skoda",
-    "logoUrl": "https://images.seeklogo.com/logo-png/24/1/skoda-logo-png_seeklogo-242292.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/skoda.png",
     "models": [
       {
         "name": "Kushaq",
@@ -1824,7 +1824,7 @@
   {
   "make": "VOLKSWAGEN",
   "slug": "volkswagen",
-  "logoUrl": "https://images.seeklogo.com/logo-png/25/1/volkswagen-new-logo-png_seeklogo-259537.png",
+  "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/volkswagen.png",
   "models": [
     {
       "name": "Taigun",
@@ -1930,11 +1930,11 @@
       "heroUrl": "https://i.pinimg.com/1200x/9a/4c/13/9a4c1301c7cd505c084168b5ff3b5208.jpg"
     }
   ]
-},
- {
+  },
+  {
   "make": "MG",
   "slug": "mg",
-  "logoUrl": "https://images.seeklogo.com/logo-png/9/1/mg-logo-png_seeklogo-91883.png",
+  "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/mg.png",
   "models": [
     {
       "name": "Hector",
@@ -2021,11 +2021,11 @@
       }
     }
   ]
-},
-{
+  },
+  {
   "make": "JEEP",
   "slug": "jeep",
-  "logoUrl": "https://images.seeklogo.com/logo-png/7/1/jeep-logo-png_seeklogo-75284.png",
+  "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/jeep.png",
   "models": [
     {
       "name": "Compass",
@@ -2076,11 +2076,11 @@
       }
     }
   ]
-},
+  },
   {
     "make": "BMW",
     "slug": "bmw",
-    "logoUrl": "https://images.seeklogo.com/logo-png/24/1/bmw-logo-png_seeklogo-240426.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/bmw.png",
     "models": [
       {
         "name": "X1",
@@ -2315,7 +2315,7 @@
   {
     "make": "MERCEDES-BENZ",
     "slug": "mercedes-benz",
-    "logoUrl": "https://images.seeklogo.com/logo-png/33/1/mercedes-benz-logo-png_seeklogo-332844.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/mercedes-benz.png",
     "models": [
       {
         "name": "A-Class",
@@ -2571,7 +2571,7 @@
   {
     "make": "AUDI",
     "slug": "audi",
-    "logoUrl": "https://images.seeklogo.com/logo-png/1/1/audi-logo-png_seeklogo-13438.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/audi.png",
     "models": [
       {
         "name": "A4",
@@ -2662,7 +2662,7 @@
   {
     "make": "VOLVO",
     "slug": "volvo",
-    "logoUrl": "https://images.seeklogo.com/logo-png/15/1/volvo-logo-png_seeklogo-150599.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/volvo.png",
     "models": [
       {
         "name": "XC40",
@@ -2729,7 +2729,7 @@
   {
     "make": "CITROEN",
     "slug": "citroen",
-    "logoUrl": "https://images.seeklogo.com/logo-png/18/1/citroen-2009-logo-png_seeklogo-189184.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/citroen.png",
     "models": [
       {
         "name": "C3",
@@ -2784,7 +2784,7 @@
   {
     "make": "LEXUS",
     "slug": "lexus",
-    "logoUrl": "https://images.seeklogo.com/logo-png/30/1/lexus-logo-png_seeklogo-309726.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/lexus.png",
     "models": [
       {
         "name": "NX350h",
@@ -2839,7 +2839,7 @@
   {
     "make": "BYD",
     "slug": "byd",
-    "logoUrl": "https://images.seeklogo.com/logo-png/54/1/byd-logo-png_seeklogo-546145.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/byd.png",
     "models": [
       {
         "name": "Atto 3",
@@ -2882,7 +2882,7 @@
   {
     "make": "PORSCHE",
     "slug": "porsche",
-    "logoUrl": "https://images.seeklogo.com/logo-png/16/1/porsche-logo-png_seeklogo-168544.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/porsche.png",
     "models": [
       {
         "name": "Macan",
@@ -2937,7 +2937,7 @@
   {
     "make": "JAGUAR",
     "slug": "jaguar",
-    "logoUrl": "https://images.seeklogo.com/logo-png/7/1/jaguar-logo-png_seeklogo-74766.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/jaguar.png",
     "models": [
       {
         "name": "F-Pace",
@@ -2980,7 +2980,7 @@
   {
     "make": "LAND ROVER",
     "slug": "land-rover",
-    "logoUrl": "https://images.seeklogo.com/logo-png/20/1/land-rover-logo-png_seeklogo-201638.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/land-rover.png",
     "models": [
       {
         "name": "Defender",
@@ -3059,7 +3059,7 @@
   {
     "make": "MINI",
     "slug": "mini",
-    "logoUrl": "https://images.seeklogo.com/logo-png/22/1/mini-cooper-logo-png_seeklogo-224659.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/mini.png",
     "models": [
       {
         "name": "Cooper",
@@ -3102,7 +3102,7 @@
   {
     "make": "ISUZU",
     "slug": "isuzu",
-    "logoUrl": "https://images.seeklogo.com/logo-png/7/1/isuzu-logo-png_seeklogo-73978.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/isuzu.png",
     "models": [
       {
         "name": "MU-X",
@@ -3131,9 +3131,9 @@
     ]
   },
   {
-    "make": " ",
+    "make": "Force Motors ",
     "slug": "force-motors",
-    "logoUrl": "https://images.seeklogo.com/logo-png/21/1/force-motors-logo-png_seeklogo-215774.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/force-motors.png",
     "models": [
       {
         "name": "Gurkha",
@@ -3176,7 +3176,7 @@
   {
     "make": "BAJAJ",
     "slug": "bajaj",
-    "logoUrl": "https://images.seeklogo.com/logo-png/32/1/bajaj-logo-png_seeklogo-320908.png",
+    "logoUrl": "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/Saved%20Pictures/car-garage/car_images/company_logos/bajaj.png",
     "models": [
       {
         "name": "Qute",

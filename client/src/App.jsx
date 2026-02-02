@@ -1,5 +1,5 @@
 // src/App.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 /* Public */
@@ -96,6 +96,10 @@ import InvoicePreview from "./bikePages/Billing/InvoicePreview.jsx";
 import WashStaffSalaryContainer from "./washPages/salaryPages/WashStaffSalaryContainer.jsx";
 
 function App() {
+  useEffect(() => {
+    document.body.style.paddingTop = "env(safe-area-inset-top)";
+    document.body.style.paddingBottom = "env(safe-area-inset-bottom)";
+  }, []);
   return (
     <ThemeProvider>
       <ScrollToTop />

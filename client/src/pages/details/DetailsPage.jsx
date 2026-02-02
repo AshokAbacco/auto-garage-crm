@@ -82,7 +82,7 @@ const DetailsPage = () => {
       border: isDark ? "#1E293B" : "#E5E7EB",
       hoverBg: isDark ? "#1E293B" : "#F8FAFC",
     }),
-    [isDark]
+    [isDark],
   );
 
   /* -----------------------------------------------------
@@ -99,7 +99,7 @@ const DetailsPage = () => {
         const token = localStorage.getItem("token");
         if (!token) {
           throw new Error(
-            "Authentication token not found. Please log in again."
+            "Authentication token not found. Please log in again.",
           );
         }
 
@@ -197,8 +197,8 @@ const DetailsPage = () => {
           result.confidence >= 80
             ? "High"
             : result.confidence >= 60
-            ? "Medium"
-            : "Low",
+              ? "Medium"
+              : "Low",
         extractedFields: Object.values(result.parsed).filter(Boolean).length,
       });
       setOcrStatus("done");
@@ -267,7 +267,7 @@ const DetailsPage = () => {
 
         localStorage.setItem(
           "ocr_usage",
-          JSON.stringify({ date: today, count: newCount })
+          JSON.stringify({ date: today, count: newCount }),
         );
 
         setDailyUsage(newCount);
@@ -306,7 +306,7 @@ const DetailsPage = () => {
       // Reset for new day
       localStorage.setItem(
         "ocr_usage",
-        JSON.stringify({ date: today, count: 0 })
+        JSON.stringify({ date: today, count: 0 }),
       );
       setDailyUsage(0);
     } else {
@@ -316,7 +316,7 @@ const DetailsPage = () => {
 
   return (
     <div
-      className="lg: max-w-7xl mx-auto px-4 sm:px-1 lg:px-6 py-2 space-y-6 transition-colors duration-300"
+      className="lg:ml-16 lg: max-w-7xl mx-auto px-4 sm:px-1 lg:px-6 py-2 space-y-6 transition-colors duration-300"
       style={{ backgroundColor: colors.mainBg }}
     >
       {/* Toast Notifications */}
@@ -448,7 +448,7 @@ const DetailsPage = () => {
                     value={clientId}
                     onChange={(e) => {
                       const selected = clientList.find(
-                        (c) => c.id === parseInt(e.target.value)
+                        (c) => c.id === parseInt(e.target.value),
                       );
                       setClientId(selected?.id || "");
                       setClientName(selected?.fullName || "");
@@ -558,8 +558,8 @@ const DetailsPage = () => {
                     ocrStatus === "error"
                       ? "text-red-500"
                       : isDark
-                      ? "text-blue-300"
-                      : "text-blue-700"
+                        ? "text-blue-300"
+                        : "text-blue-700"
                   }`}
                 >
                   {ocrStatus}

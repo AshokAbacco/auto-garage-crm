@@ -172,7 +172,7 @@ export default function StaffManagement() {
 
   return (
     <div
-      className={`p-6 lg:p-10 min-h-screen font-sans transition-colors duration-300 ${
+      className={`lg:p-10 min-h-screen font-sans transition-colors duration-300 ${
         isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
       } lg:ml-[5rem]`}
     >

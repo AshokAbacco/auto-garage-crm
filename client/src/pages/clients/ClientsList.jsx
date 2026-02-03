@@ -186,10 +186,10 @@ export default function ClientsList() {
 
   return (
     <div
-      className="min-h-screen lg:ml-16 transition-colors duration-300"
+      className="space-y-6 lg:ml-16 p-0"
       style={{ backgroundColor: colors.mainBg }}
     >
-      <div className="p-4 mx-auto space-y-6 max-w-7xl sm:p-1 lg:p-2">
+      <div className="p-4 mx-auto space-y-6  sm:p-1 lg:p-2">
         {/* Toast Notifications */}
         <div className="fixed z-50 top-4 right-4">
           <Toaster

@@ -7,26 +7,51 @@ const TableManager = ({
   onCreate,
   onRename,
   onDelete,
+  isDark, // ✅ Added isDark prop
 }) => {
   const [newTableName, setNewTableName] = useState("");
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
 
   return (
-    <div className="bg-white rounded-2xl p-2 md:p-4">
+    <div
+      className={`rounded-2xl p-2 md:p-4 transition-colors ${
+        isDark ? "bg-gray-800" : "bg-white"
+      }`}
+    >
       <div className="flex items-center justify-between mb-6 px-2">
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+        <h2
+          className={`text-xl font-bold tracking-tight ${
+            isDark ? "text-white" : "text-slate-900"
+          }`}
+        >
           Available Tables
         </h2>
-        <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+        <span
+          className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase ${
+            isDark
+              ? "bg-gray-700 text-gray-400"
+              : "bg-slate-100 text-slate-500"
+          }`}
+        >
           {tables.length} Total
         </span>
       </div>
 
       {/* CREATE SECTION */}
-      <div className="flex gap-3 mb-8 p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
+      <div
+        className={`flex gap-3 mb-8 p-3 rounded-xl border ${
+          isDark
+            ? "bg-gray-700/30 border-gray-700"
+            : "bg-slate-50/50 border-slate-100"
+        }`}
+      >
         <input
-          className="flex-1 bg-white border border-slate-200 px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium placeholder:text-slate-400"
+          className={`flex-1 px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium placeholder:opacity-60 ${
+            isDark
+              ? "bg-gray-900 border-gray-600 text-white placeholder:text-gray-500"
+              : "bg-white border-slate-200 text-slate-800 placeholder:text-slate-400"
+          }`}
           placeholder="Enter table name..."
           value={newTableName}
           onChange={(e) => setNewTableName(e.target.value)}
@@ -38,7 +63,9 @@ const TableManager = ({
           }}
         />
         <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-blue-100"
+          className={`bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-lg ${
+            isDark ? "shadow-blue-900/20" : "shadow-blue-100"
+          }`}
           onClick={() => {
             if (!newTableName) return;
             onCreate(newTableName);
@@ -54,21 +81,27 @@ const TableManager = ({
         {tables.map((t) => (
           <div
             key={t.id}
-            // Entire row is now clickable
             onClick={() => onSelect(t.id)}
             className={`flex justify-between items-center p-3 rounded-xl transition-all border-2 cursor-pointer active:scale-[0.99] ${
               selectedTableId === t.id
-                ? "border-blue-500 bg-blue-50/30 shadow-sm"
-                : "border-transparent bg-slate-50/30 border-slate-50 hover:border-slate-200 hover:bg-slate-50"
+                ? isDark
+                  ? "border-blue-500 bg-blue-500/10" // Dark Selected
+                  : "border-blue-500 bg-blue-50/30" // Light Selected
+                : isDark
+                ? "border-transparent bg-gray-700/50 hover:border-gray-600 hover:bg-gray-700" // Dark Unselected
+                : "border-transparent bg-slate-50/30 hover:border-slate-200 hover:bg-slate-50" // Light Unselected
             }`}
           >
             <div className="flex-1 flex items-center min-w-0 mr-4">
               {editId === t.id ? (
                 <input
                   autoFocus
-                  className="w-full bg-white border border-blue-400 px-3 py-1.5 rounded-lg outline-none font-semibold text-sm shadow-inner"
+                  className={`w-full border px-3 py-1.5 rounded-lg outline-none font-semibold text-sm shadow-inner ${
+                    isDark
+                      ? "bg-gray-900 border-blue-500 text-white"
+                      : "bg-white border-blue-400 text-slate-800"
+                  }`}
                   value={editName}
-                  // Stop propagation so clicking the input doesn't trigger onSelect
                   onClick={(e) => e.stopPropagation()}
                   onChange={(e) => setEditName(e.target.value)}
                   onBlur={() => setEditId(null)}
@@ -83,7 +116,11 @@ const TableManager = ({
                 <span
                   className={`text-sm font-bold truncate transition-colors ${
                     selectedTableId === t.id
-                      ? "text-blue-700"
+                      ? isDark
+                        ? "text-blue-400"
+                        : "text-blue-700"
+                      : isDark
+                      ? "text-gray-300"
                       : "text-slate-600"
                   }`}
                 >
@@ -98,7 +135,7 @@ const TableManager = ({
                 <div className="flex gap-2">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent row click
+                      e.stopPropagation();
                       onRename(t.id, editName);
                       setEditId(null);
                     }}
@@ -108,10 +145,14 @@ const TableManager = ({
                   </button>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent row click
+                      e.stopPropagation();
                       setEditId(null);
                     }}
-                    className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300 transition-colors"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold hover:opacity-80 transition-colors ${
+                      isDark
+                        ? "bg-gray-700 text-gray-300"
+                        : "bg-slate-200 text-slate-600"
+                    }`}
                   >
                     Esc
                   </button>
@@ -120,11 +161,15 @@ const TableManager = ({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent row click
+                      e.stopPropagation();
                       setEditId(t.id);
                       setEditName(t.name);
                     }}
-                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all"
+                    className={`p-2 rounded-lg transition-all ${
+                      isDark
+                        ? "text-gray-400 hover:text-blue-400 hover:bg-gray-600"
+                        : "text-slate-400 hover:text-blue-600 hover:bg-white"
+                    }`}
                     title="Rename Table"
                   >
                     <svg
@@ -144,10 +189,14 @@ const TableManager = ({
                   </button>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent row click
+                      e.stopPropagation();
                       onDelete(t.id);
                     }}
-                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-all"
+                    className={`p-2 rounded-lg transition-all ${
+                      isDark
+                        ? "text-gray-400 hover:text-rose-400 hover:bg-gray-600"
+                        : "text-slate-400 hover:text-rose-500 hover:bg-white"
+                    }`}
                     title="Delete Table"
                   >
                     <svg
@@ -172,10 +221,14 @@ const TableManager = ({
         ))}
 
         {tables.length === 0 && (
-          <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-            <p className="text-slate-400 text-sm font-medium">
-              No tables created yet.
-            </p>
+          <div
+            className={`py-10 text-center border-2 border-dashed rounded-2xl ${
+              isDark
+                ? "border-gray-700 text-gray-500"
+                : "border-slate-100 text-slate-400"
+            }`}
+          >
+            <p className="text-sm font-medium">No tables created yet.</p>
           </div>
         )}
       </div>

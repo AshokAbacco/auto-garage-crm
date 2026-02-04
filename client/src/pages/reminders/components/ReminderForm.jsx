@@ -17,7 +17,7 @@ export default function ReminderForm({ clients = [], onSubmit, refreshReminders 
     const [localClients, setLocalClients] = useState(clients);
     const [message, setMessage] = useState("");
 
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
     // ✅ Helper for Authorization header
     const getAuthConfig = () => {

@@ -1,3 +1,4 @@
+// whatsappWebhookController.js
 import prisma from "../models/prismaClient.js";
 
 export const handleWhatsAppWebhook = async (req, res) => {
@@ -7,53 +8,91 @@ export const handleWhatsAppWebhook = async (req, res) => {
     const value = change?.value;
     const message = value?.messages?.[0];
 
-    if (!message || message.type !== "button") {
+    // Always acknowledge webhook
+    if (!message) {
       return res.sendStatus(200);
     }
 
-    const payload = message.button.payload;
-    // Example: SERVICE_APPROVE_2
+    /* --------------------------------------------------------
+       Handle BUTTON REPLIES (Approve / Reject)
+    -------------------------------------------------------- */
+    if (message.type === "button") {
+      const phone = message.from; // E.164 without +
+      const actionText = message.button?.text;
 
-    const [_, action, serviceId] = payload.split("_");
+      if (!phone || !actionText) {
+        return res.sendStatus(200);
+      }
 
-    if (!serviceId) return res.sendStatus(200);
-
-    if (action === "APPROVE") {
-      await prisma.service.update({
-        where: { id: Number(serviceId) },
-        data: {
-          approvalStatus: "APPROVED",
-          approvalSource: "whatsapp",
-          approvalAt: new Date(),
-        },
+      /* ----------------------------------------------------
+         Resolve active WhatsApp session by phone
+      ---------------------------------------------------- */
+      const session = await prisma.whatsAppSession.findUnique({
+        where: { phone },
       });
+
+      // No session or session expired → ignore safely
+      if (!session || session.expiresAt < new Date()) {
+        return res.sendStatus(200);
+      }
+
+      /* ----------------------------------------------------
+         Handle APPROVE
+      ---------------------------------------------------- */
+      if (actionText === "Approve Service") {
+        await prisma.service.update({
+          where: { id: session.serviceId },
+          data: {
+            approvalStatus: "APPROVED",
+            approvalSource: "whatsapp",
+            approvalAt: new Date(),
+          },
+        });
+      }
+
+      /* ----------------------------------------------------
+         Handle REJECT
+      ---------------------------------------------------- */
+      if (actionText === "Reject / Contact Garage") {
+        await prisma.service.update({
+          where: { id: session.serviceId },
+          data: {
+            approvalStatus: "REJECTED",
+            approvalSource: "whatsapp",
+            approvalAt: new Date(),
+          },
+        });
+      }
+
+      return res.sendStatus(200);
     }
 
-    if (action === "REJECT") {
-      await prisma.service.update({
-        where: { id: Number(serviceId) },
-        data: {
-          approvalStatus: "REJECTED",
-          approvalSource: "whatsapp",
-          approvalAt: new Date(),
-        },
-      });
-    }
-
-    if (action === "CONDITION") {
-      await prisma.service.update({
-        where: { id: Number(serviceId) },
-        data: {
-          approvalStatus: "CONDITION_REQUESTED",
-          approvalSource: "whatsapp",
-          approvalAt: new Date(),
-        },
-      });
-
-      // Ask for condition text
+    /* --------------------------------------------------------
+       Handle USER TEXT MESSAGE (opens / refreshes session)
+       This allows staff to send images within 24h
+    -------------------------------------------------------- */
+    if (message.type === "text") {
       const phone = message.from;
-      // You can now send a follow-up asking:
-      // "Please type your conditions for approval."
+
+      if (!phone) {
+        return res.sendStatus(200);
+      }
+
+      // Extend session if exists
+      const existingSession = await prisma.whatsAppSession.findUnique({
+        where: { phone },
+      });
+
+      if (existingSession) {
+        await prisma.whatsAppSession.update({
+          where: { phone },
+          data: {
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        });
+      }
+
+      return res.sendStatus(200);
     }
 
     return res.sendStatus(200);

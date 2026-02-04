@@ -13,7 +13,7 @@ import {
   FiArrowUpCircle,
 } from "react-icons/fi";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export default function Plans() {
   const { isDark } = useTheme();

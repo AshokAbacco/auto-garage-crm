@@ -7,7 +7,7 @@ import axios from "axios";
 
 export default function ReminderCard({ reminder, client, onDelete, index, refreshReminders }) {
     const { isDark } = useTheme();
-    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+    const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
     const handleMarkDone = async () => {
         try {

@@ -11,7 +11,7 @@ import ImageUploader from "./components/ImageUploader";
 
 import { processImage } from "../details/utils/OCRProcessor.js";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const EMPTY_FORM = {
   fullName: "",

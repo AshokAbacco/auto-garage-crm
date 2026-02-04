@@ -23,7 +23,7 @@ router.post("/login", loginUser);       // Login and get token
 
 // 🔒 Protected Routes
 router.get("/profile", protect, getProfile); // Get logged-in user's info
-router.get("/verify", verifyToken);          // Self-verification (no protect needed)
+router.get("/verify", protect, verifyToken);          // Self-verification (no protect needed)
 
 router.delete("/delete", protect, deleteAccount);
 

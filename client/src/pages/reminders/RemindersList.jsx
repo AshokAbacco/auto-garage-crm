@@ -19,7 +19,7 @@ export default function RemindersList() {
   const { isDark } = useTheme();
 
   // Backend API base URL
-  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   // 🔐 Helper: Build config with Authorization token
   const getAuthConfig = () => {

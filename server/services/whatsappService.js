@@ -1,116 +1,117 @@
+// whatsappService.js
 import axios from "axios";
 
 const GRAPH_URL = "https://graph.facebook.com/v18.0";
-const PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
-const TOKEN = process.env.WHATSAPP_TOKEN;
+const PHONE_ID = process.env.WA_PHONE_NUMBER_ID;
+const TOKEN = process.env.WA_ACCESS_TOKEN;
+
+if (!PHONE_ID || !TOKEN) {
+  throw new Error("WhatsApp env variables are missing");
+}
 
 /* ============================================================
-   1️⃣ SIMPLE TEXT MESSAGE (DEBUG / TEST ONLY)
-   Use this only to confirm delivery
+   COMMON AXIOS CONFIG
 ============================================================ */
-export const sendTestMessage = async ({ to }) => {
-  const url = `${GRAPH_URL}/${PHONE_ID}/messages`;
-
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: {
-      body: "✅ Test message from Auto Garage CRM backend",
-    },
-  };
-
-  const res = await axios.post(url, payload, {
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  return res.data;
-};
+const axiosInstance = axios.create({
+  baseURL: GRAPH_URL,
+  headers: {
+    Authorization: `Bearer ${TOKEN}`,
+    "Content-Type": "application/json",
+  },
+});
 
 /* ============================================================
-   2️⃣ SEND UTILITY TEMPLATE (OPENS 24H WINDOW)
-   Uses existing approved template: jaspers_market_ord
+   1️⃣ SEND WHATSAPP TEMPLATE (GENERIC – ALL TEMPLATES)
 ============================================================ */
-export const sendServiceApprovalTemplate = async ({ to }) => {
-  const url = `${GRAPH_URL}/${PHONE_ID}/messages`;
+export const sendWhatsAppTemplate = async ({
+  to,
+  templateName,
+  languageCode, // ❗ no default
+  variables = [],
+}) => {
+  if (!languageCode) {
+    throw new Error("WhatsApp template languageCode is required");
+  }
 
   const payload = {
     messaging_product: "whatsapp",
     to,
     type: "template",
     template: {
-      name: "hello_world",
-      language: { code: "en_US" },
+      name: templateName,
+      language: { code: languageCode },
+      ...(variables.length > 0 && {
+        components: [
+          {
+            type: "body",
+            parameters: variables.map((value) => ({
+              type: "text",
+              text: value,
+            })),
+          },
+        ],
+      }),
     },
   };
 
-  await axios.post(url, payload, {
-    headers: {
-      Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-  });
+  const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
+  return res.data;
 };
 
 
 /* ============================================================
-   3️⃣ SEND APPROVAL BUTTONS (AFTER WINDOW IS OPEN)
+   2️⃣ SEND IMAGE (ONLY DURING ACTIVE SESSION)
 ============================================================ */
-export const sendServiceApprovalButtons = async ({ to, service }) => {
-  const url = `${GRAPH_URL}/${PHONE_ID}/messages`;
-
+export const sendWhatsAppImage = async ({ to, imageUrl, caption }) => {
   const payload = {
     messaging_product: "whatsapp",
     to,
-    type: "interactive",
-    interactive: {
-      type: "button",
-      body: {
-        text:
-          `*Service Approval Required*\n\n` +
-          `Client: ${service.client.fullName}\n` +
-          `Vehicle: ${service.client.vehicleMake} ${service.client.vehicleModel}\n` +
-          `Reg No: ${service.client.regNumber}\n\n` +
-          `Total Amount: ₹${service.cost}\n\n` +
-          `Please select an option below:`,
-      },
-      action: {
-        buttons: [
-          {
-            type: "reply",
-            reply: {
-              id: `SERVICE_APPROVE_${service.id}`,
-              title: "Approve",
-            },
-          },
-          {
-            type: "reply",
-            reply: {
-              id: `SERVICE_REJECT_${service.id}`,
-              title: "Reject",
-            },
-          },
-          {
-            type: "reply",
-            reply: {
-              id: `SERVICE_CONDITION_${service.id}`,
-              title: "Approve w Cond",
-            },
-          },
-        ],
-      },
+    type: "image",
+    image: {
+      link: imageUrl,
+      ...(caption && { caption }),
     },
   };
 
-  const res = await axios.post(url, payload, {
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-    },
-  });
+  const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
+  return res.data;
+};
 
+/* ============================================================
+   3️⃣ SEND DOCUMENT / PDF (INVOICE, PROFORMA, ETC.)
+============================================================ */
+export const sendWhatsAppDocument = async ({
+  to,
+  documentUrl,
+  filename,
+}) => {
+  const payload = {
+    messaging_product: "whatsapp",
+    to,
+    type: "document",
+    document: {
+      link: documentUrl,
+      filename,
+    },
+  };
+
+  const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
+  return res.data;
+};
+
+/* ============================================================
+   4️⃣ SIMPLE TEXT MESSAGE (DEBUG ONLY – DO NOT USE IN PROD)
+============================================================ */
+export const sendTestMessage = async ({ to, text }) => {
+  const payload = {
+    messaging_product: "whatsapp",
+    to,
+    type: "text",
+    text: {
+      body: text || "Test message from Auto Garage CRM",
+    },
+  };
+
+  const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
   return res.data;
 };

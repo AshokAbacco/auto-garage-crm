@@ -30,7 +30,7 @@ import { FaIndianRupeeSign, FaTruck } from "react-icons/fa6";
 
 import { useTheme } from "../../contexts/ThemeContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const apiRequest = async (url, options = {}) => {
   const token = localStorage.getItem("token");

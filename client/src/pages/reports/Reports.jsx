@@ -18,7 +18,7 @@ export default function Reports() {
   const [error, setError] = useState(null);
   const [clientsReport, setClientsReport] = useState([]);
 
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const fetchData = async () => {
     try {

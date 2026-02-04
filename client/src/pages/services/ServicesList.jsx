@@ -15,7 +15,7 @@ import {
 import { FaRupeeSign } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const apiRequest = async (url) => {
   const token = localStorage.getItem("token");

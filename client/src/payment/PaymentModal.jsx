@@ -174,7 +174,7 @@ const PaymentModal = ({
 
   //   const API =
   //     window.location.hostname === "localhost"
-  //       ? "http://localhost:5000"
+  //       ? "http://localhost:5001"
   //       : "https://auto-garage-crm-zrxc.onrender.com";
 
   //   // 1️⃣ Create subscription on backend
@@ -282,7 +282,7 @@ const PaymentModal = ({
 
     const API =
       window.location.hostname === "localhost"
-        ? "http://localhost:5000"
+        ? "http://localhost:5001"
         : "https://auto-garage-crm-zrxc.onrender.com";
 
     // ✅ Step 0: check email already registered (ONLY for new registration, not upgrade)

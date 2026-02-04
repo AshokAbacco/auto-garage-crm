@@ -11,22 +11,22 @@ export default function WatchDemo({ isOpen, onClose }) {
       title: "English",
       subtitle: "Product Overview",
       src: "/Videos/English.mp4",
-      gradient: "from-blue-500 to-pink-500",
+      gradient: "from-green-500 to-teal-500",
     },
     {
       id: 2,
       title: "Telugu",
       subtitle: "తెలుగు వివరణ",
       src: "/Videos/Telugu-website.mp4",
-      gradient: "from-blue-500 to-pink-500",
+      gradient: "from-green-500 to-teal-500",
     },
-    // {
-    //   id: 3,
-    //   title: "Kannada",
-    //   subtitle: "ಕನ್ನಡ ವಿವರಣೆ",
-    //   src: "/videos/demo3.mp4",
-    //   gradient: "from-orange-500 to-red-500",
-    // },
+    {
+      id: 3,
+      title: "Kannada",
+      subtitle: "ಕನ್ನಡ ವಿವರಣೆ",
+      src: "/Videos/Kannada.mp4",
+      gradient: "from-green-500 to-teal-500",
+    },
   ];
 
   const handleVideoClick = (video) => {
@@ -49,7 +49,7 @@ export default function WatchDemo({ isOpen, onClose }) {
           }}></div>
         </div>
 
-        <div className="relative w-full top-20 max-w-[800px] max-h-[85vh] overflow-hidden rounded-3xl bg-white shadow-[0_25px_80px_-15px_rgba(0,0,0,0.3)]">
+        <div className="relative w-full top-20 max-w-[900px] max-h-[85vh] overflow-hidden rounded-3xl bg-white shadow-[0_25px_80px_-15px_rgba(0,0,0,0.3)]">
           {/* Header */}
           <div className="relative overflow-hidden bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200/80 px-6 py-6 sm:px-10 sm:py-8">
             {/* Decorative Elements */}
@@ -93,7 +93,7 @@ export default function WatchDemo({ isOpen, onClose }) {
 
           {/* Videos Grid */}
           <div className="overflow-y-auto max-h-[calc(65vh-180px)] p-6 sm:p-10">
-            <div className="grid gap-6 sm:gap-8 lg:gap-10 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
+            <div className="grid gap-6 sm:gap-8 lg:gap-10 grid-cols-1 md:grid-cols-3 lg:grid-cols-2">
               {videos.map((video, index) => (
                 <div
                   key={video.id}

@@ -21,6 +21,7 @@ import {
   Wallet,
   UserRoundCog,
   Database,
+  LockKeyhole,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -38,6 +39,14 @@ export default function Layout() {
 
   const canAccessStaff = ["STANDARD", "PREMIUM"].includes(userPlan);
   const canAccessSalary = ["PREMIUM"].includes(userPlan);
+  const isPlanExpired = user?.planExpiry && new Date(user.planExpiry) < new Date();
+
+const ALLOWED_WHEN_EXPIRED = [
+  "/car-dashboard",
+  "/plan",
+  "/reference",
+  "/upgrade",
+];
 
   /* ================================
       LOAD PROFILE (OWNER / STAFF)
@@ -61,6 +70,7 @@ export default function Layout() {
         const res = await fetch(url, {
           headers: {
             Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true",
           },
         });
 
@@ -238,48 +248,87 @@ export default function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
-            {filteredMenu.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) => `
-                  flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group
-                  ${isActive ? "shadow-lg" : ""}
-                `}
-                style={({ isActive }) => ({
-                  backgroundColor: isActive
-                    ? colors.primaryButton
-                    : "transparent",
-                  color: isActive ? "#FFFFFF" : colors.textSecondary,
-                })}
-              >
-                {({ isActive }) => {
-                  const Icon = item.icon;
-                  return (
-                    <>
-                      <Icon
-                        className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
-                        style={{
-                          color: isActive ? "#FFFFFF" : colors.textSecondary,
-                        }}
-                      />
+            {filteredMenu.map((item) => {
+  const ALLOWED_WHEN_EXPIRED = [
+    "/car-dashboard",
+    "/plan",
+    "/reference",
+    "/upgrade",
+  ];
 
-                      {/* ANIMATED MENU LABEL */}
-                      <span
-                        className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                          sidebarExpanded
-                            ? "opacity-100 w-auto ml-3"
-                            : "opacity-0 w-0 ml-0"
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                    </>
-                  );
-                }}
-              </NavLink>
-            ))}
+  const isLocked =
+    !isStaff &&
+    isPlanExpired &&
+    !ALLOWED_WHEN_EXPIRED.includes(item.to);
+
+  return (
+    <NavLink
+      key={item.to}
+      to={isLocked ? "/upgrade" : item.to}
+      onClick={(e) => {
+        if (isLocked) {
+          e.preventDefault();
+          navigate("/upgrade");
+          return;
+        }
+        setSidebarOpen(false);
+      }}
+      className={({ isActive }) => `
+        flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group
+        ${isActive ? "shadow-lg" : ""}
+      `}
+      style={({ isActive }) => ({
+        backgroundColor: isActive
+          ? colors.primaryButton
+          : "transparent",
+        color: isLocked
+          ? "#94A3B8"
+          : isActive
+          ? "#FFFFFF"
+          : colors.textSecondary,
+        opacity: isLocked ? 0.6 : 1,
+        cursor: isLocked ? "not-allowed" : "pointer",
+      })}
+    >
+      {({ isActive }) => {
+        const Icon = item.icon;
+        return (
+          <>
+            <Icon
+              className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
+              style={{
+                color: isLocked
+                  ? "#94A3B8"
+                  : isActive
+                  ? "#FFFFFF"
+                  : colors.textSecondary,
+              }}
+            />
+
+            {/* ANIMATED MENU LABEL */}
+            <span
+              className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${
+                sidebarExpanded
+                  ? "opacity-100 w-auto ml-3"
+                  : "opacity-0 w-0 ml-0"
+              }`}
+            >
+              {item.label}
+      {isLocked && (
+  <span className="ml-2 flex items-center flex-end leading-none">
+    <LockKeyhole className="h-4 w-4 shrink-0" />
+  </span>
+)}
+
+
+            </span>
+          </>
+        );
+      }}
+    </NavLink>
+  );
+})}
+
           </nav>
 
           {/* Logout Button */}

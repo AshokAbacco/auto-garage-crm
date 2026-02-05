@@ -59,7 +59,7 @@ console.log("Models in Prisma:", Object.keys(prisma));
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 // Enable CORS (allow frontend connection)
@@ -69,7 +69,7 @@ const allowedOrigins = [
   "https://auto-garage-crm-r7l4.onrender.com",
   "https://themotordesk.com",
   "https://www.themotordesk.com",
-
+  "https://ld3bgq17-5173.inc1.devtunnels.ms",
   "https://xkdtp4zp-5173.inc1.devtunnels.ms",
   "https://86w0932d-5173.inc1.devtunnels.ms",
 ];

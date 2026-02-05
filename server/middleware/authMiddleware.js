@@ -132,3 +132,19 @@ export const protect = async (req, res, next) => {
     });
   }
 };
+
+export const requireActivePlan = (req, res, next) => {
+  // Staff inherits owner plan
+  if (req.user.type === "staff") return next();
+
+  if (!req.user.planExpiry) return next();
+
+  if (new Date(req.user.planExpiry) < new Date()) {
+    return res.status(403).json({
+      message: "Your subscription has expired. Please upgrade.",
+      code: "PLAN_EXPIRED",
+    });
+  }
+
+  next();
+};

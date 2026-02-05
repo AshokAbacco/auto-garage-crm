@@ -1,8 +1,15 @@
+// whatsappWebhookRoutes.js
 import express from "express";
 import { handleWhatsAppWebhook } from "../controllers/whatsappWebhookController.js";
 
 const router = express.Router();
 
+/**
+ * ============================================================
+ * WHATSAPP WEBHOOK VERIFICATION (GET)
+ * Used by Meta during webhook setup
+ * ============================================================
+ */
 router.get("/webhook", (req, res) => {
   const VERIFY_TOKEN = process.env.WA_VERIFY_TOKEN; // ✅ use same env everywhere
 
@@ -23,7 +30,6 @@ router.get("/webhook", (req, res) => {
 
   return res.sendStatus(403);
 });
-
 /* ============================================================
    POST → Incoming WhatsApp events (messages, buttons, status)
 ============================================================ */

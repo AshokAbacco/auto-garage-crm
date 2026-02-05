@@ -9,7 +9,7 @@ export default function ReportsList({
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [invoiceDetails, setInvoiceDetails] = useState(null);
 
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const openInvoice = async (inv) => {
     setSelectedInvoice(inv);

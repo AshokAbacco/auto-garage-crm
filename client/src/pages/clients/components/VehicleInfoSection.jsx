@@ -3,9 +3,6 @@ import React, { useState, useEffect } from "react";
 import { FiCalendar, FiHash } from "react-icons/fi";
 import { FaCar } from "react-icons/fa";
 
-// Assume InputField and SelectField components are defined elsewhere or included below
-// For simplicity, I will include the updated SelectField and InputField for modern styling
-
 // --- Reusable Input Component (Updated Styling) ---
 function InputField({
   icon,
@@ -64,7 +61,7 @@ function SelectField({ label, value, onChange, options, isDark }) {
       </label>
 
       <select
-        value={value}
+        value={value || ""}
         onChange={onChange}
         className={`w-full px-4 py-2.5 rounded-lg border text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-emerald-500 transition duration-150 ${
           isDark
@@ -75,8 +72,8 @@ function SelectField({ label, value, onChange, options, isDark }) {
         <option value="">Select {label}</option>
 
         {(options || []).map((opt) => (
-          <option key={opt} value={opt} className="text-black">
-            {opt}
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
           </option>
         ))}
       </select>
@@ -98,17 +95,25 @@ export default function VehicleInfoSection({
 }) {
   const [brandInput, setBrandInput] = useState(form.vehicleMake || "");
   const [filteredMakes, setFilteredMakes] = useState([]);
+  const [useCustomModel, setUseCustomModel] = useState(false);
+  const [customModel, setCustomModel] = useState("");
+
+  // Build proper model options with {label, value} structure
+  const modelOptions = [
+    ...carModels.map((m) => ({
+      label: m.name,
+      value: m.name,
+    })),
+    {
+      label: "Other / Custom Model",
+      value: "__custom__", // sentinel value
+    },
+  ];
 
   // Keep local input in sync with form (for RC + edit mode)
   useEffect(() => {
     setBrandInput(form.vehicleMake || "");
   }, [form.vehicleMake]);
-
-  // useEffect(() => {
-  //   console.log("PLAN:", userPlan);
-  //   console.log("INPUT:", brandInput);
-  //   console.log("MATCHES:", filteredMakes.length);
-  // }, [brandInput, filteredMakes, userPlan]);
 
   // Filter BRAND suggestions (only Standard/Premium)
   useEffect(() => {
@@ -119,11 +124,22 @@ export default function VehicleInfoSection({
 
     const inputLower = brandInput.toLowerCase();
     const matches = (carMakes || []).filter((m) =>
-      m.make.toLowerCase().includes(inputLower)
+      m.make.toLowerCase().includes(inputLower),
     );
 
     setFilteredMakes(matches);
   }, [brandInput, carMakes, userPlan]);
+
+  useEffect(() => {
+    if (
+      form.vehicleModel &&
+      carModels.length > 0 &&
+      !carModels.some((m) => m.name === form.vehicleModel)
+    ) {
+      setUseCustomModel(true);
+      setCustomModel(form.vehicleModel);
+    }
+  }, [form.vehicleModel, carModels]);
 
   const handleBrandSelect = (brandObj) => {
     setBrandInput(brandObj.make);
@@ -142,6 +158,8 @@ export default function VehicleInfoSection({
   };
 
   const handleModelSelect = (modelName) => {
+    setUseCustomModel(false);
+    setCustomModel("");
     setForm((prev) => ({ ...prev, vehicleModel: modelName }));
   };
 
@@ -200,7 +218,7 @@ export default function VehicleInfoSection({
             isDark={isDark}
           />
 
-          {/* MODEL FIELD - Moved to right side of BRAND */}
+          {/* MODEL FIELD - Fixed with proper {label, value} structure */}
           {userPlan === "BASIC" ? (
             <InputField
               icon={<FaCar />}
@@ -208,23 +226,54 @@ export default function VehicleInfoSection({
               required
               value={form.vehicleModel}
               onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  vehicleModel: e.target.value,
-                }))
+                setForm((prev) => ({ ...prev, vehicleModel: e.target.value }))
               }
               placeholder="Enter model"
               isDark={isDark}
             />
           ) : (
             <div>
-              <SelectField
-                label="Vehicle Model"
-                value={form.vehicleModel}
-                onChange={(e) => handleModelSelect(e.target.value)}
-                options={carModels.map((m) => m.name)} // Pass names for basic dropdown
-                isDark={isDark}
-              />
+              {!useCustomModel ? (
+                <SelectField
+                  label="Vehicle Model"
+                  value={form.vehicleModel}
+                  onChange={(e) => {
+                    if (e.target.value === "__custom__") {
+                      setUseCustomModel(true);
+                      setCustomModel(""); // ✅ blank input
+                      setForm((prev) => ({
+                        ...prev,
+                        vehicleModel: "", // ✅ clear stored value
+                      }));
+                    } else {
+                      setUseCustomModel(false);
+                      setCustomModel("");
+                      setForm((prev) => ({
+                        ...prev,
+                        vehicleModel: e.target.value, // ✅ list model stored
+                      }));
+                    }
+                  }}
+                  options={modelOptions}
+                  isDark={isDark}
+                />
+              ) : (
+                <InputField
+                  icon={<FaCar />}
+                  label="Custom Vehicle Model"
+                  required
+                  value={customModel}
+                  onChange={(e) => {
+                    setCustomModel(e.target.value);
+                    setForm((prev) => ({
+                      ...prev,
+                      vehicleModel: e.target.value, // ✅ typing stored
+                    }));
+                  }}
+                  placeholder="Enter custom model name"
+                  isDark={isDark}
+                />
+              )}
             </div>
           )}
         </div>
@@ -287,8 +336,8 @@ export default function VehicleInfoSection({
                     form.vehicleModel === m.name
                       ? "ring-2 ring-emerald-500 border-emerald-500 shadow-md"
                       : isDark
-                      ? "border-gray-700 hover:bg-gray-800"
-                      : "border-gray-200 hover:bg-gray-50"
+                        ? "border-gray-700 hover:bg-gray-800"
+                        : "border-gray-200 hover:bg-gray-50"
                   }`}
                 >
                   <div className="w-full aspect-video flex items-center justify-center overflow-hidden">
@@ -347,7 +396,7 @@ export default function VehicleInfoSection({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, fuel: e.target.value }))
             }
-            options={fuelTypes}
+            options={fuelTypes.map((type) => ({ label: type, value: type }))}
             isDark={isDark}
           />
 
@@ -358,7 +407,7 @@ export default function VehicleInfoSection({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, seats: e.target.value }))
             }
-            options={seatOptions}
+            options={seatOptions.map((seat) => ({ label: seat, value: seat }))}
             isDark={isDark}
           />
         </div>
@@ -383,4 +432,3 @@ export default function VehicleInfoSection({
     </div>
   );
 }
-

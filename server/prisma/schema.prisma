@@ -44,6 +44,11 @@ enum DynamicColumnType {
   DATE
 }
 
+enum WhatsAppApprovalSource {
+  whatsapp
+  web
+}
+
 model User {
   id           Int     @id @default(autoincrement())
   email        String  @unique
@@ -113,6 +118,8 @@ model User {
   washingStaffs        WashingStaff[]
   washingStaffSalaries WashingStaffSalary[]
   dynamicTables        DynamicTable[]
+  whatsAppSessions     WhatsAppSession[]
+  whatsAppMessages     WhatsAppMessage[]
 }
 
 //car db schemas
@@ -170,10 +177,10 @@ model Service {
   advancePaid      Float?    @default(0)
 
   // 🔹 APPROVAL WORKFLOW (NEW)
-  approvalStatus String    @default("PENDING")
+  approvalStatus String                  @default("PENDING")
   approvalNote   String?
   approvalAt     DateTime?
-  approvalSource String? // "whatsapp" | "web"
+  approvalSource WhatsAppApprovalSource?
 
   clientId     Int
   categoryId   Int?
@@ -190,6 +197,8 @@ model Service {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   serviceCostItems ServiceCostItem[]
+  whatsAppSessions WhatsAppSession[]
+  whatsAppMessages WhatsAppMessage[]
 }
 
 model ServiceMedia {
@@ -1112,4 +1121,39 @@ model WashingSalaryHistory {
   paidDate   DateTime?
 
   createdAt DateTime @default(now())
+}
+
+model WhatsAppSession {
+  phone     String   @id // E.164 format, ex: 919876543210
+  serviceId Int
+  userId    Int // Garage owner (User)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([userId])
+}
+
+model WhatsAppMessage {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  userId    Int
+  serviceId Int?
+  template  String
+  messageId String? // Meta message ID
+  status    String // sent | delivered | read | failed
+  error     String?
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([userId])
+  @@index([serviceId])
+  @@index([template])
 }

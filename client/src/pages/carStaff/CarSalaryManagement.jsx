@@ -32,7 +32,6 @@ export default function SalaryManagement() {
   const [viewSalary, setViewSalary] = useState(null);
   const [companyProfile, setCompanyProfile] = useState(null);
 
-
   /* ================= FETCH ================= */
   const loadSalaries = async () => {
     setSalaries(await getSalaries(month, year));
@@ -66,18 +65,16 @@ export default function SalaryManagement() {
       );
 
       const data = await res.json();
-      setCompanyProfile(data); // ✅ store full object
+      setCompanyProfile(data);
     } catch (err) {
       console.error("Failed to load profile", err);
     }
   };
 
-
-
   useEffect(() => {
     loadSalaries();
     loadStaff();
-    loadProfile(); 
+    loadProfile();
   }, [month, year]);
 
   const handleDownloadReport = () => {
@@ -164,7 +161,7 @@ export default function SalaryManagement() {
 
   return (
     <div
-      className={`min-h-screen p-1 lg:ml-[5rem] transition-colors duration-300 ${
+      className={`min-h-screen lg:ml-[5rem] transition-colors duration-300 ${
         isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-800"
       }`}
     >
@@ -185,8 +182,6 @@ export default function SalaryManagement() {
             </span>
           </p>
         </div>
-
-        {/* You could add a global export button here in the future */}
       </div>
 
       {/* Stats Grid */}
@@ -245,6 +240,7 @@ export default function SalaryManagement() {
             onGenerate={() => setShowPrepare(true)}
             onDownload={handleDownloadReport}
             disabled={!salaries.length}
+            isDark={isDark} // ✅ Passed isDark
           />
         </div>
 
@@ -254,6 +250,7 @@ export default function SalaryManagement() {
             salaries={salaries}
             onPay={handlePay}
             onView={setViewSalary}
+            isDark={isDark} // ✅ Passed isDark
           />
         </div>
       </div>
@@ -274,7 +271,8 @@ export default function SalaryManagement() {
       {viewSalary && (
         <SalaryViewModal
           salary={viewSalary}
-          companyProfile={companyProfile} // ✅ full profile
+          companyProfile={companyProfile}
+          isDark={isDark} // ✅ Passed isDark
           onClose={() => setViewSalary(null)}
         />
       )}
@@ -292,15 +290,29 @@ function StatCard({
   color = "blue",
   isDark,
 }) {
-  // Color mapping for dynamic styles
-  const colors = {
-    blue: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
-    emerald:
-      "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400",
-    amber:
-      "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400",
-    indigo:
-      "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400",
+  // Consistent color mapping that depends on the 'isDark' prop, 
+  // removing reliance on global 'dark:' class to ensure consistency.
+  const getThemeColors = () => {
+    switch (color) {
+      case "blue":
+        return isDark
+          ? "bg-blue-900/30 text-blue-400"
+          : "bg-blue-100 text-blue-600";
+      case "emerald":
+        return isDark
+          ? "bg-emerald-900/30 text-emerald-400"
+          : "bg-emerald-100 text-emerald-600";
+      case "amber":
+        return isDark
+          ? "bg-amber-900/30 text-amber-400"
+          : "bg-amber-100 text-amber-600";
+      case "indigo":
+        return isDark
+          ? "bg-indigo-900/30 text-indigo-400"
+          : "bg-indigo-100 text-indigo-600";
+      default:
+        return isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-600";
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -337,7 +349,7 @@ function StatCard({
           </h3>
           {subLabel && <p className="text-xs text-gray-400 mt-1">{subLabel}</p>}
         </div>
-        <div className={`p-3 rounded-xl ${colors[color]}`}>
+        <div className={`p-3 rounded-xl ${getThemeColors()}`}>
           <Icon size={24} />
         </div>
       </div>

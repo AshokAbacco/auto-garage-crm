@@ -31,7 +31,7 @@ import {
 
 import { Toaster } from "react-hot-toast";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const DetailsPage = () => {
   const { isDark } = useTheme();
@@ -316,7 +316,7 @@ const DetailsPage = () => {
 
   return (
     <div
-      className="lg:ml-16 lg: max-w-7xl mx-auto px-4 sm:px-1 lg:px-6 py-2 space-y-6 transition-colors duration-300"
+      className="mspace-y-6 lg:ml-16"
       style={{ backgroundColor: colors.mainBg }}
     >
       {/* Toast Notifications */}
@@ -349,7 +349,7 @@ const DetailsPage = () => {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 ">
+      <div className=" mx-auto space-y-6 sm:space-y-8 ">
         {/* Header */}
         <div className="rounded-3xl p-6 sm:p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl bg-gradient-to-r from-blue-900 to-blue-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

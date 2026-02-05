@@ -61,9 +61,9 @@ const Reference = () => {
 
   return (
     <div
-      className={`ml-[4rem] lg:ml-16 sm:ml-0 min-h-screen p-4 sm:p-1 transition-colors duration-300 ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}
+      className={`space-y-6 lg:ml-16 lg:ml-16 sm:ml-0 min-h-screen p-4 sm:p-1 transition-colors duration-300 ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}
     >
-      <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
+      <div className=" mx-auto space-y-8 animate-fade-in-up">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

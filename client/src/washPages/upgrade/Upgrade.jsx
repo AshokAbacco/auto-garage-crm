@@ -42,7 +42,7 @@ export default function UpgradePlans() {
 
                 const API =
                     window.location.hostname === "localhost"
-                        ? "http://localhost:5000"
+                        ? "http://localhost:5001"
                         : "https://auto-garage-crm-zrxc.onrender.com";
 
                 const response = await fetch(`${API}/api/payments/user-plan/${user.email}`, {

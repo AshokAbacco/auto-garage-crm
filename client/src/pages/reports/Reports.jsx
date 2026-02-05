@@ -18,7 +18,7 @@ export default function Reports() {
   const [error, setError] = useState(null);
   const [clientsReport, setClientsReport] = useState([]);
 
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const fetchData = async () => {
     try {
@@ -109,8 +109,8 @@ export default function Reports() {
   }
 
   return (
-    <div className={`min-h-screen lg:ml-16 ${isDark ? "" : ""}`}>
-      <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
+    <div className={`space-y-6 lg:ml-16 ${isDark ? "" : ""}`}>
+      <div className="mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
         {/* Header */}
         <div className="mb-8 ">
           <h1

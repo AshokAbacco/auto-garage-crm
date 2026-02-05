@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 
-const ExcelUpload = ({ onProceed }) => {
+const ExcelUpload = ({ onProceed, isDark }) => {
   const [parsedData, setParsedData] = useState([]);
   const [fileName, setFileName] = useState("");
 
@@ -34,7 +34,11 @@ const ExcelUpload = ({ onProceed }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-1">
+    <div
+      className={`rounded-2xl p-1 transition-colors duration-300 ${
+        isDark ? "bg-gray-800" : "bg-white"
+      }`}
+    >
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* CUSTOM FILE INPUT BUTTON */}
         <label className="relative group cursor-pointer flex-1 sm:flex-none">
@@ -44,8 +48,14 @@ const ExcelUpload = ({ onProceed }) => {
             onChange={handleFile}
             className="hidden"
           />
-          <div className="flex items-center gap-3 px-6 py-3.5 bg-slate-50 hover:bg-white border border-slate-200 rounded-2xl transition-all group-hover:border-blue-500 group-hover:shadow-lg group-hover:shadow-blue-500/5">
-            <div className="text-blue-600">
+          <div
+            className={`flex items-center gap-3 px-6 py-3.5 border rounded-2xl transition-all group-hover:shadow-lg ${
+              isDark
+                ? "bg-gray-700/50 border-gray-600 text-gray-300 group-hover:bg-gray-700"
+                : "bg-slate-50 border-slate-200 text-slate-600 group-hover:bg-white"
+            } group-hover:border-blue-500 group-hover:shadow-blue-500/5`}
+          >
+            <div className={isDark ? "text-blue-400" : "text-blue-600"}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -61,7 +71,13 @@ const ExcelUpload = ({ onProceed }) => {
                 />
               </svg>
             </div>
-            <span className="font-black text-xs uppercase tracking-widest text-slate-600 group-hover:text-blue-600 transition-colors">
+            <span
+              className={`font-black text-xs uppercase tracking-widest transition-colors ${
+                isDark
+                  ? "text-gray-300 group-hover:text-blue-400"
+                  : "text-slate-600 group-hover:text-blue-600"
+              }`}
+            >
               Import Excel
             </span>
           </div>
@@ -70,15 +86,29 @@ const ExcelUpload = ({ onProceed }) => {
         {/* PARSED DATA STATE */}
         {parsedData.length > 0 && (
           <div className="flex-1 w-full animate-in slide-in-from-left-4 duration-500">
-            <div className="flex items-center justify-between bg-white border-2 border-emerald-500/20 p-2 pl-5 rounded-2xl shadow-xl shadow-emerald-500/5">
+            <div
+              className={`flex items-center justify-between border-2 p-2 pl-5 rounded-2xl shadow-xl ${
+                isDark
+                  ? "bg-gray-800 border-emerald-500/30"
+                  : "bg-white border-emerald-500/20"
+              } shadow-emerald-500/5`}
+            >
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <p className="font-black text-slate-900 text-xs truncate max-w-[150px]">
+                  <p
+                    className={`font-black text-xs truncate max-w-[150px] ${
+                      isDark ? "text-white" : "text-slate-900"
+                    }`}
+                  >
                     {fileName}
                   </p>
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                <p
+                  className={`text-[10px] font-bold uppercase tracking-tighter ${
+                    isDark ? "text-gray-500" : "text-slate-400"
+                  }`}
+                >
                   {parsedData.length} records ready
                 </p>
               </div>
@@ -89,13 +119,17 @@ const ExcelUpload = ({ onProceed }) => {
                     setParsedData([]);
                     setFileName("");
                   }}
-                  className="px-4 py-2 text-slate-400 hover:text-slate-600 font-bold text-xs transition-colors"
+                  className={`px-4 py-2 font-bold text-xs transition-colors ${
+                    isDark
+                      ? "text-gray-400 hover:text-gray-200"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleProceed}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-200 active:scale-95"
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/20 active:scale-95"
                 >
                   Proceed
                 </button>
@@ -107,7 +141,11 @@ const ExcelUpload = ({ onProceed }) => {
 
       {/* QUICK TIP (Only when empty) */}
       {parsedData.length === 0 && (
-        <p className="mt-3 ml-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+        <p
+          className={`mt-3 ml-2 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${
+            isDark ? "text-gray-500" : "text-slate-400"
+          }`}
+        >
           <span className="text-blue-500">★</span> Max 500 rows per import
         </p>
       )}

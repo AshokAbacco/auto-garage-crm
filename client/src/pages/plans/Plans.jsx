@@ -13,7 +13,7 @@ import {
   FiArrowUpCircle,
 } from "react-icons/fi";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export default function Plans() {
   const { isDark } = useTheme();
@@ -83,9 +83,9 @@ export default function Plans() {
 
   return (
     <div
-      className={`min-h-screen p-1 transition-colors duration-300 ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}
+      className={`space-y-6 lg:ml-16 min-h-screen p-1 transition-colors duration-300 ${isDark ? " text-white" : "bg-gray-50 text-gray-900"}`}
     >
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Page Header */}
         <div>
           <h1 className="text-3xl font-bold">Subscription & Billing</h1>

@@ -19,7 +19,7 @@ export default function RemindersList() {
   const { isDark } = useTheme();
 
   // Backend API base URL
-  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   // 🔐 Helper: Build config with Authorization token
   const getAuthConfig = () => {
@@ -161,12 +161,12 @@ export default function RemindersList() {
     );
 
   return (
-    <div className="space-y-6 lg:ml-16 p-6">
+    <div className="space-y-6 lg:ml-16">
       {/* Header */}
       <div
         className={`relative overflow-hidden ${isDark
           ? "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800"
-          : "bg-gradient-to-br from-orange-600 via-red-600 to-pink-600"
+          : "bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700"
           } rounded-3xl p-8 shadow-2xl`}
       >
         <div className="flex items-center gap-4 mb-3">

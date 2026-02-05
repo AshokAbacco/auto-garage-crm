@@ -9,135 +9,6 @@ import { generateToken } from "../utils/generateToken.js";
  * REGISTER USER
  * =============================================
  */
-// export const registerUser = async (req, res) => {
-//   try {
-//     const { username, email, password, crmType } = req.body;
-
-//     if (!username || !email || !password || !crmType) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     const emailLower = email.toLowerCase().trim();
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     /**
-//      * =============================================
-//      * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
-//      * =============================================
-//      */
-//     const latestPayment = await prisma.payment.findFirst({
-//       where: { email: emailLower },
-//       orderBy: { createdAt: "desc" },
-//     });
-
-//     const plan = latestPayment?.plan || "BASIC";
-//     const referralCodeUsed = latestPayment?.referralCode || null;
-
-//     /**
-//      * =============================================
-//      * REFERRAL LOOKUP (OPTIONAL)
-//      * =============================================
-//      */
-//     let referredByUserId = null;
-
-//     if (referralCodeUsed) {
-//       const referrer = await prisma.user.findUnique({
-//         where: { myReferralCode: referralCodeUsed },
-//         select: { id: true },
-//       });
-
-//       if (referrer) {
-//         referredByUserId = referrer.id;
-//       }
-//     }
-
-//     const userPlan = latestPayment?.plan || "BASIC";
-//     const companyName = latestPayment?.companyName || null;
-//     const phone = latestPayment?.phone || null;
-
-//     const planExpiry = latestPayment?.planExpiry
-//   ? new Date(latestPayment.planExpiry)
-//   : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-//     // Check duplicates
-//     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
-//       prisma.user.findUnique({ where: { email: emailLower } }),
-//       prisma.user.findUnique({ where: { username } }),
-//     ]);
-
-//     if (
-//       existingUserByUsername &&
-//       (!existingUserByEmail ||
-//         existingUserByUsername.id !== existingUserByEmail.id)
-//     ) {
-//       return res.status(400).json({
-//         message: "This username is already taken.",
-//       });
-//     }
-
-//     /**
-//      * =============================================
-//      * CASE 1 — USER EXISTS (EMAIL FROM PAYMENT)
-//      * =============================================
-//      */
-//     if (existingUserByEmail) {
-//       const updatedUser = await prisma.user.update({
-//         where: { email: emailLower },
-//         data: {
-//           username,
-//           password: hashedPassword,
-//           allowedCrms: [crmType.toUpperCase()],
-//           plan: userPlan,
-//           planExpiry,
-//           companyName, // ✅ ADDED
-//           phone, // ✅ ADDED
-//         },
-//       });
-
-//       const token = generateToken(updatedUser);
-
-//       return res.status(200).json({
-//         message: "Registration completed successfully",
-//         token,
-//         user: updatedUser,
-//       });
-//     }
-
-//     /**
-//      * =============================================
-//      * CASE 2 — NEW USER
-//      * =============================================
-//      */
-//     const myReferralCode =
-//       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-//     const newUser = await prisma.user.create({
-//       data: {
-//         username,
-//         email: emailLower,
-//         password: hashedPassword,
-//         role: "user",
-//         allowedCrms: [crmType.toUpperCase()],
-//         myReferralCode,
-//         plan: userPlan,
-//         planExpiry,
-//         referredByUserId,
-//         companyName, // ✅ ADDED
-//         phone, // ✅ ADDED
-//       },
-//     });
-
-//     const token = generateToken(newUser);
-
-//     return res.status(201).json({
-//       message: "User registered successfully",
-//       token,
-//       user: newUser,
-//     });
-//   } catch (error) {
-//     console.error("❌ Registration Error:", error);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
 
 export const registerUser = async (req, res) => {
   try {
@@ -174,9 +45,20 @@ export const registerUser = async (req, res) => {
     const address = latestPayment.address || null;
     const referralCodeUsed = latestPayment.referralCode || null;
 
-    const planExpiry = latestPayment.expiryDate
-      ? new Date(latestPayment.expiryDate)
-      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+
+// 7 days trial + 24 hours grace = 8 days
+const TRIAL_DAYS = 7;
+const GRACE_HOURS = 24;
+
+const planExpiry =
+  latestPayment.expiryDate
+    ? new Date(latestPayment.expiryDate)
+    : new Date(
+        now.getTime() +
+          (TRIAL_DAYS * 24 + GRACE_HOURS) * 60 * 60 * 1000
+      );
+
 
     /* =================================================
        REFERRAL LOOKUP (OPTIONAL)
@@ -396,6 +278,7 @@ export const getProfile = async (req, res) => {
         plan: true,
         companyName: true,
         profileImage: true,
+        planExpiry: true,
         createdAt: true,
         updatedAt: true,
       },

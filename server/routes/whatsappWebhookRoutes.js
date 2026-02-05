@@ -11,33 +11,32 @@ const router = express.Router();
  * ============================================================
  */
 router.get("/webhook", (req, res) => {
-  const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+  const VERIFY_TOKEN = process.env.WA_VERIFY_TOKEN; // ✅ use same env everywhere
 
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
+  console.log("Webhook verification request:", {
+    mode,
+    token,
+    challenge,
+  });
+
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    // ⚠️ MUST return raw challenge string (NO JSON)
     return res.status(200).send(challenge);
   }
 
   return res.sendStatus(403);
 });
-
-/**
- * ============================================================
- * WHATSAPP WEBHOOK EVENTS (POST)
- * IMPORTANT:
- * - DO NOT add auth middleware
- * - Always return 200
- * ============================================================
- */
+/* ============================================================
+   POST → Incoming WhatsApp events (messages, buttons, status)
+============================================================ */
 router.post(
   "/webhook",
-  express.json({ type: "*/*" }), // ensure Meta payload is parsed
-  async (req, res) => {
-    await handleWhatsAppWebhook(req, res);
-  }
+  express.json(), // ⚠️ REQUIRED or body will be undefined
+  handleWhatsAppWebhook
 );
 
 export default router;

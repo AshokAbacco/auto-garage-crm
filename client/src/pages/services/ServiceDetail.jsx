@@ -66,7 +66,8 @@ export default function ServiceDetail() {
   const [service, setService] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [waError, setWaError] = useState("");
   useEffect(() => {
     const loadService = async () => {
       try {
@@ -184,6 +185,29 @@ export default function ServiceDetail() {
     isDark ? "border-gray-700" : "border-gray-100"
   }`;
 
+  const sendWhatsAppApproval = async () => {
+    try {
+      setSendingWhatsApp(true);
+      setWaError("");
+
+      const res = await apiRequest(`/api/services/${service.id}/whatsapp`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to send WhatsApp");
+
+      // 🔁 Refresh service after sending
+      const refresh = await apiRequest(`/api/services/${service.id}`);
+      const updated = await refresh.json();
+      setService(updated);
+    } catch (err) {
+      setWaError(err.message);
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
   return (
     <div
       className={`min-h-screen lg:ml-16 transition-colors duration-300 ${
@@ -210,7 +234,7 @@ export default function ServiceDetail() {
               Service #{service.id}
               <span
                 className={`px-3 py-0.5 text-xs rounded-full border font-medium uppercase tracking-wide ${getStatusStyles(
-                  service.status
+                  service.status,
                 )}`}
               >
                 {service.status}
@@ -229,13 +253,14 @@ export default function ServiceDetail() {
           >
             <FiPrinter className="w-5 h-5" />
           </button>
-          <Link
-            to={`/services/${id}/edit`}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all"
-          >
-            <FiFileText />{" "}
-            <span className="hidden sm:inline">Edit Service</span>
-          </Link>
+          {service.approvalStatus !== "APPROVED" && (
+            <Link
+              to={`/services/${id}/edit`}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+            >
+              Edit Service
+            </Link>
+          )}
         </div>
       </div>
 
@@ -536,6 +561,46 @@ export default function ServiceDetail() {
                   <p className="text-sm text-gray-500 mb-4">
                     Ready to finalize? Generate an invoice instantly.
                   </p>
+
+                  {/* WhatsApp Approval */}
+                  <div className="mt-4 border-t pt-4">
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <FaWhatsapp className="text-green-500" /> WhatsApp
+                      Approval
+                    </h4>
+
+                    <div className="text-xs text-gray-500 mb-2">
+                      Status:{" "}
+                      <span className="font-semibold">
+                        {service.approvalStatus || "Not Sent"}
+                      </span>
+                    </div>
+
+                    {waError && (
+                      <div className="text-xs text-red-500 mb-2">{waError}</div>
+                    )}
+
+                    <button
+                      disabled={
+                        sendingWhatsApp || service.approvalStatus === "APPROVED"
+                      }
+                      onClick={sendWhatsAppApproval}
+                      className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all
+      ${
+        service.approvalStatus === "APPROVED"
+          ? "bg-green-200 text-green-800 cursor-not-allowed"
+          : "bg-green-600 hover:bg-green-700 text-white"
+      }
+    `}
+                    >
+                      <FaWhatsapp />
+                      {service.approvalStatus === "APPROVED"
+                        ? "Approved via WhatsApp"
+                        : sendingWhatsApp
+                          ? "Sending..."
+                          : "Send WhatsApp Approval"}
+                    </button>
+                  </div>
 
                   <Link
                     to="/billing/new"

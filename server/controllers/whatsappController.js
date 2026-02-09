@@ -50,6 +50,10 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
       return res.status(400).json({ message: "Client phone number missing" });
     }
 
+    const owner = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { companyName: true },
+    });
     /* --------------------------------------------------------
        Normalize phone number (E.164 – India)
        Example: +91XXXXXXXXXX → 91XXXXXXXXXX
@@ -61,17 +65,25 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
        Send INTERACTIVE TEMPLATE (buttons included)
        Template: service_estimate_confirmation
     -------------------------------------------------------- */
-const waResponse = await sendWhatsAppTemplate({
-  to,
-  templateName: "service_estimate_confirmation", // ✅ EXACT
-  languageCode: "en_IN",                           // ✅ FIXED
-  variables: [
-    service.client.fullName,
-    service.client.regNumber,
-    service.cost?.toString() || "0",
-  ],
-});
+    console.log("Company Name Sending =>", owner?.companyName);
+    console.log("Variables =>", [
+      service.client.fullName,
+      owner?.companyName || "Our Garage",
+      service.client.regNumber,
+      service.cost?.toString() || "0",
+    ]);
 
+    const waResponse = await sendWhatsAppTemplate({
+      to,
+      templateName: "service_estimate_confirmation", // ✅ EXACT
+      languageCode: "en_IN", // ✅ FIXED
+      variables: [
+        service.client.fullName,
+         owner?.companyName || "Our Garage", // {{2}}
+        service.client.regNumber,
+        service.cost?.toString() || "0",
+      ],
+    });
 
     /* --------------------------------------------------------
        Log WhatsApp message (audit + debugging)
@@ -123,7 +135,7 @@ const waResponse = await sendWhatsAppTemplate({
   } catch (error) {
     console.error(
       "sendServiceApprovalWhatsApp error:",
-      error.response?.data || error
+      error.response?.data || error,
     );
 
     return res.status(500).json({

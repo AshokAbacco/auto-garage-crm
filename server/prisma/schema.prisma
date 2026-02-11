@@ -176,8 +176,8 @@ model Service {
   assignedMechanic String?
   advancePaid      Float?    @default(0)
 
-  // 🔹 APPROVAL WORKFLOW (NEW)
-  approvalStatus String                  @default("PENDING")
+  // ✅ APPROVAL WORKFLOW (FIXED)
+  approvalStatus String? // ❌ NO DEFAULT
   approvalNote   String?
   approvalAt     DateTime?
   approvalSource WhatsAppApprovalSource?
@@ -202,16 +202,16 @@ model Service {
 }
 
 model ServiceMedia {
-  id       Int    @id @default(autoincrement())
+  id        Int @id @default(autoincrement())
+  serviceId Int
+
   fileName String
   mimeType String
-  data     Bytes
+  mediaUrl String // ✅ Cloudflare R2 public URL
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model Invoice {

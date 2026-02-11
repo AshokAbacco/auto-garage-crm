@@ -1,10 +1,10 @@
 // server/controllers/invoiceController.js
 import prisma from "../models/prismaClient.js";
+import { sendFinalInvoiceWhatsApp } from "./whatsappController.js";
 
 function getOwnerUserId(req) {
   return req.user.type === "staff" ? req.user.ownerId : req.user.id;
 }
-
 
 /* ============================================================
    📄 Get All Invoices
@@ -58,8 +58,6 @@ export const getInvoices = async (req, res) => {
     });
   }
 };
-
-
 
 /* ============================================================
    📄 Get Invoice by ID
@@ -153,7 +151,6 @@ export const createInvoice = async (req, res) => {
     const createdById =
       req.user.type === "staff" ? req.user.ownerId : req.user.id;
 
-
     /* =======================
        Validation
     ======================= */
@@ -218,26 +215,20 @@ export const createInvoice = async (req, res) => {
       data: {
         invoiceNumber: `INV-${Date.now()}`,
         clientId: Number(clientId),
-
         ownerUserId,
         createdById,
-
         vehicle: vehicle || null,
         mechanic: mechanic || null,
-
         discount: Number(discount || 0),
         grandTotal: finalAmount,
-
         paymentMode: paymentMode || null,
         status: status || "Pending",
         paidAt: status === "Paid" ? new Date() : null,
         dueDate: dueDate ? new Date(dueDate) : null,
-
         notes: notes || null,
         serviceCategory: serviceCategory || null,
         serviceSubCategory: serviceSubCategory || null,
         serviceNotes: serviceNotes || null,
-
         invoiceCostItems: {
           create: normalizedItems,
         },
@@ -246,6 +237,13 @@ export const createInvoice = async (req, res) => {
         client: true,
         invoiceCostItems: true,
       },
+    });
+
+    /* =======================
+   WHATSAPP: FINAL INVOICE
+======================= */
+    sendFinalInvoiceWhatsApp(invoice.id, ownerUserId).catch((err) => {
+      console.error("⚠️ Final invoice WhatsApp failed:", err.message);
     });
 
     return res.status(201).json({
@@ -283,7 +281,9 @@ export const updateInvoice = async (req, res) => {
     });
 
     if (!existing) {
-      return res.status(404).json({ message: "Invoice not found or access denied" });
+      return res
+        .status(404)
+        .json({ message: "Invoice not found or access denied" });
     }
 
     const {
@@ -418,7 +418,9 @@ export const deleteInvoice = async (req, res) => {
     });
 
     if (!invoice) {
-      return res.status(404).json({ message: "Invoice not found or access denied" });
+      return res
+        .status(404)
+        .json({ message: "Invoice not found or access denied" });
     }
 
     await prisma.invoice.delete({
@@ -594,7 +596,6 @@ export const createInvoiceFromService = async (req, res) => {
     const createdById =
       req.user.type === "staff" ? req.user.ownerId : req.user.id;
 
-
     const service = await prisma.service.findFirst({
       where: {
         id: Number(id),
@@ -651,23 +652,17 @@ export const createInvoiceFromService = async (req, res) => {
       data: {
         invoiceNumber: `INV-${Date.now()}`,
         clientId: service.clientId,
-
         ownerUserId,
         createdById,
-
         vehicle: `${service.client.vehicleMake} ${service.client.vehicleModel}`,
         mechanic: service.mechanic || null,
-
         discount: 0,
         grandTotal,
-
         paymentMode: null,
         status: "Pending",
-
         serviceCategory: service.category?.name || null,
         serviceSubCategory: service.subService?.name || null,
         serviceNotes: service.notes || null,
-
         invoiceCostItems: {
           create: normalizedItems,
         },
@@ -676,6 +671,13 @@ export const createInvoiceFromService = async (req, res) => {
         client: true,
         invoiceCostItems: true,
       },
+    });
+
+    /* =======================
+   WHATSAPP: FINAL INVOICE
+======================= */
+    sendFinalInvoiceWhatsApp(invoice.id, ownerUserId).catch((err) => {
+      console.error("⚠️ Final invoice WhatsApp failed:", err.message);
     });
 
     /* =======================
@@ -701,6 +703,3 @@ export const createInvoiceFromService = async (req, res) => {
     });
   }
 };
-
-
-

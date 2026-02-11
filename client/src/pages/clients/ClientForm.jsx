@@ -1,4 +1,3 @@
-// ClientForm.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FiSave, FiX, FiCamera } from "react-icons/fi";
@@ -53,6 +52,9 @@ export default function ClientForm() {
   const [fuelTypes, setFuelTypes] = useState([]);
   const [seatOptions, setSeatOptions] = useState([]);
 
+  // NEW: WhatsApp Toggle State
+  const [sendWhatsApp, setSendWhatsApp] = useState(true);
+
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
@@ -73,7 +75,10 @@ export default function ClientForm() {
   ];
 
   const normalizeText = (s = "") =>
-    s.toLowerCase().replace(/[^a-z0-9]/gi, "").trim();
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gi, "")
+      .trim();
 
   const cleanBrand = (s = "") => {
     let t = s.toLowerCase();
@@ -82,7 +87,10 @@ export default function ClientForm() {
   };
 
   const cleanModel = (s = "") =>
-    s.toLowerCase().replace(/[^a-z0-9]/gi, "").trim();
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gi, "")
+      .trim();
 
   const levenshtein = (a, b) => {
     const matrix = Array(a.length + 1)
@@ -98,7 +106,7 @@ export default function ClientForm() {
         matrix[i][j] = Math.min(
           matrix[i - 1][j] + 1,
           matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
+          matrix[i - 1][j - 1] + cost,
         );
       }
     }
@@ -127,7 +135,9 @@ export default function ClientForm() {
   };
 
   const normalizeReg = (s = "") =>
-    String(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+    String(s)
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
 
   const extractFuel = (s = "") => {
     const parts = s
@@ -154,7 +164,7 @@ export default function ClientForm() {
       for (let k of keys) {
         if (parsed[k]) return parsed[k];
         const found = Object.keys(parsed).find((x) =>
-          x.toLowerCase().includes(k.toLowerCase())
+          x.toLowerCase().includes(k.toLowerCase()),
         );
         if (found) return parsed[found];
       }
@@ -281,7 +291,6 @@ export default function ClientForm() {
     loadMeta();
   }, []);
 
-
   // -------------------------------
   // LOAD EXISTING CLIENT (EDIT MODE)
   // -------------------------------
@@ -294,9 +303,9 @@ export default function ClientForm() {
 
         // 1. Try reading React Router passed state
         if (location.state?.clientData) {
-          setForm(prev => ({
+          setForm((prev) => ({
             ...prev,
-            ...location.state.clientData
+            ...location.state.clientData,
           }));
 
           // Load models for correct make
@@ -312,14 +321,14 @@ export default function ClientForm() {
         const token = localStorage.getItem("token");
 
         const res = await fetch(`${API_BASE}/api/clients/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const data = await res.json();
 
-        setForm(prev => ({
+        setForm((prev) => ({
           ...prev,
-          ...data
+          ...data,
         }));
 
         if (data.vehicleMake) {
@@ -335,7 +344,6 @@ export default function ClientForm() {
 
     loadClient();
   }, [id, location.state]);
-
 
   // -------------------------------
   // LOAD MAKES (local)
@@ -367,9 +375,9 @@ export default function ClientForm() {
       const token = localStorage.getItem("token");
       const res = await fetch(
         `${API_BASE}/api/cars/local-models?make=${encodeURIComponent(
-          makeName
+          makeName,
         )}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await res.json();
 
@@ -405,11 +413,11 @@ export default function ClientForm() {
 
         const res = await fetch(
           `${API_BASE}/api/cars/local-image?make=${encodeURIComponent(
-            make
+            make,
           )}&model=${encodeURIComponent(model)}&year=${encodeURIComponent(
-            year || ""
+            year || "",
           )}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
 
         const data = await res.json();
@@ -444,13 +452,16 @@ export default function ClientForm() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        // UPDATED: Now sends form data PLUS the WhatsApp flag
+        body: JSON.stringify({ ...form, sendWhatsApp }),
       });
 
       const body = await res.json();
       if (!res.ok) throw new Error(body?.message || "Save failed");
 
-      toast.success("Client saved!");
+      toast.success(
+        sendWhatsApp ? "Client saved & WhatsApp sent!" : "Client saved!",
+      );
       navigate("/clients");
     } catch (err) {
       toast.error(err.message);
@@ -471,7 +482,6 @@ export default function ClientForm() {
   }
 
   const effectivePlan = user?.plan || "BASIC";
-
 
   // -------------------------------
   // MAIN UI
@@ -569,11 +579,8 @@ export default function ClientForm() {
           {/* Auto-filled image from local dataset */}
           {form.carImage && (
             <div className="mb-4 flex justify-center">
-              {" "}
-              {/* Added flex justify-center */}
               <img
                 src={form.carImage}
-                // Adjusted width for better centering control
                 className="w-full rounded-2xl shadow-lg object-cover"
                 alt="Vehicle Preview"
               />
@@ -588,35 +595,52 @@ export default function ClientForm() {
           />
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-4">
-          <button
-            type="button"
-            onClick={() => navigate("/clients")}
-            className={`px-6 py-3 rounded-xl font-medium shadow ${
-              isDark
-                ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            }`}
-          >
-            <FiX className="inline-block mr-1" />
-            Cancel
-          </button>
+        {/* Action Buttons Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-6 pb-10">
+          {/* NEW: WhatsApp Notification Toggle */}
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={sendWhatsApp}
+              onChange={(e) => setSendWhatsApp(e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
+            />
+            <span
+              className={`font-medium transition-colors ${isDark ? "text-gray-300 group-hover:text-white" : "text-gray-700 group-hover:text-black"}`}
+            >
+              Send WhatsApp Receipt
+            </span>
+          </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 text-white font-semibold shadow ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : isDark
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-green-500 hover:bg-green-600"
-            }`}
-          >
-            <FiSave />
-            {loading ? "Saving..." : "Save Client"}
-          </button>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={() => navigate("/clients")}
+              className={`px-6 py-3 rounded-xl font-medium shadow transition-all ${
+                isDark
+                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+              }`}
+            >
+              <FiX className="inline-block mr-1" />
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-6 py-3 rounded-xl flex items-center gap-2 text-white font-semibold shadow transition-all ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : isDark
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-green-500 hover:bg-green-600"
+              }`}
+            >
+              <FiSave />
+              {loading ? "Saving..." : "Save Client"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

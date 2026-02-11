@@ -95,6 +95,7 @@ import StaffSalaryContainer from "./bikePages/StaffSalary/StaffSalaryContainer.j
 import InvoicePreview from "./bikePages/Billing/InvoicePreview.jsx";
 import WashStaffSalaryContainer from "./washPages/salaryPages/WashStaffSalaryContainer.jsx";
 import Data from "./pages/Data/data.jsx";
+import ProformaRender from "./pages/billing/ProformaRender.jsx";
 
 function App() {
   useEffect(() => {
@@ -165,6 +166,11 @@ function App() {
           <Route path="/dynamic-data" element={<Data />} />
           <Route path="/staff-management" element={<StaffManagement />} />
           <Route path="/salary-management" element={<SalaryManagement />} />
+          // App.jsx
+          <Route
+            path="/billing/proforma-render/:token"
+            element={<ProformaRender />}
+          />
         </Route>
         {/* 
         <Route>

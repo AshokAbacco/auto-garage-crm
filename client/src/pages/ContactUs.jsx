@@ -77,7 +77,7 @@ export default function ContactUs() {
                           isDark ? "text-gray-300" : "text-gray-700"
                         }`}
                       >
-                        +91 9972452044
+                        +91 7795692753
                       </p>
                     </div>
                   </div>

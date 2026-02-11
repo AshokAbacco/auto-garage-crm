@@ -47,7 +47,6 @@ export default function AddService() {
     inDate: "",
     outDate: "",
     expectedDelivery: "",
-    status: "Pending",
     priority: "Normal",
     assignedMechanic: "",
     category: "",

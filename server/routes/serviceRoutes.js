@@ -12,6 +12,7 @@ import {
   searchSubServices,
   createSubService,
   getServiceForBilling,
+  sendVehicleReadyWhatsApp,
 } from "../controllers/serviceController.js";
 import { createInvoiceFromService } from "../controllers/invoiceController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -59,5 +60,6 @@ router.post("/sub-services", protect, createSubService);
 
 // Create invoice from service
 router.post("/:id/create-invoice", protect, createInvoiceFromService);
+router.post("/:id/whatsapp-ready", protect, sendVehicleReadyWhatsApp);
 
 export default router;

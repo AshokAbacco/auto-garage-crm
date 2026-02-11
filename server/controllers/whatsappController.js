@@ -1,25 +1,18 @@
-// whatsappController.js
 import prisma from "../models/prismaClient.js";
 import {
   sendWhatsAppTemplate,
+  sendWhatsAppImage,
+  sendWhatsAppDocument,
 } from "../services/whatsappService.js";
+import { generateProformaPDF } from "../services/proformaService.js";
 
-/**
- * ============================================================
- * SEND SERVICE ESTIMATE APPROVAL ON WHATSAPP
- *
- * Template Used:
- * - service_estimate_confirmation
- *
- * Flow:
- * 1️⃣ Validate service + ownership
- * 2️⃣ Normalize phone number
- * 3️⃣ Send ONE interactive template (with buttons)
- * 4️⃣ Log WhatsApp message
- * 5️⃣ Create / update 24h WhatsApp session
- * 6️⃣ Mark service approval as PENDING
- * ============================================================
- */
+/* ----------------------------------------
+   OWNER SAFE (USER / STAFF)
+---------------------------------------- */
+function getOwnerUserId(req) {
+  return req.user.type === "staff" ? req.user.ownerId : req.user.id;
+}
+
 export const sendServiceApprovalWhatsApp = async (req, res) => {
   try {
     const serviceId = Number(req.params.id);
@@ -28,17 +21,16 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     }
 
     /* --------------------------------------------------------
-       Fetch service with ownership check (multi-garage safe)
+       FETCH SERVICE (✅ CORRECT RELATION NAME)
     -------------------------------------------------------- */
     const service = await prisma.service.findFirst({
       where: {
         id: serviceId,
-        client: {
-          userId: req.user.id, // garage owner
-        },
+        client: { userId: getOwnerUserId(req) },
       },
       include: {
         client: true,
+        mediaFiles: true, // ✅ FIXED (MATCHES PRISMA)
       },
     });
 
@@ -51,76 +43,91 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     }
 
     const owner = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: getOwnerUserId(req) },
       select: { companyName: true },
     });
-    /* --------------------------------------------------------
-       Normalize phone number (E.164 – India)
-       Example: +91XXXXXXXXXX → 91XXXXXXXXXX
-    -------------------------------------------------------- */
+
     const rawPhone = service.client.phone.replace(/\D/g, "");
     const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
 
-    /* --------------------------------------------------------
-       Send INTERACTIVE TEMPLATE (buttons included)
-       Template: service_estimate_confirmation
-    -------------------------------------------------------- */
-    console.log("Company Name Sending =>", owner?.companyName);
-    console.log("Variables =>", [
-      service.client.fullName,
-      owner?.companyName || "Our Garage",
-      service.client.regNumber,
-      service.cost?.toString() || "0",
-    ]);
-
-    const waResponse = await sendWhatsAppTemplate({
+    /* =====================================================
+       1️⃣ TEMPLATE (OPEN SESSION)
+    ===================================================== */
+    await sendWhatsAppTemplate({
       to,
-      templateName: "service_estimate_confirmation", // ✅ EXACT
-      languageCode: "en_IN", // ✅ FIXED
+      templateName: "service_estimate_confirmation",
+      languageCode: "en_IN",
       variables: [
         service.client.fullName,
-         owner?.companyName || "Our Garage", // {{2}}
+        owner?.companyName || "Our Garage",
         service.client.regNumber,
-        service.cost?.toString() || "0",
+        String(service.cost ?? 0),
       ],
     });
 
-    /* --------------------------------------------------------
-       Log WhatsApp message (audit + debugging)
-    -------------------------------------------------------- */
+    /* =====================================================
+       2️⃣ SEND IMAGES (R2 PUBLIC URL)
+    ===================================================== */
+    for (const media of service.mediaFiles || []) {
+      if (!media.mediaUrl) continue;
+
+      await sendWhatsAppImage({
+        to,
+        imageUrl: media.mediaUrl,
+        caption: "Service inspection image",
+      });
+    }
+
+    /* =====================================================
+       3️⃣ PROFORMA PDF (YOUR DESIGN → R2)
+    ===================================================== */
+    let pdfUrl = null;
+
+    try {
+      pdfUrl = await generateProformaPDF(service.id);
+    } catch (err) {
+      console.error("❌ Proforma generation failed:", err);
+    }
+
+    if (pdfUrl) {
+      await sendWhatsAppDocument({
+        to,
+        documentUrl: pdfUrl,
+        filename: `Proforma-Invoice-${service.id}.pdf`,
+      });
+    }
+
+    /* =====================================================
+       4️⃣ LOG MESSAGE
+    ===================================================== */
     await prisma.whatsAppMessage.create({
       data: {
         phone: to,
-        userId: req.user.id,
+        userId: getOwnerUserId(req),
         serviceId: service.id,
         template: "service_estimate_confirmation",
-        messageId: waResponse?.messages?.[0]?.id || null,
         status: "sent",
       },
     });
 
-    /* --------------------------------------------------------
-       Create / Update WhatsApp 24h Session
-       (Context resolution via phone number)
-    -------------------------------------------------------- */
+    /* =====================================================
+       5️⃣ SESSION + STATUS
+    ===================================================== */
     await prisma.whatsAppSession.upsert({
       where: { phone: to },
       update: {
         serviceId: service.id,
-        userId: req.user.id,
+        userId: getOwnerUserId(req),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
       create: {
         phone: to,
         serviceId: service.id,
-        userId: req.user.id,
+        userId: getOwnerUserId(req),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
 
-    /* --------------------------------------------------------
-       Update service approval state
-    -------------------------------------------------------- */
     await prisma.service.update({
       where: { id: service.id },
       data: {
@@ -130,16 +137,228 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     });
 
     return res.json({
-      message: "WhatsApp service approval request sent successfully",
+      message: "WhatsApp approval sent successfully",
     });
   } catch (error) {
-    console.error(
-      "sendServiceApprovalWhatsApp error:",
-      error.response?.data || error,
-    );
-
+    console.error("❌ sendServiceApprovalWhatsApp error:", error);
     return res.status(500).json({
       message: "Failed to send WhatsApp approval request",
     });
   }
+};
+
+// server/controllers/whatsappController.js
+
+export const sendServiceNotification = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+    const { type } = req.body; // e.g., "ESTIMATE", "READY", "INVOICE"
+
+    if (!serviceId)
+      return res.status(400).json({ message: "Invalid service ID" });
+
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, client: { userId: getOwnerUserId(req) } },
+      include: { client: true, mediaFiles: true },
+    });
+
+    if (!service || !service.client?.phone) {
+      return res
+        .status(404)
+        .json({ message: "Service or Client Phone not found" });
+    }
+
+    const owner = await prisma.user.findUnique({
+      where: { id: getOwnerUserId(req) },
+      select: { companyName: true },
+    });
+
+    const to = service.client.phone.replace(/\D/g, "").startsWith("91")
+      ? service.client.phone.replace(/\D/g, "")
+      : `91${service.client.phone.replace(/\D/g, "")}`;
+
+    let templateName = "";
+    let variables = [];
+
+    // Switch logic to support your active Meta templates
+    switch (type) {
+      case "READY":
+        templateName = "vehicle_ready";
+        variables = [service.client.fullName, service.client.regNumber];
+        break;
+      case "INVOICE":
+        templateName = "final_invoice_summary";
+        variables = [service.client.fullName, String(service.cost ?? 0)];
+        break;
+      case "ESTIMATE":
+      default:
+        templateName = "service_estimate_confirmation";
+        variables = [
+          service.client.fullName,
+          owner?.companyName || "Garage",
+          service.client.regNumber,
+          String(service.cost ?? 0),
+        ];
+        break;
+    }
+
+    /* 1️⃣ SEND TEMPLATE */
+    await sendWhatsAppTemplate({
+      to,
+      templateName,
+      languageCode: "en_IN",
+      variables,
+    });
+
+    /* 2️⃣ CONDITIONAL MEDIA (Only for Estimates or Invoices) */
+    if (type === "ESTIMATE" || type === "INVOICE") {
+      // Send Images
+      for (const media of service.mediaFiles || []) {
+        if (media.mediaUrl) {
+          await sendWhatsAppImage({
+            to,
+            imageUrl: media.mediaUrl,
+            caption: "Service Detail Image",
+          });
+        }
+      }
+      // Send PDF
+      const pdfUrl = await generateProformaPDF(service.id).catch(() => null);
+      if (pdfUrl) {
+        await sendWhatsAppDocument({
+          to,
+          documentUrl: pdfUrl,
+          filename: `${type}-Invoice-${service.id}.pdf`,
+        });
+      }
+    }
+
+    /* 3️⃣ SESSION & STATUS UPDATE */
+    await prisma.whatsAppSession.upsert({
+      where: { phone: to },
+      update: {
+        serviceId: service.id,
+        userId: getOwnerUserId(req),
+        expiresAt: new Date(Date.now() + 86400000),
+      },
+      create: {
+        phone: to,
+        serviceId: service.id,
+        userId: getOwnerUserId(req),
+        expiresAt: new Date(Date.now() + 86400000),
+      },
+    });
+
+    await prisma.service.update({
+      where: { id: service.id },
+      data: { approvalStatus: "PENDING", approvalTemplate: templateName },
+    });
+
+    return res.json({ message: `WhatsApp ${type} sent successfully` });
+  } catch (error) {
+    console.error("❌ WhatsApp Error:", error);
+    return res.status(500).json({ message: "Failed to send notification" });
+  }
+};
+
+export const sendVehicleReadyWhatsApp = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+    const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
+
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, client: { userId: ownerId } },
+      include: { client: true },
+    });
+
+    if (!service || !service.client?.phone) {
+      return res
+        .status(404)
+        .json({ message: "Service or Client phone not found" });
+    }
+
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { companyName: true },
+    });
+
+    const rawPhone = service.client.phone.replace(/\D/g, "");
+    const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+
+    // STOPSHIP: Meta dashboard shows 'English', which is usually code 'en'
+    // Also requires EXACTLY 3 variables: {{1}}, {{2}}, {{3}}
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_ready",
+      languageCode: "en", // Match your Meta Dashboard
+      variables: [
+        service.client.fullName, // {{1}}
+        service.client.regNumber, // {{2}}
+        owner?.companyName || "Our Garage", // {{3}}
+      ],
+    });
+
+    const updatedService = await prisma.service.update({
+      where: { id: service.id },
+      data: {
+        approvalStatus: "READY_SENT",
+        status: "Paid",
+        approvalAt: new Date(),
+      },
+    });
+
+    console.log("✅ DB Updated Successfully:", updatedService.id);
+
+    return res.json({ message: "Vehicle Ready notification sent!" });
+  } catch (error) {
+    // IMPORTANT: If you don't log this, you won't see the 500 error details!
+    console.error("❌ WHATSAPP ERROR:", error.response?.data || error.message);
+    return res
+      .status(500)
+      .json({ error: "Server Error", details: error.message });
+  }
+};
+
+export const sendFinalInvoiceWhatsApp = async (invoiceId, ownerUserId) => {
+  const invoice = await prisma.invoice.findFirst({
+    where: {
+      id: Number(invoiceId),
+      ownerUserId,
+    },
+    include: {
+      client: true,
+      ownerUser: {
+        select: { companyName: true },
+      },
+    },
+  });
+
+  if (!invoice || !invoice.client?.phone) {
+    throw new Error("Invoice or client phone not found");
+  }
+
+  const rawPhone = invoice.client.phone.replace(/\D/g, "");
+  const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+
+  await sendWhatsAppTemplate({
+    to,
+    templateName: "final_invoice_summary",
+    languageCode: "en",
+    variables: [
+      invoice.ownerUser?.companyName || "Motor Desk", // {{1}}
+      invoice.client.regNumber, // {{2}}
+      String(invoice.grandTotal), // {{3}}
+    ],
+  });
+
+  // Optional log
+  await prisma.whatsAppMessage.create({
+    data: {
+      phone: to,
+      userId: ownerUserId,
+      invoiceId: invoice.id,
+      template: "final_invoice_summary",
+      status: "sent",
+    },
+  });
 };

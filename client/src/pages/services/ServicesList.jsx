@@ -25,6 +25,26 @@ const apiRequest = async (url) => {
   return res;
 };
 
+const approvalMeta = {
+  PENDING: {
+    label: "Waiting for Approval",
+    class: "bg-yellow-100 text-yellow-800",
+  },
+  APPROVED: {
+    label: "Approved",
+    class: "bg-green-100 text-green-800",
+  },
+  REJECTED: {
+    label: "Rejected",
+    class: "bg-red-100 text-red-800",
+  },
+  READY_SENT: {
+    // ✅ ADD THIS
+    label: "Vehicle Ready",
+    class: "bg-blue-100 text-blue-800",
+  },
+};
+
 export default function ServicesList() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -112,6 +132,31 @@ export default function ServicesList() {
         {error}
       </div>
     );
+
+  const renderApprovalBadge = (service) => {
+    if (!service.approvalStatus) {
+      return (
+        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">
+          WhatsApp: Not Sent
+        </span>
+      );
+    }
+
+    const meta = approvalMeta[service.approvalStatus];
+
+    return (
+      <span
+        className={`px-2 py-0.5 rounded text-xs font-semibold ${meta.class}`}
+        title={
+          service.approvalAt
+            ? `Updated at ${new Date(service.approvalAt).toLocaleString()}`
+            : ""
+        }
+      >
+        WhatsApp: {meta.label}
+      </span>
+    );
+  };
 
   return (
     <div className={`space-y-6 lg:ml-16 ${isDark ? "" : ""}`}>
@@ -334,14 +379,21 @@ export default function ServicesList() {
 
                   {/* Right Section */}
                   <div className="flex flex-col items-end space-y-2 text-right w-full sm:w-auto mt-3 sm:mt-0">
+                    {/* Service Status */}
                     <span
                       className={`px-3 py-1 rounded-lg text-sm font-semibold text-white ${statusColor}`}
                     >
                       {s.status}
                     </span>
+
+                    {/* WhatsApp Approval Status */}
+                    {renderApprovalBadge(s)}
+
+                    {/* Amount */}
                     <span className="text-blue-900 font-bold text-base sm:text-lg">
                       ₹{estimatedTotal.toFixed(2)}
                     </span>
+
                     <button
                       onClick={() => navigate(`/services/${s.id}`)}
                       className="text-blue-600 hover:underline text-sm font-semibold"

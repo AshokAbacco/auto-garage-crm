@@ -36,7 +36,7 @@ router.get("/webhook", (req, res) => {
 router.post(
   "/webhook",
   express.json(), // ⚠️ REQUIRED or body will be undefined
-  handleWhatsAppWebhook
+  handleWhatsAppWebhook,
 );
 
 export default router;

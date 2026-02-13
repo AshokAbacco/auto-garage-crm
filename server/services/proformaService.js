@@ -77,16 +77,14 @@ export const generateProformaPDF = async (serviceId) => {
   // LAUNCH OPTIONS
   const browser = await puppeteer.launch({
     headless: "new",
-    /* REMOVED: process.env.PUPPETEER_EXECUTABLE_PATH
-       Puppeteer will now automatically find the browser in your 
-       PUPPETEER_CACHE_DIR (/opt/render/.cache/puppeteer)
-    */
+    // This path matches the local .cache folder created by your config file
+    executablePath:
+      "/opt/render/project/src/server/.cache/puppeteer/chrome/linux-145.0.7632.67/chrome-linux64/chrome",
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
       "--disable-gpu",
-      "--no-zygote",
       "--single-process",
     ],
   });

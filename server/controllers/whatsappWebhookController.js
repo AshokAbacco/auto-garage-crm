@@ -16,14 +16,11 @@ export const handleWhatsAppWebhook = async (req, res) => {
     console.log("========================================");
 
     /* ========================================================
-       HANDLE TEMPLATE QUICK REPLY BUTTONS (OPT-IN FIX)
+       HANDLE ALL BUTTON CLICKS (OPT-IN + APPROVE/REJECT)
     ======================================================== */
-    if (
-      message.type === "interactive" &&
-      message.interactive?.type === "button_reply"
-    ) {
-      const phone = message.from;
-      const actionText = message.interactive.button_reply?.title;
+    if (message.type === "button") {
+      const phone = message.from; // 917204986825
+      const actionText = message.button?.text;
 
       console.log("Button clicked:", actionText);
       console.log("From phone:", phone);
@@ -32,12 +29,13 @@ export const handleWhatsAppWebhook = async (req, res) => {
         return res.sendStatus(200);
       }
 
-      const last10 = phone.slice(-10);
+      const last10 = phone.slice(-10); // 7204986825
 
+      /* ================= OPT-IN ================= */
       if (actionText === "Yes, Send Updates") {
         const result = await prisma.client.updateMany({
           where: {
-            phone: { contains: last10 },
+            phone: last10, // exact match with DB
           },
           data: {
             whatsappOptin: true,
@@ -50,10 +48,11 @@ export const handleWhatsAppWebhook = async (req, res) => {
         return res.sendStatus(200);
       }
 
+      /* ================= OPT-OUT ================= */
       if (actionText === "No, Thanks") {
         const result = await prisma.client.updateMany({
           where: {
-            phone: { contains: last10 },
+            phone: last10,
           },
           data: {
             whatsappOptin: false,
@@ -63,18 +62,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
         console.log("Opt-out updated rows:", result.count);
         return res.sendStatus(200);
       }
-    }
 
-    /* ========================================================
-       YOUR EXISTING APPROVE / REJECT LOGIC (UNCHANGED)
-    ======================================================== */
-    if (message.type === "button") {
-      const phone = message.from;
-      const actionText = message.button?.text;
-
-      if (!phone || !actionText) {
-        return res.sendStatus(200);
-      }
+      /* ================= APPROVE / REJECT ================= */
 
       const session = await prisma.whatsAppSession.findUnique({
         where: { phone },
@@ -116,6 +105,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
       const phone = message.from;
       const text = message.text?.body?.trim().toLowerCase();
 
+      console.log("Text received:", text);
+
       if (!phone) {
         return res.sendStatus(200);
       }
@@ -125,7 +116,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
       if (text === "stop") {
         const result = await prisma.client.updateMany({
           where: {
-            phone: { contains: last10 },
+            phone: last10,
           },
           data: {
             whatsappOptin: false,

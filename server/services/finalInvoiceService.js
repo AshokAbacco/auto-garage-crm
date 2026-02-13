@@ -1,3 +1,4 @@
+// server/services/finalInvoiceService.js
 import puppeteer from "puppeteer";
 import prisma from "../models/prismaClient.js";
 import { uploadBufferToR2 } from "./r2Service.js";
@@ -38,6 +39,7 @@ const numberToWords = (num) => {
     "Eighty",
     "Ninety",
   ];
+
   const format = (n) => {
     if (n < 20) return a[n];
     if (n < 100) return b[Math.floor(n / 10)] + " " + a[n % 10];
@@ -51,6 +53,9 @@ const numberToWords = (num) => {
   return `${format(Math.floor(num))}Only`.replace(/\s+/g, " ");
 };
 
+/* -----------------------------------------
+   MAIN PDF GENERATOR
+----------------------------------------- */
 export const generateFinalInvoicePDF = async (invoiceId) => {
   const invoice = await prisma.invoice.findUnique({
     where: { id: Number(invoiceId) },
@@ -65,33 +70,56 @@ export const generateFinalInvoicePDF = async (invoiceId) => {
 
   const html = buildInvoiceHTML(invoice);
 
+  // LAUNCH OPTIONS - Optimized for Render
   const browser = await puppeteer.launch({
     headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    // CRITICAL: Automatically finds the browser path based on .puppeteerrc.cjs
+    executablePath: puppeteer.executablePath(),
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage", // Vital for Render memory limits
+      "--disable-gpu",
+      "--no-zygote",
+      "--single-process",
+    ],
   });
 
-  const page = await browser.newPage();
-  // We use networkidle0 to ensure all styles are rendered
-  await page.setContent(html, { waitUntil: "networkidle0" });
+  try {
+    const page = await browser.newPage();
 
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-    margin: { top: "10mm", bottom: "10mm", left: "10mm", right: "10mm" },
-  });
+    // Set content with a safety timeout
+    await page.setContent(html, {
+      waitUntil: "networkidle0",
+      timeout: 30000,
+    });
 
-  await browser.close();
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", bottom: "10mm", left: "10mm", right: "10mm" },
+    });
 
-  const key = `invoices/${invoice.id}/final-${invoice.invoiceNumber}.pdf`;
-  const pdfUrl = await uploadBufferToR2({
-    buffer: pdfBuffer,
-    key,
-    contentType: "application/pdf",
-  });
+    const key = `invoices/${invoice.id}/final-${invoice.invoiceNumber}.pdf`;
+    const pdfUrl = await uploadBufferToR2({
+      buffer: pdfBuffer,
+      key,
+      contentType: "application/pdf",
+    });
 
-  return pdfUrl;
+    return pdfUrl;
+  } catch (error) {
+    console.error("❌ Final Invoice PDF Generation Error:", error);
+    throw error;
+  } finally {
+    // CRITICAL: Ensure browser closes to prevent memory leaks
+    if (browser) await browser.close();
+  }
 };
 
+/* -----------------------------------------
+   HTML BUILDER
+----------------------------------------- */
 function buildInvoiceHTML(invoice) {
   const owner = invoice.ownerUser;
   const client = invoice.client;
@@ -100,7 +128,6 @@ function buildInvoiceHTML(invoice) {
   const parts = items.filter((i) => i.type === "part");
   const labour = items.filter((i) => i.type === "labor");
 
-  // Tax Grouping Logic (Matches UI)
   const getTaxGroups = (itemArray) => {
     const groups = {};
     itemArray.forEach((item) => {
@@ -173,11 +200,9 @@ function buildInvoiceHTML(invoice) {
   <head>
     <style>
       body { font-family: 'Helvetica', 'Arial', sans-serif; padding: 20px; color: #111; line-height: 1.2; }
-      .border-b-2 { border-bottom: 2px solid #111; }
-      .text-gray-600 { color: #4b5563; }
-      .uppercase { text-transform: uppercase; }
       table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
       .section-title { font-size: 10px; font-weight: bold; color: #6b7280; margin-bottom: 10px; text-transform: uppercase; }
+      .uppercase { text-transform: uppercase; }
     </style>
   </head>
   <body>
@@ -215,67 +240,16 @@ function buildInvoiceHTML(invoice) {
       </div>
     </div>
 
-    ${
-      parts.length > 0
-        ? `
-      <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px;">PARTS DETAILS</div>
-      <table><thead>${tableHeader}</thead><tbody>${renderRows(parts)}</tbody></table>
-    `
-        : ""
-    }
-
-    ${
-      labour.length > 0
-        ? `
-      <div style="font-size: 11px; font-weight: bold; margin-bottom: 8px; margin-top: 15px;">LABOUR DETAILS</div>
-      <table><thead>${tableHeader}</thead><tbody>${renderRows(labour)}</tbody></table>
-    `
-        : ""
-    }
+    ${parts.length > 0 ? `<div style="font-size: 11px; font-weight: bold; margin-bottom: 8px;">PARTS DETAILS</div><table><thead>${tableHeader}</thead><tbody>${renderRows(parts)}</tbody></table>` : ""}
+    ${labour.length > 0 ? `<div style="font-size: 11px; font-weight: bold; margin-bottom: 8px; margin-top: 15px;">LABOUR DETAILS</div><table><thead>${tableHeader}</thead><tbody>${renderRows(labour)}</tbody></table>` : ""}
 
     <div style="display: flex; justify-content: space-between; margin-top: 20px; border-top: 2px solid #111; pt: 20px;">
       <div style="width: 55%; font-size: 10px;">
         <div class="section-title" style="margin-top: 10px;">Grand Total Calculation</div>
-        ${partsTaxGroups
-          .map(
-            (
-              g,
-            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;">
-          <span>CGST(Parts) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
-          <span>₹${g.taxAmount.toFixed(2)}</span>
-        </div>`,
-          )
-          .join("")}
-        ${partsTaxGroups
-          .map(
-            (
-              g,
-            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;">
-          <span>SGST(Parts) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
-          <span>₹${g.taxAmount.toFixed(2)}</span>
-        </div>`,
-          )
-          .join("")}
-        ${laborTaxGroups
-          .map(
-            (
-              g,
-            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;">
-          <span>CGST(Labor) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
-          <span>₹${g.taxAmount.toFixed(2)}</span>
-        </div>`,
-          )
-          .join("")}
-        ${laborTaxGroups
-          .map(
-            (
-              g,
-            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-left: 10px; border-bottom: 1px solid #eee; pb: 5px;">
-          <span>SGST(Labor) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
-          <span>₹${g.taxAmount.toFixed(2)}</span>
-        </div>`,
-          )
-          .join("")}
+        ${partsTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;"><span>CGST(Parts) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
+        ${partsTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;"><span>SGST(Parts) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
+        ${laborTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;"><span>CGST(Labor) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
+        ${laborTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-left: 10px; border-bottom: 1px solid #eee;"><span>SGST(Labor) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
         
         <div style="margin-top: 15px;">
           <strong>Total Amount (In Words):</strong>
@@ -284,33 +258,20 @@ function buildInvoiceHTML(invoice) {
       </div>
 
       <div style="width: 40%; font-size: 10px; display: flex; flex-direction: column; gap: 6px;">
-        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-          <span color="#4b5563">Net Amount (Incl. Tax)</span>
-          <span>₹${totalWithTax.toFixed(2)}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; color: #dc2626;">
-          <span>Discount</span>
-          <span>- ₹${discount.toFixed(2)}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #d1d5db; padding-top: 4px;">
-          <span>Amount After Discount</span>
-          <span>₹${(totalWithTax - discount).toFixed(2)}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; color: #ef4444;">
-          <span>Round off</span>
-          <span>₹${roundOff}</span>
-        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px;"><span>Net Amount (Incl. Tax)</span><span>₹${totalWithTax.toFixed(2)}</span></div>
+        <div style="display: flex; justify-content: space-between; color: #dc2626;"><span>Discount</span><span>- ₹${discount.toFixed(2)}</span></div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #d1d5db; padding-top: 4px;"><span>Amount After Discount</span><span>₹${(totalWithTax - discount).toFixed(2)}</span></div>
+        <div style="display: flex; justify-content: space-between; color: #ef4444;"><span>Round off</span><span>₹${roundOff}</span></div>
         <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; background: #f3f4f6; padding: 8px; border-top: 1px solid #9ca3af; border-bottom: 1px solid #9ca3af; margin-top: 5px;">
-          <span>AMOUNT PAYABLE</span>
-          <span>₹${finalPayable.toFixed(2)}</span>
+          <span>AMOUNT PAYABLE</span><span>₹${finalPayable.toFixed(2)}</span>
         </div>
       </div>
     </div>
 
     <div style="margin-top: 60px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-      <p style="color: #1d4ed8; font-weight: bold; font-size: 11px; margin-bottom: 4px;">Thank you for choosing ${owner.companyName} for your vehicle service!</p>
+      <p style="color: #1d4ed8; font-weight: bold; font-size: 11px; margin-bottom: 4px;">Thank you for choosing ${owner.companyName}!</p>
       <p style="font-size: 10px; color: #4b5563;">Support Email: <strong>${owner.email}</strong></p>
-      <div style="display: flex; justify-content: space-between; font-size: 8px; color: #374151; text-transform: uppercase; margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; font-size: 8px; color: #374151; margin-top: 20px;">
         <span>The Motor Desk © ${new Date().getFullYear()}</span>
         <span>Digital Billing System - Secure & Verified</span>
       </div>

@@ -81,6 +81,53 @@ export const handleWhatsAppWebhook = async (req, res) => {
         where: { phone: fullPhone }, // ALWAYS 12 digit now
       });
 
+      /* ================= REVIEW RATING ================= */
+
+      const ratingMap = {
+        "1 - 2 Poor": 2,
+        "3 Average": 3,
+        "4 - 5 Excellent": 5,
+      };
+
+      if (ratingMap[actionText]) {
+        const last10 = phone.slice(-10);
+
+        const client = await prisma.client.findFirst({
+          where: { phone: last10 },
+        });
+
+        if (!client) return res.sendStatus(200);
+
+        // Get latest service that was sent review but not yet rated
+        const service = await prisma.service.findFirst({
+          where: {
+            clientId: client.id,
+            reviewSentAt: { not: null },
+            reviewRating: null,
+          },
+          orderBy: {
+            reviewSentAt: "desc",
+          },
+        });
+
+        if (!service) return res.sendStatus(200);
+
+        await prisma.service.update({
+          where: { id: service.id },
+          data: {
+            reviewRating: ratingMap[actionText], // ✅ Stored as INT
+            reviewSource: "whatsapp",
+          },
+        });
+
+        console.log(
+          `⭐ Review saved for service ${service.id}:`,
+          ratingMap[actionText],
+        );
+
+        return res.sendStatus(200);
+      }
+
       if (!session) {
         console.log("❌ No session found for phone:", fullPhone);
         return res.sendStatus(200);

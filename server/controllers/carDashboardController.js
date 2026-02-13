@@ -1,67 +1,58 @@
-//carDashboardContoller.js
+// carDashboardContoller.js
 import prisma from "../models/prismaClient.js";
 
-/**
- * =============================================
- * CAR DASHBOARD CONTROLLER
- * =============================================
- */
 export const getDashboardData = async (req, res) => {
   try {
-    /**
-     * ===============================
-     * STAFF DASHBOARD (LIMITED DATA)
-     * ===============================
-     */
-   if (req.user.type === "staff") {
-     const ownerId = req.user.ownerId;
+    const now = new Date();
 
-     const totalClients = await prisma.client.count({
-       where: { userId: ownerId },
-     });
+    /* ===============================
+       STAFF DASHBOARD
+    =============================== */
+    if (req.user.type === "staff") {
+      const ownerId = req.user.ownerId;
 
-     const totalServices = await prisma.service.count({
-       where: {
-         client: { userId: ownerId },
-       },
-     });
+      const totalClients = await prisma.client.count({
+        where: { userId: ownerId },
+      });
 
-     const upcomingReminders = await prisma.reminder.count({
-       where: {
-         userId: ownerId,
-         remindAt: { gte: new Date() },
-       },
-     });
+      const totalServices = await prisma.service.count({
+        where: { client: { userId: ownerId } },
+      });
 
-     return res.status(200).json({
-       stats: {
-         totalClients,
-         totalServices,
-         upcomingReminders,
+      const upcomingReminders = await prisma.reminder.count({
+        where: {
+          userId: ownerId,
+          OR: [
+            { remind15At: { gte: now }, sent15: false },
+            { remind7At: { gte: now }, sent7: false },
+          ],
+        },
+      });
 
-         // 🔑 MUST EXIST
-         totalRevenue: 0,
-         avgServiceTime: 0,
-         customerRating: 0,
-         overdueRevenue: 0,
-       },
-       charts: {
-         monthlyRevenue: [],
-         serviceTypes: [],
-         weeklyAppointments: [],
-       },
-       data: {
-         todayAppointments: [],
-       },
-     });
-   }
+      return res.status(200).json({
+        stats: {
+          totalClients,
+          totalServices,
+          upcomingReminders,
+          totalRevenue: 0,
+          avgServiceTime: 0,
+          customerRating: 0,
+          overdueRevenue: 0,
+        },
+        charts: {
+          monthlyRevenue: [],
+          serviceTypes: [],
+          weeklyAppointments: [],
+        },
+        data: {
+          todayAppointments: [],
+        },
+      });
+    }
 
-
-    /**
-     * ===============================
-     * OWNER DASHBOARD (FULL DATA)
-     * ===============================
-     */
+    /* ===============================
+       OWNER DASHBOARD
+    =============================== */
     const userId = req.user.id;
 
     const totalClients = await prisma.client.count({
@@ -69,15 +60,16 @@ export const getDashboardData = async (req, res) => {
     });
 
     const totalServices = await prisma.service.count({
-      where: {
-        client: { userId },
-      },
+      where: { client: { userId } },
     });
 
     const upcomingReminders = await prisma.reminder.count({
       where: {
         userId,
-        remindAt: { gte: new Date() },
+        OR: [
+          { remind15At: { gte: now }, sent15: false },
+          { remind7At: { gte: now }, sent7: false },
+        ],
       },
     });
 

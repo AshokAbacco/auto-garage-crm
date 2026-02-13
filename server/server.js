@@ -52,8 +52,13 @@ import dynamicTableRoutes from "./routes/dynamic-table.routes.js";
 import dynamicColumnRoutes from "./routes/dynamic-column.routes.js";
 import dynamicRowRoutes from "./routes/dynamic-row.routes.js";
 import dynamicReadRoutes from "./routes/dynamic-read.routes.js";
+import testRoutes from "./routes/test.routes.js";
+import serviceMediaRoutes from "./routes/serviceMedia.routes.js";
+import invoiceRenderRoutes from "./routes/invoiceRender.routes.js";
+import cron from "node-cron";
+import { startReminderScheduler } from "./jobs/reminderScheduler.js";
 
-console.log("Models in Prisma:", Object.keys(prisma));
+// console.log("Models in Prisma:", Object.keys(prisma));
 
 // Load environment variables
 dotenv.config();
@@ -89,6 +94,8 @@ const allowedOrigins = [
 //   })
 // );
 
+// Runs daily at 9:00 AM
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -108,6 +115,7 @@ app.use(
   }),
 );
 
+startReminderScheduler();
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
@@ -179,6 +187,7 @@ app.use("/api/dynamic-tables", dynamicTableRoutes);
 app.use("/api/dynamic-columns", dynamicColumnRoutes);
 app.use("/api/dynamic-rows", dynamicRowRoutes);
 app.use("/api/dynamic", dynamicReadRoutes);
+app.use("/api", invoiceRenderRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes
@@ -191,6 +200,8 @@ app.use("/api/services", serviceRoutes); // 🧰 Service routes
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
+// server/index.js OR app.js
+app.use("/uploads", express.static("uploads"));
 
 app.use("/api/ocr", ocrRoutes);
 // app.use("/api/dashboard", dashboardRoutes);
@@ -204,6 +215,8 @@ app.use("/api/wash-billing", washBillingRoutes);
 app.use("/api/teams", teamsRoutes);
 app.use("/api/washing-staff", washingStaffRoutes);
 app.use("/api/washing-staff-salary", washingStaffSalaryRoutes);
+app.use("/api/test", testRoutes);
+app.use("/api", serviceMediaRoutes);
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

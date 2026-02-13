@@ -297,7 +297,7 @@ const { form, invoiceItems, calculations, bike } = state;
         {parts.length > 0 && (
           <div className="px-8 py-4">
             <h3 className="text-sm font-bold text-gray-800 mb-2 uppercase">
-              Genuine Parts Details
+              Parts Details
             </h3>
             <table className="w-full text-xs border-collapse">
               <thead>

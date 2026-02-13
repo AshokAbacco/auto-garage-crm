@@ -1,4 +1,3 @@
-// whatsappWebhookController.js
 import prisma from "../models/prismaClient.js";
 
 export const handleWhatsAppWebhook = async (req, res) => {
@@ -8,37 +7,83 @@ export const handleWhatsAppWebhook = async (req, res) => {
     const value = change?.value;
     const message = value?.messages?.[0];
 
-    // Always acknowledge webhook
     if (!message) {
       return res.sendStatus(200);
     }
 
-    /* --------------------------------------------------------
-       Handle BUTTON REPLIES (Approve / Reject)
-    -------------------------------------------------------- */
+    console.log("========== INCOMING WHATSAPP ==========");
+    console.log(JSON.stringify(message, null, 2));
+    console.log("========================================");
+
+    /* ========================================================
+       HANDLE TEMPLATE QUICK REPLY BUTTONS (OPT-IN FIX)
+    ======================================================== */
+    if (
+      message.type === "interactive" &&
+      message.interactive?.type === "button_reply"
+    ) {
+      const phone = message.from;
+      const actionText = message.interactive.button_reply?.title;
+
+      console.log("Button clicked:", actionText);
+      console.log("From phone:", phone);
+
+      if (!phone || !actionText) {
+        return res.sendStatus(200);
+      }
+
+      const last10 = phone.slice(-10);
+
+      if (actionText === "Yes, Send Updates") {
+        const result = await prisma.client.updateMany({
+          where: {
+            phone: { contains: last10 },
+          },
+          data: {
+            whatsappOptin: true,
+            whatsappOptinAt: new Date(),
+            whatsappOptinSource: "whatsapp_button",
+          },
+        });
+
+        console.log("Opt-in updated rows:", result.count);
+        return res.sendStatus(200);
+      }
+
+      if (actionText === "No, Thanks") {
+        const result = await prisma.client.updateMany({
+          where: {
+            phone: { contains: last10 },
+          },
+          data: {
+            whatsappOptin: false,
+          },
+        });
+
+        console.log("Opt-out updated rows:", result.count);
+        return res.sendStatus(200);
+      }
+    }
+
+    /* ========================================================
+       YOUR EXISTING APPROVE / REJECT LOGIC (UNCHANGED)
+    ======================================================== */
     if (message.type === "button") {
-      const phone = message.from; // E.164 without +
+      const phone = message.from;
       const actionText = message.button?.text;
 
       if (!phone || !actionText) {
         return res.sendStatus(200);
       }
 
-      /* ----------------------------------------------------
-         Resolve active WhatsApp session by phone
-      ---------------------------------------------------- */
       const session = await prisma.whatsAppSession.findUnique({
         where: { phone },
       });
 
-      // No session or session expired → ignore safely
       if (!session || session.expiresAt < new Date()) {
         return res.sendStatus(200);
       }
 
-      /* ----------------------------------------------------
-         Handle APPROVE
-      ---------------------------------------------------- */
       if (actionText === "Approve Service") {
         await prisma.service.update({
           where: { id: session.serviceId },
@@ -50,9 +95,6 @@ export const handleWhatsAppWebhook = async (req, res) => {
         });
       }
 
-      /* ----------------------------------------------------
-         Handle REJECT
-      ---------------------------------------------------- */
       if (actionText === "Reject / Contact Garage") {
         await prisma.service.update({
           where: { id: session.serviceId },
@@ -67,18 +109,33 @@ export const handleWhatsAppWebhook = async (req, res) => {
       return res.sendStatus(200);
     }
 
-    /* --------------------------------------------------------
-       Handle USER TEXT MESSAGE (opens / refreshes session)
-       This allows staff to send images within 24h
-    -------------------------------------------------------- */
+    /* ========================================================
+       HANDLE TEXT (STOP)
+    ======================================================== */
     if (message.type === "text") {
       const phone = message.from;
+      const text = message.text?.body?.trim().toLowerCase();
 
       if (!phone) {
         return res.sendStatus(200);
       }
 
-      // Extend session if exists
+      const last10 = phone.slice(-10);
+
+      if (text === "stop") {
+        const result = await prisma.client.updateMany({
+          where: {
+            phone: { contains: last10 },
+          },
+          data: {
+            whatsappOptin: false,
+          },
+        });
+
+        console.log("STOP updated rows:", result.count);
+        return res.sendStatus(200);
+      }
+
       const existingSession = await prisma.whatsAppSession.findUnique({
         where: { phone },
       });

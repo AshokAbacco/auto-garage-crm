@@ -1,4 +1,4 @@
-// whatsappService.js
+
 import axios from "axios";
 
 const GRAPH_URL = "https://graph.facebook.com/v18.0";
@@ -9,9 +9,6 @@ if (!PHONE_ID || !TOKEN) {
   throw new Error("WhatsApp env variables are missing");
 }
 
-/* ============================================================
-   COMMON AXIOS CONFIG
-============================================================ */
 const axiosInstance = axios.create({
   baseURL: GRAPH_URL,
   headers: {
@@ -20,19 +17,13 @@ const axiosInstance = axios.create({
   },
 });
 
-/* ============================================================
-   1️⃣ SEND WHATSAPP TEMPLATE (GENERIC – ALL TEMPLATES)
-============================================================ */
+/* TEMPLATE */
 export const sendWhatsAppTemplate = async ({
   to,
   templateName,
-  languageCode, // ❗ no default
+  languageCode,
   variables = [],
 }) => {
-  if (!languageCode) {
-    throw new Error("WhatsApp template languageCode is required");
-  }
-
   const payload = {
     messaging_product: "whatsapp",
     to,
@@ -40,28 +31,25 @@ export const sendWhatsAppTemplate = async ({
     template: {
       name: templateName,
       language: { code: languageCode },
-      ...(variables.length > 0 && {
-        components: [
-          {
-            type: "body",
-            parameters: variables.map((value) => ({
-              type: "text",
-              text: value,
-            })),
-          },
-        ],
-      }),
+      components: [
+        {
+          type: "body",
+          parameters: variables.map((v) => ({
+            type: "text",
+            text: String(v),
+          })),
+        },
+      ],
     },
   };
 
   const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
-  return res.data;
+
+  // ✅ RETURN ONLY MESSAGE ID (STRING)
+  return res.data?.messages?.[0]?.id || null;
 };
 
-
-/* ============================================================
-   2️⃣ SEND IMAGE (ONLY DURING ACTIVE SESSION)
-============================================================ */
+/* IMAGE */
 export const sendWhatsAppImage = async ({ to, imageUrl, caption }) => {
   const payload = {
     messaging_product: "whatsapp",
@@ -77,9 +65,7 @@ export const sendWhatsAppImage = async ({ to, imageUrl, caption }) => {
   return res.data;
 };
 
-/* ============================================================
-   3️⃣ SEND DOCUMENT / PDF (INVOICE, PROFORMA, ETC.)
-============================================================ */
+/* DOCUMENT */
 export const sendWhatsAppDocument = async ({
   to,
   documentUrl,
@@ -92,23 +78,6 @@ export const sendWhatsAppDocument = async ({
     document: {
       link: documentUrl,
       filename,
-    },
-  };
-
-  const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
-  return res.data;
-};
-
-/* ============================================================
-   4️⃣ SIMPLE TEXT MESSAGE (DEBUG ONLY – DO NOT USE IN PROD)
-============================================================ */
-export const sendTestMessage = async ({ to, text }) => {
-  const payload = {
-    messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: {
-      body: text || "Test message from Auto Garage CRM",
     },
   };
 

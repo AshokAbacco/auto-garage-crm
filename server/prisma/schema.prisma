@@ -49,6 +49,23 @@ enum WhatsAppApprovalSource {
   web
 }
 
+enum ReferrerType {
+  USER
+  PARTNER
+}
+
+enum ReferralStatus {
+  REGISTERED
+  PAID
+  REWARDED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
 model User {
   id           Int     @id @default(autoincrement())
   email        String  @unique
@@ -73,6 +90,9 @@ model User {
   myReferralCode   String    @unique
   referredByCode   String?
   referredByUserId Int?
+
+  referralsMade  Referral[] @relation("UserReferralsMade")
+  referralRecord Referral?  @relation("UserReferralReceived")
 
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
@@ -125,26 +145,29 @@ model User {
 //car db schemas
 
 model Client {
-  id           Int      @id @default(autoincrement())
-  fullName     String
-  phone        String
-  email        String?
-  address      String?
-  vehicleMake  String
-  vehicleModel String
-  vehicleYear  Int
-  regNumber    String
-  fuel         String? // ✅ ADD THIS
-  seats        Int?
-  vin          String?
-  carImage     String?
-  adImage      String?
-  staffPerson  String?
-  receiverName String?
-  damageImages Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  userId       Int?
+  id                  Int       @id @default(autoincrement())
+  fullName            String
+  phone               String
+  email               String?
+  address             String?
+  vehicleMake         String
+  vehicleModel        String
+  vehicleYear         Int
+  regNumber           String
+  fuel                String? // ✅ ADD THIS
+  seats               Int?
+  vin                 String?
+  carImage            String?
+  adImage             String?
+  staffPerson         String?
+  receiverName        String?
+  damageImages        Json?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  userId              Int?
+  whatsappOptin       Boolean   @default(false)
+  whatsappOptinAt     DateTime?
+  whatsappOptinSource String?
 
   user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   services  Service[]
@@ -176,8 +199,8 @@ model Service {
   assignedMechanic String?
   advancePaid      Float?    @default(0)
 
-  // 🔹 APPROVAL WORKFLOW (NEW)
-  approvalStatus String                  @default("PENDING")
+  // ✅ APPROVAL WORKFLOW (FIXED)
+  approvalStatus String? // ❌ NO DEFAULT
   approvalNote   String?
   approvalAt     DateTime?
   approvalSource WhatsAppApprovalSource?
@@ -202,16 +225,16 @@ model Service {
 }
 
 model ServiceMedia {
-  id       Int    @id @default(autoincrement())
+  id        Int @id @default(autoincrement())
+  serviceId Int
+
   fileName String
   mimeType String
-  data     Bytes
+  mediaUrl String // ✅ Cloudflare R2 public URL
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model Invoice {
@@ -248,6 +271,7 @@ model Invoice {
   serviceNotes       String?
   mechanic           String?
   vehicle            String?
+  whatsAppMessages   WhatsAppMessage[] // 👈 ADD THIS
 
   // 🔗 RELATIONS
   services         Service[]
@@ -307,16 +331,29 @@ model ServiceCostItem {
 }
 
 model Reminder {
-  id        Int      @id @default(autoincrement())
-  clientId  Int
-  userId    Int?
-  message   String
-  remindAt  DateTime
-  sent      Boolean  @default(false)
+  id       Int  @id @default(autoincrement())
+  clientId Int
+  userId   Int?
+
+  serviceDate DateTime // actual appointment date & time
+  note        String?  @db.Text
+
+  remind15At DateTime? // auto-calculated: serviceDate - 15 days
+  remind7At  DateTime? // auto-calculated: serviceDate - 7 days
+
+  sent15 Boolean @default(false)
+  sent7  Boolean @default(false)
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([serviceDate])
+  @@index([remind15At])
+  @@index([remind7At])
+  @@index([clientId])
 }
 
 model ServiceCategory {
@@ -550,18 +587,12 @@ model Bike {
   fuel         String?
   notes        String?
 
-  /**
-   * 🔐 OWNERSHIP (USER BASED)
-   */
   ownerUserId Int
   createdById Int
 
   ownerUser User @relation("OwnerBikes", fields: [ownerUserId], references: [id])
   createdBy User @relation("CreatedBikes", fields: [createdById], references: [id])
 
-  /**
-   * 🔗 RELATIONS
-   */
   bikeServices   BikeService[]
   bikeInvoices   BikeInvoice[]
   bikeReminders  BikeReminder[]
@@ -990,9 +1021,6 @@ model WashingService {
 
   media WashingServiceMedia[]
 
-  /**
-   * 🔗 Invoice link via JOIN table
-   */
   billings WashBillingService[]
 
   createdAt DateTime @default(now())
@@ -1139,21 +1167,124 @@ model WhatsAppSession {
 }
 
 model WhatsAppMessage {
-  id        Int      @id @default(autoincrement())
-  phone     String
-  userId    Int
+  id     Int    @id @default(autoincrement())
+  phone  String
+  userId Int
+
   serviceId Int?
+  invoiceId Int?
+
   template  String
-  messageId String? // Meta message ID
-  status    String // sent | delivered | read | failed
+  messageId String?
+  status    String
   error     String?
+
   createdAt DateTime @default(now())
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   @@index([phone])
   @@index([userId])
   @@index([serviceId])
-  @@index([template])
+  @@index([invoiceId])
+}
+
+//Admin Tables
+model Admin {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  password String
+  role     String  @default("SUPER_ADMIN") // SUPER_ADMIN | STAFF
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReferralPartner {
+  id Int @id @default(autoincrement())
+
+  name     String
+  email    String @unique
+  phone    String
+  password String // ✅ ADD THIS
+  upiId    String
+  address  String
+
+  referralCode String @unique
+
+  totalReferrals Int   @default(0)
+  totalEarnings  Float @default(0)
+
+  isActive Boolean @default(true)
+
+  referrals Referral[]
+  payouts   ReferralPayout[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Referral {
+  id String @id @default(cuid())
+
+  referralCode String
+  referrerType ReferrerType
+
+  referrerUserId Int?
+  referrerUser   User? @relation("UserReferralsMade", fields: [referrerUserId], references: [id], onDelete: Cascade)
+
+  referrerPartnerId Int?
+  referrerPartner   ReferralPartner? @relation(fields: [referrerPartnerId], references: [id], onDelete: Cascade)
+
+  referredUserId Int  @unique
+  referredUser   User @relation("UserReferralReceived", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  status ReferralStatus @default(REGISTERED)
+
+  commissionAmount Float?
+  rewardGiven      Boolean @default(false)
+
+  createdAt   DateTime  @default(now())
+  convertedAt DateTime?
+
+  @@index([referralCode])
+  @@index([referrerUserId])
+  @@index([referrerPartnerId])
+}
+
+model ReferralSettings {
+  id Int @id @default(1)
+
+  userCommissionPercent    Float
+  partnerCommissionPercent Float
+
+  rewardAfterDays     Int   @default(0)
+  minimumPayoutAmount Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReferralPayout {
+  id Int @id @default(autoincrement())
+
+  partnerId Int
+  partner   ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  amount Float
+
+  status PayoutStatus @default(PENDING)
+
+  transactionReference String?
+  paidAt               DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+  @@index([status])
 }

@@ -25,6 +25,7 @@ import OCRUploader from "../details/components/OCRUploader";
 import OCRResults from "../details/components/OCRResults";
 import { processImage } from "../details/utils/OCRProcessor.js";
 import { Toaster, toast } from "react-hot-toast";
+import { FaWhatsapp } from "react-icons/fa";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
@@ -53,7 +54,7 @@ export default function ClientDetail() {
       border: isDark ? "#1E293B" : "#E5E7EB",
       hoverBg: isDark ? "#1E293B" : "#F8FAFC",
     }),
-    [isDark]
+    [isDark],
   );
 
   const [client, setClient] = useState(null);
@@ -81,7 +82,7 @@ export default function ClientDetail() {
         const token = localStorage.getItem("token");
         if (!token) {
           throw new Error(
-            "Authentication token not found. Please log in again."
+            "Authentication token not found. Please log in again.",
           );
         }
 
@@ -190,7 +191,7 @@ export default function ClientDetail() {
     try {
       setOcrImage(image);
       const result = await processImage(image, (p) =>
-        console.log("OCR progress:", Math.round(p * 100), "%")
+        console.log("OCR progress:", Math.round(p * 100), "%"),
       );
       setOcrParsed(result.parsed);
       setOcrRaw(result.text);
@@ -278,7 +279,7 @@ export default function ClientDetail() {
       setClient((prev) => ({
         ...prev,
         services: prev.services.map((s) =>
-          s.id === data.service.id ? data.service : s
+          s.id === data.service.id ? data.service : s,
         ),
       }));
       setSelectedService(null);
@@ -301,6 +302,37 @@ export default function ClientDetail() {
     navigate(`/details?${q}`);
   };
 
+  const handleManualWhatsApp = async () => {
+    if (
+      !window.confirm(
+        "Send 'Vehicle Received' message?",
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/clients/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        // We pass sendWhatsApp: true to trigger the backend logic we added to updateClient
+        body: JSON.stringify({ sendWhatsApp: true }),
+      });
+
+      if (res.ok) {
+        toast.success("WhatsApp Receipt Sent!");
+      } else {
+        const errData = await res.json();
+        toast.error(errData.message || "Failed to send WhatsApp");
+      }
+    } catch (err) {
+      console.error("WhatsApp error:", err);
+      toast.error("Error connecting to server");
+    }
+  };
   if (loading)
     return (
       <div
@@ -365,7 +397,7 @@ export default function ClientDetail() {
   const totalServices = services.length;
   const totalBilled = invoices.reduce(
     (s, i) => s + (i.grandTotal || i.totalAmount || 0),
-    0
+    0,
   );
 
   return (
@@ -448,13 +480,22 @@ export default function ClientDetail() {
                 <FiArrowLeft className="w-4 h-4" />
                 <span className="font-medium">Back</span>
               </Link>
-              <button
-                onClick={handleScanNavigate}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
-              >
-                <FiCamera className="w-4 h-4" />
-                <span className="font-medium">Scan RC</span>
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleManualWhatsApp}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  <FaWhatsapp className="w-4 h-4" />
+                  <span className="font-medium">Send Receipt</span>
+                </button>
+                <button
+                  onClick={handleScanNavigate}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  <FiCamera className="w-4 h-4" />
+                  <span className="font-medium">Scan RC</span>
+                </button>
+              </div>
             </div>
 
             {/* Client Info */}
@@ -603,8 +644,8 @@ export default function ClientDetail() {
                       activeTab === tab
                         ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md transform scale-105"
                         : isDark
-                        ? "text-gray-300 hover:bg-gray-700"
-                        : "text-gray-700 hover:bg-gray-100"
+                          ? "text-gray-300 hover:bg-gray-700"
+                          : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     {tab === "ocr"
@@ -707,8 +748,8 @@ export default function ClientDetail() {
                             s.status === "Paid"
                               ? "bg-green-500/20 text-green-400"
                               : s.status === "In Progress"
-                              ? "bg-yellow-500/20 text-yellow-400"
-                              : "bg-red-500/20 text-red-400"
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
                           }`}
                         >
                           {s.status}
@@ -755,7 +796,7 @@ export default function ClientDetail() {
                           >
                             {new Date(inv.createdAt).toLocaleDateString()} • ₹
                             {(inv.grandTotal || inv.totalAmount || 0).toFixed(
-                              2
+                              2,
                             )}
                           </p>
                         </div>

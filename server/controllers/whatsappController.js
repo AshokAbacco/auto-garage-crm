@@ -1,3 +1,4 @@
+//whatsappController.js
 import prisma from "../models/prismaClient.js";
 import {
   sendWhatsAppTemplate,
@@ -21,8 +22,27 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
       return res.status(400).json({ message: "Invalid service ID" });
     }
 
+    /* =====================================================
+       PHONE NORMALIZER (FIXED LOGIC)
+    ===================================================== */
+    const normalizePhone = (phone) => {
+      const digits = String(phone).replace(/\D/g, "");
+
+      // If stored as 10 digit Indian number
+      if (digits.length === 10) {
+        return `91${digits}`;
+      }
+
+      // If already in 12 digit E.164 format
+      if (digits.length === 12 && digits.startsWith("91")) {
+        return digits;
+      }
+
+      throw new Error(`Invalid phone format: ${phone}`);
+    };
+
     /* --------------------------------------------------------
-       FETCH SERVICE (✅ CORRECT RELATION NAME)
+       FETCH SERVICE
     -------------------------------------------------------- */
     const service = await prisma.service.findFirst({
       where: {
@@ -31,7 +51,7 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
       },
       include: {
         client: true,
-        mediaFiles: true, // ✅ FIXED (MATCHES PRISMA)
+        mediaFiles: true,
       },
     });
 
@@ -48,8 +68,12 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
       select: { companyName: true },
     });
 
-    const rawPhone = service.client.phone.replace(/\D/g, "");
-    const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+    /* =====================================================
+       NORMALIZED PHONE (FIX APPLIED HERE)
+    ===================================================== */
+    const to = normalizePhone(service.client.phone);
+
+    console.log("📲 Normalized phone:", to);
 
     /* =====================================================
        1️⃣ TEMPLATE (OPEN SESSION)
@@ -67,7 +91,7 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     });
 
     /* =====================================================
-       2️⃣ SEND IMAGES (R2 PUBLIC URL)
+       2️⃣ SEND IMAGES
     ===================================================== */
     for (const media of service.mediaFiles || []) {
       if (!media.mediaUrl) continue;
@@ -80,7 +104,7 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     }
 
     /* =====================================================
-       3️⃣ PROFORMA PDF (YOUR DESIGN → R2)
+       3️⃣ PROFORMA PDF
     ===================================================== */
     let pdfUrl = null;
 
@@ -99,7 +123,7 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     }
 
     /* =====================================================
-       4️⃣ LOG MESSAGE
+       4️⃣ LOG MESSAGE (ALWAYS STORES 12 DIGIT FORMAT NOW)
     ===================================================== */
     await prisma.whatsAppMessage.create({
       data: {
@@ -112,7 +136,7 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     });
 
     /* =====================================================
-       5️⃣ SESSION + STATUS
+       5️⃣ SESSION (ALWAYS 12 DIGIT FORMAT)
     ===================================================== */
     await prisma.whatsAppSession.upsert({
       where: { phone: to },
@@ -129,6 +153,9 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
       },
     });
 
+    /* =====================================================
+       6️⃣ UPDATE SERVICE STATUS
+    ===================================================== */
     await prisma.service.update({
       where: { id: service.id },
       data: {

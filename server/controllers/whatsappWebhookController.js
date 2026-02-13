@@ -1,3 +1,4 @@
+//whatsappWebhookController.js
 import prisma from "../models/prismaClient.js";
 
 export const handleWhatsAppWebhook = async (req, res) => {
@@ -16,27 +17,42 @@ export const handleWhatsAppWebhook = async (req, res) => {
     console.log("========================================");
 
     /* ========================================================
-       HANDLE ALL BUTTON CLICKS (OPT-IN + APPROVE/REJECT)
+       PHONE NORMALIZER (12 DIGIT E.164 WITHOUT +)
+    ======================================================== */
+    const normalizePhone = (phone) => {
+      const digits = String(phone).replace(/\D/g, "");
+
+      if (digits.length === 10) {
+        return `91${digits}`;
+      }
+
+      if (digits.length === 12 && digits.startsWith("91")) {
+        return digits;
+      }
+
+      return digits; // fallback (safe)
+    };
+
+    const fullPhone = normalizePhone(message.from);
+    const last10 = fullPhone.slice(-10);
+
+    /* ========================================================
+       HANDLE BUTTON CLICKS
     ======================================================== */
     if (message.type === "button") {
-      const phone = message.from; // 917204986825
       const actionText = message.button?.text;
 
       console.log("Button clicked:", actionText);
-      console.log("From phone:", phone);
+      console.log("From phone (normalized):", fullPhone);
 
-      if (!phone || !actionText) {
+      if (!fullPhone || !actionText) {
         return res.sendStatus(200);
       }
-
-      const last10 = phone.slice(-10); // 7204986825
 
       /* ================= OPT-IN ================= */
       if (actionText === "Yes, Send Updates") {
         const result = await prisma.client.updateMany({
-          where: {
-            phone: last10, // exact match with DB
-          },
+          where: { phone: last10 },
           data: {
             whatsappOptin: true,
             whatsappOptinAt: new Date(),
@@ -51,12 +67,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
       /* ================= OPT-OUT ================= */
       if (actionText === "No, Thanks") {
         const result = await prisma.client.updateMany({
-          where: {
-            phone: last10,
-          },
-          data: {
-            whatsappOptin: false,
-          },
+          where: { phone: last10 },
+          data: { whatsappOptin: false },
         });
 
         console.log("Opt-out updated rows:", result.count);
@@ -66,10 +78,16 @@ export const handleWhatsAppWebhook = async (req, res) => {
       /* ================= APPROVE / REJECT ================= */
 
       const session = await prisma.whatsAppSession.findUnique({
-        where: { phone },
+        where: { phone: fullPhone }, // ALWAYS 12 digit now
       });
 
-      if (!session || session.expiresAt < new Date()) {
+      if (!session) {
+        console.log("❌ No session found for phone:", fullPhone);
+        return res.sendStatus(200);
+      }
+
+      if (session.expiresAt < new Date()) {
+        console.log("❌ Session expired for phone:", fullPhone);
         return res.sendStatus(200);
       }
 
@@ -82,6 +100,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
             approvalAt: new Date(),
           },
         });
+
+        console.log("✅ Service approved:", session.serviceId);
       }
 
       if (actionText === "Reject / Contact Garage") {
@@ -93,6 +113,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
             approvalAt: new Date(),
           },
         });
+
+        console.log("❌ Service rejected:", session.serviceId);
       }
 
       return res.sendStatus(200);
@@ -102,25 +124,19 @@ export const handleWhatsAppWebhook = async (req, res) => {
        HANDLE TEXT (STOP)
     ======================================================== */
     if (message.type === "text") {
-      const phone = message.from;
       const text = message.text?.body?.trim().toLowerCase();
 
       console.log("Text received:", text);
+      console.log("From phone (normalized):", fullPhone);
 
-      if (!phone) {
+      if (!fullPhone) {
         return res.sendStatus(200);
       }
 
-      const last10 = phone.slice(-10);
-
       if (text === "stop") {
         const result = await prisma.client.updateMany({
-          where: {
-            phone: last10,
-          },
-          data: {
-            whatsappOptin: false,
-          },
+          where: { phone: last10 },
+          data: { whatsappOptin: false },
         });
 
         console.log("STOP updated rows:", result.count);
@@ -128,16 +144,18 @@ export const handleWhatsAppWebhook = async (req, res) => {
       }
 
       const existingSession = await prisma.whatsAppSession.findUnique({
-        where: { phone },
+        where: { phone: fullPhone },
       });
 
       if (existingSession) {
         await prisma.whatsAppSession.update({
-          where: { phone },
+          where: { phone: fullPhone },
           data: {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },
         });
+
+        console.log("🔄 Session extended for:", fullPhone);
       }
 
       return res.sendStatus(200);

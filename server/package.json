@@ -4,8 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-     "postinstall": "prisma generate && npx puppeteer browsers install chrome",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "prisma generate && PUPPETEER_CACHE_DIR=.cache npx puppeteer browsers install chrome",    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js"
   },
   "prisma": {

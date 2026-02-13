@@ -5,6 +5,7 @@ import {
   sendWhatsAppDocument,
 } from "../services/whatsappService.js";
 import { generateProformaPDF } from "../services/proformaService.js";
+import { generateFinalInvoicePDF } from "../services/finalInvoiceService.js";
 
 /* ----------------------------------------
    OWNER SAFE (USER / STAFF)
@@ -55,8 +56,8 @@ export const sendServiceApprovalWhatsApp = async (req, res) => {
     ===================================================== */
     await sendWhatsAppTemplate({
       to,
-      templateName: "service_estimate_confirmation",
-      languageCode: "en_IN",
+      templateName: "service_estimate_approvel",
+      languageCode: "en",
       variables: [
         service.client.fullName,
         owner?.companyName || "Our Garage",
@@ -206,7 +207,7 @@ export const sendServiceNotification = async (req, res) => {
     await sendWhatsAppTemplate({
       to,
       templateName,
-      languageCode: "en_IN",
+      languageCode: "en",
       variables,
     });
 
@@ -320,45 +321,97 @@ export const sendVehicleReadyWhatsApp = async (req, res) => {
 };
 
 export const sendFinalInvoiceWhatsApp = async (invoiceId, ownerUserId) => {
-  const invoice = await prisma.invoice.findFirst({
-    where: {
-      id: Number(invoiceId),
-      ownerUserId,
-    },
-    include: {
-      client: true,
-      ownerUser: {
-        select: { companyName: true },
+  try {
+    /* ================================
+       1️⃣ FETCH INVOICE
+    ================================= */
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        id: Number(invoiceId),
+        ownerUserId,
       },
-    },
-  });
+      include: {
+        client: true,
+        ownerUser: true,
+        invoiceCostItems: true,
+      },
+    });
 
-  if (!invoice || !invoice.client?.phone) {
-    throw new Error("Invoice or client phone not found");
+    if (!invoice || !invoice.client?.phone) {
+      throw new Error("Invoice or client phone not found");
+    }
+
+    const rawPhone = invoice.client.phone.replace(/\D/g, "");
+    const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+
+    /* ================================
+       2️⃣ SEND TEMPLATE FIRST
+    ================================= */
+    const messageId = await sendWhatsAppTemplate({
+      to,
+      templateName: "final_invoice_summary",
+      languageCode: "en", // Must match Meta dashboard
+      variables: [
+        invoice.ownerUser?.companyName || "Motor Desk",
+        invoice.client.regNumber,
+        String(invoice.grandTotal),
+      ],
+    });
+
+    console.log("✅ Final invoice template sent");
+
+    /* ================================
+       3️⃣ GENERATE FINAL INVOICE PDF
+    ================================= */
+    let pdfUrl = null;
+
+    try {
+      pdfUrl = await generateFinalInvoicePDF(invoice.id);
+      console.log("📄 Final Invoice PDF URL:", pdfUrl);
+    } catch (err) {
+      console.error("❌ Final invoice PDF generation failed:", err.message);
+    }
+
+    /* ================================
+       4️⃣ SEND DOCUMENT
+    ================================= */
+    if (pdfUrl) {
+      try {
+        await sendWhatsAppDocument({
+          to,
+          documentUrl: pdfUrl,
+          filename: `Invoice-${invoice.invoiceNumber}.pdf`,
+        });
+
+        console.log("✅ Final invoice PDF sent");
+      } catch (err) {
+        console.error(
+          "❌ Document send error:",
+          err.response?.data || err.message,
+        );
+        throw err;
+      }
+    } else {
+      console.log("⚠ No PDF URL generated");
+    }
+
+    /* ================================
+       5️⃣ LOG MESSAGE (NO invoiceId FIELD)
+    ================================= */
+    await prisma.whatsAppMessage.create({
+      data: {
+        phone: to,
+        userId: ownerUserId,
+        serviceId: null, // Invoice not linked in schema
+        template: "final_invoice_summary",
+        messageId: messageId || null,
+        status: "sent",
+      },
+    });
+
+    console.log("📝 WhatsApp message logged");
+  } catch (error) {
+    console.error("❌ sendFinalInvoiceWhatsApp ERROR:", error.message);
+    throw error;
   }
-
-  const rawPhone = invoice.client.phone.replace(/\D/g, "");
-  const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
-
-  await sendWhatsAppTemplate({
-    to,
-    templateName: "final_invoice_summary",
-    languageCode: "en",
-    variables: [
-      invoice.ownerUser?.companyName || "Motor Desk", // {{1}}
-      invoice.client.regNumber, // {{2}}
-      String(invoice.grandTotal), // {{3}}
-    ],
-  });
-
-  // Optional log
-  await prisma.whatsAppMessage.create({
-    data: {
-      phone: to,
-      userId: ownerUserId,
-      invoiceId: invoice.id,
-      template: "final_invoice_summary",
-      status: "sent",
-    },
-  });
 };

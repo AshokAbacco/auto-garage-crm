@@ -55,9 +55,8 @@ import dynamicReadRoutes from "./routes/dynamic-read.routes.js";
 import testRoutes from "./routes/test.routes.js";
 import serviceMediaRoutes from "./routes/serviceMedia.routes.js";
 import invoiceRenderRoutes from "./routes/invoiceRender.routes.js";
-
-
-
+import cron from "node-cron";
+import { startReminderScheduler } from "./jobs/reminderScheduler.js";
 
 // console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -95,6 +94,8 @@ const allowedOrigins = [
 //   })
 // );
 
+// Runs daily at 9:00 AM
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -114,6 +115,7 @@ app.use(
   }),
 );
 
+startReminderScheduler();
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
@@ -186,7 +188,6 @@ app.use("/api/dynamic-columns", dynamicColumnRoutes);
 app.use("/api/dynamic-rows", dynamicRowRoutes);
 app.use("/api/dynamic", dynamicReadRoutes);
 app.use("/api", invoiceRenderRoutes);
-
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

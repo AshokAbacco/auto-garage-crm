@@ -2,9 +2,7 @@ import puppeteer from "puppeteer";
 import prisma from "../models/prismaClient.js";
 import { uploadBufferToR2 } from "./r2Service.js";
 
-/* -----------------------------------------
-   Helpers
------------------------------------------ */
+// Helper for Amount in Words
 const numberToWords = (num) => {
   const a = [
     "",
@@ -31,48 +29,41 @@ const numberToWords = (num) => {
   const b = [
     "",
     "",
-    "Twenty ",
-    "Thirty ",
-    "Forty ",
-    "Fifty ",
-    "Sixty ",
-    "Seventy ",
-    "Eighty ",
-    "Ninety ",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
   ];
-
-  const inWords = (n) => {
+  const format = (n) => {
     if (n < 20) return a[n];
-    if (n < 100) return b[Math.floor(n / 10)] + a[n % 10];
-    if (n < 1000) return a[Math.floor(n / 100)] + "Hundred " + inWords(n % 100);
+    if (n < 100) return b[Math.floor(n / 10)] + " " + a[n % 10];
+    if (n < 1000) return a[Math.floor(n / 100)] + "Hundred " + format(n % 100);
     if (n < 100000)
-      return inWords(Math.floor(n / 1000)) + "Thousand " + inWords(n % 1000);
+      return format(Math.floor(n / 1000)) + "Thousand " + format(n % 1000);
     if (n < 10000000)
-      return inWords(Math.floor(n / 100000)) + "Lakh " + inWords(n % 100000);
+      return format(Math.floor(n / 100000)) + "Lakh " + format(n % 100000);
     return "";
   };
-  return `${inWords(Math.floor(num)).trim()} Only`;
+  return `${format(Math.floor(num))}Only`.replace(/\s+/g, " ");
 };
 
-/* -----------------------------------------
-   MAIN PDF GENERATOR
------------------------------------------ */
-export const generateProformaPDF = async (serviceId) => {
-  const service = await prisma.service.findUnique({
-    where: { id: Number(serviceId) },
+export const generateFinalInvoicePDF = async (invoiceId) => {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: Number(invoiceId) },
     include: {
       client: true,
-      serviceCostItems: true,
+      ownerUser: true,
+      invoiceCostItems: true,
     },
   });
 
-  if (!service) throw new Error("Service not found");
+  if (!invoice) throw new Error("Invoice not found");
 
-  const owner = await prisma.user.findUnique({
-    where: { id: service.client.userId },
-  });
-
-  const html = buildProformaHTML(service, owner);
+  const html = buildInvoiceHTML(invoice);
 
   const browser = await puppeteer.launch({
     headless: "new",
@@ -80,6 +71,7 @@ export const generateProformaPDF = async (serviceId) => {
   });
 
   const page = await browser.newPage();
+  // We use networkidle0 to ensure all styles are rendered
   await page.setContent(html, { waitUntil: "networkidle0" });
 
   const pdfBuffer = await page.pdf({
@@ -90,7 +82,7 @@ export const generateProformaPDF = async (serviceId) => {
 
   await browser.close();
 
-  const key = `services/${service.id}/proforma-${service.id}.pdf`;
+  const key = `invoices/${invoice.id}/final-${invoice.invoiceNumber}.pdf`;
   const pdfUrl = await uploadBufferToR2({
     buffer: pdfBuffer,
     key,
@@ -100,13 +92,15 @@ export const generateProformaPDF = async (serviceId) => {
   return pdfUrl;
 };
 
-function buildProformaHTML(service, owner) {
-  const client = service.client;
-  const items = service.serviceCostItems || [];
+function buildInvoiceHTML(invoice) {
+  const owner = invoice.ownerUser;
+  const client = invoice.client;
+  const items = invoice.invoiceCostItems || [];
+
   const parts = items.filter((i) => i.type === "part");
   const labour = items.filter((i) => i.type === "labor");
 
-  // Tax Grouping Logic
+  // Tax Grouping Logic (Matches UI)
   const getTaxGroups = (itemArray) => {
     const groups = {};
     itemArray.forEach((item) => {
@@ -136,7 +130,7 @@ function buildProformaHTML(service, owner) {
   }, 0);
 
   const totalWithTax = totalTaxable + totalTax;
-  const discount = 0; // Proforma usually doesn't have a discount applied yet
+  const discount = Number(invoice.discount || 0);
   const finalPayable = Math.floor(totalWithTax - discount);
   const roundOff = (finalPayable - (totalWithTax - discount)).toFixed(2);
 
@@ -168,7 +162,7 @@ function buildProformaHTML(service, owner) {
       <td style="border: 1px solid #9ca3af; padding: 6px; text-align: right;">${((item.quantity * item.unitPrice * item.cgstRate) / 100).toFixed(2)}</td>
       <td style="border: 1px solid #9ca3af; padding: 6px; text-align: center;">${item.sgstRate}%</td>
       <td style="border: 1px solid #9ca3af; padding: 6px; text-align: right;">${((item.quantity * item.unitPrice * item.sgstRate) / 100).toFixed(2)}</td>
-      <td style="border: 1px solid #9ca3af; padding: 6px; text-align: right; font-weight: bold;">${(item.quantity * item.unitPrice * (1 + (item.cgstRate + item.sgstRate) / 100)).toFixed(2)}</td>
+      <td style="border: 1px solid #9ca3af; padding: 6px; text-align: right; font-weight: bold;">${Number(item.totalCost).toFixed(2)}</td>
     </tr>`,
       )
       .join("");
@@ -178,39 +172,26 @@ function buildProformaHTML(service, owner) {
   <html>
   <head>
     <style>
-      body { font-family: 'Helvetica', 'Arial', sans-serif; padding: 20px; color: #111; line-height: 1.2; position: relative; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; z-index: 10; position: relative; }
-      .watermark {
-        position: fixed;
-        top: 35%;
-        left: 5%;
-        font-size: 80px;
-        font-weight: 900;
-        color: rgba(0,0,0,0.05);
-        transform: rotate(-30deg);
-        z-index: 0;
-        pointer-events: none;
-        text-transform: uppercase;
-        width: 100%;
-        text-align: center;
-      }
+      body { font-family: 'Helvetica', 'Arial', sans-serif; padding: 20px; color: #111; line-height: 1.2; }
+      .border-b-2 { border-bottom: 2px solid #111; }
+      .text-gray-600 { color: #4b5563; }
+      .uppercase { text-transform: uppercase; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
       .section-title { font-size: 10px; font-weight: bold; color: #6b7280; margin-bottom: 10px; text-transform: uppercase; }
     </style>
   </head>
   <body>
-    <div class="watermark">PROFORMA INVOICE</div>
-
     <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 2px solid #111;">
       <div style="width: 60%;">
-        <h1 style="font-size: 28px; font-weight: bold; margin: 0 0 5px 0;">${owner?.companyName || "Garage Name"}</h1>
-        <p style="font-size: 10px; color: #4b5563; margin: 0;">${owner?.address || ""}</p>
+        <h1 style="font-size: 28px; font-weight: bold; margin: 0 0 5px 0;">${owner.companyName}</h1>
+        <p style="font-size: 10px; color: #4b5563; margin: 0;">${owner.address}</p>
         <div style="font-size: 10px; margin-top: 10px;">
-          <strong>GSTIN:</strong> ${owner?.gstNumber || "N/A"} | <strong>Contact:</strong> ${owner?.phone || "N/A"}
+          <strong>GSTIN:</strong> ${owner.gstNumber} | <strong>Contact:</strong> ${owner.phone}
         </div>
       </div>
       <div style="text-align: right;">
         <h1 style="font-size: 28px; font-weight: bold; margin: 0;">TAX INVOICE</h1>
-        <p style="font-size: 9px; color: #6b7280; font-weight: bold;">PROFORMA</p>
+        <p style="font-size: 9px; color: #6b7280; font-weight: bold;">CASH / CREDIT</p>
       </div>
     </div>
 
@@ -226,10 +207,10 @@ function buildProformaHTML(service, owner) {
       <div style="width: 48%;">
         <div class="section-title">Invoice Details</div>
         <div style="font-size: 10px; display: grid; gap: 4px;">
-          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Proforma No:</span> <strong>PI-${service.id}</strong></div>
-          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Date:</span> <span>${new Date().toLocaleDateString()}</span></div>
-          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Vehicle No:</span> <strong style="text-transform: uppercase;">${client.regNumber || "N/A"}</strong></div>
-          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Model/Make:</span> <span style="text-transform: uppercase;">${client.vehicleMake} ${client.vehicleModel}</span></div>
+          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Invoice No:</span> <strong>${invoice.invoiceNumber}</strong></div>
+          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Date:</span> <span>${new Date(invoice.createdAt).toLocaleDateString()}</span></div>
+          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Vehicle No:</span> <strong class="uppercase">${client.regNumber || "N/A"}</strong></div>
+          <div><span style="display:inline-block; width: 100px; color: #4b5563;">Model/Make:</span> <span class="uppercase">${invoice.vehicle || "N/A"}</span></div>
         </div>
       </div>
     </div>
@@ -254,27 +235,83 @@ function buildProformaHTML(service, owner) {
 
     <div style="display: flex; justify-content: space-between; margin-top: 20px; border-top: 2px solid #111; pt: 20px;">
       <div style="width: 55%; font-size: 10px;">
-        <div class="section-title" style="margin-top: 10px;">Calculation Breakdown</div>
-        ${partsTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;"><span>CGST(Parts) @ <strong>${g.rate}%</strong></span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
-        ${partsTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;"><span>SGST(Parts) @ <strong>${g.rate}%</strong></span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
-        ${laborTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;"><span>CGST(Labor) @ <strong>${g.rate}%</strong></span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
-        ${laborTaxGroups.map((g) => `<div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-left: 10px; border-bottom: 1px solid #eee;"><span>SGST(Labor) @ <strong>${g.rate}%</strong></span><span>₹${g.taxAmount.toFixed(2)}</span></div>`).join("")}
-        <div style="margin-top: 15px;"><strong>Total Amount in Words:</strong><br/><strong>${numberToWords(finalPayable)}</strong></div>
+        <div class="section-title" style="margin-top: 10px;">Grand Total Calculation</div>
+        ${partsTaxGroups
+          .map(
+            (
+              g,
+            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;">
+          <span>CGST(Parts) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
+          <span>₹${g.taxAmount.toFixed(2)}</span>
+        </div>`,
+          )
+          .join("")}
+        ${partsTaxGroups
+          .map(
+            (
+              g,
+            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;">
+          <span>SGST(Parts) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
+          <span>₹${g.taxAmount.toFixed(2)}</span>
+        </div>`,
+          )
+          .join("")}
+        ${laborTaxGroups
+          .map(
+            (
+              g,
+            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding-left: 10px;">
+          <span>CGST(Labor) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
+          <span>₹${g.taxAmount.toFixed(2)}</span>
+        </div>`,
+          )
+          .join("")}
+        ${laborTaxGroups
+          .map(
+            (
+              g,
+            ) => `<div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-left: 10px; border-bottom: 1px solid #eee; pb: 5px;">
+          <span>SGST(Labor) @ <strong>${g.rate}%</strong> on ₹${g.taxable.toFixed(2)}</span>
+          <span>₹${g.taxAmount.toFixed(2)}</span>
+        </div>`,
+          )
+          .join("")}
+        
+        <div style="margin-top: 15px;">
+          <strong>Total Amount (In Words):</strong>
+          <div style="font-style: italic; font-weight: bold; font-size: 11px;">${numberToWords(finalPayable)}</div>
+        </div>
       </div>
 
       <div style="width: 40%; font-size: 10px; display: flex; flex-direction: column; gap: 6px;">
-        <div style="display: flex; justify-content: space-between; margin-top: 10px;"><span>Net Amount</span><span>₹${totalWithTax.toFixed(2)}</span></div>
-        <div style="display: flex; justify-content: space-between; color: #ef4444;"><span>Round off</span><span>₹${roundOff}</span></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+          <span color="#4b5563">Net Amount (Incl. Tax)</span>
+          <span>₹${totalWithTax.toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; color: #dc2626;">
+          <span>Discount</span>
+          <span>- ₹${discount.toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #d1d5db; padding-top: 4px;">
+          <span>Amount After Discount</span>
+          <span>₹${(totalWithTax - discount).toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; color: #ef4444;">
+          <span>Round off</span>
+          <span>₹${roundOff}</span>
+        </div>
         <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; background: #f3f4f6; padding: 8px; border-top: 1px solid #9ca3af; border-bottom: 1px solid #9ca3af; margin-top: 5px;">
-          <span>ESTIMATED TOTAL</span><span>₹${finalPayable.toFixed(2)}</span>
+          <span>AMOUNT PAYABLE</span>
+          <span>₹${finalPayable.toFixed(2)}</span>
         </div>
       </div>
     </div>
 
     <div style="margin-top: 60px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-      <p style="color: #1d4ed8; font-weight: bold; font-size: 11px;">This is a Proforma Invoice (Estimation) only.</p>
-      <div style="display: flex; justify-content: space-between; font-size: 8px; color: #374151; margin-top: 20px;">
-        <span>The Motor Desk © 2026</span>
+      <p style="color: #1d4ed8; font-weight: bold; font-size: 11px; margin-bottom: 4px;">Thank you for choosing ${owner.companyName} for your vehicle service!</p>
+      <p style="font-size: 10px; color: #4b5563;">Support Email: <strong>${owner.email}</strong></p>
+      <div style="display: flex; justify-content: space-between; font-size: 8px; color: #374151; text-transform: uppercase; margin-top: 20px;">
+        <span>The Motor Desk © ${new Date().getFullYear()}</span>
         <span>Digital Billing System - Secure & Verified</span>
       </div>
     </div>

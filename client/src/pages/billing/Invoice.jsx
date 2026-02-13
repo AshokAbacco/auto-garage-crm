@@ -357,7 +357,7 @@ export default function Invoice({ previewData }) {
         {parts.length > 0 && (
           <div className="mb-6">
             <h3 className="font-bold text-[11px] uppercase mb-3 text-gray-800">
-              Genuine Parts Details
+              Parts Details
             </h3>
             <table className="w-full text-[9px] border-collapse border border-gray-400">
               <thead>

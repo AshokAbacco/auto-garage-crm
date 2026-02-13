@@ -44,7 +44,9 @@ export const sendWhatsAppTemplate = async ({
   };
 
   const res = await axiosInstance.post(`/${PHONE_ID}/messages`, payload);
-  return res.data;
+
+  // ✅ RETURN ONLY MESSAGE ID (STRING)
+  return res.data?.messages?.[0]?.id || null;
 };
 
 /* IMAGE */

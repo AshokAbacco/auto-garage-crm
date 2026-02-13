@@ -45,28 +45,48 @@ const clientCreateSchema = clientBaseSchema;
 const clientUpdateSchema = clientBaseSchema.partial();
 
 const triggerVehicleReceivedWhatsApp = async (client, ownerId) => {
-  const owner = await prisma.user.findUnique({
-    where: { id: ownerId },
-    select: { companyName: true },
-  });
+  try {
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { companyName: true },
+    });
 
-  const rawPhone = client.phone.replace(/\D/g, "");
-  const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+    if (!client?.phone) {
+      console.log("❌ WhatsApp skipped — phone missing");
+      return;
+    }
 
-  // ✅ TEMPLATE ONLY — SAFE TEST
-  await sendWhatsAppTemplate({
-    to,
-    templateName: "vehicle_received",
-    languageCode: "en_IN",
-    variables: [
-      client.fullName, // {{1}}
-      client.regNumber, // {{2}}
-      owner?.companyName || "Motor Desk", // {{3}}
-    ],
-  });
+    // Normalize phone to E.164 (India example)
+    let rawPhone = client.phone.replace(/\D/g, "");
 
-  // ❌ DO NOT SEND IMAGES FOR NOW
-  // (intentionally disabled)
+    if (rawPhone.length === 10) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    if (!rawPhone.startsWith("91")) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    const to = rawPhone;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_receive",
+      languageCode: "en",
+      variables: [
+        client.fullName || "Customer",
+        client.regNumber || "N/A",
+        owner?.companyName || "Motor Desk",
+      ],
+    });
+
+    console.log(`✅ Opt-in template sent to ${to}`);
+  } catch (error) {
+    console.error(
+      `❌ Failed to send WhatsApp template to ${client?.phone}`,
+      error?.response?.data || error.message,
+    );
+  }
 };
 
 /**

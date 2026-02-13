@@ -57,6 +57,7 @@ import serviceMediaRoutes from "./routes/serviceMedia.routes.js";
 import invoiceRenderRoutes from "./routes/invoiceRender.routes.js";
 import cron from "node-cron";
 import { startReminderScheduler } from "./jobs/reminderScheduler.js";
+import { startReviewScheduler } from "./services/reviewScheduler.js";
 
 // console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -116,6 +117,7 @@ app.use(
 );
 
 startReminderScheduler();
+startReviewScheduler();
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",

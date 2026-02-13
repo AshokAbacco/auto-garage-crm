@@ -74,40 +74,53 @@ export const generateProformaPDF = async (serviceId) => {
 
   const html = buildProformaHTML(service, owner);
 
+  // LAUNCH OPTIONS
   const browser = await puppeteer.launch({
     headless: "new",
-    // This automatically finds the chrome executable installed by the build command
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+    /* REMOVED: process.env.PUPPETEER_EXECUTABLE_PATH
+       Puppeteer will now automatically find the browser in your 
+       PUPPETEER_CACHE_DIR (/opt/render/.cache/puppeteer)
+    */
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage", // Uses /tmp instead of shared memory (vital for Render)
-      "--disable-gpu", // Not needed for PDF generation
-      "--no-first-run",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
       "--no-zygote",
-      "--single-process", // Reduces memory footprint
+      "--single-process",
     ],
   });
 
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: "networkidle0" });
+  try {
+    const page = await browser.newPage();
 
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-    margin: { top: "10mm", bottom: "10mm", left: "10mm", right: "10mm" },
-  });
+    // Added a timeout to prevent hanging on Render
+    await page.setContent(html, {
+      waitUntil: "networkidle0",
+      timeout: 30000,
+    });
 
-  await browser.close();
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", bottom: "10mm", left: "10mm", right: "10mm" },
+    });
 
-  const key = `services/${service.id}/proforma-${service.id}.pdf`;
-  const pdfUrl = await uploadBufferToR2({
-    buffer: pdfBuffer,
-    key,
-    contentType: "application/pdf",
-  });
+    const key = `services/${service.id}/proforma-${service.id}.pdf`;
+    const pdfUrl = await uploadBufferToR2({
+      buffer: pdfBuffer,
+      key,
+      contentType: "application/pdf",
+    });
 
-  return pdfUrl;
+    return pdfUrl;
+  } catch (error) {
+    console.error("❌ PDF Generation Error:", error);
+    throw error;
+  } finally {
+    // CRITICAL: Always close browser even if generation fails
+    if (browser) await browser.close();
+  }
 };
 
 function buildProformaHTML(service, owner) {

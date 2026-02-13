@@ -30,7 +30,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
         return digits;
       }
 
-      return digits; // fallback (safe)
+      return digits;
     };
 
     const fullPhone = normalizePhone(message.from);
@@ -40,7 +40,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
        HANDLE BUTTON CLICKS
     ======================================================== */
     if (message.type === "button") {
-      const actionText = message.button?.text;
+      const actionText = message.button?.text?.trim();
 
       console.log("Button clicked:", actionText);
       console.log("From phone (normalized):", fullPhone);
@@ -75,12 +75,6 @@ export const handleWhatsAppWebhook = async (req, res) => {
         return res.sendStatus(200);
       }
 
-      /* ================= APPROVE / REJECT ================= */
-
-      const session = await prisma.whatsAppSession.findUnique({
-        where: { phone: fullPhone }, // ALWAYS 12 digit now
-      });
-
       /* ================= REVIEW RATING ================= */
 
       const ratingMap = {
@@ -90,15 +84,12 @@ export const handleWhatsAppWebhook = async (req, res) => {
       };
 
       if (ratingMap[actionText]) {
-        const last10 = phone.slice(-10);
-
         const client = await prisma.client.findFirst({
           where: { phone: last10 },
         });
 
         if (!client) return res.sendStatus(200);
 
-        // Get latest service that was sent review but not yet rated
         const service = await prisma.service.findFirst({
           where: {
             clientId: client.id,
@@ -115,7 +106,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
         await prisma.service.update({
           where: { id: service.id },
           data: {
-            reviewRating: ratingMap[actionText], // ✅ Stored as INT
+            reviewRating: ratingMap[actionText],
             reviewSource: "whatsapp",
           },
         });
@@ -127,6 +118,12 @@ export const handleWhatsAppWebhook = async (req, res) => {
 
         return res.sendStatus(200);
       }
+
+      /* ================= APPROVE / REJECT ================= */
+
+      const session = await prisma.whatsAppSession.findUnique({
+        where: { phone: fullPhone },
+      });
 
       if (!session) {
         console.log("❌ No session found for phone:", fullPhone);

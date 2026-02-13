@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import prisma from "../models/prismaClient.js";
 import { uploadBufferToR2 } from "./r2Service.js";
 
@@ -66,6 +66,8 @@ export const generateFinalInvoicePDF = async (invoiceId) => {
   const html = buildInvoiceHTML(invoice);
 
   const browser = await puppeteer.launch({
+    executablePath:
+      process.env.NODE_ENV === "production" ? "/usr/bin/chromium" : undefined,
     headless: "new",
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });

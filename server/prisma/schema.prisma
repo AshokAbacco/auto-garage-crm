@@ -222,6 +222,12 @@ model Service {
   serviceCostItems ServiceCostItem[]
   whatsAppSessions WhatsAppSession[]
   whatsAppMessages WhatsAppMessage[]
+
+  // ===== REVIEW SYSTEM =====
+  reviewSentAt    DateTime?
+  reviewRating    Int?
+  reviewSource    String?
+  reviewMessageId String?
 }
 
 model ServiceMedia {

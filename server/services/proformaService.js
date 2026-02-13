@@ -76,7 +76,17 @@ export const generateProformaPDF = async (serviceId) => {
 
   const browser = await puppeteer.launch({
     headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    // This automatically finds the chrome executable installed by the build command
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage", // Uses /tmp instead of shared memory (vital for Render)
+      "--disable-gpu", // Not needed for PDF generation
+      "--no-first-run",
+      "--no-zygote",
+      "--single-process", // Reduces memory footprint
+    ],
   });
 
   const page = await browser.newPage();

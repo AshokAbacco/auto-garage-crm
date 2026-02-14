@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "prisma generate && PUPPETEER_CACHE_DIR=.cache npx puppeteer browsers install chrome",    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "nodemon server.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

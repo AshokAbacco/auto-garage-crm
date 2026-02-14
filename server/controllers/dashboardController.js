@@ -1,194 +1,278 @@
-// server/controllers/dashboardController.js
 import prisma from "../models/prismaClient.js";
 
 /**
- * @desc Get dashboard summary data
+ * @desc Get Car CRM dashboard summary
  * @route GET /api/dashboard
  * @access Private
  */
-
 export const getDashboardData = async (req, res) => {
-    try {
-        const userId = req.user.id;
+  try {
+    const userId = req.user.id;
 
-        // ✅ Run all heavy queries in parallel
-        const [
-            recentClients,
-            recentServices,
-            recentInvoices,
-            upcomingReminders,
-            totalClients,
-            monthlyRevenueRaw,
-            weeklyDataRaw,
-            serviceTypesRaw
-        ] = await Promise.all([
-            // ✅ 1. Recent clients
-            prisma.client.findMany({
-                where: { userId },
-                select: {
-                    id: true,
-                    fullName: true,
-                    phone: true,
-                    email: true,
-                    vehicleMake: true,
-                    vehicleModel: true,
-                    regNumber: true,
-                    createdAt: true,
-                },
-                orderBy: { createdAt: "desc" },
-                take: 5,
-            }),
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
-            // ✅ 2. Recent services
-            prisma.service.findMany({
-                where: { client: { userId } },
-                include: {
-                    client: { select: { id: true, fullName: true } },
-                    category: { select: { name: true } },
-                    subService: { select: { name: true } },
-                },
-                orderBy: { date: "desc" },
-                take: 10,
-            }),
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
 
-            // ✅ 3. Recent invoices
-            prisma.invoice.findMany({
-                where: { client: { userId } },
-                include: {
-                    client: { select: { id: true, fullName: true } },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 10,
-            }),
+    /* ==========================================================
+       1️⃣ CORE KPI AGGREGATIONS
+    ========================================================== */
 
-            // ✅ 4. Future reminders
-            prisma.reminder.findMany({
-                where: {
-                    client: { userId },
-                    remindAt: { gte: new Date() },
-                },
-                include: { client: { select: { id: true, fullName: true } } },
-                orderBy: { remindAt: "asc" },
-                take: 5,
-            }),
+    const [
+      paidRevenueAgg,
+      pendingRevenueAgg,
+      overdueRevenueAgg,
+      totalInvoices,
+      totalServices,
+      activeServices,
+      completedToday,
+      totalClients,
+      upcomingRemindersCount,
+      approvalPendingCount,
+      reviewAggregate,
+      reviewDistributionRaw,
+    ] = await Promise.all([
+      // ✅ Paid Revenue (including partially paid)
+      prisma.invoice.aggregate({
+        _sum: { grandTotal: true },
+        where: {
+          ownerUserId: userId,
+          status: { in: ["Paid", "Partially Paid"] },
+        },
+      }),
 
-            // ✅ 5. Total clients count
-            prisma.client.count({ where: { userId } }),
+      // ✅ Pending Revenue
+      prisma.invoice.aggregate({
+        _sum: { grandTotal: true },
+        where: {
+          ownerUserId: userId,
+          status: "Pending",
+        },
+      }),
 
-            // ✅ 6. Monthly revenue (6 months) using GROUP BY
-            prisma.$queryRaw`
-        SELECT 
-          DATE_TRUNC('month', "createdAt") AS month,
-          SUM(CASE WHEN status = 'Paid' THEN "grandTotal" ELSE 0 END) AS revenue,
-          COUNT(*) FILTER (WHERE status = 'Paid') AS serviceCount
-        FROM "Invoice"
-        WHERE "clientId" IN (SELECT id FROM "Client" WHERE "userId" = ${userId})
+      // ✅ Overdue Revenue
+      prisma.invoice.aggregate({
+        _sum: { grandTotal: true },
+        where: {
+          ownerUserId: userId,
+          status: "Pending",
+          dueDate: { lt: new Date() },
+        },
+      }),
+
+      prisma.invoice.count({
+        where: { ownerUserId: userId },
+      }),
+
+      prisma.service.count({
+        where: { client: { userId } },
+      }),
+
+      prisma.service.count({
+        where: {
+          client: { userId },
+          status: { in: ["PENDING", "IN_PROGRESS"] },
+        },
+      }),
+
+      prisma.service.count({
+        where: {
+          client: { userId },
+          status: "COMPLETED",
+          serviceOutDate: {
+            gte: startOfToday,
+            lte: endOfToday,
+          },
+        },
+      }),
+
+      prisma.client.count({
+        where: { userId },
+      }),
+
+      prisma.reminder.count({
+        where: {
+          client: { userId },
+          OR: [
+            { remind15At: { gte: new Date() } },
+            { remind7At: { gte: new Date() } },
+          ],
+        },
+      }),
+
+      prisma.service.count({
+        where: {
+          client: { userId },
+          approvalStatus: null,
+        },
+      }),
+
+      // ⭐ Average Rating + Count
+      prisma.service.aggregate({
+        _avg: { reviewRating: true },
+        _count: { reviewRating: true },
+        where: {
+          client: { userId },
+          reviewRating: { not: null },
+        },
+      }),
+
+      // ⭐ Rating Distribution
+      prisma.service.groupBy({
+        by: ["reviewRating"],
+        where: {
+          client: { userId },
+          reviewRating: { not: null },
+        },
+        _count: { reviewRating: true },
+      }),
+    ]);
+
+    /* ==========================================================
+       2️⃣ MONTHLY REVENUE (LAST 6 MONTHS)
+    ========================================================== */
+
+    const monthlyRevenueRaw = await prisma.$queryRaw`
+      SELECT 
+        DATE_TRUNC('month', "createdAt") AS month,
+        SUM("grandTotal") FILTER (WHERE status IN ('Paid','Partially Paid')) AS revenue,
+        COUNT(*) FILTER (WHERE status IN ('Paid','Partially Paid')) AS invoice_count
+      FROM "Invoice"
+      WHERE "ownerUserId" = ${userId}
         AND "createdAt" >= NOW() - INTERVAL '6 months'
-        GROUP BY 1
-        ORDER BY 1 ASC;
-      `,
+      GROUP BY 1
+      ORDER BY 1 ASC;
+    `;
 
-            // ✅ 7. Weekly appointments in one query
-            prisma.$queryRaw`
-        SELECT 
-          TO_CHAR("date", 'Dy') AS day,
-          COUNT(*) AS appointments,
-          COUNT(*) FILTER (WHERE status = 'Completed') AS completed
-        FROM "Service"
-        WHERE "clientId" IN (SELECT id FROM "Client" WHERE "userId" = ${userId})
-        AND "date" >= NOW() - INTERVAL '7 days'
-        GROUP BY day
-        ORDER BY MIN("date");
-      `,
+    const monthlyRevenue = monthlyRevenueRaw.map((m) => ({
+      month: new Date(m.month).toLocaleString("default", {
+        month: "short",
+      }),
+      revenue: Number(m.revenue || 0),
+      invoices: Number(m.invoice_count || 0),
+    }));
 
-            // ✅ 8. Service type distribution in one query
-            prisma.$queryRaw`
-        SELECT c.name AS category, COUNT(*) AS value
-        FROM "Service" s
-        JOIN "ServiceCategory" c ON s."categoryId" = c.id
-        WHERE s."clientId" IN (SELECT id FROM "Client" WHERE "userId" = ${userId})
-        GROUP BY c.name
-        ORDER BY value DESC
-        LIMIT 5;
-      `
-        ]);
+    /* ==========================================================
+       3️⃣ 30-DAY APPOINTMENT TREND
+    ========================================================== */
 
-        // ✅ Revenue stats
-        const paidInvoices = recentInvoices.filter(inv => inv.status === "Paid");
-        const pendingInvoices = recentInvoices.filter(inv => inv.status === "Pending");
-        const overdueInvoices = recentInvoices.filter(inv => inv.status === "Overdue");
+    const last30DaysRaw = await prisma.$queryRaw`
+      SELECT 
+        DATE("date") as day,
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status = 'COMPLETED') as completed
+      FROM "Service"
+      WHERE "clientId" IN (
+        SELECT id FROM "Client" WHERE "userId" = ${userId}
+      )
+      AND "date" >= NOW() - INTERVAL '30 days'
+      GROUP BY day
+      ORDER BY day ASC;
+    `;
 
-        const totalRevenue = paidInvoices.reduce((a, b) => a + Number(b.grandTotal), 0);
-        const pendingRevenue = pendingInvoices.reduce((a, b) => a + Number(b.grandTotal), 0);
-        const overdueRevenue = overdueInvoices.reduce((a, b) => a + Number(b.grandTotal), 0);
+    const appointments30Days = last30DaysRaw.map((d) => ({
+      day: new Date(d.day).toLocaleDateString("default", {
+        day: "2-digit",
+        month: "short",
+      }),
+      appointments: Number(d.total),
+      completed: Number(d.completed),
+    }));
 
-        // ✅ Weekly & Monthly formatting
-        const monthlyRevenue = monthlyRevenueRaw.map(m => ({
-            month: new Date(m.month).toLocaleString('default', { month: 'short' }),
-            revenue: Number(m.revenue),
-            services: Number(m.serviceCount)
-        }));
+    /* ==========================================================
+       4️⃣ SERVICE STATUS DISTRIBUTION
+    ========================================================== */
 
-        const weeklyAppointments = weeklyDataRaw.map(w => ({
-            day: w.day,
-            appointments: Number(w.appointments),
-            completed: Number(w.completed)
-        }));
+    const serviceStatusRaw = await prisma.service.groupBy({
+      by: ["status"],
+      where: { client: { userId } },
+      _count: { status: true },
+    });
 
-        // ✅ Format today's appointments
-        const todayAppointments = recentServices
-            .filter(s => new Date(s.date).toDateString() === new Date().toDateString())
-            .map(service => {
-                const time = new Date(service.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const initials = service.client.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const serviceStatusDistribution = serviceStatusRaw.map((s) => ({
+      name: s.status,
+      value: s._count.status,
+    }));
 
-                return {
-                    id: service.id,
-                    name: service.client.fullName,
-                    time,
-                    service: service.subService?.name || service.category?.name || "Service",
-                    status: service.status,
-                    avatar: initials
-                };
-            });
+    /* ==========================================================
+       5️⃣ TODAY PANEL
+    ========================================================== */
 
-        res.json({
-            stats: {
-                totalRevenue,
-                pendingRevenue,
-                overdueRevenue,
-                totalServices: recentServices.length,
-                totalClients,
-                upcomingReminders: upcomingReminders.length,
-                avgServiceTime: "2.5 hrs",
-                customerRating: 4.8,
-            },
-            charts: {
-                monthlyRevenue,
-                weeklyAppointments,
-                serviceTypes: serviceTypesRaw.map(s => ({
-                    name: s.category,
-                    value: Number(s.value),
-                })),
-            },
-            data: {
-                clients: recentClients,
-                services: recentServices,
-                invoices: recentInvoices,
-                reminders: upcomingReminders,
-                todayAppointments
-            }
-        });
+    const todayServices = await prisma.service.findMany({
+      where: {
+        client: { userId },
+        date: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
+      },
+      include: {
+        client: { select: { fullName: true } },
+        category: { select: { name: true } },
+        subService: { select: { name: true } },
+      },
+      orderBy: { date: "asc" },
+    });
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error fetching dashboard" });
-    }
+    const todayAppointments = todayServices.map((service) => {
+      const initials = service.client.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+
+      return {
+        id: service.id,
+        name: service.client.fullName,
+        time: new Date(service.date).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        service:
+          service.subService?.name || service.category?.name || "Service",
+        status: service.status,
+        avatar: initials,
+      };
+    });
+
+    /* ==========================================================
+       FINAL RESPONSE
+    ========================================================== */
+
+    res.json({
+      stats: {
+        totalRevenue: paidRevenueAgg._sum.grandTotal || 0,
+        pendingRevenue: pendingRevenueAgg._sum.grandTotal || 0,
+        overdueRevenue: overdueRevenueAgg._sum.grandTotal || 0,
+        totalInvoices,
+        totalServices,
+        activeServices,
+        completedToday,
+        totalClients,
+        upcomingReminders: upcomingRemindersCount,
+        approvalPending: approvalPendingCount,
+      },
+
+      reviewStats: {
+        averageRating: reviewAggregate._avg.reviewRating || 0,
+        totalReviews: reviewAggregate._count.reviewRating || 0,
+        ratingDistribution: reviewDistributionRaw,
+      },
+
+      charts: {
+        monthlyRevenue,
+        appointments30Days,
+        serviceStatusDistribution,
+      },
+
+      data: {
+        todayAppointments,
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+    res.status(500).json({ message: "Error fetching dashboard data" });
+  }
 };
-
-
-// Helper function to generate random colors
-function getRandomColor() {
-    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
-    return colors[Math.floor(Math.random() * colors.length)];
-}

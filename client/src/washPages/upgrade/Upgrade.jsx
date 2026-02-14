@@ -42,7 +42,7 @@ export default function UpgradePlans() {
 
                 const API =
                     window.location.hostname === "localhost"
-                        ? "http://localhost:5000"
+                        ? "http://localhost:5001"
                         : "https://auto-garage-crm-zrxc.onrender.com";
 
                 const response = await fetch(`${API}/api/payments/user-plan/${user.email}`, {
@@ -295,19 +295,23 @@ export default function UpgradePlans() {
                                     </div>
                                 )}
 
-                                <div
-                                    className={`h-full rounded-3xl p-10 transition-all duration-300 ${isPremium ? "scale-[1.04] min-h-[640px]" : "min-h-[600px]"
-                                        } hover:scale-[1.02] ${isCurrent
-                                            ? "bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50"
-                                            : isPremium
-                                                ? "bg-white text-gray-900 border-2 border-gray-200 shadow-2xl"
-                                                : isPopular
-                                                    ? "bg-blue-600 text-white shadow-2xl shadow-violet-500/25 border-2 border-blue-400/50"
-                                                    : isDark
-                                                        ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-violet-500/50"
-                                                        : "bg-white border-2 border-gray-200 hover:border-violet-500/50 shadow-xl"
-                                        }`}
-                                >
+                               <div
+                                    className={`h-full rounded-3xl p-10 transition-all duration-300 ${
+                                        isPremium ? "scale-[1.04] min-h-[640px]" : "min-h-[600px]"
+                                    } hover:scale-[1.02] ${
+                                        isCurrent
+                                        ? "bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50"
+                                        : isPremium
+                                            ? isDark
+                                            ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white border-2 border-violet-500/40 shadow-2xl"
+                                            : "bg-white text-gray-900 border-2 border-gray-200 shadow-2xl"
+                                            : isPopular
+                                            ? "bg-blue-600 text-white shadow-2xl shadow-violet-500/25 border-2 border-blue-400/50"
+                                            : isDark
+                                                ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-violet-500/50"
+                                                : "bg-white border-2 border-gray-200 hover:border-violet-500/50 shadow-xl"
+                                    }`}
+                                    >
 
                                     {/* Icon */}
                                     <div

@@ -4,29 +4,103 @@ import jsPDF from "jspdf";
 import {
   X,
   Download,
-  Building2,
   Loader2,
-  CheckCircle2,
   Clock,
+  Wallet,
+  Phone,
+  Mail,
+  MapPin,
+  BadgeCheck,
+  Receipt,
 } from "lucide-react";
+import { HiMiniWrenchScrewdriver } from "react-icons/hi2";
 
-export default function SalaryViewModal({ salary,companyName, onClose }) {
+/* ================= HELPERS ================= */
+
+const formatMonthYear = (month, year) =>
+  new Date(year, month - 1).toLocaleString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+
+const getFinancialYear = (month, year) => {
+  const startYear = month >= 4 ? year : year - 1;
+  return `${startYear}-${String(startYear + 1).slice(-2)}`;
+};
+
+const numberToWords = (num) => {
+  const a = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const b = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  const inWords = (n) => {
+    if (n < 20) return a[n];
+    if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
+    if (n < 1000)
+      return (
+        a[Math.floor(n / 100)] + " Hundred " + (n % 100 ? inWords(n % 100) : "")
+      );
+    if (n < 100000)
+      return (
+        inWords(Math.floor(n / 1000)) +
+        " Thousand " +
+        (n % 1000 ? inWords(n % 1000) : "")
+      );
+    if (n < 10000000)
+      return (
+        inWords(Math.floor(n / 100000)) +
+        " Lakh " +
+        (n % 100000 ? inWords(n % 100000) : "")
+      );
+    return "";
+  };
+
+  return num ? `${inWords(Math.floor(num))} Rupees Only` : "Zero Rupees";
+};
+
+export default function SalaryViewModal({ salary, companyProfile, onClose }) {
   const payslipRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!salary) return null;
 
-  /* ================= HELPERS ================= */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       minimumFractionDigits: 0,
     }).format(amount || 0);
-  };
-
-
-
 
   const formatDate = (date) =>
     date
@@ -35,324 +109,372 @@ export default function SalaryViewModal({ salary,companyName, onClose }) {
           month: "short",
           year: "numeric",
         })
-      : "—";
+      : "Awaiting Payment";
 
-  /* ================= DOWNLOAD LOGIC ================= */
+  const totalEarnings = (salary.baseSalary || 0) + (salary.bonus || 0);
+  const totalDeductions =
+    (salary.leaveDeduction || 0) + (salary.extraDeductions || 0);
+  const netSalary = totalEarnings - totalDeductions;
+
+  /* ================= PDF GENERATION (ALIGNMENT FIXED) ================= */
   const handleDownloadPdf = async () => {
-    if (!payslipRef.current) return;
     setIsDownloading(true);
-
     try {
       const element = payslipRef.current;
 
+      // We force the canvas to capture at exactly 210mm width (A4)
+      // to prevent the flex-box items from shifting during render
       const canvas = await html2canvas(element, {
-        scale: 2,
-        backgroundColor: "#ffffff",
+        scale: 3, // Higher scale for ultra-sharp text
         useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        onclone: (clonedDoc) => {
+          // Ensure the cloned element is visible and properly styled for capture
+          const clonedElement = clonedDoc.querySelector(
+            "[data-payslip-container]"
+          );
+          if (clonedElement) {
+            clonedElement.style.width = "210mm";
+            clonedElement.style.transform = "none";
+          }
+        },
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/png", 1.0);
       const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      // Use 0,0 to fill the A4 width exactly
+      pdf.addImage(
+        imgData,
+        "PNG",
+        0,
+        0,
+        pdfWidth,
+        pdfHeight,
+        undefined,
+        "FAST"
+      );
+
       pdf.save(
-        `Payslip_${salary.staff.name}_${salary.month}_${salary.year}.pdf`
+        `Payslip_${(salary.staff?.name || "Staff").replace(/\s+/g, "_")}_${
+          salary.month
+        }_${salary.year}.pdf`
       );
     } catch (error) {
-      console.error("Download failed", error);
-      alert("Failed to download PDF");
+      console.error("PDF Error:", error);
     } finally {
       setIsDownloading(false);
     }
   };
 
-  /* ================= CALCULATIONS ================= */
-  const totalEarnings = (salary.baseSalary || 0) + (salary.bonus || 0);
-  const totalDeductions =
-    (salary.leaveDeduction || 0) + (salary.extraDeductions || 0);
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="flex flex-col max-h-full">
-        {/* Toolbar */}
-        <div className="flex justify-between items-center mb-4 text-white">
-          <h2 className="text-xl font-semibold">Salary Slip Preview</h2>
-          <div className="flex gap-3">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full flex flex-col items-center py-8">
+        {/* Modern Floating Toolbar */}
+        <div className="sticky top-0 z-50 w-full max-w-[210mm] flex justify-between items-center bg-white/95 backdrop-blur-md text-slate-900 px-6 py-4 rounded-2xl shadow-2xl border border-slate-200 mb-8 ring-1 ring-black/5">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+              <Receipt className="text-white" size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 leading-none">
+                Payslip Preview
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                Verify details before downloading
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
             <button
               onClick={handleDownloadPdf}
               disabled={isDownloading}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="flex items-center gap-2 bg-slate-900 hover:bg-black px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-50"
             >
               {isDownloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="animate-spin w-4 h-4" />
               ) : (
                 <Download className="w-4 h-4" />
               )}
-              {isDownloading ? "Generating..." : "Download PDF"}
+              {isDownloading ? "Processing..." : "Download PDF"}
             </button>
             <button
               onClick={onClose}
-              className="bg-white/10 hover:bg-white/20 p-2.5 rounded-lg transition-colors"
+              className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>
 
-        {/* ================= PAYSLIP DOCUMENT START ================= */}
-        <div className="overflow-auto rounded-xl shadow-2xl max-h-[85vh]">
-          <div
-            ref={payslipRef}
-            className="w-[210mm] min-h-[140mm] bg-white text-black p-10 relative box-border mx-auto"
-            style={{ width: "800px" }}
-          >
-            {/* Header */}
-            <header className="relative mb-8 border-b-4 border-black pb-6">
-              <div className="flex justify-between items-start">
-                {/* Left: Company Info */}
-                <div className="flex items-start gap-4">
-                  <div className="bg-black text-white p-3 rounded-lg">
-                    <Building2 size={36} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-black text-black mb-1 tracking-tight">
-                      {companyName || "Garage"}
-                    </h1>
+        {/* ================= PAYSLIP CONTAINER (A4 Size) ================= */}
+        <div
+          ref={payslipRef}
+          data-payslip-container
+          className="bg-white shadow-2xl relative"
+          style={{
+            width: "210mm",
+            minHeight: "297mm",
+            padding: "0",
+            margin: "0 auto",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Top Decorative Bar */}
+          <div className="h-2 w-full bg-slate-900"></div>
+
+          <div className="px-12 py-12 space-y-10">
+            {/* Header Section */}
+            <header className="flex justify-between items-start">
+              {/* Left: Company Profile */}
+              <div className="flex gap-5 items-start">
+                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0">
+                  <HiMiniWrenchScrewdriver className="text-slate-900 w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-black text-slate-900 leading-none uppercase tracking-tight">
+                    {companyProfile?.companyName || "Garage3"}
+                  </h1>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2 text-slate-500 max-w-[320px]">
+                      <MapPin
+                        size={14}
+                        className="mt-0.5 shrink-0 text-slate-400"
+                      />
+                      <span className="text-[11px] leading-relaxed font-medium">
+                        {companyProfile?.address ||
+                          "Building No. 24, 3rd Cross, Hosur Main Road, Bengaluru - 560068"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 text-[11px] font-bold text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <Phone size={12} className="text-slate-400" />
+                        <span>{companyProfile?.phone || "9874563211"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail size={12} className="text-slate-400" />
+                        <span>
+                          {companyProfile?.email || "carpremium@gmail.com"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Right: Payslip Title & Status */}
-                <div className="text-right">
-                  <h2 className="text-4xl font-black text-black mb-2 tracking-tight">
+              {/* Right: Title & Date */}
+              <div className="text-right pt-1">
+                <div className="border-[2.5px] border-slate-900 px-6 py-2 rounded-lg inline-block mb-3">
+                  <h2 className="text-xl font-black text-slate-900 tracking-[0.2em] leading-none">
                     PAYSLIP
                   </h2>
-                  <p className="text-base text-gray-700 font-bold mb-3">
-                    {salary.month} {salary.year}
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-black text-slate-900 uppercase">
+                    {formatMonthYear(salary.month, salary.year)}
                   </p>
-
-                  {/* Status Badge */}
-                  {salary.status === "PAID" ? (
-                    <div
-                      style={{
-                        backgroundColor: "#16a34a",
-                        color: "#ffffff",
-                        padding: "8px 18px",
-                        borderRadius: "20px",
-                        fontWeight: "700",
-                        fontSize: "12px",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      PAID
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        backgroundColor: "#f97316",
-                        color: "#ffffff",
-                        padding: "8px 18px",
-                        borderRadius: "20px",
-                        fontWeight: "700",
-                        fontSize: "12px",
-                        display: "inline-block",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      PENDING
-                    </div>
-                  )}
+                  <p className="text-[11px] text-slate-500 font-bold">
+                    FINANCIAL YEAR {getFinancialYear(salary.month, salary.year)}
+                  </p>
                 </div>
               </div>
             </header>
 
-            {/* Employee Details */}
-            <div className="bg-gray-50 rounded-sm border-2 border-gray-300 p-6 mb-8">
-              <h3 className="text-xs font-black text-black uppercase tracking-widest mb-4 pb-2 border-b-2 border-gray-400">
-                Employee Information
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-xs text-gray-600 uppercase font-bold mb-1.5">
-                    Employee Name
+            {/* Employee Banner */}
+            <div className="flex justify-between items-center p-6 bg-slate-50 rounded-2xl border border-slate-200/60">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-slate-900 font-black text-xl shadow-sm">
+                  {(salary.staff?.name || "U").charAt(0).toUpperCase()}
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold text-slate-900 leading-none">
+                    {salary.staff?.name || "premium staff1"}
+                  </h3>
+                  <p className="text-sm font-bold text-slate-500">
+                    {salary.staff?.role || "Mechanic"}
                   </p>
-                  <p className="text-lg font-black text-black">
-                    {salary.staff.name}
+                  <p className="text-[11px] font-mono text-slate-400">
+                    EMP ID:{" "}
+                    {String(salary.staff?.id || "0000").padStart(4, "0")}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 uppercase font-bold mb-1.5">
-                    Designation
-                  </p>
-                  <p className="text-lg font-bold text-black">
-                    {salary.staff.role}
-                  </p>
+              </div>
+
+              <div className="text-right space-y-3">
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest ${
+                    salary.status === "PAID"
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      : "bg-amber-100 text-amber-700 border border-amber-200"
+                  }`}
+                >
+                  {salary.status === "PAID" ? (
+                    <BadgeCheck size={14} />
+                  ) : (
+                    <Clock size={14} />
+                  )}
+                  {salary.status}
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 uppercase font-bold mb-1.5">
-                    Pay Period
-                  </p>
-                  <p className="text-base font-bold text-black">
-                    {salary.month}, {salary.year}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 uppercase font-bold mb-1.5">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                     Payment Date
                   </p>
-                  <p className="text-base font-bold text-black">
+                  <p className="text-sm font-black text-slate-900">
                     {formatDate(salary.paidAt)}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Simple Earnings & Deductions Table */}
-            <div className="border-2 border-gray-300 rounded-sm overflow-hidden mb-8">
-              {/* Table Header */}
-              <div className="grid grid-cols-3 bg-gray-200 text-black font-bold text-sm uppercase">
-                <div className="col-span-2 py-3 px-5 border-r border-gray-300">
-                  Particulars
+            {/* Breakdown Table */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 border-b-2 border-slate-100 pb-3">
+                <div className="p-1.5 bg-slate-900 rounded-lg">
+                  <Wallet size={16} className="text-white" />
                 </div>
-                <div className="py-3 px-5 text-right">Amount (₹)</div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+                  Salary Breakdown
+                </h3>
               </div>
 
-              {/* EARNINGS SECTION */}
-              <div className="bg-gray-200">
-                <div className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-black">
-                  Earnings
-                </div>
-              </div>
-
-              <div className="bg-white">
-                <div className="grid grid-cols-3 py-3 px-5 border-b border-gray-300">
-                  <div className="col-span-2 font-semibold text-black">
-                    Basic Salary
-                  </div>
-                  <div className="text-right font-mono font-bold text-black">
-                    {formatCurrency(salary.baseSalary)}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 py-3 px-5 border-b border-gray-300">
-                  <div className="col-span-2 font-semibold text-black">
-                    Performance Bonus
-                  </div>
-                  <div className="text-right font-mono font-bold text-black">
-                    {formatCurrency(salary.bonus)}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 py-3 px-5 bg-gray-200 border-b-2 border-black">
-                  <div className="col-span-2 font-black text-black">
-                    Gross Earnings
-                  </div>
-                  <div className="text-right font-mono font-black text-black">
-                    {formatCurrency(totalEarnings)}
-                  </div>
-                </div>
-              </div>
-
-              {/* DEDUCTIONS SECTION */}
-              <div className="bg-gray-200">
-                <div className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-black">
-                  Deductions
-                </div>
-              </div>
-
-              <div className="bg-white">
-                <div className="grid grid-cols-3 py-3 px-5 border-b border-gray-300">
-                  <div className="col-span-2 font-semibold text-black">
-                    Unpaid Leaves ({salary.leaves} days)
-                  </div>
-                  <div className="text-right font-mono font-bold text-black">
-                    {formatCurrency(salary.leaveDeduction)}
-                  </div>
-                </div>
-                {salary.extraDeductions > 0 && (
-                  <div className="grid grid-cols-3 py-3 px-5 border-b border-gray-300">
-                    <div className="col-span-2 font-semibold text-black">
-                      Other Deductions
-                    </div>
-                    <div className="text-right font-mono font-bold text-black">
-                      {formatCurrency(salary.extraDeductions)}
-                    </div>
-                  </div>
-                )}
-                <div className="grid grid-cols-3 py-3 px-5 bg-gray-200">
-                  <div className="col-span-2 font-black text-black">
-                    Total Deductions
-                  </div>
-                  <div className="text-right font-mono font-black text-black">
-                    {formatCurrency(totalDeductions)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Net Pay */}
-            <div className=" text-black rounded-sm p-6 mb-10 border-2 border-gray-400">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-xs uppercase font-black tracking-widest mb-1 text-gray-800">
-                    Net Payable Amount
-                  </p>
-                  <p className="text-xs font-semibold text-gray-800">
-                    (Gross Earnings - Total Deductions)
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-4xl font-semibold font-mono tracking-tight text-green-600">
-                    {formatCurrency(salary.netSalary)}
-                  </div>
-                </div>
+              <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-500 border-b border-slate-200">
+                      <th className="py-4 px-6 text-left tracking-widest">
+                        Description
+                      </th>
+                      <th className="py-4 px-6 text-right tracking-widest">
+                        Earnings
+                      </th>
+                      <th className="py-4 px-6 text-right tracking-widest">
+                        Deductions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-[13px] font-medium text-slate-700">
+                    <tr>
+                      <td className="py-4 px-6">Basic Monthly Salary</td>
+                      <td className="py-4 px-6 text-right font-bold text-slate-900">
+                        {formatCurrency(salary.baseSalary)}
+                      </td>
+                      <td className="py-4 px-6 text-right text-slate-300">
+                        0.00
+                      </td>
+                    </tr>
+                    {salary.bonus > 0 && (
+                      <tr>
+                        <td className="py-4 px-6">
+                          Incentive / Performance Bonus
+                        </td>
+                        <td className="py-4 px-6 text-right font-bold text-emerald-600">
+                          {formatCurrency(salary.bonus)}
+                        </td>
+                        <td className="py-4 px-6 text-right text-slate-300">
+                          0.00
+                        </td>
+                      </tr>
+                    )}
+                    {salary.leaves > 0 && (
+                      <tr className="bg-red-50/20">
+                        <td className="py-4 px-6">
+                          Unpaid Leaves ({salary.leaves} Days)
+                        </td>
+                        <td className="py-4 px-6 text-right text-slate-300">
+                          0.00
+                        </td>
+                        <td className="py-4 px-6 text-right font-bold text-red-600">
+                          {formatCurrency(salary.leaveDeduction)}
+                        </td>
+                      </tr>
+                    )}
+                    {salary.extraDeductions > 0 && (
+                      <tr className="bg-red-50/20">
+                        <td className="py-4 px-6">Other Ad-hoc Deductions</td>
+                        <td className="py-4 px-6 text-right text-slate-300">
+                          0.00
+                        </td>
+                        <td className="py-4 px-6 text-right font-bold text-red-600">
+                          {formatCurrency(salary.extraDeductions)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-900 text-white font-bold">
+                      <td className="py-4 px-6 text-xs uppercase tracking-widest">
+                        Total Accumulations
+                      </td>
+                      <td className="py-4 px-6 text-right text-sm">
+                        {formatCurrency(totalEarnings)}
+                      </td>
+                      <td className="py-4 px-6 text-right text-sm">
+                        {formatCurrency(totalDeductions)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="relative pt-6 border-t-2 border-dashed border-gray-400 flex justify-between items-end">
-              {/* System Note */}
-              <div className="text-xs text-gray-700">
-                <p className="font-bold">System Generated</p>
-                <p className="text-gray-600">{new Date().toLocaleString()}</p>
-              </div>
-
-              {/* Signature */}
-              <div className="text-center">
-                <div className="h-12 w-32 border-b-2 border-black mb-2"></div>
-                <p className="text-xs uppercase font-black text-black tracking-wider">
-                  Authorized Signature
+            {/* Net Amount Highlight */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="space-y-2">
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  Net Payable (In Words)
+                </p>
+                <p className="text-sm font-bold text-slate-700 italic leading-relaxed">
+                  {numberToWords(netSalary)}
                 </p>
               </div>
+              <div className="text-center md:text-right">
+                <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-1">
+                  Take Home Salary
+                </p>
+                <p className="text-4xl font-black text-slate-900 tracking-tighter">
+                  {formatCurrency(netSalary)}
+                </p>
+              </div>
+            </div>
 
-              {/* Modern GREEN PAID Stamp */}
-              {salary.status === "PAID" && (
-                <div className="absolute -top-8 right-8 transform -rotate-12">
-                  <div className="relative">
-                    {/* Outer glow effect */}
-                    <div className="absolute inset-0 bg-emerald-400/40 rounded-full blur-xl"></div>
-
-                    {/* Main stamp circle */}
-                    <div className="relative h-28 w-28 rounded-full border-[6px] border-emerald-600 bg-white flex items-center justify-center shadow-2xl">
-                      <div className="h-20 w-20 rounded-full border-[3px] border-dashed border-emerald-500 flex flex-col items-center justify-center">
-                        <CheckCircle2
-                          className="w-9 h-9 text-emerald-600 mb-0.5"
-                          strokeWidth={3}
-                        />
-                        <span className="text-2xl font-black text-emerald-600 uppercase tracking-tight leading-none">
-                          PAID
-                        </span>
-                        <span className="text-[8px] font-bold text-emerald-700 uppercase tracking-widest mt-0.5">
-                          ✓ VERIFIED
-                        </span>
-                      </div>
-                    </div>
+            {/* Footer / Signatures */}
+            <footer className="pt-10 border-t border-slate-100">
+              <div className="flex justify-between items-end mb-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    Document Hash
+                  </p>
+                  <p className="text-[10px] font-mono text-slate-300">
+                    GEN-{Date.now()}-AUTH
+                  </p>
+                </div>
+                <div className="text-center min-w-[180px]">
+                  <div className="h-12 flex items-center justify-center">
+                    {/* Space for Digital Signature */}
+                  </div>
+                  <div className="border-t-2 border-slate-900 pt-2">
+                    <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest">
+                      Authorized Signatory
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+              <p className="text-center text-[10px] text-slate-400 font-medium leading-relaxed max-w-xl mx-auto">
+                This is a computer-generated document and contains digital
+                authentication. It does not require a physical signature. Any
+                discrepancy should be reported to the finance office within 7
+                working days.
+              </p>
+            </footer>
           </div>
         </div>
-        {/* ================= PAYSLIP END ================= */}
       </div>
     </div>
   );

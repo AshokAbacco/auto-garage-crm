@@ -31,7 +31,7 @@ import {
 
 import { Toaster } from "react-hot-toast";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const OCRScanner = () => {
   const { isDark } = useTheme();
@@ -130,17 +130,20 @@ const OCRScanner = () => {
     const fetchHistory = async () => {
       if (!bikeClientId) return;
 
-
       try {
         const data = await loadHistory(bikeClientId);
-        setHistoryData(data);
+
+        // ✅ FIX: always set array
+        setHistoryData(Array.isArray(data) ? data : data?.records || []);
       } catch (err) {
         console.error("Error loading OCR history:", err);
+        setHistoryData([]);
       }
     };
 
     fetchHistory();
   }, [bikeClientId]);
+
 
 
   // ----------------------------------------------------------

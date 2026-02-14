@@ -30,7 +30,7 @@ import { FaIndianRupeeSign, FaTruck } from "react-icons/fa6";
 
 import { useTheme } from "../../contexts/ThemeContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const apiRequest = async (url, options = {}) => {
   const token = localStorage.getItem("token");
@@ -167,7 +167,7 @@ export default function ServiceForm() {
       const loadSubServices = async () => {
         try {
           const r = await apiRequest(
-            `/api/services/sub-services/search?categoryId=${form.categoryId}`
+            `/api/services/sub-services/search?categoryId=${form.categoryId}`,
           );
           const data = await r.json();
           setSubServiceSuggestions(Array.isArray(data) ? data : []);
@@ -189,7 +189,7 @@ export default function ServiceForm() {
       const loadMechanics = async () => {
         try {
           const r = await apiRequest(
-            `/api/mechanics/search?q=${encodeURIComponent(mechanicInput)}`
+            `/api/mechanics/search?q=${encodeURIComponent(mechanicInput)}`,
           );
           const data = await r.json();
           setMechanicSuggestions(Array.isArray(data) ? data : []);
@@ -467,7 +467,7 @@ export default function ServiceForm() {
           method: id ? "PUT" : "POST",
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
           body: formData,
-        }
+        },
       );
 
       const result = await res.json();
@@ -555,7 +555,7 @@ export default function ServiceForm() {
                   setForm((f) => ({ ...f, clientId }));
                   if (clientId) {
                     const client = clients.find(
-                      (c) => c.id === parseInt(clientId)
+                      (c) => c.id === parseInt(clientId),
                     );
                     setSelectedClient(client);
                   }
@@ -766,7 +766,7 @@ export default function ServiceForm() {
                     {mechanicInput.trim() !== "" &&
                       !mechanicSuggestions.some(
                         (m) =>
-                          m.name.toLowerCase() === mechanicInput.toLowerCase()
+                          m.name.toLowerCase() === mechanicInput.toLowerCase(),
                       ) && (
                         <div
                           onClick={() => setShowCreateMechanic(true)}
@@ -807,7 +807,7 @@ export default function ServiceForm() {
                       const r = await apiRequest(
                         `/api/services/sub-services/search?categoryId=${
                           form.categoryId
-                        }&q=${encodeURIComponent(v)}`
+                        }&q=${encodeURIComponent(v)}`,
                       );
                       const data = await r.json();
                       setSubServiceSuggestions(Array.isArray(data) ? data : []);
@@ -818,7 +818,7 @@ export default function ServiceForm() {
                   } else if (form.categoryId && v.trim() === "") {
                     try {
                       const r = await apiRequest(
-                        `/api/services/sub-services/search?categoryId=${form.categoryId}`
+                        `/api/services/sub-services/search?categoryId=${form.categoryId}`,
                       );
                       const data = await r.json();
                       setSubServiceSuggestions(Array.isArray(data) ? data : []);
@@ -833,13 +833,13 @@ export default function ServiceForm() {
                 onFocus={() => {
                   if (form.categoryId && subServiceInput.trim() === "") {
                     apiRequest(
-                      `/api/services/sub-services/search?categoryId=${form.categoryId}`
+                      `/api/services/sub-services/search?categoryId=${form.categoryId}`,
                     )
                       .then((r) => r.json())
                       .then((data) =>
                         setSubServiceSuggestions(
-                          Array.isArray(data) ? data : []
-                        )
+                          Array.isArray(data) ? data : [],
+                        ),
                       )
                       .catch((err) => {
                         console.error("Error fetching sub-services:", err);
@@ -880,7 +880,7 @@ export default function ServiceForm() {
                   {subServiceInput.trim() !== "" &&
                     !subServiceSuggestions.some(
                       (s) =>
-                        s.name.toLowerCase() === subServiceInput.toLowerCase()
+                        s.name.toLowerCase() === subServiceInput.toLowerCase(),
                     ) && (
                       <div
                         onClick={() => setShowCreateSubService(true)}

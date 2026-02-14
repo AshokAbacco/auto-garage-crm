@@ -9,7 +9,7 @@ export default function ReportsList({
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [invoiceDetails, setInvoiceDetails] = useState(null);
 
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const openInvoice = async (inv) => {
     setSelectedInvoice(inv);
@@ -22,7 +22,7 @@ export default function ReportsList({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       {/* ============================
           🧾 Recent Invoices Section
       ============================ */}
@@ -101,8 +101,8 @@ export default function ReportsList({
                       inv.status === "Paid"
                         ? "text-blue-400"
                         : inv.status === "Pending"
-                        ? "text-yellow-400"
-                        : "text-red-400"
+                          ? "text-yellow-400"
+                          : "text-red-400"
                     }`}
                   >
                     {inv.status}
@@ -201,8 +201,8 @@ export default function ReportsList({
                       srv.status === "Completed"
                         ? "text-green-400"
                         : srv.status === "Pending"
-                        ? "text-yellow-400"
-                        : "text-gray-500"
+                          ? "text-yellow-400"
+                          : "text-gray-500"
                     }`}
                   >
                     {srv.status}
@@ -282,8 +282,8 @@ export default function ReportsList({
                     invoiceDetails.status === "Paid"
                       ? "text-green-400"
                       : invoiceDetails.status === "Pending"
-                      ? "text-yellow-400"
-                      : "text-red-400"
+                        ? "text-yellow-400"
+                        : "text-red-400"
                   }`}
                 >
                   Status: {invoiceDetails.status}
@@ -437,8 +437,8 @@ export default function ReportsList({
                             srv.status === "Completed"
                               ? "text-green-400"
                               : srv.status === "Pending"
-                              ? "text-yellow-400"
-                              : "text-gray-500"
+                                ? "text-yellow-400"
+                                : "text-gray-500"
                           }
                         >
                           {srv.status}

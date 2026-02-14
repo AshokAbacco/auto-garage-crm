@@ -4,9 +4,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "postinstall": "prisma generate",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "postinstall": "prisma generate && PUPPETEER_CACHE_DIR=.cache npx puppeteer browsers install chrome",    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -16,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.985.0",
     "@prisma/client": "^6.18.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -32,6 +32,8 @@
     "jspdf": "^3.0.4",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "puppeteer": "^24.37.3",
     "razorpay": "^2.9.6",
     "xlsx": "^0.18.5",
     "zod": "^4.1.12"

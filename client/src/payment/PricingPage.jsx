@@ -150,6 +150,25 @@ export default function ModernPricingPage() {
         "Team accounts (up to 3)",
       ],
     },
+
+    {
+      id: "premium",
+      name: "Premium",
+      tagline: "For growing businesses",
+      numericPrice: 1000,
+      icon: Crown,
+      badge: "BEST VALUE",
+      features: [
+        "Everything in Standard",
+        "Team accounts (up to 10)",
+        "Maintenance Alert SMS",
+        "Bulk processing",
+        "Dedicated manager",
+        "Auto Invoice",
+        "Staff Salary Management",
+        "Online Payment Options",
+      ],
+    },
   ];
 
   // ================ PLAN SWITCHING ================
@@ -172,11 +191,10 @@ export default function ModernPricingPage() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 mt-[5%] ${
-        isDark
-          ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white"
-          : "bg-gradient-to-b from-white via-gray-50 to-white text-gray-900"
-      }`}
+      className={`min-h-screen transition-colors duration-300 mt-[5%] ${isDark
+        ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white"
+        : "bg-gradient-to-b from-white via-gray-50 to-white text-gray-900"
+        }`}
     >
       {/* Hero Section */}
       <Hero
@@ -188,24 +206,21 @@ export default function ModernPricingPage() {
       />
 
       {/* Pricing Cards */}
-      <section className="relative z-10 px-4 sm:px-6 pb-20">
-        <div
-          className={`max-w-7xl mx-auto gap-8 
-                ${
-                  activePlans.length === 1
-                    ? "flex justify-center"
-                    : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                }`}
-        >
+      <section className="relative z-10 px-4 pb-10 sm:px-6">
+        <div className={`max-w-6xl mx-auto gap-6
+          ${activePlans.length === 1
+            ? "flex justify-center"
+            : activePlans.length === 2
+              ? "grid grid-cols-1 md:grid-cols-2 justify-center"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          }
+        `}>
           {activePlans.map((plan) => (
             <div
               key={plan.id}
-              className={`${
-                activePlans.length === 1
-                  ? "w-full max-w-[350px]" // <-- increase width here
-                  : ""
-              }`}
+              className="mx-auto w-full max-w-[320px]"
             >
+
               <PricingCard
                 plan={plan}
                 billingPeriod={billingPeriod}

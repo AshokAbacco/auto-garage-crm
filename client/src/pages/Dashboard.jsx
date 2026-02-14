@@ -1,34 +1,38 @@
-// client/src/pages/Dashboard.jsx
 import React, { useState, useEffect, Suspense, lazy, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
-  TrendingUp,
-  Users,
-  Wrench,
   IndianRupee,
+  Wrench,
+  Users,
+  AlertCircle,
   Clock,
   Calendar,
-  AlertCircle,
+  CheckCircle,
   Star,
   ChevronRight,
-  MoreHorizontal,
 } from "lucide-react";
+// Ensure this path matches your actual project structure
 import { useTheme } from "../contexts/ThemeContext";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Define fetchWithAuth function
+const RevenueChart = lazy(() => import("../components/Dashboard/RevenueChart"));
+const Appointments30DaysChart = lazy(
+  () => import("../components/Dashboard/WeeklyAppointmentsChart"),
+);
+const ServiceStatusPieChart = lazy(
+  () => import("../components/Dashboard/ServiceTypesPieChart"),
+);
+const ReviewAnalyticsChart = lazy(
+  () => import("../components/Dashboard/CustomerOverviewChart"),
+);
+
 const getAuthToken = () => localStorage.getItem("token");
 
 const fetchWithAuth = async (url) => {
   const token = getAuthToken();
-  if (!token) throw new Error("No authentication token found");
-
   const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (response.status === 401) {
@@ -39,661 +43,667 @@ const fetchWithAuth = async (url) => {
   return response;
 };
 
-// Lazy load entire chart components
-const RevenueChart = lazy(() => import("../components/Dashboard/RevenueChart"));
-const ServiceTypesPieChart = lazy(() =>
-  import("../components/Dashboard/ServiceTypesPieChart")
-);
-const WeeklyAppointmentsChart = lazy(() =>
-  import("../components/Dashboard/WeeklyAppointmentsChart")
-);
-const CustomerOverviewChart = lazy(() =>
-  import("../components/Dashboard/CustomerOverviewChart")
-);
-
-// Memoize StatCard
-const StatCard = React.memo(
-  ({
-    title,
-    value,
-    change,
-    icon: Icon,
-    color = "blue",
-    formatValue = false,
-  }) => {
-    const { isDark } = useTheme();
-    const colors = {
-      // Backgrounds
-      layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-      mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-      elementBg: isDark ? "#01204E" : "#FFFFFF", // Dropdowns/Modals
-
-      // Text
-      textPrimary: isDark ? "#E5E7EB" : "#0F172A",
-      textSecondary: isDark ? "#94A3B8" : "#475569",
-
-      // Brand & Accents
-      brand: isDark ? "#1E3A8A" : "#0B1D51",
-      primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-      // Borders & Hover
-      border: isDark ? "#1E293B" : "#E5E7EB",
-      hoverBg: isDark ? "#1E293B" : "#F8FAFC",
-    };
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="rounded-2xl p-6 shadow-lg border transition-all duration-300"
-        style={{
-          backgroundColor: colors.elementBg,
-          borderColor: colors.border,
-        }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div
-            className={`p-3 rounded-xl shadow-md bg-gradient-to-r from-${color}-500 to-${color}-600`}
-          >
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          {change !== undefined && (
-            <div
-              className={`flex items-center text-sm font-medium ${
-                change > 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              <TrendingUp className="w-4 h-4 mr-1" />
-              {change > 0 ? "+" : ""}
-              {change}%
-            </div>
-          )}
-        </div>
-        <h3
-          className="text-2xl font-bold mb-1"
-          style={{ color: colors.textPrimary }}
-        >
-          {formatValue ? `₹${value.toLocaleString()}` : value}
-        </h3>
-        <p className="text-sm" style={{ color: colors.textSecondary }}>
-          {title}
-        </p>
-      </motion.div>
-    );
-  }
-);
-
-// Memoize ChartCard
-const ChartCard = React.memo(({ title, children, subtitle, action }) => {
-  const { isDark } = useTheme();
-  const colors = {
-    // Backgrounds
-    layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-    mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-    elementBg: isDark ? "#01204E" : "#FFFFFF", // Dropdowns/Modals
-
-    // Text
-    textPrimary: isDark ? "#E5E7EB" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#475569",
-
-    // Brand & Accents
-    brand: isDark ? "#1E3A8A" : "#0B1D51",
-    primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-    // Borders & Hover
-    border: isDark ? "#1E293B" : "#E5E7EB",
-    hoverBg: isDark ? "#1E293B" : "#F8FAFC",
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="rounded-2xl p-6 shadow-lg border transition-all duration-300"
-      style={{
-        backgroundColor: colors.elementBg,
-        borderColor: colors.border,
-      }}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3
-            className="text-lg font-semibold"
-            style={{ color: colors.textPrimary }}
-          >
-            {title}
-          </h3>
-          {subtitle && (
-            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-        {action && (
-          <button
-            className="transition-colors hover:opacity-75"
-            style={{ color: colors.textSecondary }}
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-      {children}
-    </motion.div>
-  );
-});
-
-// Memoize AppointmentCard
-const AppointmentCard = React.memo(
-  ({ name, time, service, status, avatar, onClick }) => {
-    const { isDark } = useTheme();
-    const colors = {
-      // Backgrounds
-      layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-      mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-      elementBg: isDark ? "#01204E" : "#FFFFFF", // Dropdowns/Modals
-
-      // Text
-      textPrimary: isDark ? "#E5E7EB" : "#0F172A",
-      textSecondary: isDark ? "#94A3B8" : "#475569",
-
-      // Brand & Accents
-      brand: isDark ? "#1E3A8A" : "#0B1D51",
-      primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-      // Borders & Hover
-      border: isDark ? "#1E293B" : "#E5E7EB",
-      hoverBg: isDark ? "#1E293B" : "#F8FAFC",
-    };
-
-    return (
-      <motion.div
-        whileHover={{ y: -5 }}
-        className="flex items-center justify-between p-4 rounded-xl transition-colors cursor-pointer"
-        style={{
-          // Use itemBg to distinguish list items from the card background
-          backgroundColor: colors.mainBg,
-        }}
-        onClick={onClick}
-      >
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md">
-            {avatar}
-          </div>
-          <div>
-            <p className="font-medium" style={{ color: colors.textPrimary }}>
-              {name}
-            </p>
-            <p className="text-sm" style={{ color: colors.textSecondary }}>
-              {service}
-            </p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p
-            className="text-sm font-medium"
-            style={{ color: colors.textPrimary }}
-          >
-            {time}
-          </p>
-          <span
-            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-              status === "Completed"
-                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                : status === "In Progress"
-                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-            }`}
-          >
-            {status}
-          </span>
-        </div>
-      </motion.div>
-    );
-  }
-);
-
-// Memoize QuickStat
-const QuickStat = React.memo(({ icon: Icon, title, value, color }) => {
-  const { isDark } = useTheme();
-  const colors = {
-    // Backgrounds
-    layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-    mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-    elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
-
-    // Text
-    textPrimary: isDark ? "#E5E7EB" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#475569",
-
-    // Brand & Accents
-    brand: isDark ? "#1E3A8A" : "#0B1D51",
-    primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-    // Borders & Hover
-    border: isDark ? "#1E293B" : "#E5E7EB",
-    hoverBg: isDark ? "#1E293B" : "#F8FAFC",
-  };
-
-  return (
-    <motion.div
-      whileHover={{ scale: 1.03 }}
-      className="flex items-center justify-between p-4 rounded-xl transition-colors"
-      style={{
-        backgroundColor: colors.mainBg,
-      }}
-    >
-      <div className="flex items-center space-x-3">
-        <div
-          className={`p-2 rounded-lg ${
-            isDark ? `bg-${color}-900/30` : `bg-${color}-50`
-          }`}
-        >
-          <Icon
-            className={`w-5 h-5 ${
-              isDark ? `text-${color}-400` : `text-${color}-600`
-            }`}
-          />
-        </div>
-        <span style={{ color: colors.textSecondary }}>{title}</span>
-      </div>
-      <span className="font-bold" style={{ color: colors.textPrimary }}>
-        {value}
-      </span>
-    </motion.div>
-  );
-});
-
-// Chart Loading Component
-const ChartLoading = () => {
-  const { isDark } = useTheme();
-  const colors = {
-    // Backgrounds
-    layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-    mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-    elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
-
-    // Text
-    textPrimary: isDark ? "#E5E7EB" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#475569",
-
-    // Brand & Accents
-    brand: isDark ? "#1E3A8A" : "#0B1D51",
-    primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-    // Borders & Hover
-    border: isDark ? "#1E293B" : "#E5E7EB",
-    hoverBg: isDark ? "#1E293B" : "#F8FAFC",
-  };
+/**
+ * THEME-AWARE STAT CARD
+ * Adapts background, text, and borders based on theme.
+ */
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  isCurrency = false,
+  colorClass = "text-blue-600",
+  colors, // Theme colors passed as prop
+}) => {
+  const safeValue =
+    typeof value === "number" || typeof value === "string" ? value : 0;
 
   return (
     <div
-      className="flex items-center justify-center h-64"
-      style={{ backgroundColor: colors.mainBg }}
+      className="rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md"
+      style={{
+        backgroundColor: colors.cardBg,
+        borderColor: colors.border,
+      }}
     >
-      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-start justify-between p-5">
+        <div>
+          <p
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: colors.textSecondary }}
+          >
+            {title}
+          </p>
+          <h3
+            className="mt-2 text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            {isCurrency ? (
+              <span className="flex items-baseline">
+                <span className="mr-0.5 text-lg font-medium opacity-70">₹</span>
+                {Number(safeValue).toLocaleString()}
+              </span>
+            ) : (
+              Number(safeValue).toLocaleString()
+            )}
+          </h3>
+        </div>
+
+        <div
+          className={`rounded-lg p-2.5 ${colorClass}`}
+          style={{
+            // Use a subtle background for the icon container based on theme
+            backgroundColor: isDarkModeBg(colors.cardBg),
+          }}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
     </div>
   );
 };
 
+// Helper to determine icon bg opacity based on card color
+function isDarkModeBg(bg) {
+  return bg === "#1E293B" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+}
+
 export default function Dashboard() {
   const { isDark } = useTheme();
-  const colors = {
-    // Backgrounds
-    layoutBg: isDark ? "#020617" : "#FFFFFF", // Sidebar/Header BG
-    mainBg: isDark ? "#020617" : "#F8FAFC", // Page Content BG
-    elementBg: isDark ? "#020D36" : "#FFFFFF", // Dropdowns/Modals
-
-    // Text
-    textPrimary: isDark ? "#E5E7EB" : "#0F172A",
-    textSecondary: isDark ? "#94A3B8" : "#475569",
-
-    // Brand & Accents
-    brand: isDark ? "#1E3A8A" : "#0B1D51",
-    primaryButton: isDark ? "#3B82F6" : "#0046FF", // Blue Color for Active Tab
-
-    // Borders & Hover
-    border: isDark ? "#1E293B" : "#E5E7EB",
-    hoverBg: isDark ? "#1E293B" : "#F8FAFC",
-  };
-
-  const [dashboardData, setDashboardData] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  // Define colors based on theme
+  const colors = useMemo(
+    () => ({
+      mainBg: isDark ? "#020617" : "#F8FAFC", // Page background
+      cardBg: isDark ? "#1E293B" : "#FFFFFF", // Card/Element background
+      textPrimary: isDark ? "#F1F5F9" : "#0F172A",
+      textSecondary: isDark ? "#94A3B8" : "#64748B",
+      border: isDark ? "#334155" : "#E2E8F0",
+      hoverBg: isDark ? "#0F172A" : "#F1F5F9", // For list items
+      accent: "#3B82F6", // Brand blue
+    }),
+    [isDark],
+  );
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const load = async () => {
       try {
-        const response = await fetchWithAuth(`${API_URL}/api/dashboard`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch dashboard data");
-        }
-
-        setDashboardData(data);
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError(err.message);
+        const res = await fetchWithAuth(`${API_URL}/api/dashboard`);
+        const json = await res.json();
+        setData(json);
+      } catch (error) {
+        console.error("Dashboard load failed", error);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchDashboardData();
+    load();
   }, []);
 
-  const chartData = useMemo(() => {
-    if (!dashboardData) return null;
-
-    return {
-      monthlyRevenue: dashboardData.charts.monthlyRevenue,
-      serviceTypes: dashboardData.charts.serviceTypes,
-      weeklyAppointments: dashboardData.charts.weeklyAppointments,
-    };
-  }, [dashboardData]);
-
-  if (loading) {
+  if (loading)
     return (
       <div
-        className="min-h-screen w-full lg:pl-20 p-6 flex items-center justify-center transition-colors duration-300"
-        style={{ backgroundColor: colors.mainBg }}
-      >
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4" style={{ color: colors.textSecondary }}>
-            Loading dashboard...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        className="min-h-screen w-full lg:pl-20 p-6 flex items-center justify-center"
+        className="flex flex-col items-center justify-center min-h-screen"
         style={{ backgroundColor: colors.mainBg }}
       >
         <div
-          className="text-center p-8 rounded-xl max-w-md"
-          style={{
-            backgroundColor: isDark ? "rgba(127, 29, 29, 0.2)" : "#FEF2F2",
-          }}
-        >
-          <div className="text-5xl mb-4 text-red-500">⚠️</div>
-          <h2 className="text-xl font-bold mb-2 text-red-600 dark:text-red-400">
-            Error Loading Dashboard
-          </h2>
-          <p className="text-red-500 dark:text-red-300">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 rounded-lg transition-colors text-white bg-red-600 hover:bg-red-700"
-          >
-            Try Again
-          </button>
-        </div>
+          className="h-10 w-10 animate-spin rounded-full border-4 border-t-transparent mb-4"
+          style={{ borderColor: colors.accent, borderTopColor: "transparent" }}
+        ></div>
+        <p className="font-medium" style={{ color: colors.textSecondary }}>
+          Loading Dashboard...
+        </p>
       </div>
     );
-  }
 
-  if (!dashboardData) {
-    return null;
-  }
-
-  const { stats, data: dashboardContent } = dashboardData;
+  const {
+    stats,
+    charts,
+    reviewStats = { averageRating: 0, totalReviews: 0, ratingDistribution: [] },
+  } = data;
 
   return (
     <div
-      className="min-h-screen w-full lg:pl-20 p-1 transition-colors duration-300"
+      className="lg:ml-[4rem] min-h-screen px-4 py-8 md:px-8"
       style={{ backgroundColor: colors.mainBg }}
     >
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mx-auto space-y-10">
+        {/* HEADER */}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h1
-              className="text-3xl font-bold"
+              className="text-3xl font-extrabold"
               style={{ color: colors.textPrimary }}
             >
-              Dashboard Overview
+              Dashboard
             </h1>
-            <p className="mt-1" style={{ color: colors.textSecondary }}>
-              Welcome back! Here's what's happening in your garage today.
+            <p style={{ color: colors.textSecondary }}>
+              Overview of your business performance and daily tasks.
             </p>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-sm" style={{ color: colors.textSecondary }}>
-                Today
-              </p>
-              <p
-                className="font-semibold"
+          <div
+            className="text-sm font-medium px-4 py-2 rounded-lg border shadow-sm self-start"
+            style={{
+              backgroundColor: colors.cardBg,
+              color: colors.textSecondary,
+              borderColor: colors.border,
+            }}
+          >
+            {new Date().toLocaleDateString("en-IN", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </div>
+        </div>
+
+        {/* SECTION: FINANCIAL KPIs */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div
+              className="h-4 w-1 rounded-full"
+              style={{ backgroundColor: colors.accent }}
+            ></div>
+            <h2
+              className="text-sm font-bold uppercase tracking-widest"
+              style={{ color: colors.textSecondary }}
+            >
+              Financials
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Revenue"
+              value={stats.totalRevenue}
+              icon={IndianRupee}
+              isCurrency
+              colorClass="text-emerald-600"
+              colors={colors}
+            />
+            <StatCard
+              title="Pending"
+              value={stats.pendingRevenue}
+              icon={Clock}
+              isCurrency
+              colorClass="text-amber-600"
+              colors={colors}
+            />
+            <StatCard
+              title="Overdue"
+              value={stats.overdueRevenue}
+              icon={AlertCircle}
+              isCurrency
+              colorClass="text-rose-600"
+              colors={colors}
+            />
+            <StatCard
+              title="Total Invoices"
+              value={stats.totalInvoices}
+              icon={CheckCircle}
+              colorClass="text-blue-600"
+              colors={colors}
+            />
+          </div>
+        </section>
+
+        {/* SECTION: OPERATIONS & CUSTOMERS */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <div className="space-y-4">
+            <h2
+              className="text-sm font-bold uppercase tracking-widest"
+              style={{ color: colors.textSecondary }}
+            >
+              Operations
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard
+                title="Total Services"
+                value={stats.totalServices}
+                icon={Wrench}
+                colors={colors}
+              />
+              <StatCard
+                title="Active"
+                value={stats.activeServices}
+                icon={Clock}
+                colors={colors}
+              />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h2
+              className="text-sm font-bold uppercase tracking-widest"
+              style={{ color: colors.textSecondary }}
+            >
+              Customer Satisfaction
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard
+                title="Total Clients"
+                value={stats.totalClients}
+                icon={Users}
+                colors={colors}
+              />
+              <StatCard
+                title="Avg Rating"
+                value={reviewStats.averageRating.toFixed(1)}
+                icon={Star}
+                colorClass="text-yellow-500"
+                colors={colors}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* CHARTS ROW 1 */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div
+            className="rounded-2xl border p-6 lg:col-span-2 shadow-sm"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.border,
+            }}
+          >
+            <h3
+              className="mb-6 text-lg font-bold"
+              style={{ color: colors.textPrimary }}
+            >
+              Revenue Trend
+            </h3>
+            <Suspense
+              fallback={
+                <div
+                  className="h-72 w-full animate-pulse rounded-lg"
+                  style={{ backgroundColor: colors.hoverBg }}
+                />
+              }
+            >
+              {/* Pass isDark state to chart */}
+              <RevenueChart data={charts.monthlyRevenue} isDark={isDark} />
+            </Suspense>
+          </div>
+          <div
+            className="rounded-2xl border p-6 shadow-sm"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.border,
+            }}
+          >
+            <h3
+              className="mb-6 text-lg font-bold"
+              style={{ color: colors.textPrimary }}
+            >
+              Service Status
+            </h3>
+            <Suspense
+              fallback={
+                <div
+                  className="h-72 w-full animate-pulse rounded-lg"
+                  style={{ backgroundColor: colors.hoverBg }}
+                />
+              }
+            >
+              <ServiceStatusPieChart
+                data={charts.serviceStatusDistribution}
+                isDark={isDark}
+              />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* CHARTS ROW 2 & TODAY'S PANEL */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div
+            className="rounded-2xl border p-6 shadow-sm"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.border,
+            }}
+          >
+            <h3
+              className="mb-6 text-lg font-bold"
+              style={{ color: colors.textPrimary }}
+            >
+              Appointment Planning (30 Days)
+            </h3>
+            <Suspense
+              fallback={
+                <div
+                  className="h-72 w-full animate-pulse rounded-lg"
+                  style={{ backgroundColor: colors.hoverBg }}
+                />
+              }
+            >
+              <Appointments30DaysChart
+                data={charts.appointments30Days}
+                isDark={isDark}
+              />
+            </Suspense>
+          </div>
+
+          <div
+            className="flex flex-col rounded-2xl border overflow-hidden shadow-sm"
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.border,
+            }}
+          >
+            {/* Header */}
+            <div
+              className="p-6"
+              style={{ borderBottom: `1px solid ${colors.border}` }}
+            >
+              <h3
+                className="text-lg font-bold"
                 style={{ color: colors.textPrimary }}
               >
-                {new Date().toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
+                Today's Services
+              </h3>
             </div>
-          </div>
-        </div>
-      </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total Revenue"
-          value={stats.totalRevenue}
-          change={12}
-          icon={IndianRupee}
-          color="blue"
-          formatValue={true}
-        />
-        <StatCard
-          title="Total Services"
-          value={stats.totalServices}
-          change={8}
-          icon={Wrench}
-          color="blue"
-        />
-        <StatCard
-          title="Avg Service Time"
-          value={stats.avgServiceTime}
-          change={-5}
-          icon={Clock}
-          color="blue"
-        />
-        <StatCard
-          title="Customer Rating"
-          value={stats.customerRating}
-          icon={Star}
-          color="blue"
-        />
-      </div>
-
-      {/* Main Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Revenue Chart */}
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="Revenue & Services"
-            subtitle="Monthly overview of revenue and completed services"
-          >
-            <Suspense fallback={<ChartLoading />}>
-              {chartData && (
-                <RevenueChart data={chartData.monthlyRevenue} isDark={isDark} />
-              )}
-            </Suspense>
-          </ChartCard>
-        </div>
-
-        {/* Service Types Pie Chart */}
-        <ChartCard
-          title="Service Distribution"
-          subtitle="Popular service types this month"
-        >
-          <Suspense fallback={<ChartLoading />}>
-            {chartData && (
-              <ServiceTypesPieChart
-                data={chartData.serviceTypes}
-                isDark={isDark}
-              />
-            )}
-          </Suspense>
-        </ChartCard>
-      </div>
-
-      {/* Secondary Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Weekly Appointments */}
-        <ChartCard
-          title="Weekly Appointments"
-          subtitle="Appointments scheduled vs completed this week"
-        >
-          <Suspense fallback={<ChartLoading />}>
-            {chartData && (
-              <WeeklyAppointmentsChart
-                data={chartData.weeklyAppointments}
-                isDark={isDark}
-              />
-            )}
-          </Suspense>
-        </ChartCard>
-
-        {/* Customer Overview */}
-        <ChartCard
-          title="Customer Overview"
-          subtitle="New vs returning customers"
-        >
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div
-              className="text-center p-4 rounded-xl"
-              style={{
-                backgroundColor: isDark ? "rgba(30, 58, 138, 0.3)" : "#EFF6FF",
-              }} // Blue-50 equivalent
-            >
-              <div
-                className="text-3xl font-bold mb-2"
-                style={{ color: isDark ? "#60A5FA" : "#2563EB" }} // Blue-400/600
-              >
-                {stats.totalClients}
-              </div>
-              <div className="text-sm" style={{ color: colors.textSecondary }}>
-                Total Customers
-              </div>
-            </div>
-            <div
-              className="text-center p-4 rounded-xl"
-              style={{
-                backgroundColor: isDark ? "rgba(20, 83, 45, 0.3)" : "#F0FDF4",
-              }} // Green-50 equivalent
-            >
-              <div
-                className="text-3xl font-bold mb-2"
-                style={{ color: isDark ? "#4ADE80" : "#16A34A" }} // Green-400/600
-              >
-                {stats.upcomingReminders}
-              </div>
-              <div className="text-sm" style={{ color: colors.textSecondary }}>
-                Upcoming Reminders
-              </div>
-            </div>
-          </div>
-          <Suspense fallback={<ChartLoading />}>
-            {chartData && (
-              <CustomerOverviewChart
-                data={chartData.monthlyRevenue}
-                isDark={isDark}
-              />
-            )}
-          </Suspense>
-        </ChartCard>
-      </div>
-
-      {/* Appointments and Quick Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Today's Appointments */}
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="Today's Appointments"
-            subtitle="Scheduled appointments for today"
-            action={
-              <button
-                className="text-sm font-medium flex items-center transition-colors"
-                style={{ color: colors.primaryButton }}
-              >
-                View All <ChevronRight className="w-4 h-4 ml-1" />
-              </button>
-            }
-          >
-            <div className="space-y-3">
-              {dashboardContent.todayAppointments.length > 0 ? (
-                dashboardContent.todayAppointments.map((appointment) => (
-                  <AppointmentCard
-                    key={appointment.id}
-                    name={appointment.name}
-                    time={appointment.time}
-                    service={appointment.service}
-                    status={appointment.status}
-                    avatar={appointment.avatar}
-                    onClick={() =>
-                      console.log("View appointment:", appointment.id)
-                    }
-                  />
-                ))
-              ) : (
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {data.data.todayAppointments.length === 0 ? (
                 <div
-                  className="text-center py-8"
+                  className="flex flex-col items-center justify-center h-full py-10"
                   style={{ color: colors.textSecondary }}
                 >
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No appointments scheduled for today</p>
+                  <Calendar className="h-10 w-10 mb-2 opacity-20" />
+                  <p className="font-medium">
+                    No services scheduled for today.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {data.data.todayAppointments.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md"
+                      style={{
+                        backgroundColor: colors.hoverBg,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      {/* Left Side: Avatar & Info */}
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full border font-bold shadow-sm sm:flex"
+                          style={{
+                            backgroundColor: colors.cardBg,
+                            borderColor: colors.border,
+                            color: "#2563EB", // Brand Blue
+                          }}
+                        >
+                          {item.name.charAt(0)}
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <p
+                              className="font-bold text-base leading-tight"
+                              style={{ color: colors.textPrimary }}
+                            >
+                              {item.name}
+                            </p>
+                            <span
+                              className="text-sm font-medium px-2 py-0.5 rounded-md border"
+                              style={{
+                                color: "#2563EB",
+                                backgroundColor: isDark
+                                  ? "rgba(37, 99, 235, 0.15)"
+                                  : "#EFF6FF",
+                                borderColor: isDark
+                                  ? "rgba(37, 99, 235, 0.3)"
+                                  : "#BFDBFE",
+                              }}
+                            >
+                              {item.phone}
+                            </span>
+                          </div>
+
+                          <div
+                            className="flex items-center text-xs font-medium"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            <span className="uppercase tracking-wider">
+                              {item.vehicle}
+                            </span>
+                            <span className="mx-2 opacity-50">•</span>
+                            <span
+                              className="px-1.5 py-0.5 rounded"
+                              style={{
+                                color: colors.textPrimary,
+                                backgroundColor: isDark
+                                  ? "rgba(255,255,255,0.05)"
+                                  : "#E2E8F0",
+                              }}
+                            >
+                              {item.regNumber}
+                            </span>
+                          </div>
+
+                          <p
+                            className="text-xs"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            {item.service}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Time & Status */}
+                      <div
+                        className="flex items-center justify-between sm:justify-end border-t pt-3 sm:border-0 sm:pt-0"
+                        style={{ borderColor: colors.border }}
+                      >
+                        <span
+                          className="text-xs font-bold uppercase tracking-tighter sm:hidden"
+                          style={{ color: colors.textSecondary }}
+                        >
+                          Schedule
+                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <div
+                            className="text-sm font-bold px-3 py-1.5 rounded-lg shadow-sm border"
+                            style={{
+                              color: colors.textPrimary,
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.border,
+                            }}
+                          >
+                            {item.time}
+                          </div>
+                          <span
+                            className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border"
+                            style={{
+                              backgroundColor: isDark
+                                ? "rgba(59, 130, 246, 0.2)"
+                                : "#DBEAFE",
+                              color: "#3B82F6",
+                              borderColor: isDark
+                                ? "rgba(59, 130, 246, 0.4)"
+                                : "#BFDBFE",
+                            }}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          </ChartCard>
-        </div>
 
-        {/* Quick Stats */}
-        <ChartCard title="Quick Stats" subtitle="Key metrics at a glance">
-          <div className="space-y-4">
-            <QuickStat
-              icon={Users}
-              title="Active Clients"
-              value={stats.totalClients}
-              color="blue"
-            />
-            <QuickStat
-              icon={Wrench}
-              title="Services This Month"
-              value={stats.totalServices}
-              color="blue"
-            />
-            <QuickStat
-              icon={Calendar}
-              title="Pending Reminders"
-              value={stats.upcomingReminders}
-              color="blue"
-            />
-            <QuickStat
-              icon={AlertCircle}
-              title="Overdue Bills"
-              value={stats.overdueRevenue > 0 ? "Yes" : "No"}
-              color="blue"
-            />
+            {/* Footer Button */}
+            <button
+              className="flex items-center justify-center gap-2 border-t py-4 text-sm font-semibold transition-colors"
+              style={{
+                borderColor: colors.border,
+                color: colors.accent,
+                backgroundColor: "transparent",
+              }}
+              onClick={() => navigate("/reminders")} // Navigation Logic Here
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = colors.hoverBg)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
+            >
+              View Full Schedule <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
-        </ChartCard>
+
+          {/* ===== UPCOMING 30 DAYS ===== */}
+          <div
+            className="flex flex-col rounded-2xl border shadow-sm overflow-hidden"
+            style={{
+              borderColor: colors.border,
+              backgroundColor: colors.cardBg,
+            }}
+          >
+            {/* Header */}
+            <div
+              className="border-b p-6"
+              style={{ borderBottomColor: colors.border }}
+            >
+              <h3
+                className="text-lg font-bold"
+                style={{ color: colors.textPrimary }}
+              >
+                Upcoming 30 Days
+              </h3>
+            </div>
+
+            {/* Content Area */}
+            <div
+              className="flex-1 overflow-y-auto p-4 md:p-6"
+              style={{ backgroundColor: colors.cardBg }}
+            >
+              {!data.data.upcomingAppointments?.length ? (
+                <div
+                  className="flex flex-col items-center justify-center h-full py-10"
+                  style={{ color: colors.textSecondary }}
+                >
+                  <Calendar className="h-10 w-10 mb-2 opacity-20" />
+                  <p className="font-medium">No upcoming appointments.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {data.data.upcomingAppointments.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md"
+                      style={{
+                        backgroundColor: colors.hoverBg,
+                        borderColor: colors.border,
+                      }}
+                      // Optional: Add specific hover styles if needed via onMouseEnter/Leave or a specific class
+                      // Note: Tailwind hover classes won't affect inline styles, so base colors are set here.
+                    >
+                      {/* Left Side: Avatar & Info */}
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full border font-bold shadow-sm sm:flex"
+                          style={{
+                            backgroundColor: colors.cardBg,
+                            borderColor: colors.border,
+                            color: "#2563EB", // Brand Blue
+                          }}
+                        >
+                          {item.name.charAt(0)}
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <p
+                              className="font-bold text-base leading-tight"
+                              style={{ color: colors.textPrimary }}
+                            >
+                              {item.name}
+                            </p>
+                            <span
+                              className="text-sm font-medium px-2 py-0.5 rounded-md border"
+                              style={{
+                                color: "#2563EB",
+                                backgroundColor: isDark
+                                  ? "rgba(37, 99, 235, 0.15)"
+                                  : "#EFF6FF",
+                                borderColor: isDark
+                                  ? "rgba(37, 99, 235, 0.3)"
+                                  : "#BFDBFE",
+                              }}
+                            >
+                              {item.phone}
+                            </span>
+                          </div>
+
+                          <div
+                            className="flex items-center text-xs font-medium"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            <span className="uppercase tracking-wider">
+                              {item.vehicle}
+                            </span>
+                            <span className="mx-2 opacity-50">•</span>
+                            <span
+                              className="px-1.5 py-0.5 rounded"
+                              style={{
+                                color: colors.textPrimary,
+                                backgroundColor: isDark
+                                  ? "rgba(255,255,255,0.05)"
+                                  : "#E2E8F0",
+                              }}
+                            >
+                              {item.regNumber}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Date Badge */}
+                      <div
+                        className="flex items-center justify-between sm:justify-end border-t pt-3 sm:border-0 sm:pt-0"
+                        style={{ borderColor: colors.border }}
+                      >
+                        <span
+                          className="text-xs font-bold uppercase tracking-tighter sm:hidden"
+                          style={{ color: colors.textSecondary }}
+                        >
+                          Service Date
+                        </span>
+                        <div className="flex flex-col items-end">
+                          <div
+                            className="text-sm font-bold px-3 py-1.5 rounded-lg shadow-sm border"
+                            style={{
+                              color: colors.textPrimary,
+                              backgroundColor: colors.cardBg,
+                              borderColor: colors.border,
+                            }}
+                          >
+                            {new Date(item.serviceDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

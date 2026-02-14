@@ -40,7 +40,7 @@ export default function UpgradePlans() {
 
         const API =
           window.location.hostname === "localhost"
-            ? "http://localhost:5000"
+            ? "http://localhost:5001"
             : "https://auto-garage-crm-zrxc.onrender.com";
 
         const response = await fetch(`${API}/api/payments/user-plan/${user.email}`, {
@@ -271,7 +271,7 @@ export default function UpgradePlans() {
               >
                 Choose Your Perfect Plan
               </span>
-              <span className="block bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent py-3">
                 Scale as you grow
               </span>
             </h1>
@@ -286,43 +286,67 @@ export default function UpgradePlans() {
           </div>
 
           {/* Billing Period Toggle */}
-          <div className="flex items-center justify-center gap-4 pt-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            {/* Monthly */}
             <span
-              className={`text-sm font-medium ${
-                billingPeriod === "monthly" ? "text-white" : "text-gray-500"
+              className={`text-sm font-medium transition ${
+                billingPeriod === "monthly"
+                  ? isDark
+                    ? "text-white"
+                    : "text-gray-900"
+                  : isDark
+                  ? "text-gray-400"
+                  : "text-gray-500"
               }`}
             >
               Monthly
             </span>
 
+            {/* Toggle */}
             <button
               onClick={() =>
-                setBillingPeriod(
-                  billingPeriod === "monthly" ? "yearly" : "monthly"
-                )
+                setBillingPeriod(billingPeriod === "monthly" ? "yearly" : "monthly")
               }
-              className={`relative w-16 h-8 rounded-full transition ${
-                billingPeriod === "yearly"
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600"
-                  : "bg-gray-700"
-              }`}
+              className={`relative w-16 h-8 rounded-full transition-colors duration-300
+                ${
+                  billingPeriod === "yearly"
+                    ? "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                    : isDark
+                    ? "bg-gray-700"
+                    : "bg-gray-300"
+                }
+              `}
             >
               <div
-                className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${
-                  billingPeriod === "yearly" ? "translate-x-9" : "translate-x-1"
-                }`}
+                className={`absolute top-1 left-1 w-6 h-6 rounded-full transition-transform duration-300
+                  ${
+                    billingPeriod === "yearly"
+                      ? "translate-x-8 bg-white"
+                      : isDark
+                      ? "bg-white"
+                      : "bg-gray-900"
+                  }
+                `}
               />
             </button>
 
+            {/* Yearly */}
             <span
-              className={`text-sm font-medium ${
-                billingPeriod === "yearly" ? "text-white" : "text-gray-500"
+              className={`text-sm font-medium transition ${
+                billingPeriod === "yearly"
+                  ? isDark
+                    ? "text-white"
+                    : "text-gray-900"
+                  : isDark
+                  ? "text-gray-400"
+                  : "text-gray-500"
               }`}
             >
               Yearly
             </span>
 
-            <span className="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-bold">
+            {/* Save Badge */}
+            <span className="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-bold shadow-sm">
               Save 10%
             </span>
           </div>
@@ -526,11 +550,10 @@ export default function UpgradePlans() {
         }`}
       >
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               { icon: Shield, label: "Secure Payment", desc: "Bank-level encryption" },
               { icon: Clock, label: "Instant Access", desc: "Start immediately" },
-              { icon: TrendingUp, label: "Cancel Anytime", desc: "No commitments" },
               { icon: Star, label: "24/7 Support", desc: "Always here to help" },
             ].map((item, index) => {
               const Icon = item.icon;

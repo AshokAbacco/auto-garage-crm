@@ -9,10 +9,12 @@ import { generateToken } from "../utils/generateToken.js";
  * REGISTER USER
  * =============================================
  */
+
 export const registerUser = async (req, res) => {
   try {
     const { username, email, password, crmType } = req.body;
 
+    /* ---------- BASIC VALIDATION ---------- */
     if (!username || !email || !password || !crmType) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -20,29 +22,47 @@ export const registerUser = async (req, res) => {
     const emailLower = email.toLowerCase().trim();
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    /**
-     * =============================================
-     * FETCH LATEST PAYMENT (SOURCE OF TRUTH)
-     * =============================================
-     */
+    /* =================================================
+       FETCH LATEST PAYMENT (SINGLE SOURCE OF TRUTH)
+    ================================================= */
     const latestPayment = await prisma.payment.findFirst({
       where: { email: emailLower },
       orderBy: { createdAt: "desc" },
     });
 
-    const plan = latestPayment?.plan || "BASIC";
-    const planExpiry = latestPayment?.planExpiry || null;
-    const referralCodeUsed = latestPayment?.referralCode || null;
+    if (!latestPayment) {
+      return res.status(400).json({
+        message:
+          "No payment found for this email. Please complete payment first.",
+      });
+    }
 
-    // ✅ NEW: extract company & phone
-    const companyName = latestPayment?.companyName || null;
-    const phone = latestPayment?.phone || null;
+    /* ---------- EXTRACT FROM PAYMENT ---------- */
+    const userPlan = latestPayment.plan || "BASIC";
+    const companyName = latestPayment.companyName || null;
+    const phone = latestPayment.phone || null;
+    const gstNumber = latestPayment.gstNumber || null;
+    const address = latestPayment.address || null;
+    const referralCodeUsed = latestPayment.referralCode || null;
 
-    /**
-     * =============================================
-     * REFERRAL LOOKUP (OPTIONAL)
-     * =============================================
-     */
+    const now = new Date();
+
+// 7 days trial + 24 hours grace = 8 days
+const TRIAL_DAYS = 7;
+const GRACE_HOURS = 24;
+
+const planExpiry =
+  latestPayment.expiryDate
+    ? new Date(latestPayment.expiryDate)
+    : new Date(
+        now.getTime() +
+          (TRIAL_DAYS * 24 + GRACE_HOURS) * 60 * 60 * 1000
+      );
+
+
+    /* =================================================
+       REFERRAL LOOKUP (OPTIONAL)
+    ================================================= */
     let referredByUserId = null;
 
     if (referralCodeUsed) {
@@ -51,16 +71,10 @@ export const registerUser = async (req, res) => {
         select: { id: true },
       });
 
-      if (referrer) {
-        referredByUserId = referrer.id;
-      }
+      if (referrer) referredByUserId = referrer.id;
     }
 
-    /**
-     * =============================================
-     * DUPLICATE CHECKS
-     * =============================================
-     */
+    /* ---------- DUPLICATE CHECK ---------- */
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
       prisma.user.findUnique({ where: { username } }),
@@ -76,11 +90,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    /**
-     * =============================================
-     * CASE 1 — USER EXISTS (EMAIL FROM PAYMENT)
-     * =============================================
-     */
+    /* =================================================
+       CASE 1 — USER ALREADY EXISTS (FROM PAYMENT EMAIL)
+    ================================================= */
     if (existingUserByEmail) {
       const updatedUser = await prisma.user.update({
         where: { email: emailLower },
@@ -88,10 +100,14 @@ export const registerUser = async (req, res) => {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-          plan,
+          plan: userPlan,
           planExpiry,
-          companyName, // ✅ ADDED
-          phone, // ✅ ADDED
+
+          // 🔥 PAYMENT → USER SYNC
+          companyName,
+          phone,
+          gstNumber,
+          address,
         },
       });
 
@@ -104,11 +120,9 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    /**
-     * =============================================
-     * CASE 2 — NEW USER
-     * =============================================
-     */
+    /* =================================================
+       CASE 2 — BRAND NEW USER
+    ================================================= */
     const myReferralCode =
       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -120,11 +134,15 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
-        plan,
-        planExpiry,
         referredByUserId,
-        companyName, // ✅ ADDED
-        phone, // ✅ ADDED
+
+        // 🔥 PAYMENT → USER SYNC
+        plan: userPlan,
+        planExpiry,
+        companyName,
+        phone,
+        gstNumber,
+        address,
       },
     });
 
@@ -141,11 +159,13 @@ export const registerUser = async (req, res) => {
   }
 };
 
+
 /**
  * =============================================
  * LOGIN USER
  * =============================================
  */
+ 
 export const loginUser = async (req, res) => {
   try {
     const { identifier, password, crmType } = req.body;
@@ -218,6 +238,7 @@ export const loginUser = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
         role: "user",
         type: "owner",
         plan: user.plan,
@@ -233,9 +254,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-
-
-
 /**
  * =============================================
  * GET PROFILE
@@ -243,6 +261,13 @@ export const loginUser = async (req, res) => {
  */
 export const getProfile = async (req, res) => {
   try {
+    // 🔒 BLOCK TEAM ACCESS
+    if (req.user.type !== "owner") {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -250,14 +275,18 @@ export const getProfile = async (req, res) => {
         username: true,
         email: true,
         role: true,
-        plan: true, // ⭐ RETURN PLAN
+        plan: true,
+        companyName: true,
         profileImage: true,
+        planExpiry: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.status(200).json(user);
   } catch (error) {
@@ -265,6 +294,7 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ message: "Error fetching profile" });
   }
 };
+
 
 /**
  * =============================================
@@ -353,21 +383,147 @@ export const verifyToken = async (req, res) => {
  * DELETE ACCOUNT
  * =============================================
  */
+// export const deleteAccount = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     await prisma.payment.deleteMany({
+//       where: { email: req.user.email },
+//     });
+
+//     await prisma.user.delete({
+//       where: { id: userId },
+//     });
+
+//     res.status(200).json({ message: "Account deleted successfully" });
+//   } catch (error) {
+//     console.error("❌ Delete Account Error:", error);
+//     return res.status(500).json({ message: "Failed to delete account" });
+//   }
+// };
+
 export const deleteAccount = async (req, res) => {
+  const userId = req.user.id;
+  const email = req.user.email?.toLowerCase();
+
   try {
-    const userId = req.user.id;
-
-    await prisma.payment.deleteMany({
-      where: { email: req.user.email },
+    /* =========================
+       CAR CRM (NO TRANSACTION)
+    ========================= */
+    const clients = await prisma.client.findMany({
+      where: { userId },
+      select: { id: true },
     });
+    const clientIds = clients.map((c) => c.id);
 
-    await prisma.user.delete({
-      where: { id: userId },
+    if (clientIds.length) {
+      await prisma.serviceCostItem.deleteMany({
+        where: { service: { clientId: { in: clientIds } } },
+      });
+      await prisma.serviceMedia.deleteMany({
+        where: { service: { clientId: { in: clientIds } } },
+      });
+      await prisma.service.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.reminder.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.ocrRecord.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.invoiceCostItem.deleteMany({
+        where: { invoice: { clientId: { in: clientIds } } },
+      });
+      await prisma.invoice.deleteMany({
+        where: { clientId: { in: clientIds } },
+      });
+      await prisma.client.deleteMany({
+        where: { id: { in: clientIds } },
+      });
+    }
+
+    /* =========================
+       WASH CRM (MAIN PROBLEM)
+    ========================= */
+    const washTeams = await prisma.washTeam.findMany({
+      where: { createdBy: userId },
+      select: { id: true },
     });
+    const washTeamIds = washTeams.map((t) => t.id);
 
-    res.status(200).json({ message: "Account deleted successfully" });
+    if (washTeamIds.length) {
+      await prisma.washStaff.deleteMany({
+        where: { washTeamId: { in: washTeamIds } },
+      });
+      await prisma.washTeam.deleteMany({
+        where: { id: { in: washTeamIds } },
+      });
+    }
+
+    const washingClients = await prisma.washingClient.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const washingClientIds = washingClients.map((c) => c.id);
+
+    if (washingClientIds.length) {
+      await prisma.washBillingService.deleteMany({
+        where: {
+          washingService: {
+            clientId: { in: washingClientIds },
+          },
+        },
+      });
+      await prisma.washingServiceMedia.deleteMany({
+        where: {
+          washingService: {
+            clientId: { in: washingClientIds },
+          },
+        },
+      });
+      await prisma.washingService.deleteMany({
+        where: { clientId: { in: washingClientIds } },
+      });
+      await prisma.washBilling.deleteMany({
+        where: { washingClientId: { in: washingClientIds } },
+      });
+      await prisma.washingClient.deleteMany({
+        where: { id: { in: washingClientIds } },
+      });
+    }
+
+    /* =========================
+       BIKE / STAFF / PAYMENTS
+    ========================= */
+    await prisma.carStaffSalary.deleteMany({ where: { ownerId: userId } });
+    await prisma.carStaffLogin.deleteMany({ where: { ownerId: userId } });
+    await prisma.carStaff.deleteMany({ where: { ownerId: userId } });
+
+    await prisma.bikeSalaryHistory.deleteMany({
+      where: { bikeStaff: { userId } },
+    });
+    await prisma.bikeStaff.deleteMany({ where: { userId } });
+    await prisma.staff.deleteMany({ where: { userId } });
+
+    await prisma.payment.deleteMany({ where: { email } });
+
+    /* =========================
+       USER (SHORT TRANSACTION)
+    ========================= */
+    await prisma.$transaction([prisma.user.delete({ where: { id: userId } })]);
+
+    return res.json({ success: true, message: "Account deleted successfully" });
   } catch (error) {
     console.error("❌ Delete Account Error:", error);
-    return res.status(500).json({ message: "Failed to delete account" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete account",
+      code: error.code,
+    });
   }
 };
+
+
+
+

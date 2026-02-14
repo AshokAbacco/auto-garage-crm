@@ -32,9 +32,38 @@ enum ServiceStatus {
   CANCELLED
 }
 
-enum UserRole {
+enum ItemType {
+  Part
+  Labor
+}
+
+enum DynamicColumnType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+}
+
+enum WhatsAppApprovalSource {
+  whatsapp
+  web
+}
+
+enum ReferrerType {
   USER
-  TEAM_MEMBER
+  PARTNER
+}
+
+enum ReferralStatus {
+  REGISTERED
+  PAID
+  REWARDED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
 }
 
 model User {
@@ -45,27 +74,30 @@ model User {
   profileImage String?
   phone        String?
   companyName  String?
+  address      String?
+  gstNumber    String?
 
-  // OWNER only
-  role        String    @default("user")
+  // 👑 ROLE (ONLY OWNER)
+  role        String    @default("user") // DO NOT STORE TEAM HERE
   allowedCrms CrmType[] @default([])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
-  // Subscription fields
+  // 📦 Subscription
   plan       PlanType  @default(BASIC)
   planExpiry DateTime?
 
-  payments Payment[]
-
-  myReferralCode   String  @unique
+  // 💳 Payments & Referrals
+  payments         Payment[]
+  myReferralCode   String    @unique
   referredByCode   String?
   referredByUserId Int?
+
+  referralsMade  Referral[] @relation("UserReferralsMade")
+  referralRecord Referral?  @relation("UserReferralReceived")
 
   referredByUser User?  @relation("UserReferrals", fields: [referredByUserId], references: [id])
   referrals      User[] @relation("UserReferrals")
 
-  // Car
+  // 🚗 CAR CRM (OWNER DATA)
   clients          Client[]
   invoices         Invoice[]
   reminders        Reminder[]
@@ -74,10 +106,15 @@ model User {
   carStaffLogins   CarStaffLogin[]
   carStaffSalaries CarStaffSalary[]
 
-  //Bike
-  parentUserId          Int?
-  parentUser            User?           @relation("TeamUsers", fields: [parentUserId], references: [id])
-  teamUsers             User[]          @relation("TeamUsers")
+  // 🔗 PARENT USER (FOR MULTI-CRM / SUB-USER LOGIN)
+  parentUserId    Int?
+  parentUser      User?     @relation("UserHierarchy", fields: [parentUserId], references: [id])
+  // 🧾 CAR INVOICES
+  ownedInvoices   Invoice[] @relation("OwnerInvoices")
+  createdInvoices Invoice[] @relation("CreatedInvoices")
+  childUsers      User[]    @relation("UserHierarchy")
+
+  // 🏍️ BIKE CRM (OWNER DATA ONLY)
   ownedBikes            Bike[]          @relation("OwnerBikes")
   createdBikes          Bike[]          @relation("CreatedBikes")
   ownedBikeServices     BikeService[]   @relation("OwnerBikeServices")
@@ -91,37 +128,46 @@ model User {
   bikeStaffs            BikeStaff[]
   bikeTeams             BikeTeam[]
 
-  // washing 
+  // 🧼 WASHING
   washingClients WashingClient[]
-  washTeamsOwned WashTeam[]      @relation("AdminWashTeams")
-  // Team member → belongs to one team
-  washTeamId     Int?
-  washTeamMember WashTeam?       @relation("TeamMember", fields: [washTeamId], references: [id])
+  washTeams      WashTeam[]      @relation("AdminWashTeams")
+
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  staffs               Staff[]
+  washingStaffs        WashingStaff[]
+  washingStaffSalaries WashingStaffSalary[]
+  dynamicTables        DynamicTable[]
+  whatsAppSessions     WhatsAppSession[]
+  whatsAppMessages     WhatsAppMessage[]
 }
 
 //car db schemas
 
 model Client {
-  id           Int      @id @default(autoincrement())
-  fullName     String
-  phone        String
-  email        String?
-  address      String?
-  vehicleMake  String
-  vehicleModel String
-  vehicleYear  Int
-  regNumber    String
-  fuel         String? // ✅ ADD THIS
-  seats        Int?
-  vin          String?
-  carImage     String?
-  adImage      String?
-  staffPerson  String?
-  receiverName String?
-  damageImages Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  userId       Int?
+  id                  Int       @id @default(autoincrement())
+  fullName            String
+  phone               String
+  email               String?
+  address             String?
+  vehicleMake         String
+  vehicleModel        String
+  vehicleYear         Int
+  regNumber           String
+  fuel                String? // ✅ ADD THIS
+  seats               Int?
+  vin                 String?
+  carImage            String?
+  adImage             String?
+  staffPerson         String?
+  receiverName        String?
+  damageImages        Json?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  userId              Int?
+  whatsappOptin       Boolean   @default(false)
+  whatsappOptinAt     DateTime?
+  whatsappOptinSource String?
 
   user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
   services  Service[]
@@ -153,11 +199,11 @@ model Service {
   assignedMechanic String?
   advancePaid      Float?    @default(0)
 
-  // 🔹 APPROVAL WORKFLOW (NEW)
-  approvalStatus String    @default("PENDING")
+  // ✅ APPROVAL WORKFLOW (FIXED)
+  approvalStatus String? // ❌ NO DEFAULT
   approvalNote   String?
   approvalAt     DateTime?
-  approvalSource String? // "whatsapp" | "web"
+  approvalSource WhatsAppApprovalSource?
 
   clientId     Int
   categoryId   Int?
@@ -174,28 +220,46 @@ model Service {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   serviceCostItems ServiceCostItem[]
+  whatsAppSessions WhatsAppSession[]
+  whatsAppMessages WhatsAppMessage[]
+
+  // ===== REVIEW SYSTEM =====
+  reviewSentAt    DateTime?
+  reviewRating    Int?
+  reviewSource    String?
+  reviewMessageId String?
 }
 
 model ServiceMedia {
-  id       Int    @id @default(autoincrement())
+  id        Int @id @default(autoincrement())
+  serviceId Int
+
   fileName String
   mimeType String
-  data     Bytes
+  mediaUrl String // ✅ Cloudflare R2 public URL
 
-  serviceId Int
-  service   Service @relation(fields: [serviceId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model Invoice {
   id            Int    @id @default(autoincrement())
   invoiceNumber String @unique
 
+  // 🔗 CLIENT
   clientId Int
-  userId   Int?
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+  // 🏢 COMPANY / OWNER (ALWAYS USED FOR INVOICE HEADER)
+  ownerUserId Int
+  ownerUser   User @relation("OwnerInvoices", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  // 👤 CREATED BY (OWNER OR STAFF)
+  createdById Int?
+  createdBy   User? @relation("CreatedInvoices", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // 💰 FINANCIALS
   tax        Float @default(0)
   discount   Float @default(0)
   grandTotal Float
@@ -205,6 +269,7 @@ model Invoice {
   paidAt      DateTime?
   dueDate     DateTime?
 
+  // 📝 SERVICE INFO
   notes String?
 
   serviceCategory    String?
@@ -212,17 +277,23 @@ model Invoice {
   serviceNotes       String?
   mechanic           String?
   vehicle            String?
+  whatsAppMessages   WhatsAppMessage[] // 👈 ADD THIS
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  client           Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // 🔗 RELATIONS
   services         Service[]
+  invoiceCostItems InvoiceCostItem[]
   washingClient    WashingClient?    @relation(fields: [washingClientId], references: [id])
   washingClientId  Int?
-  invoiceCostItems InvoiceCostItem[]
 
+  // 🕒 TIMESTAMPS
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+
+  // 📌 INDEXES
+  @@index([ownerUserId])
+  @@index([createdById])
   @@index([status])
   @@index([paymentMode])
 }
@@ -266,16 +337,29 @@ model ServiceCostItem {
 }
 
 model Reminder {
-  id        Int      @id @default(autoincrement())
-  clientId  Int
-  userId    Int?
-  message   String
-  remindAt  DateTime
-  sent      Boolean  @default(false)
+  id       Int  @id @default(autoincrement())
+  clientId Int
+  userId   Int?
+
+  serviceDate DateTime // actual appointment date & time
+  note        String?  @db.Text
+
+  remind15At DateTime? // auto-calculated: serviceDate - 15 days
+  remind7At  DateTime? // auto-calculated: serviceDate - 7 days
+
+  sent15 Boolean @default(false)
+  sent7  Boolean @default(false)
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([serviceDate])
+  @@index([remind15At])
+  @@index([remind7At])
+  @@index([clientId])
 }
 
 model ServiceCategory {
@@ -423,6 +507,7 @@ model Payment {
 
   referralCode String?
   gstNumber    String?
+  address      String?
 
   paymentId String? @unique
   orderId   String? @unique
@@ -439,6 +524,46 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DynamicTable {
+  id        String   @id @default(uuid())
+  name      String
+  userId    Int
+  createdAt DateTime @default(now())
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns DynamicColumn[]
+  rows    DynamicRow[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model DynamicColumn {
+  id        String            @id @default(uuid())
+  tableId   String
+  name      String
+  type      DynamicColumnType
+  required  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  table DynamicTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+}
+
+model DynamicRow {
+  id        String   @id @default(uuid())
+  tableId   String
+  data      Json // 🔥 flexible user data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  table DynamicTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([tableId])
 }
 
 // Bike Tables
@@ -468,18 +593,12 @@ model Bike {
   fuel         String?
   notes        String?
 
-  /**
-   * 🔐 OWNERSHIP (USER BASED)
-   */
   ownerUserId Int
   createdById Int
 
   ownerUser User @relation("OwnerBikes", fields: [ownerUserId], references: [id])
   createdBy User @relation("CreatedBikes", fields: [createdById], references: [id])
 
-  /**
-   * 🔗 RELATIONS
-   */
   bikeServices   BikeService[]
   bikeInvoices   BikeInvoice[]
   bikeReminders  BikeReminder[]
@@ -497,25 +616,41 @@ model BikeService {
   clientId Int
   client   Bike @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  categoryId Int
-  category   BikeServiceCategory @relation(fields: [categoryId], references: [id])
+  // 🔽 MAKE OPTIONAL
+  categoryId Int?
+  category   BikeServiceCategory? @relation(fields: [categoryId], references: [id])
 
-  subServiceId Int
-  subService   BikeSubService @relation(fields: [subServiceId], references: [id])
+  subServiceId Int?
+  subService   BikeSubService? @relation(fields: [subServiceId], references: [id])
 
-  date  DateTime
-  notes String?
+  categoryText   String?
+  subServiceText String?
 
-  partsCost Float @default(0)
-  partsGst  Float @default(0)
-  laborCost Float @default(0)
-  laborGst  Float @default(0)
+  inDate           DateTime
+  outDate          DateTime?
+  expectedDelivery DateTime?
 
-  cost   Float  @default(0)
-  status String @default("Pending")
+  status           String  @default("Pending")
+  priority         String  @default("Normal")
+  assignedMechanic String?
+  notes            String?
 
-  invoiceId Int?
-  invoice   BikeInvoice? @relation("InvoiceServices", fields: [invoiceId], references: [id])
+  partsSubtotal Float @default(0)
+  laborSubtotal Float @default(0)
+  cgstTotal     Float @default(0)
+  sgstTotal     Float @default(0)
+
+  discountType String @default("Fixed Amount")
+  discount     Float  @default(0)
+  advancePaid  Float  @default(0)
+
+  grandTotal Float @default(0)
+  balanceDue Float @default(0)
+
+  invoiceStatus String @default("draft")
+
+  bikeInvoiceId Int?
+  bikeInvoice   BikeInvoice? @relation("InvoiceServices", fields: [bikeInvoiceId], references: [id])
 
   ownerUserId Int
   createdById Int
@@ -523,52 +658,71 @@ model BikeService {
   ownerUser User @relation("OwnerBikeServices", fields: [ownerUserId], references: [id])
   createdBy User @relation("CreatedBikeServices", fields: [createdById], references: [id])
 
+  serviceItems ServiceItem[]
+  serviceMedia BikeServiceMedia[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  bikeServiceMedias BikeServiceMedia[]
-
-  @@index([ownerUserId])
-  @@index([createdById])
-  @@index([clientId])
-  @@index([invoiceId])
 }
 
 model BikeInvoice {
   id            Int    @id @default(autoincrement())
   invoiceNumber String @unique
 
-  bikeId    Int
-  bike      Bike    @relation(fields: [bikeId], references: [id])
-  vehicle   String?
-  partsCost Float   @default(0)
-  partsGst  Float   @default(0)
-  laborCost Float   @default(0)
-  laborGst  Float   @default(0)
-  tax       Float   @default(0)
-  discount  Float   @default(0)
+  bikeId Int
+  bike   Bike @relation(fields: [bikeId], references: [id], onDelete: Cascade)
 
-  grandTotal Float
+  vehicle            String?
+  serviceCategory    String?
+  serviceSubCategory String?
+  notes              String?
+
+  partsSubtotal Float @default(0)
+  laborSubtotal Float @default(0)
+  cgstTotal     Float @default(0)
+  sgstTotal     Float @default(0)
+
+  discountType String @default("Fixed Amount")
+  discount     Float  @default(0)
+  advancePaid  Float  @default(0)
+
+  grandTotal Float @default(0)
+  balanceDue Float @default(0)
 
   paymentMode String?
   status      String    @default("Pending")
   paidAt      DateTime?
-  dueDate     DateTime?
 
   ownerUserId Int
+  ownerUser   User @relation("OwnerBikeInvoices", fields: [ownerUserId], references: [id])
+
+  bikeServices BikeService[] @relation("InvoiceServices")
+
   createdById Int
+  createdBy   User @relation("CreatedBikeInvoices", fields: [createdById], references: [id])
 
-  ownerUser User @relation("OwnerBikeInvoices", fields: [ownerUserId], references: [id])
-  createdBy User @relation("CreatedBikeInvoices", fields: [createdById], references: [id])
-
-  services BikeService[] @relation("InvoiceServices")
+  invoiceItems InvoiceItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@index([ownerUserId])
-  @@index([createdById])
-  @@index([bikeId])
+// ✅ NEW: Invoice Items Model
+model InvoiceItem {
+  id Int @id @default(autoincrement())
+
+  bikeInvoiceId Int
+  bikeInvoice   BikeInvoice @relation(fields: [bikeInvoiceId], references: [id], onDelete: Cascade)
+
+  type      String // Part | Labor
+  name      String
+  quantity  Int
+  unitPrice Float
+  cgst      Float  @default(0)
+  sgst      Float  @default(0)
+  total     Float
+
+  createdAt DateTime @default(now())
 }
 
 model BikeReminder {
@@ -617,6 +771,23 @@ model BikeOcrRecord {
   updatedAt DateTime @updatedAt
 }
 
+model ServiceItem {
+  id Int @id @default(autoincrement())
+
+  bikeServiceId Int
+  bikeService   BikeService @relation(fields: [bikeServiceId], references: [id], onDelete: Cascade)
+
+  type      String // Part | Labor
+  name      String
+  quantity  Int
+  unitPrice Float
+  cgst      Float  @default(0)
+  sgst      Float  @default(0)
+  total     Float
+
+  createdAt DateTime @default(now())
+}
+
 model BikeServiceCategory {
   id   Int    @id @default(autoincrement())
   name String
@@ -646,8 +817,8 @@ model BikeSubService {
 model BikeServiceMedia {
   id Int @id @default(autoincrement())
 
-  serviceId Int
-  service   BikeService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  bikeServiceId Int
+  service       BikeService @relation(fields: [bikeServiceId], references: [id], onDelete: Cascade)
 
   fileName String?
   mimeType String?
@@ -656,45 +827,76 @@ model BikeServiceMedia {
   createdAt DateTime @default(now())
 }
 
+model Staff {
+  id Int @id @default(autoincrement())
+
+  name    String
+  email   String?
+  phone   String?
+  address String?
+  role    String
+
+  annualSalary Float
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  salaries BikeStaff[] @relation("StaffSalaries")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([email])
+}
+
 model BikeStaff {
-  id            Int                 @id @default(autoincrement())
-  // 🔗 Owner (Admin/User who created staff)
-  userId        Int
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // 👤 Staff details
-  name          String
-  role          String
-  // 💰 Salary fields
-  baseSalary    Float
-  bonus         Float               @default(0)
-  leaves        Int                 @default(0)
-  deductions    Float               @default(0)
-  // 📅 Status tracking
-  joiningDate   DateTime
-  status        String              @default("pending") // pending | paid
-  lastPaid      DateTime?
-  // 🔗 Salary history
+  id Int @id @default(autoincrement())
+
+  // 🔗 Staff reference (NEW)
+  staffId Int
+  staff   Staff @relation("StaffSalaries", fields: [staffId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  annualSalary Float // Copy from Staff for history
+  bonus        Float @default(0)
+  leaves       Int   @default(0)
+  deductions   Float @default(0)
+
+  status           String    @default("pending") // pending | paid
+  lastUpdatedMonth String?
+  lastPaid         DateTime?
+
   salaryHistory BikeSalaryHistory[]
-  // ⏱️ Meta
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  bikeTeams     BikeTeam[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bikeTeams BikeTeam[]
+
+  @@index([userId])
+  @@index([staffId])
+  @@index([status])
 }
 
 model BikeSalaryHistory {
-  id          Int       @id @default(autoincrement())
-  // 🔗 Staff reference
+  id Int @id @default(autoincrement())
+
   bikeStaffId Int
-  staff       BikeStaff @relation(fields: [bikeStaffId], references: [id], onDelete: Cascade)
-  // 🗓️ Salary snapshot
-  month       String // "Sep 2025"
-  baseSalary  Float
-  bonus       Float
-  deductions  Float
-  netSalary   Float
-  // 💸 Payment info
-  paidDate    DateTime
-  createdAt   DateTime  @default(now())
+  bikeStaff   BikeStaff @relation(fields: [bikeStaffId], references: [id], onDelete: Cascade)
+
+  month      String // "Jan 2026"
+  baseSalary Float // Monthly salary
+  bonus      Float
+  deductions Float
+  netSalary  Float
+
+  paidDate DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([bikeStaffId, month])
 }
 
 // Bike TeamUsers login
@@ -732,6 +934,7 @@ model BikeTeamLogin {
   team       BikeTeam @relation(fields: [bikeTeamId], references: [id], onDelete: Cascade)
 
   username String  @unique
+  email    String  @unique // ✅ ADD THIS
   password String
   isActive Boolean @default(true)
 
@@ -758,6 +961,7 @@ model WashingClient {
   washingServices WashingService[]
   washBillings    WashBilling[]
   invoices        Invoice[]
+  washTeamId      Int? // WASH TEAM
 }
 
 model WashingServiceCategory {
@@ -823,9 +1027,6 @@ model WashingService {
 
   media WashingServiceMedia[]
 
-  /**
-   * 🔗 Invoice link via JOIN table
-   */
   billings WashBillingService[]
 
   createdAt DateTime @default(now())
@@ -876,18 +1077,220 @@ model WashBillingService {
 }
 
 model WashTeam {
-  id   Int    @id @default(autoincrement())
-  name String
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String // admin email only
 
-  // Display / contact email only
-  email String @unique
-
-  // Admin who created the team
   createdBy Int
   admin     User @relation("AdminWashTeams", fields: [createdBy], references: [id])
 
-  // Team members
-  members User[] @relation("TeamMember")
+  members WashStaff[]
 
   createdAt DateTime @default(now())
+}
+
+// team accounts
+model WashStaff {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  username String?
+  password String
+
+  washTeamId Int
+  team       WashTeam @relation(fields: [washTeamId], references: [id])
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// salary pages
+
+model WashingStaff {
+  id           Int     @id @default(autoincrement())
+  name         String
+  email        String?
+  phone        String?
+  address      String?
+  role         String
+  annualSalary Int
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  salaries  WashingStaffSalary[]
+  createdAt DateTime             @default(now())
+}
+
+model WashingStaffSalary {
+  id      Int          @id @default(autoincrement())
+  staffId Int
+  staff   WashingStaff @relation(fields: [staffId], references: [id])
+
+  annualSalary Int
+  bonus        Int @default(0)
+  leaves       Int @default(0)
+  deductions   Int @default(0)
+
+  status           String    @default("pending") // pending | paid
+  lastPaid         DateTime?
+  lastUpdatedMonth String?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  history   WashingSalaryHistory[]
+  createdAt DateTime               @default(now())
+}
+
+model WashingSalaryHistory {
+  id                   Int                @id @default(autoincrement())
+  washingStaffSalaryId Int
+  washingStaffSalary   WashingStaffSalary @relation(fields: [washingStaffSalaryId], references: [id])
+
+  month      String // "Jan 2026"
+  baseSalary Int
+  bonus      Int
+  deductions Int
+  netSalary  Int
+  paidDate   DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model WhatsAppSession {
+  phone     String   @id // E.164 format, ex: 919876543210
+  serviceId Int
+  userId    Int // Garage owner (User)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([userId])
+}
+
+model WhatsAppMessage {
+  id     Int    @id @default(autoincrement())
+  phone  String
+  userId Int
+
+  serviceId Int?
+  invoiceId Int?
+
+  template  String
+  messageId String?
+  status    String
+  error     String?
+
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([userId])
+  @@index([serviceId])
+  @@index([invoiceId])
+}
+
+//Admin Tables
+model Admin {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  password String
+  role     String  @default("SUPER_ADMIN") // SUPER_ADMIN | STAFF
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReferralPartner {
+  id Int @id @default(autoincrement())
+
+  name     String
+  email    String @unique
+  phone    String
+  password String // ✅ ADD THIS
+  upiId    String
+  address  String
+
+  referralCode String @unique
+
+  totalReferrals Int   @default(0)
+  totalEarnings  Float @default(0)
+
+  isActive Boolean @default(true)
+
+  referrals Referral[]
+  payouts   ReferralPayout[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Referral {
+  id String @id @default(cuid())
+
+  referralCode String
+  referrerType ReferrerType
+
+  referrerUserId Int?
+  referrerUser   User? @relation("UserReferralsMade", fields: [referrerUserId], references: [id], onDelete: Cascade)
+
+  referrerPartnerId Int?
+  referrerPartner   ReferralPartner? @relation(fields: [referrerPartnerId], references: [id], onDelete: Cascade)
+
+  referredUserId Int  @unique
+  referredUser   User @relation("UserReferralReceived", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  status ReferralStatus @default(REGISTERED)
+
+  commissionAmount Float?
+  rewardGiven      Boolean @default(false)
+
+  createdAt   DateTime  @default(now())
+  convertedAt DateTime?
+
+  @@index([referralCode])
+  @@index([referrerUserId])
+  @@index([referrerPartnerId])
+}
+
+model ReferralSettings {
+  id Int @id @default(1)
+
+  userCommissionPercent    Float
+  partnerCommissionPercent Float
+
+  rewardAfterDays     Int   @default(0)
+  minimumPayoutAmount Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReferralPayout {
+  id Int @id @default(autoincrement())
+
+  partnerId Int
+  partner   ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  amount Float
+
+  status PayoutStatus @default(PENDING)
+
+  transactionReference String?
+  paidAt               DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+  @@index([status])
 }

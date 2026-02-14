@@ -1,6 +1,7 @@
 // server/controllers/serviceController.js
 import prisma from "../models/prismaClient.js";
-
+import { uploadToR2 } from "../utils/r2Upload.js";
+import { sendWhatsAppTemplate } from "../services/whatsappService.js";
 /**
  * Convert a media file record to a data: URI string (defensive for Buffers, Uint8Array, Array, base64 strings).
  * Expects file to have at least: { data, mimeType, type } where data may be Buffer/Uint8Array/Array/string.
@@ -9,7 +10,6 @@ import prisma from "../models/prismaClient.js";
 function getOwnerUserId(req) {
   return req.user.type === "staff" ? req.user.ownerId : req.user.id;
 }
-
 
 function toDataUri(file) {
   if (!file) return null;
@@ -67,18 +67,18 @@ function requireAuth(req, res) {
   return true;
 }
 
-
 /**
  * Map an array of media file records to the API-friendly shape.
  * Ensures `data` is a proper data:<mime>;base64,... string (or null).
  */
 function mapMediaFiles(mediaFiles = []) {
   if (!Array.isArray(mediaFiles)) return [];
+
   return mediaFiles.map((f) => ({
     id: f.id,
-    fileName: f.fileName || f.name || null,
-    mimeType: f.mimeType || f.type || null,
-    data: toDataUri(f),
+    fileName: f.fileName || null,
+    mimeType: f.mimeType || null,
+    mediaUrl: f.mediaUrl, // ✅ THIS IS WHAT UI NEEDS
   }));
 }
 
@@ -119,14 +119,13 @@ export const getServices = async (req, res) => {
         ...s,
         mediaFiles: mapMediaFiles(mediaByService[s.id] || []),
         serviceCostItems: s.serviceCostItems,
-      }))
+      })),
     );
   } catch (err) {
     console.error("getServices error:", err);
     res.status(500).json({ message: "Failed to fetch services" });
   }
 };
-
 
 /* ============================================================
    👤 Get All Services by a Specific Client
@@ -176,7 +175,7 @@ export const getServicesByClient = async (req, res) => {
             id: true,
             fileName: true,
             mimeType: true,
-            data: true,
+            mediaUrl: true,
             serviceId: true,
           },
         })
@@ -323,6 +322,11 @@ function calculateTotals(costItems = []) {
 ============================================================ */
 export const createService = async (req, res) => {
   try {
+    if (!requireAuth(req, res)) return;
+
+    /* ----------------------------------------
+       1️⃣ EXTRACT & VALIDATE INPUT
+    ---------------------------------------- */
     const {
       clientId,
       categoryId,
@@ -341,17 +345,7 @@ export const createService = async (req, res) => {
     if (!clientId || !serviceInDate) {
       return res
         .status(400)
-        .json({ message: "Client and service in date are required" });
-    }
-
-    const inDate = parseDate(serviceInDate);
-    const outDate = parseDate(serviceOutDate);
-    const expectedDate = parseDate(expectedDelivery);
-
-    if (!inDate) {
-      return res
-        .status(400)
-        .json({ message: "Invalid service in date format" });
+        .json({ message: "clientId and serviceInDate are required" });
     }
 
     const ownerUserId = getOwnerUserId(req);
@@ -359,15 +353,28 @@ export const createService = async (req, res) => {
     const client = await prisma.client.findFirst({
       where: {
         id: parseInt(clientId),
-        userId: ownerUserId, // ✅ FIX
+        userId: ownerUserId,
       },
     });
-
 
     if (!client) {
       return res.status(403).json({ message: "Unauthorized client access" });
     }
 
+    /* ----------------------------------------
+       2️⃣ PARSE DATES SAFELY
+    ---------------------------------------- */
+    const inDate = parseDate(serviceInDate);
+    const outDate = parseDate(serviceOutDate);
+    const expectedDate = parseDate(expectedDelivery);
+
+    if (!inDate) {
+      return res.status(400).json({ message: "Invalid serviceInDate" });
+    }
+
+    /* ----------------------------------------
+       3️⃣ PARSE COST ITEMS
+    ---------------------------------------- */
     let parsedItems = [];
     if (costItems) {
       parsedItems =
@@ -376,7 +383,9 @@ export const createService = async (req, res) => {
 
     const totals = calculateTotals(parsedItems);
 
-    // ✅ CREATE SERVICE FIRST
+    /* ----------------------------------------
+       4️⃣ CREATE SERVICE
+    ---------------------------------------- */
     const service = await prisma.service.create({
       data: {
         date: inDate,
@@ -386,9 +395,10 @@ export const createService = async (req, res) => {
 
         notes: notes || null,
         internalNotes: internalNotes || null,
+        assignedMechanic: assignedMechanic || null,
         priority: priority || "Normal",
         advancePaid: Number(advancePaid) || 0,
-        assignedMechanic: assignedMechanic || null,
+
         partsCost: totals.partsCost,
         laborCost: totals.laborCost,
         cost: totals.totalCost,
@@ -401,11 +411,15 @@ export const createService = async (req, res) => {
       },
     });
 
-    // ✅ SAVE COST ITEMS
+    const serviceId = service.id;
+
+    /* ----------------------------------------
+       5️⃣ SAVE COST ITEMS
+    ---------------------------------------- */
     if (totals.normalizedItems.length) {
       await prisma.serviceCostItem.createMany({
         data: totals.normalizedItems.map((item) => ({
-          serviceId: service.id,
+          serviceId,
           type: item.type,
           name: item.name,
           quantity: item.quantity,
@@ -417,15 +431,23 @@ export const createService = async (req, res) => {
       });
     }
 
-    // 🔥 FIX: SAVE MEDIA FILES ON CREATE
+    /* ----------------------------------------
+       6️⃣ UPLOAD MEDIA TO R2
+    ---------------------------------------- */
     if (req.files?.length) {
       for (const file of req.files) {
+        const { url } = await uploadToR2({
+          buffer: file.buffer,
+          mimeType: file.mimetype,
+          serviceId,
+        });
+
         await prisma.serviceMedia.create({
           data: {
-            serviceId: service.id,
+            serviceId,
             fileName: file.originalname,
             mimeType: file.mimetype,
-            data: file.buffer,
+            mediaUrl: url,
           },
         });
       }
@@ -437,10 +459,12 @@ export const createService = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ createService error:", error);
-    return res.status(500).json({ message: "Error creating service" });
+    return res.status(500).json({
+      message: "Error creating service",
+      error: error.message,
+    });
   }
 };
-
 
 /* ============================================================
    ✏️ UPDATE SERVICE
@@ -507,7 +531,7 @@ export const updateService = async (req, res) => {
     };
 
     Object.keys(updateData).forEach(
-      (k) => updateData[k] === undefined && delete updateData[k]
+      (k) => updateData[k] === undefined && delete updateData[k],
     );
 
     const service = await prisma.service.update({
@@ -535,28 +559,37 @@ export const updateService = async (req, res) => {
       });
     }
 
-    // 🔥 FIX: SAVE MEDIA FILES ON UPDATE
+    // 🔥 FIXED: SAVE MEDIA FILES ON UPDATE
     if (req.files?.length) {
       for (const file of req.files) {
+        // 1️⃣ Upload to R2
+        const { url } = await uploadToR2({
+          buffer: file.buffer,
+          mimeType: file.mimetype,
+          serviceId: service.id, // ✅ FIX
+        });
+
+        // 2️⃣ Save metadata + URL
         await prisma.serviceMedia.create({
           data: {
-            serviceId: service.id,
+            serviceId: service.id, // ✅ FIX
             fileName: file.originalname,
             mimeType: file.mimetype,
-            data: file.buffer,
+            mediaUrl: url, // ✅ REQUIRED
           },
         });
       }
     }
 
-    return res.json({ message: "Service updated successfully", service });
+    return res.json({
+      message: "Service updated successfully",
+      service,
+    });
   } catch (error) {
     console.error("❌ updateService error:", error);
     return res.status(500).json({ message: "Error updating service" });
   }
 };
-
-
 
 /* ============================================================
    🗑️ Delete Service
@@ -754,3 +787,59 @@ export const getServiceForBilling = async (req, res) => {
     res.status(500).json({ message: "Error fetching service" });
   }
 };
+
+export const sendVehicleReadyWhatsApp = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+    const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
+
+    const service = await prisma.service.findFirst({
+      where: { id: serviceId, client: { userId: ownerId } },
+      include: { client: true },
+    });
+
+    if (!service || !service.client?.phone) {
+      return res
+        .status(404)
+        .json({ message: "Service or Client phone not found" });
+    }
+
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { companyName: true },
+    });
+
+    const rawPhone = service.client.phone.replace(/\D/g, "");
+    const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_ready",
+      languageCode: "en",
+      variables: [
+        service.client.fullName,
+        service.client.regNumber,
+        owner?.companyName || "Our Garage",
+      ],
+    });
+
+    // ✅ THIS WAS MISSING
+    const updatedService = await prisma.service.update({
+      where: { id: service.id },
+      data: {
+        status: "Paid",
+        approvalStatus: "READY_SENT",
+        approvalAt: new Date(),
+      },
+    });
+
+    return res.json({
+      message: "Vehicle Ready notification sent!",
+      service: updatedService,
+    });
+  } catch (error) {
+    console.error("WhatsApp Ready error:", error);
+    res.status(500).json({ message: "Failed to send notification" });
+  }
+};
+

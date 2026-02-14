@@ -1,236 +1,309 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-    Users,
-    Mail,
-    Lock,
-    UserPlus,
-    CheckCircle,
-    AlertTriangle,
+  Users,
+  Mail,
+  Lock,
+  UserPlus,
+  Search,
+  ShieldCheck,
+  UserCheck,
+  TrendingUp,
+  CheckCircle,
 } from "lucide-react";
-import { useTheme } from "../../contexts/ThemeContext";
-import api from "./utils/axiosInstance.js";
+import api from "./utils/axiosInstance";
 
-export default function TeamRegister() {
-    const navigate = useNavigate();
-    const { isDark } = useTheme();
+export default function Teams() {
+  /* ================= STATES ================= */
+  const [adminEmail, setAdminEmail] = useState("");
+  const [used, setUsed] = useState(0);
+  const [limit, setLimit] = useState(0);
 
-    const [adminEmail, setAdminEmail] = useState("");
-    const [used, setUsed] = useState(0);
-    const [limit, setLimit] = useState(0);
+  const [staffList, setStaffList] = useState([]);
+  const [search, setSearch] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState(null);
 
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successModal, setSuccessModal] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
-    /* ==============================
-       FETCH TEAM INFO
-    ============================== */
-    useEffect(() => {
-        const fetchTeamInfo = async () => {
-            try {
-                const res = await api.get("/api/teams/info");
-                setAdminEmail(res.data.admin.email);
-                setUsed(res.data.team.used);
-                setLimit(res.data.team.limit);
-            } catch (err) {
-                setError(err.response?.data?.message || "Access denied");
-            }
-        };
+  /* ================= FETCH DATA ================= */
+  useEffect(() => {
+    fetchTeamInfo();
+    fetchStaff();
+  }, []);
 
-        fetchTeamInfo();
-    }, []);
+  const fetchTeamInfo = async () => {
+    const res = await api.get("/api/teams/info");
+    setAdminEmail(res.data.admin.email);
+    setUsed(res.data.team.used);
+    setLimit(res.data.team.limit);
+  };
 
-    /* ==============================
-       CREATE TEAM MEMBER
-    ============================== */
-    const handleCreate = async () => {
-        if (!email || !password) {
-            setError("Email and password are required");
-            return;
-        }
+  const fetchStaff = async () => {
+    const res = await api.get("/api/washing-staff");
+    setStaffList(res.data || []);
+  };
 
-        try {
-            setLoading(true);
-            setError("");
+  /* ================= STAFF CLICK ================= */
+  const handleSelectStaff = (staff) => {
+    setSelectedStaff(staff);
+    setUsername(staff.name || "");
+    setEmail(staff.email || "");
 
-            await api.post("/api/teams/create", {
-                username,
-                email,
-                password,
-            });
+    if (staff.hasAccount) {
+      setAlreadyRegistered(true);
+      setError("This employee already has a team account");
+    } else {
+      setAlreadyRegistered(false);
+      setError("");
+    }
+  };
 
-            setSuccess(true);
+  /* ================= CREATE ================= */
+  const handleCreate = async () => {
+    if (alreadyRegistered) return;
 
-            setTimeout(() => {
-                navigate("/admin/teams");
-            }, 1500);
-        } catch (err) {
-            setError(err.response?.data?.message || "Failed to create team member");
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      setLoading(true);
+      setError("");
 
-    const remaining = limit - used;
-    const usagePercent = limit ? Math.min((used / limit) * 100, 100) : 0;
-    const isBasicPlan = limit === 1;
+      await api.post("/api/teams/create", {
+        username,
+        email,
+        password,
+      });
 
-    /* ==============================
-       UI
-    ============================== */
-    return (
-        <>
-            {/* SUCCESS MODAL */}
-            {success && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div
-                        className={`p-8 rounded-2xl text-center ${isDark ? "bg-gray-800 text-white" : "bg-white"
-                            }`}
-                    >
-                        <CheckCircle className="mx-auto text-green-500" size={48} />
-                        <h3 className="mt-4 text-xl font-bold">
-                            Team Member Created
-                        </h3>
-                        <p className="mt-2 text-sm opacity-70">Redirecting…</p>
-                    </div>
-                </div>
+      setSuccessModal(true);
+      setPassword("");
+      setAlreadyRegistered(true);
+
+      setTimeout(() => {
+        setSuccessModal(false);
+      }, 2000);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to create team account"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const available = limit - used;
+
+  const filteredStaff = staffList.filter((s) =>
+    `${s.name} ${s.email}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  /* ================= UI ================= */
+  return (
+    <div className="min-h-screen bg-gray-50 px-8 py-6">
+      {/* SUCCESS MODAL */}
+      {successModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-8 text-center w-[320px] shadow-xl">
+            <div className="mx-auto mb-4 w-14 h-14 flex items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="text-green-600" size={32} />
+            </div>
+            <h3 className="text-xl font-bold">Registered Successfully</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Team account created successfully
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold text-center mb-2">
+        Create Team Account
+      </h1>
+      <p className="text-center text-gray-500 mb-8">
+        Select staff members and create team accounts for your garage
+      </p>
+
+      {/* SUMMARY CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-10">
+        <SummaryCard icon={<ShieldCheck />} label="Admin" value={adminEmail} />
+        <SummaryCard
+          icon={<UserCheck />}
+          label="Used Slots"
+          value={`${used}/${limit}`}
+        />
+        <SummaryCard
+          icon={<TrendingUp />}
+          label="Available"
+          value={available}
+          green
+        />
+      </div>
+
+      {/* MAIN */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {/* STAFF LIST */}
+        <div className="bg-white rounded-2xl border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="text-blue-600" />
+            <h3 className="font-semibold text-lg">Staff Members</h3>
+          </div>
+
+          <div className="relative mb-4">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
+            <input
+              placeholder="Search staff by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {filteredStaff.length === 0 && (
+              <div className="text-center text-gray-400 py-10">
+                <Users className="mx-auto mb-2" size={40} />
+                No staff found
+              </div>
             )}
 
-            <div
-                className={`min-h-screen flex items-center justify-center px-4 ${isDark
-                    ? "bg-gradient-to-br from-gray-900 to-gray-800"
-                    : "bg-gradient-to-br from-blue-50 to-white"
-                    }`}
-            >
-                <div
-                    className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${isDark ? "bg-gray-800" : "bg-white"
-                        }`}
-                >
-                    {/* HEADER */}
-                    <div className="mb-8 text-center">
-                        <div className="inline-flex p-4 rounded-2xl bg-gradient-to-r from-[#023067] to-[#045aa8]">
-                            <UserPlus className="text-white" size={36} />
-                        </div>
-                        <h2 className="mt-4 text-3xl font-bold">
-                            Create Team Account
-                        </h2>
-                    </div>
-
-                    {/* ERROR */}
-                    {error && (
-                        <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-xl">
-                            {error}
-                        </div>
-                    )}
-
-                    {/* BASIC PLAN WARNING */}
-                    {isBasicPlan && (
-                        <div className="flex gap-3 p-4 mb-6 text-sm text-yellow-800 bg-yellow-100 rounded-xl">
-                            <AlertTriangle size={18} />
-                            <span>
-                                Your current plan does not support team members.
-                                Upgrade your plan to add users.
-                            </span>
-                        </div>
-                    )}
-
-                    {/* TEAM INFO */}
-                    <div
-                        className={`mb-6 p-4 rounded-xl ${isDark ? "bg-gray-700" : "bg-gray-50"
-                            }`}
-                    >
-                        <div className="flex justify-between mb-2 text-sm">
-                            <span>Admin</span>
-                            <span className="font-semibold">{adminEmail}</span>
-                        </div>
-
-                        <div className="flex justify-between mb-1 text-sm">
-                            <span>Usage</span>
-                            <span className="font-semibold">
-                                {used} / {limit}
-                            </span>
-                        </div>
-
-                        <div className="h-2 overflow-hidden bg-gray-300 rounded-full">
-                            <div
-                                className="h-full bg-[#023067]"
-                                style={{ width: `${usagePercent}%` }}
-                            />
-                        </div>
-
-                        <p className="mt-1 text-xs opacity-70">
-                            {remaining > 0
-                                ? `${remaining} slots remaining`
-                                : "No slots remaining"}
-                        </p>
-                    </div>
-
-                    {/* FORM */}
-                    <div className="space-y-4">
-                        <Input
-                            icon={<Users size={18} />}
-                            placeholder="Username (optional)"
-                            value={username}
-                            onChange={setUsername}
-                            isDark={isDark}
-                        />
-                        <Input
-                            icon={<Mail size={18} />}
-                            placeholder="Email"
-                            value={email}
-                            onChange={setEmail}
-                            isDark={isDark}
-                        />
-                        <Input
-                            icon={<Lock size={18} />}
-                            placeholder="Password"
-                            type="password"
-                            value={password}
-                            onChange={setPassword}
-                            isDark={isDark}
-                        />
-
-                        <button
-                            disabled={loading || remaining <= 0 || isBasicPlan}
-                            onClick={handleCreate}
-                            className={`w-full py-4 rounded-xl text-white font-semibold transition ${loading || remaining <= 0 || isBasicPlan
-                                ? "bg-gray-400 cursor-not-allowed"
-                                : "bg-gradient-to-r from-[#023067] to-[#045aa8] hover:scale-[1.02]"
-                                }`}
-                        >
-                            {loading ? "Creating..." : "Create Team Account"}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-}
-
-/* ==============================
-   INPUT COMPONENT
-============================== */
-function Input({ icon, placeholder, value, onChange, type = "text", isDark }) {
-    return (
-        <div className="relative">
-            <div className="absolute -translate-y-1/2 opacity-50 left-4 top-1/2">
-                {icon}
-            </div>
-            <input
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className={`w-full pl-12 pr-4 py-3 rounded-xl border outline-none ${isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-white border-gray-200"
-                    } focus:border-[#023067]`}
-            />
+            {filteredStaff.map((s) => (
+              <div
+                key={s.id}
+                onClick={() => handleSelectStaff(s)}
+                className={`p-3 rounded-xl cursor-pointer border transition ${
+                  s.hasAccount
+                    ? "bg-gray-100 cursor-not-allowed"
+                    : selectedStaff?.id === s.id
+                    ? "bg-blue-50 border-blue-500"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <p className="font-medium">{s.name}</p>
+                <p className="text-sm text-gray-500">{s.email}</p>
+                {s.hasAccount && (
+                  <span className="text-xs text-red-600">
+                    Already registered
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-    );
+
+        {/* FORM */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border p-8">
+          <div className="flex flex-col items-center mb-6">
+            <div className="p-4 bg-blue-600 rounded-2xl text-white mb-3">
+              <UserPlus size={28} />
+            </div>
+            <h2 className="text-2xl font-bold">Create Team Account</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Fill in the details below to create a new team member
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 text-sm text-red-600">{error}</div>
+          )}
+
+          <div className="space-y-5">
+            <Input
+              label="Username"
+              icon={<Users size={18} />}
+              value={username}
+              onChange={setUsername}
+              disabled={!!selectedStaff}
+              placeholder="e.g., john_doe"
+            />
+
+            <Input
+              label="Email Address"
+              icon={<Mail size={18} />}
+              value={email}
+              onChange={setEmail}
+              disabled={!!selectedStaff}
+            />
+
+            <Input
+              label="Password"
+              icon={<Lock size={18} />}
+              type="password"
+              value={password}
+              onChange={setPassword}
+              disabled={alreadyRegistered}
+            />
+
+            <button
+              onClick={handleCreate}
+              disabled={
+                alreadyRegistered ||
+                loading ||
+                available <= 0 ||
+                !email ||
+                !password
+              }
+              className={`w-full py-3 rounded-xl font-semibold transition ${
+                alreadyRegistered || available <= 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+            >
+              Create Team Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+/* ================= COMPONENTS ================= */
+
+const SummaryCard = ({ icon, label, value, green }) => (
+  <div
+    className={`p-4 rounded-xl border flex items-center gap-4 ${
+      green ? "border-green-400 bg-green-50" : "bg-white"
+    }`}
+  >
+    <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+      {icon}
+    </div>
+    <div>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="font-semibold">{value}</p>
+    </div>
+  </div>
+);
+
+const Input = ({
+  label,
+  icon,
+  value,
+  onChange,
+  type = "text",
+  disabled,
+}) => (
+  <div>
+    <label className="text-sm font-medium mb-1 block">{label}</label>
+    <div className="relative">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+        {icon}
+      </div>
+      <input
+        type={type}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full pl-10 pr-4 py-2.5 border rounded-xl ${
+          disabled ? "bg-gray-100 cursor-not-allowed" : ""
+        }`}
+      />
+    </div>
+  </div>
+);

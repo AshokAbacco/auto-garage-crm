@@ -12,9 +12,14 @@ import {
   UserPlus,
   Shield,
   ShieldAlert,
+  ArrowUpRight,
+  Filter,
+  XCircle,
+  Calendar, // Imported Calendar icon
 } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
 
+// Import your existing modals
 import StaffEditModal from "../../components/Car/StaffEditModal";
 import StaffViewModal from "../../components/Car/StaffViewModal";
 import StaffCreateModal from "../../components/Car/StaffCreateModal";
@@ -106,11 +111,23 @@ export default function StaffManagement() {
       "bg-pink-500",
       "bg-emerald-500",
       "bg-orange-500",
+      "bg-teal-500",
+      "bg-cyan-500",
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++)
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
+  };
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   /* ===============================
@@ -143,206 +160,226 @@ export default function StaffManagement() {
           isDark ? "bg-slate-900" : "bg-slate-50"
         }`}
       >
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <p className={isDark ? "text-slate-400" : "text-slate-500"}>
+            Loading staff data...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className={`p-6 md:p-8 min-h-screen font-sans ${
-        isDark ? "text-slate-100" : "text-slate-900"
+      className={`lg:p-10 min-h-screen font-sans transition-colors duration-300 ${
+        isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
       } lg:ml-[5rem]`}
     >
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+      {/* ================= HEADER SECTION ================= */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
           <h1
-            className={`text-3xl font-extrabold ${
-              isDark ? "text-slate-100" : "text-slate-900"
-            } tracking-tight`}
+            className={`text-3xl font-bold tracking-tight ${
+              isDark ? "text-white" : "text-slate-900"
+            }`}
           >
             Staff Management
           </h1>
-          <p
-            className={`${
-              isDark ? "text-slate-400" : "text-slate-500"
-            } mt-2 text-sm`}
-          >
-            Manage staff profiles and salary configuration (defaults)
+          <p className={`mt-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            Overview of your team, roles, and access permissions.
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className={`flex items-center gap-2 ${
-            isDark
-              ? "bg-indigo-600 hover:bg-indigo-700"
-              : "bg-indigo-600 hover:bg-indigo-700"
-          } text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95 font-medium`}
-        >
-          <Plus size={20} strokeWidth={2.5} />
-          <span>Add New Staff</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-95 font-medium"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            <span>Add Staff</span>
+          </button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+      {/* ================= STATS CARDS ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
           title="Total Employees"
           value={stats.totalStaff}
           icon={Users}
-          color="bg-blue-500"
+          trend="+2 this month"
+          color="blue"
           isDark={isDark}
         />
         <StatCard
-          title="System Access"
+          title="Active System Users"
           value={stats.activeLogins}
           icon={Shield}
-          color="bg-emerald-500"
+          trend="Secure Access"
+          color="emerald"
           isDark={isDark}
         />
         <StatCard
-          title="Estimated Monthly Payroll"
+          title="Est. Monthly Payroll"
           value={`₹${stats.estimatedPayroll.toLocaleString()}`}
           icon={Wallet}
-          color="bg-violet-500"
+          trend="Based on defaults"
+          color="violet"
           isDark={isDark}
         />
       </div>
 
-      {/* Main Content Card */}
+      {/* ================= MAIN CONTENT ================= */}
       <div
-        className={`${
-          isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
-        } rounded-2xl shadow-sm border overflow-hidden`}
+        className={`rounded-2xl shadow-sm border overflow-hidden ${
+          isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+        }`}
       >
         {/* Toolbar */}
-        <div
-          className={`p-5 border-b ${
-            isDark
-              ? "border-slate-700 bg-slate-800"
-              : "border-slate-100 bg-slate-50/50"
-          } flex items-center justify-between gap-4`}
-        >
-          <div className="relative w-full max-w-md">
-            <Search
-              className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                isDark ? "text-slate-400" : "text-slate-400"
-              }`}
-              size={18}
-            />
+        <div className="p-5 border-b border-inherit flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className={`relative w-full max-w-md group`}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search
+                size={18}
+                className={isDark ? "text-slate-500" : "text-slate-400"}
+              />
+            </div>
             <input
               type="text"
-              placeholder="Search by name or role..."
+              placeholder="Search employees..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`pl-10 pr-4 py-2.5 w-full ${
+              className={`block w-full pl-10 pr-3 py-2.5 rounded-xl text-sm transition-all outline-none border ${
                 isDark
-                  ? "bg-slate-700 border-slate-600 text-slate-100 focus:bg-slate-600"
-                  : "bg-slate-50 border-transparent focus:bg-white"
-              } border focus:border-indigo-500 rounded-xl focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm`}
+                  ? "bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  : "bg-gray-50 border-gray-200 text-slate-900 placeholder-gray-400 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              }`}
             />
           </div>
+
+          <button
+            className={`p-2.5 rounded-xl border transition-colors ${
+              isDark
+                ? "border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white"
+                : "border-gray-200 text-slate-500 hover:bg-gray-50 hover:text-slate-900"
+            }`}
+          >
+            <Filter size={18} />
+          </button>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full border-collapse">
             <thead>
               <tr
-                className={`${
+                className={`text-xs uppercase tracking-wider font-semibold ${
                   isDark
-                    ? "bg-slate-800/50 border-slate-700"
-                    : "bg-slate-50/50 border-slate-100"
-                } border-b border-slate-100 text-xs font-bold ${
-                  isDark ? "text-slate-400" : "text-slate-500"
-                } uppercase tracking-wider`}
+                    ? "bg-slate-800/50 text-slate-400 border-b border-slate-800"
+                    : "bg-gray-50/80 text-gray-500 border-b border-gray-100"
+                }`}
               >
-                <th className="px-6 py-4">Employee</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4 text-center">System Access</th>
-                <th className="px-6 py-4 text-right">Estimated Salary</th>
+                <th className="px-6 py-4 text-left">Employee Details</th>
+                <th className="px-6 py-4 text-left">Role</th>
+                {/* NEW COLUMN HEADER */}
+                <th className="px-6 py-4 text-left">Joined Date</th>
+                <th className="px-6 py-4 text-left">System Access</th>
+                <th className="px-6 py-4 text-right">Base Salary (Est.)</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody
               className={`divide-y ${
-                isDark ? "divide-slate-700" : "divide-slate-100"
+                isDark ? "divide-slate-800" : "divide-slate-100"
               }`}
             >
               {filteredStaff.map((s) => (
                 <tr
                   key={s.id}
-                  className={`hover:${
-                    isDark ? "bg-slate-800" : "bg-slate-50"
-                  } transition-colors group`}
+                  className={`group transition-colors duration-200 ${
+                    isDark ? "hover:bg-slate-800/60" : "hover:bg-slate-50"
+                  }`}
                 >
-                  {/* Name Column with Avatar */}
-                  <td className="px-6 py-4 align-middle">
-                    <div className="flex items-center gap-3">
+                  {/* Name */}
+                  <td className="px-6 py-4 align-middle text-left">
+                    <div className="flex items-center gap-4">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0 ${getRandomColor(
-                          s.name
-                        )}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-offset-2 ${
+                          isDark ? "ring-offset-slate-900" : "ring-offset-white"
+                        } ${getRandomColor(s.name)}`}
                       >
                         {getInitials(s.name)}
                       </div>
-                      <p
-                        className={`font-semibold ${
-                          isDark ? "text-slate-100" : "text-slate-900"
-                        }`}
-                      >
-                        {s.name}
-                      </p>
+                      <div>
+                        <p
+                          className={`font-semibold text-sm ${
+                            isDark ? "text-slate-100" : "text-slate-900"
+                          }`}
+                        >
+                          {s.name}
+                        </p>
+                        <p
+                          className={`text-xs ${
+                            isDark ? "text-slate-500" : "text-slate-500"
+                          }`}
+                        >
+                          ID: #{s.id.toString().padStart(4, "0")}
+                        </p>
+                      </div>
                     </div>
                   </td>
 
-                  {/* Role Column */}
-                  <td className="px-6 py-4 align-middle">
+                  {/* Role */}
+                  <td className="px-6 py-4 align-middle text-left">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
                         isDark
-                          ? "bg-slate-700 text-slate-300 border-slate-600"
-                          : "bg-slate-100 text-slate-600"
-                      } text-xs font-semibold border ${
-                        isDark ? "border-slate-600" : "border-slate-200"
+                          ? "bg-slate-800 text-slate-300 border-slate-700"
+                          : "bg-white text-slate-600 border-slate-200 shadow-sm"
                       }`}
                     >
-                      <Briefcase size={12} />
-                      {s.role || "Staff"}
+                      <Briefcase size={12} className="opacity-70" />
+                      {s.role || "Staff Member"}
                     </span>
                   </td>
 
-                  {/* Login Status Column - IMPROVED VISIBILITY */}
-                  <td className="px-6 py-4 text-center align-middle">
+                  {/* NEW COLUMN BODY: JOINED DATE */}
+                  <td className="px-6 py-4 align-middle text-left">
+                    <div
+                      className={`flex items-center gap-2 text-sm ${
+                        isDark ? "text-slate-400" : "text-slate-600"
+                      }`}
+                    >
+                      <Calendar size={14} className="opacity-70" />
+                      <span>{formatDate(s.createdAt || s.joinDate)}</span>
+                    </div>
+                  </td>
+
+                  {/* Access Status & Revoke Button */}
+                  <td className="px-6 py-4 align-middle text-left">
                     {!s.login ? (
                       <button
                         onClick={() => setLoginStaff(s)}
-                        className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg border border-dashed transition-all flex items-center gap-2 ${
                           isDark
-                            ? "text-indigo-400 bg-indigo-900/30 border-indigo-700 hover:bg-indigo-900/40"
-                            : "text-indigo-700 bg-indigo-50 border-indigo-200"
-                        } hover:${
-                          isDark ? "bg-indigo-900/40" : "bg-indigo-100"
-                        } border px-3 py-1.5 rounded-lg transition-colors`}
+                            ? "border-slate-700 text-slate-400 hover:text-indigo-400 hover:border-indigo-500 hover:bg-indigo-500/10"
+                            : "border-gray-300 text-gray-500 hover:text-indigo-600 hover:border-indigo-600 hover:bg-indigo-50"
+                        }`}
                       >
                         <UserPlus size={14} /> Create Login
                       </button>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                      <div className="flex items-center gap-3">
+                        {/* Status Badge */}
+                        <div
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border ${
                             s.login.isActive
-                              ? `${
-                                  isDark
-                                    ? "bg-emerald-900/30 text-emerald-400 border-emerald-700"
-                                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                }`
-                              : `${
-                                  isDark
-                                    ? "bg-rose-900/30 text-rose-400 border-rose-700"
-                                    : "bg-rose-50 text-rose-700 border-rose-200"
-                                }`
+                              ? isDark
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : isDark
+                              ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                              : "bg-rose-50 text-rose-700 border-rose-200"
                           }`}
                         >
                           {s.login.isActive ? (
@@ -351,72 +388,67 @@ export default function StaffManagement() {
                             <ShieldAlert size={12} />
                           )}
                           {s.login.isActive ? "Active" : "Inactive"}
-                        </span>
+                        </div>
 
+                        {/* Revoke/Enable Button */}
                         <button
                           onClick={() => toggleLogin(s.id)}
-                          className={`text-xs font-medium px-2 py-0.5 rounded transition-colors ${
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all shadow-sm ${
                             s.login.isActive
-                              ? `${
-                                  isDark
-                                    ? "text-rose-400 hover:bg-rose-900/30"
-                                    : "text-rose-600 hover:bg-rose-50"
-                                }`
-                              : `${
-                                  isDark
-                                    ? "text-emerald-400 hover:bg-emerald-900/30"
-                                    : "text-emerald-600 hover:bg-emerald-50"
-                                }`
+                              ? isDark
+                                ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:border-red-500/50"
+                                : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300"
+                              : isDark
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                              : "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
                           }`}
                         >
-                          {s.login.isActive ? "Revoke Access" : "Enable Access"}
+                          {s.login.isActive ? (
+                            <>
+                              <XCircle size={14} /> Revoke
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={14} /> Enable
+                            </>
+                          )}
                         </button>
                       </div>
                     )}
                   </td>
 
-                  {/* Salary Column */}
-                  <td className="px-6 py-4 text-right align-middle">
-                    <span className="font-bold text-green-600">
+                  {/* Salary - Green Color */}
+                  <td className="px-6 py-4 align-middle text-right">
+                    <p
+                      className={`font-mono font-bold ${
+                        isDark ? "text-emerald-400" : "text-emerald-600"
+                      }`}
+                    >
                       ₹{calculateEstimatedSalary(s).toLocaleString()}
-                    </span>
+                    </p>
                   </td>
 
-                  {/* Actions Column - ALWAYS VISIBLE */}
-                  <td className="px-6 py-4 text-right align-middle">
+                  {/* Actions - Always Visible */}
+                  <td className="px-6 py-4 align-middle text-right">
                     <div className="flex items-center justify-end gap-1">
                       <ActionBtn
                         icon={Eye}
                         onClick={() => setViewStaff(s)}
-                        color={`${
-                          isDark
-                            ? "text-slate-400 hover:text-indigo-400 hover:bg-indigo-900/30"
-                            : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
-                        }`}
-                        title="View Details"
                         isDark={isDark}
+                        tooltip="View Details"
                       />
                       <ActionBtn
                         icon={Edit3}
                         onClick={() => setEditStaff(s)}
-                        color={`${
-                          isDark
-                            ? "text-slate-400 hover:text-amber-400 hover:bg-amber-900/30"
-                            : "text-slate-400 hover:text-amber-600 hover:bg-amber-50"
-                        }`}
-                        title="Edit Staff"
                         isDark={isDark}
+                        tooltip="Edit Staff"
                       />
                       <ActionBtn
                         icon={Trash2}
                         onClick={() => deleteStaff(s.id)}
-                        color={`${
-                          isDark
-                            ? "text-slate-400 hover:text-rose-400 hover:bg-rose-900/30"
-                            : "text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                        }`}
-                        title="Delete Staff"
                         isDark={isDark}
+                        danger
+                        tooltip="Delete"
                       />
                     </div>
                   </td>
@@ -425,20 +457,43 @@ export default function StaffManagement() {
 
               {filteredStaff.length === 0 && (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className={`py-12 text-center ${
-                      isDark ? "text-slate-400" : "text-slate-400"
-                    }`}
-                  >
-                    <div className="flex flex-col items-center justify-center">
-                      <Users
-                        size={48}
-                        className={`${
-                          isDark ? "text-slate-700" : "text-slate-200"
-                        } mb-3`}
-                      />
-                      <p>No staff members found matching your search.</p>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <div
+                      className={`flex flex-col items-center justify-center rounded-2xl border border-dashed p-8 ${
+                        isDark
+                          ? "border-slate-800 bg-slate-800/30"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      <div
+                        className={`p-4 rounded-full mb-3 ${
+                          isDark
+                            ? "bg-slate-800 text-slate-600"
+                            : "bg-white text-slate-300 shadow-sm"
+                        }`}
+                      >
+                        <Users size={32} />
+                      </div>
+                      <h3
+                        className={`text-lg font-medium mb-1 ${
+                          isDark ? "text-slate-200" : "text-slate-900"
+                        }`}
+                      >
+                        No staff found
+                      </h3>
+                      <p
+                        className={`text-sm ${
+                          isDark ? "text-slate-500" : "text-slate-500"
+                        }`}
+                      >
+                        Try adjusting your search or add a new staff member.
+                      </p>
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="mt-4 text-indigo-500 text-sm font-medium hover:underline"
+                      >
+                        Clear search
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -448,7 +503,7 @@ export default function StaffManagement() {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* ================= MODALS ================= */}
       {showCreate && (
         <StaffCreateModal
           onClose={() => setShowCreate(false)}
@@ -476,7 +531,6 @@ export default function StaffManagement() {
           staff={loginStaff}
           onClose={() => setLoginStaff(null)}
           onSaved={fetchStaff}
-          isDark={isDark}
         />
       )}
     </div>
@@ -487,42 +541,73 @@ export default function StaffManagement() {
    SUB COMPONENTS
 =============================== */
 
-function StatCard({ title, value, icon: Icon, color, isDark }) {
+function StatCard({ title, value, icon: Icon, trend, color, isDark }) {
+  const colors = {
+    blue: isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600",
+    emerald: isDark
+      ? "bg-emerald-500/10 text-emerald-400"
+      : "bg-emerald-50 text-emerald-600",
+    violet: isDark
+      ? "bg-violet-500/10 text-violet-400"
+      : "bg-violet-50 text-violet-600",
+  };
+
   return (
     <div
-      className={`${
-        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100"
-      } p-6 rounded-2xl shadow-sm border flex items-start justify-between hover:shadow-md transition-shadow`}
+      className={`p-6 rounded-2xl border transition-all duration-200 ${
+        isDark
+          ? "bg-slate-900 border-slate-800 hover:border-slate-700"
+          : "bg-white border-slate-200 shadow-sm hover:shadow-md"
+      }`}
     >
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-xl ${colors[color]}`}>
+          <Icon size={22} />
+        </div>
+        {trend && (
+          <span
+            className={`text-xs font-medium flex items-center gap-1 ${
+              isDark ? "text-slate-500" : "text-slate-400"
+            }`}
+          >
+            {trend} <ArrowUpRight size={12} />
+          </span>
+        )}
+      </div>
       <div>
         <p
-          className={`text-sm font-medium ${
+          className={`text-sm font-medium mb-1 ${
             isDark ? "text-slate-400" : "text-slate-500"
-          } mb-1`}
+          }`}
         >
           {title}
         </p>
         <h3
           className={`text-2xl font-bold ${
-            isDark ? "text-slate-100" : "text-slate-800"
+            isDark ? "text-slate-100" : "text-slate-900"
           }`}
         >
           {value}
         </h3>
       </div>
-      <div className={`p-3 rounded-xl ${color} bg-opacity-10`}>
-        <Icon size={24} className={color.replace("bg-", "text-")} />
-      </div>
     </div>
   );
 }
 
-function ActionBtn({ icon: Icon, onClick, color, title, isDark }) {
+function ActionBtn({ icon: Icon, onClick, danger, isDark, tooltip }) {
   return (
     <button
       onClick={onClick}
-      title={title}
-      className={`p-2 rounded-lg transition-all ${color}`}
+      title={tooltip}
+      className={`p-2 rounded-lg transition-all duration-200 ${
+        danger
+          ? isDark
+            ? "text-slate-500 hover:bg-rose-500/10 hover:text-rose-400"
+            : "text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+          : isDark
+          ? "text-slate-500 hover:bg-slate-800 hover:text-indigo-400"
+          : "text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
+      }`}
     >
       <Icon size={18} />
     </button>

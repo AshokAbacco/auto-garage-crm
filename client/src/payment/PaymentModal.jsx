@@ -38,6 +38,7 @@ const PaymentModal = ({
     companyName: "",
     email: "",
     phone: "",
+    address: "",
     referenceCode: "",
     gstNumber: "", // Added GST number field
   });
@@ -130,8 +131,9 @@ const PaymentModal = ({
         companyName: userData.companyName || "",
         email: userData.email || "",
         phone: userData.phone || "",
+        address: userData.address || "",
         referenceCode: "",
-        gstNumber: ""
+        gstNumber: "",
       });
     }
   }, [isUpgradePage, userData]);
@@ -172,7 +174,7 @@ const PaymentModal = ({
 
   //   const API =
   //     window.location.hostname === "localhost"
-  //       ? "http://localhost:5000"
+  //       ? "http://localhost:5001"
   //       : "https://auto-garage-crm-zrxc.onrender.com";
 
   //   // 1️⃣ Create subscription on backend
@@ -280,7 +282,7 @@ const PaymentModal = ({
 
     const API =
       window.location.hostname === "localhost"
-        ? "http://localhost:5000"
+        ? "http://localhost:5001"
         : "https://auto-garage-crm-zrxc.onrender.com";
 
     // ✅ Step 0: check email already registered (ONLY for new registration, not upgrade)
@@ -422,6 +424,13 @@ const PaymentModal = ({
       type: "text",
       icon: FaBuilding,
       placeholder: "Acme Inc.",
+    },
+    {
+      key: "address",
+      label: "Business Address",
+      type: "text",
+      icon: FaBuilding,
+      placeholder: "Full business address",
     },
     {
       key: "email",

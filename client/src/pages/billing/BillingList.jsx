@@ -8,13 +8,10 @@ import {
   FiCalendar,
   FiUser,
   FiFileText,
-  FiCreditCard,
   FiCheckCircle,
   FiClock,
   FiAlertCircle,
-  FiDownload,
   FiEdit,
-  FiFilter,
   FiSearch,
 } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -42,36 +39,51 @@ const fetchWithAuth = async (url, options = {}) => {
   return response;
 };
 
-// Payment Status Config
-const statusConfig = {
-  paid: {
-    label: "Paid",
-    color: "text-blue-700 bg-blue-50",
-    border: "border-blue-200",
-    icon: FiCheckCircle,
-  },
-  pending: {
-    label: "Pending",
-    color: "text-yellow-700 bg-yellow-50",
-    border: "border-yellow-200",
-    icon: FiClock,
-  },
-  overdue: {
-    label: "Overdue",
-    color: "text-red-700 bg-red-50",
-    border: "border-red-200",
-    icon: FiAlertCircle,
-  },
-  default: {
-    label: "Unknown",
-    color: "text-slate-700 bg-slate-50",
-    border: "border-slate-200",
-    icon: FiFileText,
-  },
-};
+// Helper component for Stat Cards in the header
+function StatHeader({ label, value, subValue, color, isDark }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border-b sm:border-b-0 sm:border-r border-gray-100 dark:border-gray-700 last:border-0">
+      <div>
+        <p
+          className={`text-xs font-bold uppercase tracking-wider ${
+            isDark ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
+          {label}
+        </p>
+        <h3
+          className={`text-xl font-bold mt-1 ${isDark ? "text-white" : "text-gray-900"}`}
+        >
+          {value}
+        </h3>
+      </div>
+      {subValue && (
+        <span className={`text-sm font-medium mt-2 sm:mt-0 ${color}`}>
+          {subValue}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function BillingList() {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
+
+  // Theme Configuration
+  const colors = useMemo(
+    () => ({
+      mainBg: isDark ? "#020617" : "#F8FAFC",
+      cardBg: isDark ? "#1E293B" : "#FFFFFF",
+      textPrimary: isDark ? "#F1F5F9" : "#0F172A",
+      textSecondary: isDark ? "#94A3B8" : "#64748B",
+      border: isDark ? "#334155" : "#E2E8F0",
+      hoverBg: isDark ? "#0F172A" : "#F1F5F9",
+      accent: "#3B82F6",
+    }),
+    [isDark],
+  );
+
   const [invoices, setInvoices] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [query, setQuery] = useState("");
@@ -84,7 +96,6 @@ export default function BillingList() {
     overdue: 0,
     totalAmount: 0,
   });
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -95,7 +106,6 @@ export default function BillingList() {
           throw new Error(data.message || "Failed to fetch invoices");
         setInvoices(data);
 
-        // Calculate statistics
         const calculatedStats = data.reduce(
           (acc, inv) => {
             acc.total++;
@@ -105,7 +115,7 @@ export default function BillingList() {
             if (inv.status?.toLowerCase() === "overdue") acc.overdue++;
             return acc;
           },
-          { total: 0, paid: 0, pending: 0, overdue: 0, totalAmount: 0 }
+          { total: 0, paid: 0, pending: 0, overdue: 0, totalAmount: 0 },
         );
         setStats(calculatedStats);
       } catch (err) {
@@ -145,16 +155,66 @@ export default function BillingList() {
     }
   };
 
+  const getStatusBadge = (status) => {
+    const s = status?.toLowerCase();
+    let style = {};
+    let label = status || "Unknown";
+
+    if (s === "paid") {
+      style = {
+        backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#ECFDF5",
+        color: "#059669",
+        border: isDark
+          ? "1px solid rgba(16, 185, 129, 0.3)"
+          : "1px solid #D1FAE5",
+      };
+    } else if (s === "pending") {
+      style = {
+        backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#FFFBEB",
+        color: "#D97706",
+        border: isDark
+          ? "1px solid rgba(245, 158, 11, 0.3)"
+          : "1px solid #FDE68A",
+      };
+    } else if (s === "overdue") {
+      style = {
+        backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEF2F2",
+        color: "#DC2626",
+        border: isDark
+          ? "1px solid rgba(239, 68, 68, 0.3)"
+          : "1px solid #FECACA",
+      };
+    } else {
+      style = {
+        backgroundColor: isDark ? "rgba(148, 163, 184, 0.2)" : "#F3F4F6",
+        color: colors.textSecondary,
+        border: isDark
+          ? "1px solid rgba(148, 163, 184, 0.3)"
+          : "1px solid #E5E7EB",
+      };
+    }
+    return (
+      <span
+        className="px-2.5 py-1 rounded-full text-xs font-semibold uppercase"
+        style={style}
+      >
+        {label}
+      </span>
+    );
+  };
+
   if (loading)
     return (
       <div
-        className={`flex justify-center items-center h-screen ${
-          isDark ? "bg-gray-900" : "bg-white"
-        }`}
+        className="flex justify-center items-center h-screen"
+        style={{ backgroundColor: colors.mainBg }}
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-900 border-t-transparent mx-auto mb-4"></div>
-          <p className={`text-lg ${isDark ? "text-white" : "text-gray-700"}`}>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p
+            className="text-lg font-medium"
+            style={{ color: colors.textPrimary }}
+          >
             Loading Invoices...
           </p>
         </div>
@@ -164,314 +224,359 @@ export default function BillingList() {
   if (error)
     return (
       <div
-        className={`text-center p-8 ${
-          isDark ? "text-red-400" : "text-red-600"
-        } font-semibold`}
+        className="text-center p-8 rounded-xl"
+        style={{
+          color: "#DC2626",
+          backgroundColor: colors.cardBg,
+          border: `1px solid ${colors.border}`,
+        }}
       >
         Error: {error}
       </div>
     );
 
   return (
-    <div className={`min-h-screen`}>
-      <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
-        {/* Compact Header */}
-        <div
-          className={`rounded-2xl shadow-lg border ${
-            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-          } p-4`}
-        >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1
-                className={`text-xl font-bold ${
-                  isDark ? "text-white" : "text-gray-900"
-                } mb-1`}
-              >
-                Billing & Invoices
-              </h1>
-              <div
-                className={`flex flex-wrap gap-4 text-sm ${
-                  isDark ? "text-gray-300" : "text-gray-600"
-                }`}
-              >
-                <span className="flex items-center gap-1">
-                  <FiFileText size={14} /> {stats.total} Invoices
-                </span>
-                <span className="flex items-center gap-1">
-                  <FiDollarSign size={14} /> ₹{stats.totalAmount.toFixed(2)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <FiCheckCircle size={14} /> {stats.paid} Paid
-                </span>
-                <span className="flex items-center gap-1">
-                  <FiClock size={14} /> {stats.pending} Pending
-                </span>
-              </div>
-            </div>
-            <Link
-              to="/billing/new"
-              className="bg-blue-900 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 text-sm"
+    <div
+      className="lg:ml-16 min-h-screen p-4 sm:p-6 lg:p-8"
+      style={{ backgroundColor: colors.mainBg }}
+    >
+      <div className="mx-auto space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: colors.textPrimary }}
             >
-              <FiPlus size={16} /> New Invoice
-            </Link>
+              Invoices
+            </h1>
+            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+              Manage your billing history and payments.
+            </p>
           </div>
+          <Link
+            to="/billing/new"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm transition-all hover:shadow-md"
+            style={{
+              backgroundColor: colors.accent,
+              color: "white",
+            }}
+          >
+            <FiPlus size={18} /> New Invoice
+          </Link>
         </div>
 
-        {/* Compact Filters */}
+        {/* Stats Row */}
         <div
-          className={`rounded-2xl shadow-lg border ${
-            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-          } p-3`}
+          className="rounded-xl border shadow-sm grid grid-cols-2 sm:grid-cols-4"
+          style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
         >
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 relative">
+          <StatHeader
+            label="Total Invoices"
+            value={stats.total}
+            isDark={isDark}
+          />
+          <StatHeader
+            label="Total Revenue"
+            value={`₹${stats.totalAmount.toLocaleString()}`}
+            isDark={isDark}
+          />
+          <StatHeader
+            label="Paid"
+            value={stats.paid}
+            subValue={`₹${(stats.totalAmount * (stats.paid / stats.total || 0)).toFixed(0)}`}
+            color="text-green-500"
+            isDark={isDark}
+          />
+          <StatHeader
+            label="Pending"
+            value={stats.pending + stats.overdue}
+            color="text-amber-500"
+            isDark={isDark}
+          />
+        </div>
+
+        {/* Filters & Search */}
+        <div
+          className="rounded-xl border p-4 shadow-sm"
+          style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
+        >
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
               <FiSearch
-                className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
-                  isDark ? "text-gray-400" : "text-gray-400"
-                }`}
-                size={16}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 opacity-50"
+                size={18}
+                style={{ color: colors.textSecondary }}
               />
               <input
                 type="text"
-                placeholder="Search invoice, client, notes..."
+                placeholder="Search invoice, client name..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 text-sm rounded-lg border ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-gray-50 border-gray-300 text-gray-900"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+                style={{
+                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
               />
             </div>
-
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className={`px-3 py-2 text-sm rounded-lg border ${
-                isDark
-                  ? "bg-gray-700 border-gray-600 text-white"
-                  : "bg-gray-50 border-gray-300 text-gray-900"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              className="px-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]"
+              style={{
+                backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
             >
-              <option value="all">All</option>
+              <option value="all">All Status</option>
               <option value="paid">Paid</option>
               <option value="pending">Pending</option>
               <option value="overdue">Overdue</option>
             </select>
-
-            <button className="px-4 py-2 text-sm rounded-lg bg-blue-900 text-white hover:shadow-md transition-all flex items-center gap-2 font-medium">
-              <FiDownload size={16} /> Export
-            </button>
           </div>
         </div>
 
-        {/* Compact Invoice Cards */}
-        {filtered.length === 0 ? (
-          <div
-            className={`p-8 rounded-2xl text-center shadow-lg border ${
-              isDark
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            }`}
-          >
-            <FiFileText
-              className={`mx-auto text-3xl mb-3 ${
-                isDark ? "text-gray-400" : "text-gray-300"
-              }`}
-            />
-            <h3
-              className={`text-lg font-bold mb-1 ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
-            >
-              No Invoices Found
-            </h3>
-            <p
-              className={`text-sm mb-4 ${
-                isDark ? "text-gray-400" : "text-gray-500"
-              }`}
-            >
-              Try adjusting your filters or create a new invoice.
-            </p>
-            <Link
-              to="/billing/new"
-              className="inline-flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm"
-            >
-              <FiPlus size={16} /> Create Invoice
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((inv) => {
-              const status =
-                statusConfig[inv.status?.toLowerCase()] || statusConfig.default;
-              const StatusIcon = status.icon;
-
-              return (
-                <div
-                  key={inv.id}
-                  className={`rounded-xl shadow-lg border hover:shadow-xl transition-all ${
-                    isDark
-                      ? "bg-gray-800 border-gray-700"
-                      : "bg-white border-gray-200"
-                  }`}
+        {/* Table Container - Classic View */}
+        <div
+          className="rounded-xl border shadow-sm overflow-hidden"
+          style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
+        >
+          {filtered.length === 0 ? (
+            <div className="p-12 text-center">
+              <FiFileText
+                size={48}
+                className="mx-auto mb-4 opacity-20"
+                style={{ color: colors.textSecondary }}
+              />
+              <h3
+                className="text-lg font-medium mb-2"
+                style={{ color: colors.textPrimary }}
+              >
+                No invoices found
+              </h3>
+              <p
+                className="text-sm mb-6"
+                style={{ color: colors.textSecondary }}
+              >
+                {query || filterStatus !== "all"
+                  ? "Try adjusting your search filters."
+                  : "Get started by creating your first invoice."}
+              </p>
+              <Link
+                to="/billing/new"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: colors.hoverBg,
+                  color: colors.accent,
+                }}
+              >
+                <FiPlus size={16} /> Create Invoice
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: `2px solid ${colors.border}`,
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.02)"
+                        : "rgba(0,0,0,0.02)",
+                    }}
+                  >
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Invoice #
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Client
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider hidden sm:table-cell"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Date
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider hidden md:table-cell"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Due Date
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider text-right"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Amount
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider text-center hidden sm:table-cell"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider text-right"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  className="divide-y"
+                  style={{ borderColor: colors.border }}
                 >
-                  <div className="p-4">
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                      {/* Left Section - Invoice Info */}
-                      <div className="flex items-center gap-3 lg:w-48 flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FiFileText className="text-white" size={14} />
-                        </div>
-                        <div className="min-w-0">
-                          <h3
-                            className={`font-bold text-sm ${
-                              isDark ? "text-white" : "text-gray-900"
-                            } truncate`}
-                          >
-                            #{inv.invoiceNumber}
-                          </h3>
-                          <p
-                            className={`text-xs ${
-                              isDark ? "text-gray-400" : "text-gray-500"
-                            }`}
-                          >
-                            {new Date(inv.createdAt).toLocaleDateString(
-                              "en-IN",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              }
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Middle Section - Details */}
-                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 min-w-0">
-                        {/* Client */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <FiUser
-                              className="text-blue-600 flex-shrink-0"
-                              size={12}
-                            />
-                            <span
-                              className={`text-xs font-medium ${
-                                isDark ? "text-gray-400" : "text-gray-500"
-                              }`}
-                            >
-                              Client
-                            </span>
-                          </div>
-                          <p
-                            className={`text-sm font-medium ${
-                              isDark ? "text-white" : "text-gray-900"
-                            } truncate`}
-                          >
-                            {inv.client?.fullName || "N/A"}
-                          </p>
-                          <p
-                            className={`text-xs ${
-                              isDark ? "text-gray-500" : "text-gray-400"
-                            } truncate`}
-                          >
-                            {inv.client?.phone || "—"}
-                          </p>
-                        </div>
-
-                        {/* Payment & Due Date */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <FiCalendar
-                              className="text-blue-600 flex-shrink-0"
-                              size={12}
-                            />
-                            <span
-                              className={`text-xs font-medium ${
-                                isDark ? "text-gray-400" : "text-gray-500"
-                              }`}
-                            >
-                              Due Date
-                            </span>
-                          </div>
-                          <p
-                            className={`text-sm font-medium ${
-                              isDark ? "text-white" : "text-gray-900"
-                            }`}
-                          >
-                            {inv.dueDate
-                              ? new Date(inv.dueDate).toLocaleDateString(
-                                  "en-IN",
-                                  { day: "2-digit", month: "short" }
-                                )
-                              : "—"}
-                          </p>
-                          <p
-                            className={`text-xs ${
-                              isDark ? "text-gray-500" : "text-gray-400"
-                            } flex items-center gap-1`}
-                          >
-                            <FiCreditCard size={10} /> {inv.paymentMode || "—"}
-                          </p>
-                        </div>
-
-                        {/* Amount & Status */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <FiDollarSign
-                              className="text-blue-600 flex-shrink-0"
-                              size={12}
-                            />
-                            <span
-                              className={`text-xs font-medium ${
-                                isDark ? "text-gray-400" : "text-gray-500"
-                              }`}
-                            >
-                              Amount
-                            </span>
-                          </div>
-                          <p className="text-lg font-bold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                            ₹{Number(inv.grandTotal || 0).toFixed(2)}
-                          </p>
+                  {filtered.map((inv) => (
+                    <tr
+                      key={inv.id}
+                      className="transition-colors hover:bg-opacity-50 group"
+                      style={{ hoverBg: colors.hoverBg }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = colors.hoverBg)
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "transparent")
+                      }
+                    >
+                      {/* Invoice Number */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
                           <div
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${status.color} mt-0.5`}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{
+                              backgroundColor: isDark
+                                ? "rgba(59, 130, 246, 0.2)"
+                                : "#DBEAFE",
+                            }}
                           >
-                            <StatusIcon size={10} /> {status.label}
+                            <FiFileText
+                              size={16}
+                              style={{ color: colors.accent }}
+                            />
+                          </div>
+                          <div>
+                            <p
+                              className="font-bold text-sm"
+                              style={{ color: colors.textPrimary }}
+                            >
+                              {inv.invoiceNumber}
+                            </p>
+                            {/* <p
+                              className="text-xs hidden sm:block"
+                              style={{ color: colors.textSecondary }}
+                            >
+                              {getStatusBadge(inv.status)}
+                            </p> */}
                           </div>
                         </div>
-                      </div>
+                      </td>
 
-                      {/* Right Section - Actions */}
-                      <div className="flex lg:flex-col gap-2 lg:w-24 flex-shrink-0">
-                        <button
-                          onClick={() => navigate(`/billing/${inv.id}`)}
-                          className="flex-1 lg:w-full px-3 py-1.5 text-xs rounded-md bg-blue-900 text-white font-medium hover:shadow-md transition-all flex items-center justify-center gap-1.5"
+                      {/* Client */}
+                      <td className="p-4">
+                        <p
+                          className="font-medium text-sm"
+                          style={{ color: colors.textPrimary }}
                         >
-                          <FiEye size={12} /> View
-                        </button>
-                        <button
-                          onClick={() => navigate(`/billing/${inv.id}/edit`)}
-                          className="flex-1 lg:w-full px-3 py-1.5 text-xs rounded-md bg-blue-800 text-white font-medium hover:shadow-md transition-all flex items-center justify-center gap-1.5"
+                          {inv.client?.fullName || "Unknown Client"}
+                        </p>
+                        <p
+                          className="text-xs"
+                          style={{ color: colors.textSecondary }}
                         >
-                          <FiEdit size={12} /> Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(inv.id)}
-                          className="flex-1 lg:w-full px-3 py-1.5 text-xs rounded-md bg-red-600 text-white font-semibold hover:shadow-md transition-all flex items-center justify-center gap-1.5"
+                          {inv.client?.phone || "No Phone"}
+                        </p>
+                      </td>
+
+                      {/* Date */}
+                      <td className="p-4 hidden sm:table-cell">
+                        <p
+                          className="text-sm"
+                          style={{ color: colors.textPrimary }}
                         >
-                          <FiTrash2 size={12} /> Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                          {new Date(inv.createdAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </td>
+
+                      {/* Due Date */}
+                      <td className="p-4 hidden md:table-cell">
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: colors.textPrimary }}
+                        >
+                          {inv.dueDate
+                            ? new Date(inv.dueDate).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                },
+                              )
+                            : "—"}
+                        </p>
+                      </td>
+
+                      {/* Amount */}
+                      <td className="p-4 text-right">
+                        <p
+                          className="text-sm font-bold"
+                          style={{ color: colors.textPrimary }}
+                        >
+                          ₹{Number(inv.grandTotal || 0).toFixed(2)}
+                        </p>
+                      </td>
+
+                      {/* Status (Mobile Hidden) */}
+                      <td className="p-4 text-center hidden sm:table-cell">
+                        {getStatusBadge(inv.status)}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => navigate(`/billing/${inv.id}`)}
+                            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                            title="View"
+                          >
+                            <FiEye size={18} />
+                          </button>
+                          <button
+                            onClick={() => navigate(`/billing/${inv.id}/edit`)}
+                            className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                            title="Edit"
+                          >
+                            <FiEdit size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(inv.id)}
+                            className="p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete"
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -36,75 +36,75 @@ const menu = [
     to: "/bike-dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
   {
     to: "/bike-clients",
     label: "Clients",
     icon: Users,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
   {
     to: "/bike-services",
     label: "Services",
     icon: Wrench,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
   {
     to: "/bike-billing",
     label: "Billing",
     icon: Receipt,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
   {
     to: "/bike-reminders",
     label: "Reminders",
     icon: Bell,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
   {
     to: "/bike-reports",
     label: "Reports",
     icon: BarChart2,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
   {
     to: "/bike-ocr-scanner",
     label: "OCR Scanner",
     icon: FileText,
-    roles: ["user", "TEAM_MEMBER"],
+    roles: ["owner", "bike_team"],
   },
 
-  // 🔒 OWNER/USER ONLY
+  // 🔒 OWNER ONLY
   {
     to: "/bike-plan",
     label: "Your Plan",
     icon: IndianRupee,
-    roles: ["user"],
+    roles: ["owner"],
   },
   {
     to: "/bike-reference",
     label: "Reference",
     icon: Network,
-    roles: ["user"],
+    roles: ["owner"],
   },
   {
     to: "/salary-manage",
-    label: "Salary Management",
+    label: "Staff Management",
     icon: Package,
-    roles: ["user"],
+    roles: ["owner"],
   },
   {
     to: "/team-register",
     label: "Team Accounts",
     icon: Users,
-    roles: ["user"],
+    roles: ["owner"],
   },
   {
     to: "/bike-plans",
     label: "Upgrade",
     icon: Crown,
-    roles: ["user"],
+    roles: ["owner"],
   },
 ];
 
@@ -152,7 +152,7 @@ const logout = () => {
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
-          ${sidebarExpanded ? "w-64" : "w-16"}
+          ${sidebarExpanded ? "w-64" : "w-18"}
           lg:translate-x-0
           ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -200,7 +200,7 @@ const logout = () => {
           <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
             {menu
               // ✅ FILTER BASED ON ROLE
-              .filter(item => item.roles.includes(user?.role))
+              .filter(item => item.roles.includes(user?.type))
               .map((item) => {
                 const isActive = activeRoute === item.to;
                 const Icon = item.icon;
@@ -338,20 +338,25 @@ const logout = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div
-                        className={`w-full h-full flex items-center justify-center 
-                          ${
-                            isDark
-                              ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                              : "bg-gradient-to-br from-blue-500 to-blue-600"
-                          }`}
-                      >
-                        <span className="text-white font-medium">
-                          {user?.username
-                            ? user.username.charAt(0).toUpperCase()
-                            : "U"}
-                        </span>
-                      </div>
+                      // <div
+                      //   className={`w-full h-full flex items-center justify-center 
+                      //     ${
+                      //       isDark
+                      //         ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                      //         : "bg-gradient-to-br from-blue-500 to-blue-600"
+                      //     }`}
+                      // >
+                      //   <span className="text-white font-medium">
+                      //     {user?.username
+                      //       ? user.username.charAt(0).toUpperCase()
+                      //       : "U"}
+                      //   </span>
+                      // </div>
+                       <img
+                          src="/Logos/logo3.png"
+                          alt="Default Logo"
+                          className="w-full h-full object-contain bg-white"
+                        />
                     )}
                   </div>
 
@@ -361,23 +366,22 @@ const logout = () => {
                       isDark ? "text-white" : "text-gray-800"
                     }`}
                   >
-                    <div className="font-medium">{user?.username || "user"}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {user?.role === "user" ? "Owner" : "Team Member"}
+                    <div className="font-medium">
+                      {user?.displayName || user?.username || "User"}
                     </div>
+
+                    <div className="text-xs text-gray-500">
+                      {user?.email || (user?.type === "bike_team" ? "Team Member" : "")}
+                    </div>
+
                   </div>
                 </button>
 
                 {/* Dropdown Menu */}
-                {openProfileMenu && (
+                {openProfileMenu && user?.type === "owner" && (
                   <div
-                    className={`
-                      absolute right-0 mt-3 w-48 rounded-xl shadow-lg border p-3 z-50
-                      ${
-                        isDark
-                          ? "bg-gray-800 border-gray-700"
-                          : "bg-white border-gray-200"
-                      }
+                    className={`absolute right-0 mt-3 w-48 rounded-xl shadow-lg border p-3 z-50
+                      ${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}
                     `}
                   >
                     <button
@@ -385,19 +389,15 @@ const logout = () => {
                         routerNavigate("/bike-profile");
                         setOpenProfileMenu(false);
                       }}
-                      className={`
-                        w-full text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300
-                        ${
-                          isDark
-                            ? "text-gray-200 hover:bg-gray-700"
-                            : "text-gray-800 hover:bg-blue-50"
-                        }
+                      className={`w-full text-left px-3 py-2 rounded-lg font-medium
+                        ${isDark ? "text-gray-200 hover:bg-gray-700" : "text-gray-800 hover:bg-blue-50"}
                       `}
                     >
                       Profile
                     </button>
                   </div>
                 )}
+
               </div>
             </div>
           </div>

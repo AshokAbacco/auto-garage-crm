@@ -1,4 +1,3 @@
-// SalaryTable.jsx
 import React from "react";
 import {
   Eye,
@@ -10,13 +9,19 @@ import {
   Calendar,
 } from "lucide-react";
 
-export default function SalaryTable({ salaries, onPay, onView }) {
-  // 1. Helper for Status Badges
+export default function SalaryTable({ salaries, onPay, onView, isDark }) {
+  // 1. Helper for Status Badges (Dark/Light Support)
   const StatusBadge = ({ status }) => {
     const styles = {
-      PAID: "bg-emerald-100 text-emerald-700 border border-emerald-200",
-      HOLD: "bg-amber-100 text-amber-700 border border-amber-200",
-      UNPAID: "bg-rose-100 text-rose-700 border border-rose-200",
+      PAID: isDark
+        ? "bg-emerald-900/40 text-emerald-400 border border-emerald-700/50"
+        : "bg-emerald-100 text-emerald-700 border border-emerald-200",
+      HOLD: isDark
+        ? "bg-amber-900/40 text-amber-400 border border-amber-700/50"
+        : "bg-amber-100 text-amber-700 border border-amber-200",
+      UNPAID: isDark
+        ? "bg-rose-900/40 text-rose-400 border border-rose-700/50"
+        : "bg-rose-100 text-rose-700 border border-rose-200",
     };
 
     const icons = {
@@ -37,17 +42,31 @@ export default function SalaryTable({ salaries, onPay, onView }) {
     );
   };
 
-  // 2. Empty State
+  // 2. Empty State (Dark/Light Support)
   if (!salaries || !salaries.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow border border-gray-100">
-        <div className="bg-indigo-50 p-4 rounded-full mb-3">
-          <Wallet className="w-8 h-8 text-indigo-400" />
+      <div
+        className={`flex flex-col items-center justify-center py-16 rounded-xl shadow border ${
+          isDark
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-gray-100"
+        }`}
+      >
+        <div
+          className={`p-4 rounded-full mb-3 ${
+            isDark ? "bg-indigo-900/30" : "bg-indigo-50"
+          }`}
+        >
+          <Wallet className={`w-8 h-8 ${isDark ? "text-indigo-400" : "text-indigo-400"}`} />
         </div>
-        <h3 className="text-gray-900 font-semibold text-lg">
+        <h3
+          className={`font-semibold text-lg ${
+            isDark ? "text-gray-100" : "text-gray-900"
+          }`}
+        >
           No records found
         </h3>
-        <p className="text-gray-500">
+        <p className={isDark ? "text-gray-400" : "text-gray-500"}>
           No salary data available for this period.
         </p>
       </div>
@@ -55,31 +74,50 @@ export default function SalaryTable({ salaries, onPay, onView }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+    <div
+      className={`rounded-xl shadow-lg border overflow-hidden ${
+        isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+      }`}
+    >
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           {/* Colorful Header */}
           <thead>
-            <tr className="bg-indigo-600 text-white text-xs uppercase tracking-wider font-semibold">
+            <tr
+              className={`text-xs uppercase tracking-wider font-semibold ${
+                isDark
+                  ? "bg-indigo-900 text-gray-200"
+                  : "bg-indigo-600 text-white"
+              }`}
+            >
               <th className="px-6 py-4 rounded-tl-lg">Staff Member</th>
               <th className="px-6 py-4">Base Pay</th>
               <th className="px-6 py-4 text-center">Leaves</th>
               <th className="px-6 py-4">Bonus</th>
               <th className="px-6 py-4">Deductions</th>
-              <th className="px-6 py-4 bg-indigo-700">Net Salary</th>{" "}
-              {/* Highlighted Header */}
+              <th className={`px-6 py-4 ${isDark ? "bg-indigo-950" : "bg-indigo-700"}`}>
+                Net Salary
+              </th>{" "}
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 text-right rounded-tr-lg">Action</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100">
+          <tbody
+            className={`divide-y ${isDark ? "divide-gray-700" : "divide-gray-100"}`}
+          >
             {salaries.map((row, index) => (
               <tr
                 key={row.id}
                 className={`group transition-colors duration-200 ${
-                  index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                } hover:bg-indigo-50/40`}
+                  index % 2 === 0
+                    ? isDark
+                      ? "bg-gray-800"
+                      : "bg-white"
+                    : isDark
+                    ? "bg-gray-800/40"
+                    : "bg-slate-50"
+                } ${isDark ? "hover:bg-gray-700" : "hover:bg-indigo-50/40"}`}
               >
                 {/* Staff */}
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -89,27 +127,36 @@ export default function SalaryTable({ salaries, onPay, onView }) {
                       <User className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="block font-bold text-gray-800">
+                      <span
+                        className={`block font-bold ${
+                          isDark ? "text-gray-100" : "text-gray-800"
+                        }`}
+                      >
                         {row.staff.name}
                       </span>
-                      {/* <span className="text-xs text-gray-400">
-                        ID: {row.staff.id || "---"}
-                      </span> */}
                     </div>
                   </div>
                 </td>
 
                 {/* Base Salary */}
-                <td className="px-6 py-4 whitespace-nowrap text-gray-600 font-medium">
+                <td
+                  className={`px-6 py-4 whitespace-nowrap font-medium ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
                   ₹{row.baseSalary?.toLocaleString() || 0}
                 </td>
 
-                {/* Leaves - Showing 0 instead of dash */}
+                {/* Leaves */}
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <span
                     className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                       row.leaves > 0
-                        ? "bg-red-100 text-red-600"
+                        ? isDark
+                          ? "bg-red-900/40 text-red-400"
+                          : "bg-red-100 text-red-600"
+                        : isDark
+                        ? "bg-gray-700 text-gray-500"
                         : "bg-gray-100 text-gray-400"
                     }`}
                   >
@@ -117,19 +164,37 @@ export default function SalaryTable({ salaries, onPay, onView }) {
                   </span>
                 </td>
 
-                {/* Bonus - Showing 0 */}
-                <td className="px-6 py-4 whitespace-nowrap text-emerald-600 font-medium">
+                {/* Bonus */}
+                <td
+                  className={`px-6 py-4 whitespace-nowrap font-medium ${
+                    isDark ? "text-emerald-400" : "text-emerald-600"
+                  }`}
+                >
                   ₹{row.bonus?.toLocaleString() || 0}
                 </td>
 
-                {/* Deductions - Showing 0 */}
-                <td className="px-6 py-4 whitespace-nowrap text-rose-500 font-medium">
+                {/* Deductions */}
+                <td
+                  className={`px-6 py-4 whitespace-nowrap font-medium ${
+                    isDark ? "text-rose-400" : "text-rose-500"
+                  }`}
+                >
                   ₹{row.extraDeductions?.toLocaleString() || 0}
                 </td>
 
                 {/* Net Salary - Highlighted Column */}
-                <td className="px-6 py-4 whitespace-nowrap bg-indigo-50/50 group-hover:bg-indigo-100/50 transition-colors">
-                  <span className="text-green-600 font-extrabold text-base">
+                <td
+                  className={`px-6 py-4 whitespace-nowrap transition-colors ${
+                    isDark
+                      ? "bg-indigo-900/20 group-hover:bg-indigo-900/30"
+                      : "bg-indigo-50/50 group-hover:bg-indigo-100/50"
+                  }`}
+                >
+                  <span
+                    className={`font-extrabold text-base ${
+                      isDark ? "text-emerald-400" : "text-green-600"
+                    }`}
+                  >
                     ₹{row.netSalary?.toLocaleString() || 0}
                   </span>
                 </td>
@@ -145,7 +210,11 @@ export default function SalaryTable({ salaries, onPay, onView }) {
                     {/* View Icon */}
                     <button
                       onClick={() => onView(row)}
-                      className="p-2 text-blue-700 hover:text-indigo-600 hover:bg-white rounded-full transition-all shadow-sm border border-transparent hover:border-gray-200"
+                      className={`p-2 rounded-full transition-all shadow-sm border border-transparent hover:border-gray-200 ${
+                        isDark
+                          ? "text-indigo-400 hover:text-indigo-300 hover:bg-gray-700"
+                          : "text-blue-700 hover:text-indigo-600 hover:bg-white"
+                      }`}
                       title="View Details"
                     >
                       <Eye className="w-4 h-4" />
@@ -165,11 +234,23 @@ export default function SalaryTable({ salaries, onPay, onView }) {
                     {/* Paid Date Info */}
                     {row.status === "PAID" && row.paidAt && (
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] text-gray-400 font-medium uppercase">
+                        <span
+                          className={`text-[10px] font-medium uppercase ${
+                            isDark ? "text-gray-500" : "text-gray-400"
+                          }`}
+                        >
                           Paid On
                         </span>
-                        <div className="flex items-center text-xs text-gray-600 font-medium">
-                          <Calendar className="w-3 h-3 mr-1 text-gray-400" />
+                        <div
+                          className={`flex items-center text-xs font-medium ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          <Calendar
+                            className={`w-3 h-3 mr-1 ${
+                              isDark ? "text-gray-600" : "text-gray-400"
+                            }`}
+                          />
                           {new Date(row.paidAt).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",

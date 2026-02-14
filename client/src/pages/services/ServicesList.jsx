@@ -12,10 +12,11 @@ import {
   FiUser,
   FiTag,
 } from "react-icons/fi";
+import { FaEye } from "react-icons/fa6";
 import { FaRupeeSign } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const apiRequest = async (url) => {
   const token = localStorage.getItem("token");
@@ -37,6 +38,20 @@ export default function ServicesList() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Theme Configuration
+  const colors = useMemo(
+    () => ({
+      mainBg: isDark ? "#020617" : "#F8FAFC",
+      cardBg: isDark ? "#1E293B" : "#FFFFFF",
+      textPrimary: isDark ? "#F1F5F9" : "#0F172A",
+      textSecondary: isDark ? "#94A3B8" : "#64748B",
+      border: isDark ? "#334155" : "#E2E8F0",
+      hoverBg: isDark ? "#0F172A" : "#F1F5F9",
+      accent: "#3B82F6",
+    }),
+    [isDark],
+  );
 
   useEffect(() => {
     const loadServices = async () => {
@@ -67,7 +82,7 @@ export default function ServicesList() {
     loadCategories();
   }, []);
 
-  // ✅ Enhanced Filtered List
+  // Filtering Logic
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return services.filter((s) => {
@@ -99,286 +114,542 @@ export default function ServicesList() {
     (sum, s) =>
       sum +
       (Number(s.cost) || Number(s.partsCost || 0) + Number(s.laborCost || 0)),
-    0
+    0,
   );
+
+  // Helper for Status Badges
+  const getStatusBadge = (status) => {
+    const s = status?.toLowerCase();
+    let style = {};
+    let label = status || "Unknown";
+
+    if (s === "pending") {
+      style = {
+        backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEF2F2",
+        color: "#DC2626",
+        border: isDark
+          ? "1px solid rgba(239, 68, 68, 0.3)"
+          : "1px solid #FECACA",
+      };
+    } else if (s === "paid") {
+      style = {
+        backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#ECFDF5",
+        color: "#059669",
+        border: isDark
+          ? "1px solid rgba(16, 185, 129, 0.3)"
+          : "1px solid #D1FAE5",
+      };
+    } else if (s === "processing") {
+      style = {
+        backgroundColor: isDark ? "rgba(59, 130, 246, 0.2)" : "#EFF6FF",
+        color: "#2563EB",
+        border: isDark
+          ? "1px solid rgba(59, 130, 246, 0.3)"
+          : "1px solid #BFDBFE",
+      };
+    } else {
+      style = {
+        backgroundColor: isDark ? "rgba(148, 163, 184, 0.2)" : "#F3F4F6",
+        color: colors.textSecondary,
+        border: isDark
+          ? "1px solid rgba(148, 163, 184, 0.3)"
+          : "1px solid #E5E7EB",
+      };
+    }
+    return (
+      <span
+        className="px-2.5 py-1 rounded-full text-xs font-semibold uppercase w-fit"
+        style={style}
+      >
+        {label}
+      </span>
+    );
+  };
+
+  // Helper for WhatsApp Approval Badges
+  const getApprovalBadge = (status) => {
+    if (!status) {
+      return (
+        <span
+          className="px-2 py-0.5 rounded text-xs font-medium"
+          style={{ color: colors.textSecondary }}
+        >
+          WhatsApp: Not Sent
+        </span>
+      );
+    }
+
+    let style = {};
+    let label = "";
+
+    if (status === "PENDING") {
+      label = "Waiting Approval";
+      style = {
+        color: "#D97706",
+        backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB",
+      };
+    } else if (status === "APPROVED") {
+      label = "Approved";
+      style = {
+        color: "#059669",
+        backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
+      };
+    } else if (status === "REJECTED") {
+      label = "Rejected";
+      style = {
+        color: "#DC2626",
+        backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+      };
+    } else if (status === "READY_SENT") {
+      label = "Vehicle Ready";
+      style = {
+        color: "#2563EB",
+        backgroundColor: isDark ? "rgba(37, 99, 235, 0.15)" : "#EFF6FF",
+      };
+    }
+
+    return (
+      <span
+        className={`px-2 py-0.5 rounded text-xs font-semibold border w-fit`}
+        style={{
+          ...style,
+          borderColor: style.color.replace("0.15", "0.3").replace("0.2", "0.4"),
+        }}
+      >
+        {label}
+      </span>
+    );
+  };
 
   if (error)
     return (
       <div
-        className={`p-6 text-center ${
-          isDark ? "text-red-400" : "text-red-600"
-        } font-semibold`}
+        className="text-center p-8 rounded-xl"
+        style={{
+          color: "#DC2626",
+          backgroundColor: colors.cardBg,
+          border: `1px solid ${colors.border}`,
+        }}
       >
-        {error}
+        Error: {error}
       </div>
     );
 
   return (
-    <div className={`min-h-screen ${isDark ? "" : ""}`}>
-      <div className="lg: max-w-7xl  mx-auto px-4 sm:px-1 lg:px-6 py-6 space-y-6">
-        {/* Header */}
-        <div
-          className={`rounded-2xl shadow-lg border ${
-            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-          } p-4 sm:p-6`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1
-                className={`text-xl sm:text-2xl font-bold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Service Management
-              </h1>
-              <p
-                className={`mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}
-              >
-                Track and manage all service records
-              </p>
-            </div>
-            <Link
-              to="/services/new"
-              className="flex items-center justify-center gap-2 bg-blue-900 text-white px-4 sm:px-5 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all text-sm sm:text-base whitespace-nowrap"
+    <div
+      className="lg:ml-16 min-h-screen p-4 sm:p-6 lg:p-8"
+      style={{ backgroundColor: colors.mainBg }}
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: colors.textPrimary }}
             >
-              <FiPlus /> Add New Service
-            </Link>
+              Services
+            </h1>
+            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+              Manage service records and vehicle status.
+            </p>
           </div>
+          <Link
+            to="/services/new"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm transition-all hover:shadow-md"
+            style={{
+              backgroundColor: colors.accent,
+              color: "white",
+            }}
+          >
+            <FiPlus size={18} /> New Service
+          </Link>
         </div>
 
-        {/* Search & Filter Bar */}
+        {/* Filters & Search Bar */}
         <div
-          className={`rounded-2xl shadow-lg border ${
-            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-          } p-3 sm:p-4`}
+          className="rounded-xl border p-4 shadow-sm"
+          style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-3 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            {/* Search */}
+            <div className="relative">
               <FiSearch
-                className={isDark ? "text-gray-400" : "text-gray-400"}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 opacity-50"
+                size={18}
+                style={{ color: colors.textSecondary }}
               />
               <input
                 type="text"
+                placeholder="Search client, reg, status..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by client, status, reg number..."
-                className={`w-full bg-transparent outline-none ${
-                  isDark ? "text-white" : "text-gray-900"
-                } text-sm sm:text-base`}
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+                style={{
+                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
               />
             </div>
 
-            <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end w-full mt-3 sm:mt-0">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <FiFilter />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className={`rounded-lg border p-2 text-sm ${
-                    isDark
-                      ? "bg-gray-700 border-gray-600 text-white"
-                      : "bg-gray-50 border-gray-300 text-gray-900"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
-                >
-                  <option value="">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Category Filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+            >
+              <option value="">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
 
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className={`rounded-lg border p-2 text-sm ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600 text-white"
-                    : "bg-gray-50 border-gray-300 text-gray-900"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
-              >
-                <option value="">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-              </select>
+            {/* Status Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                borderColor: colors.border,
+                color: colors.textPrimary,
+              }}
+            >
+              <option value="">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Paid">Paid</option>
+            </select>
 
-              {/* Date Filters */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <FiCalendar
-                  className={isDark ? "text-gray-400" : "text-gray-400"}
-                />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className={`rounded-lg border p-2 text-sm ${
-                    isDark
-                      ? "bg-gray-700 border-gray-600 text-white"
-                      : "bg-gray-50 border-gray-300 text-gray-900"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
-                />
-                <span className={isDark ? "text-gray-400" : "text-gray-400"}>
-                  -
-                </span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className={`rounded-lg border p-2 text-sm ${
-                    isDark
-                      ? "bg-gray-700 border-gray-600 text-white"
-                      : "bg-gray-50 border-gray-300 text-gray-900"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto`}
-                />
-              </div>
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <FiCalendar size={18} style={{ color: colors.textSecondary }} />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
+              />
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
-            icon={<FiTool />}
             title="Total Services"
             value={services.length}
-            isDark={isDark}
+            icon={<FiTool />}
+            colors={colors}
           />
           <StatCard
-            icon={<FiFileText />}
             title="Filtered Results"
             value={filtered.length}
-            isDark={isDark}
+            icon={<FiFileText />}
+            colors={colors}
           />
           <StatCard
-            icon={<FaRupeeSign />}
             title="Total Revenue"
             value={`₹${totalRevenue.toFixed(2)}`}
-            isDark={isDark}
+            icon={<FaRupeeSign />}
+            colors={colors}
           />
         </div>
 
-        {/* Services List */}
-        {loading ? (
-          <div
-            className={`text-center py-20 ${
-              isDark ? "text-gray-400" : "text-gray-500"
-            }`}
-          >
-            Loading...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div
-            className={`text-center py-20 ${
-              isDark ? "text-gray-400" : "text-gray-500"
-            }`}
-          >
-            <FiAlertCircle className="mx-auto mb-2 text-3xl" />
-            No services found.
-          </div>
-        ) : (
-          <div className="space-y-3 sm:space-y-4">
-            {filtered.map((s) => {
-              const estimatedTotal =
-                Number(s.cost) ||
-                Number(s.partsCost || 0) + Number(s.laborCost || 0);
-
-              const statusColor =
-                s.status === "Pending"
-                  ? "bg-red-600 text-white"
-                  : s.status === "Paid"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-600 text-white";
-
-              return (
-                <div
-                  key={s.id}
-                  className={`rounded-2xl shadow-lg border hover:shadow-xl transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-5 ${
-                    isDark
-                      ? "bg-gray-800 border-gray-700"
-                      : "bg-white border-gray-200"
-                  }`}
+        {/* Table Container */}
+        <div
+          className="rounded-xl border shadow-sm overflow-hidden"
+          style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
+        >
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="p-12 text-center">
+              <FiAlertCircle
+                size={48}
+                className="mx-auto mb-4 opacity-20"
+                style={{ color: colors.textSecondary }}
+              />
+              <h3
+                className="text-lg font-medium mb-2"
+                style={{ color: colors.textPrimary }}
+              >
+                No services found
+              </h3>
+              <p
+                className="text-sm mb-6"
+                style={{ color: colors.textSecondary }}
+              >
+                {search ||
+                selectedCategory ||
+                selectedStatus ||
+                startDate ||
+                endDate
+                  ? "Try adjusting your search filters."
+                  : "Get started by creating a new service record."}
+              </p>
+              <Link
+                to="/services/new"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: colors.hoverBg,
+                  color: colors.accent,
+                }}
+              >
+                <FiPlus size={16} /> Create Service
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: `2px solid ${colors.border}`,
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.02)"
+                        : "rgba(0,0,0,0.02)",
+                    }}
+                  >
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Service Type
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Client / Vehicle
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap hidden md:table-cell"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Date
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider whitespace-nowrap hidden lg:table-cell"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      WhatsApp Status
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider text-right whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Amount
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider text-center"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Status
+                    </th>
+                    <th
+                      className="p-4 text-xs font-bold uppercase tracking-wider text-right"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  className="divide-y"
+                  style={{ borderColor: colors.border }}
                 >
-                  {/* Left Section */}
-                  <div className="space-y-1 flex-1">
-                    <h3
-                      className={`text-base sm:text-lg font-bold flex items-center gap-2 ${
-                        isDark ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      <FiTool /> {s.subService?.name || s.type || "Service"}
-                    </h3>
-                    <p
-                      className={`text-sm flex items-center gap-2 ${
-                        isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      <FiTag /> {s.category?.name || "No Category"}
-                    </p>
-                    <p
-                      className={`text-sm flex items-center gap-2 ${
-                        isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      <FiUser /> {s.client?.fullName || "No Client"} (
-                      {s.client?.regNumber || "N/A"})
-                    </p>
-                    <p
-                      className={`text-sm flex items-center gap-2 ${
-                        isDark ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      <FiCalendar /> {new Date(s.date).toLocaleDateString()}
-                    </p>
-                  </div>
+                  {filtered.map((s) => {
+                    const estimatedTotal =
+                      Number(s.cost) ||
+                      Number(s.partsCost || 0) + Number(s.laborCost || 0);
 
-                  {/* Right Section */}
-                  <div className="flex flex-col items-end space-y-2 text-right w-full sm:w-auto mt-3 sm:mt-0">
-                    <span
-                      className={`px-3 py-1 rounded-lg text-sm font-semibold text-white ${statusColor}`}
-                    >
-                      {s.status}
-                    </span>
-                    <span className="text-blue-900 font-bold text-base sm:text-lg">
-                      ₹{estimatedTotal.toFixed(2)}
-                    </span>
-                    <button
-                      onClick={() => navigate(`/services/${s.id}`)}
-                      className="text-blue-600 hover:underline text-sm font-semibold"
-                    >
-                      View Details →
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                    return (
+                      <tr
+                        key={s.id}
+                        className="transition-colors group"
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            colors.hoverBg)
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
+                        }
+                      >
+                        {/* Service Type */}
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center"
+                              style={{
+                                backgroundColor: isDark
+                                  ? "rgba(59, 130, 246, 0.2)"
+                                  : "#DBEAFE",
+                              }}
+                            >
+                              <FiTool
+                                size={16}
+                                style={{ color: colors.accent }}
+                              />
+                            </div>
+                            <div>
+                              <p
+                                className="font-bold text-sm"
+                                style={{ color: colors.textPrimary }}
+                              >
+                                {s.subService?.name ||
+                                  s.type ||
+                                  "General Service"}
+                              </p>
+                              <p
+                                className="text-xs"
+                                style={{ color: colors.textSecondary }}
+                              >
+                                {s.category?.name || "Uncategorized"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Client */}
+                        <td className="p-4">
+                          <p
+                            className="font-medium text-sm"
+                            style={{ color: colors.textPrimary }}
+                          >
+                            {s.client?.fullName || "Unknown Client"}
+                          </p>
+                          <p
+                            className="text-xs flex items-center gap-1"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            <FiTag size={10} /> {s.client?.regNumber || "N/A"}
+                          </p>
+                        </td>
+
+                        {/* Date */}
+                        <td className="p-4 hidden md:table-cell">
+                          <p
+                            className="text-sm"
+                            style={{ color: colors.textPrimary }}
+                          >
+                            {new Date(s.date).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </td>
+
+                        {/* WhatsApp Status */}
+                        <td className="p-4 hidden lg:table-cell">
+                          {getApprovalBadge(s.approvalStatus)}
+                        </td>
+
+                        {/* Amount */}
+                        <td className="p-4 text-right">
+                          <p
+                            className="text-sm font-bold"
+                            style={{ color: colors.textPrimary }}
+                          >
+                            ₹{estimatedTotal.toFixed(2)}
+                          </p>
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="p-4 text-center">
+                          {getStatusBadge(s.status)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => navigate(`/services/${s.id}`)}
+                            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all hover:shadow-sm"
+                            style={{
+                              backgroundColor: isDark
+                                ? "rgba(59, 130, 246, 0.1)"
+                                : "#EFF6FF",
+                              color: colors.accent,
+                              borderColor: isDark
+                                ? "rgba(59, 130, 246, 0.3)"
+                                : "#BFDBFE",
+                            }}
+                          >
+                            <FaEye size={12} /> View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ icon, title, value, isDark }) {
+function StatCard({ title, value, icon, colors }) {
   return (
     <div
-      className={`rounded-2xl shadow-lg border ${
-        isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-      } p-4 sm:p-6 flex items-center justify-between`}
+      className="rounded-xl border shadow-sm p-4 flex items-center justify-between"
+      style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
     >
       <div>
-        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+        <p
+          className="text-xs font-bold uppercase tracking-wider mb-1"
+          style={{ color: colors.textSecondary }}
+        >
           {title}
         </p>
-        <p
-          className={`text-xl sm:text-2xl font-bold ${
-            isDark ? "text-white" : "text-gray-900"
-          }`}
-        >
+        <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
           {value}
         </p>
       </div>
-      <div className="text-blue-900 text-xl sm:text-2xl">{icon}</div>
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center opacity-80"
+        style={{
+          backgroundColor: isDarkModeBg(colors.cardBg),
+          color: colors.accent,
+        }}
+      >
+        {icon}
+      </div>
     </div>
   );
+}
+
+// Helper to determine icon bg opacity based on card color
+function isDarkModeBg(bg) {
+  return bg === "#1E293B" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
 }

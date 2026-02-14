@@ -1,6 +1,11 @@
 // server/controllers/clientController.js
 import prisma from "../models/prismaClient.js";
 import { z } from "zod";
+import {
+  sendWhatsAppTemplate,
+  sendWhatsAppImage,
+} from "../services/whatsappService.js";
+import { uploadToR2 } from "../utils/r2Upload.js";
 
 /**
  * ===========================
@@ -18,7 +23,7 @@ const clientBaseSchema = z.object({
   vehicleYear: z
     .preprocess(
       (val) => (val ? Number(val) : val),
-      z.number().int().gte(1900).lte(2100)
+      z.number().int().gte(1900).lte(2100),
     )
     .optional()
     .nullable(),
@@ -27,7 +32,7 @@ const clientBaseSchema = z.object({
   fuel: z.string().optional().nullable(), // NEW
   seats: z.preprocess(
     (v) => (v ? Number(v) : null),
-    z.number().int().optional().nullable()
+    z.number().int().optional().nullable(),
   ), // NEW
   carImage: z.string().optional().nullable(),
   adImage: z.string().optional().nullable(),
@@ -38,6 +43,51 @@ const clientBaseSchema = z.object({
 
 const clientCreateSchema = clientBaseSchema;
 const clientUpdateSchema = clientBaseSchema.partial();
+
+const triggerVehicleReceivedWhatsApp = async (client, ownerId) => {
+  try {
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { companyName: true },
+    });
+
+    if (!client?.phone) {
+      console.log("❌ WhatsApp skipped — phone missing");
+      return;
+    }
+
+    // Normalize phone to E.164 (India example)
+    let rawPhone = client.phone.replace(/\D/g, "");
+
+    if (rawPhone.length === 10) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    if (!rawPhone.startsWith("91")) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    const to = rawPhone;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_receive",
+      languageCode: "en",
+      variables: [
+        client.fullName || "Customer",
+        client.regNumber || "N/A",
+        owner?.companyName || "Motor Desk",
+      ],
+    });
+
+    console.log(`✅ Opt-in template sent to ${to}`);
+  } catch (error) {
+    console.error(
+      `❌ Failed to send WhatsApp template to ${client?.phone}`,
+      error?.response?.data || error.message,
+    );
+  }
+};
 
 /**
  * ===========================
@@ -153,16 +203,22 @@ export const getClientById = async (req, res) => {
  * ===========================
  */
 
+/**
+ * ===========================
+ * CREATE new client
+ * ===========================
+ */
 export const createClient = async (req, res) => {
   const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
   try {
-    const parsed = clientCreateSchema.parse(req.body);
+    // 1. Separate the WhatsApp flag from the Zod-validated data
+    const { sendWhatsApp, ...rest } = req.body;
+    const parsed = clientCreateSchema.parse(rest);
 
-    // 🔥 DUPLICATE CHECK (inside same garage)
     const existing = await prisma.client.findFirst({
       where: {
         regNumber: parsed.regNumber,
-        userId: ownerId, // check only for this garage/user
+        userId: ownerId,
       },
     });
 
@@ -170,13 +226,10 @@ export const createClient = async (req, res) => {
       return res.status(400).json({
         success: false,
         duplicate: true,
-        message: `This client (${parsed.regNumber}) is already registered in your garage under ${existing.fullName}.`,
-        clientId: existing.id,
-        client: existing,
+        message: `Already registered.`,
       });
     }
 
-    // ✔ Create new client
     const client = await prisma.client.create({
       data: {
         ...parsed,
@@ -185,12 +238,16 @@ export const createClient = async (req, res) => {
       },
     });
 
+    // 2. TRIGGER WHATSAPP IF FLAG IS TRUE
+    if (sendWhatsApp) {
+      // We don't 'await' this to prevent slowing down the HTTP response
+      triggerVehicleReceivedWhatsApp(client, ownerId).catch(console.error);
+    }
+
     return res.status(201).json(client);
   } catch (err) {
     console.error("createClient err:", err);
-    if (err?.errors) {
-      return res.status(400).json({ error: err.errors });
-    }
+    if (err?.errors) return res.status(400).json({ error: err.errors });
     return res.status(500).json({ error: "Server error" });
   }
 };
@@ -198,31 +255,35 @@ export const createClient = async (req, res) => {
 /**
  * ===========================
  * UPDATE client
- * @route PUT /api/clients/:id
- * @access Private
  * ===========================
  */
 export const updateClient = async (req, res) => {
+  const ownerId = req.user.type === "staff" ? req.user.ownerId : req.user.id;
   try {
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: "Invalid client id" });
 
-    const parsed = clientUpdateSchema.parse(req.body);
+    // 1. Separate the WhatsApp flag from the update data
+    const { sendWhatsApp, ...rest } = req.body;
+    const parsed = clientUpdateSchema.parse(rest);
 
     const client = await prisma.client.update({
       where: { id },
       data: {
         ...parsed,
-        damageImages: parsed.damageImages ?? undefined, // undefined = don't touch
+        damageImages: parsed.damageImages ?? undefined,
       },
     });
+
+    // 2. TRIGGER WHATSAPP IF FLAG IS TRUE (Handles manual button & edit confirmation)
+    if (sendWhatsApp) {
+      triggerVehicleReceivedWhatsApp(client, ownerId).catch(console.error);
+    }
 
     return res.json(client);
   } catch (err) {
     console.error("updateClient err:", err);
-    if (err?.errors) {
-      return res.status(400).json({ error: err.errors });
-    }
+    if (err?.errors) return res.status(400).json({ error: err.errors });
     return res.status(500).json({ error: "Server error" });
   }
 };

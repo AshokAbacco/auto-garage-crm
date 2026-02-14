@@ -83,8 +83,8 @@ export const createBike = async (req, res) => {
         adImage: data.adImage || null,
         damageImages: data.damageImages || [],
 
-        ownerUserId,            // ✅ OWNER (USER)
-        createdById: req.user.id, // ✅ CREATOR (USER / TEAM_MEMBER)
+        ownerUserId,            // ✅ OWNER (USER)TEAM_MEMBER
+        createdById: req.user.id, // ✅ CREATOR (USER / )
       },
     });
 
@@ -103,10 +103,11 @@ export const getBikes = async (req, res) => {
   try {
     const ownerUserId = getOwnerUserId(req.user);
 
-    const whereCondition =
-      req.user.role === "user"
-        ? { ownerUserId }
-        : { ownerUserId, createdById: req.user.id };
+   const role = String(req.user.role).toLowerCase();
+
+    const whereCondition = {
+      ownerUserId: ownerUserId,
+    };
 
     const bikes = await prisma.bike.findMany({
       where: whereCondition,
@@ -128,12 +129,10 @@ export const getBikeById = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const ownerUserId = getOwnerUserId(req.user);
+    const role = String(req.user.role).toLowerCase();
 
     const bike = await prisma.bike.findFirst({
-      where:
-        req.user.role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId }
     });
 
     if (!bike) {
@@ -156,12 +155,10 @@ export const updateBike = async (req, res) => {
     const id = Number(req.params.id);
     const data = req.body;
     const ownerUserId = getOwnerUserId(req.user);
+    const role = String(req.user.role).toLowerCase();
 
     const result = await prisma.bike.updateMany({
-      where:
-        req.user.role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId },
       data: {
         ownerName: data.fullName,
         phone: data.phone,
@@ -205,12 +202,22 @@ export const deleteBike = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const ownerUserId = getOwnerUserId(req.user);
+    const role = String(req.user.role).toLowerCase();
+
+    // 🔒 Check if invoices exist
+    const invoiceCount = await prisma.bikeInvoice.count({
+      where: { bikeId: id },
+    });
+
+    if (invoiceCount > 0) {
+      return res.status(400).json({
+        message:
+          "This bike has invoices. Please delete invoices first or keep the bike.",
+      });
+    }
 
     const result = await prisma.bike.deleteMany({
-      where:
-        req.user.role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: { id, ownerUserId }
     });
 
     if (result.count === 0) {

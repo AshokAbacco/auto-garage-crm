@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiSend, FiX } from "react-icons/fi";
 import { useTheme } from "../../contexts/ThemeContext";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export default function BikeReminderForm({ refresh, close }) {
   const { isDark } = useTheme();

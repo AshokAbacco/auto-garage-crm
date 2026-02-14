@@ -1,5 +1,8 @@
 import bcrypt from "bcryptjs";
 import prisma from "../models/prismaClient.js";
+import { generateToken } from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
+
 
 /**
  * ==============================
@@ -8,40 +11,18 @@ import prisma from "../models/prismaClient.js";
  */
 const TEAM_LIMITS = {
   BASIC: 1,       // admin only
-  STANDARD: 3,    // admin + 2
-  PREMIUM: 10     // admin + 9
+  STANDARD: 3,    // admin + 2 staff
+  PREMIUM: 10     // admin + 9 staff
 };
 
 /**
  * ==============================
- * HELPER → GENERATE UNIQUE USERNAME
- * ==============================
- */
-const generateUniqueUsername = async (base) => {
-  let username = base;
-  let counter = 1;
-
-  while (await prisma.user.findUnique({ where: { username } })) {
-    username = `${base}${counter}`;
-    counter++;
-  }
-
-  return username;
-};
-
-/**
- * ==============================
- * CREATE TEAM MEMBER (ADMIN)
+ * CREATE WASH STAFF (ADMIN)
  * ==============================
  */
 export const createTeam = async (req, res) => {
   try {
-    // ✅ Only ADMIN (role === "user")
-    if (!req.user || req.user.role !== "user") {
-      return res.status(403).json({ message: "Admin access only" });
-    }
-
-    const { username, name, email, password } = req.body;
+    const { email, password, username } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password required" });
@@ -49,90 +30,69 @@ export const createTeam = async (req, res) => {
 
     const emailLower = email.toLowerCase().trim();
 
-    // ✅ Check existing user
+     // ✅ BLOCK DUPLICATE TEAM ACCOUNT (MOST IMPORTANT)
     const existingUser = await prisma.user.findUnique({
       where: { email: emailLower },
     });
 
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "A user with this email already exists" });
-    }
-
-    // ✅ Plan & limit
-    const plan = req.user.plan || "BASIC";
-    const limit = TEAM_LIMITS[plan] || 1;
-
-    // ✅ Count team members (washTeam) + admin
-    const teamCount = await prisma.washTeam.count({
-      where: { createdBy: req.user.id },
-    });
-
-    const used = teamCount + 1; // admin included
-
-    if (used >= limit) {
-      return res.status(403).json({
-        message: `Team limit reached for ${plan} plan`,
+      return res.status(400).json({
+        message: "This employee already has a team account",
       });
     }
 
-    // ✅ Generate username
-    const baseUsername = (username || name || emailLower.split("@")[0])
-      .toLowerCase()
-      .replace(/\s+/g, "");
 
-    const finalUsername = await generateUniqueUsername(baseUsername);
+    // ✅ Get or create admin's wash team
+    let team = await prisma.washTeam.findFirst({
+      where: { createdBy: req.user.id },
+      include: { members: true },
+    });
 
-    // ✅ Hash password
+    if (!team) {
+      team = await prisma.washTeam.create({
+        data: {
+          name: "My Wash Team",
+          email: req.user.email, // ADMIN EMAIL ONLY
+          createdBy: req.user.id,
+        },
+        include: { members: true },
+      });
+    }
+
+    // ✅ Plan limit check
+    const limit = TEAM_LIMITS[req.user.plan] || 1;
+    const used = team.members.length + 1; // admin included
+
+    if (used >= limit) {
+      return res.status(403).json({ message: "Team limit reached" });
+    }
+
+    // ✅ Create wash staff
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 1️⃣ Create USER (team member)
-    const user = await prisma.user.create({
+    const staff = await prisma.washStaff.create({
       data: {
         email: emailLower,
-        username: finalUsername,
+        username,
         password: hashedPassword,
-        role: "team",
-        plan: "BASIC",
-        allowedCrms: ["WASH"],
+        washTeamId: team.id,
       },
-    });
-
-    // 2️⃣ Create TEAM record
-    const team = await prisma.washTeam.create({
-      data: {
-        name: name || finalUsername,
-        email: emailLower,
-        createdBy: req.user.id,
-      },
-    });
-
-    // 3️⃣ Link USER → TEAM
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { washTeamId: team.id },
     });
 
     return res.status(201).json({
-      message: "Team account created successfully",
-      team,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-      },
+      message: "Wash staff created successfully",
+      staff,
     });
   } catch (error) {
+    console.error("❌ Create Team Error:", error);
+
     if (error.code === "P2002") {
       return res.status(400).json({
-        message: "Username or email already exists",
+        message: "Email or username already exists",
       });
     }
 
-    console.error("❌ Create Team Error:", error);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -143,28 +103,29 @@ export const createTeam = async (req, res) => {
  */
 export const getTeamInfo = async (req, res) => {
   try {
-    if (!req.user || req.user.role !== "user") {
-      return res.status(403).json({ message: "Admin access only" });
-    }
+     if (req.user.type !== "owner") {
+        return res.status(403).json({ message: "Admin only" });
+      }
+
+
 
     const admin = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: { email: true, plan: true },
     });
 
-    const plan = req.user.plan || "BASIC";
-    const limit = TEAM_LIMITS[plan] || 1;
-
-    // ✅ Count team members correctly
-    const teamCount = await prisma.washTeam.count({
+    const team = await prisma.washTeam.findFirst({
       where: { createdBy: req.user.id },
+      include: { members: true },
     });
 
-    const used = teamCount + 1; // admin included
+    const limit = TEAM_LIMITS[admin.plan] || 1;
+    const used = (team?.members.length || 0) + 1;
 
     return res.json({
       admin,
       team: {
+        id: team?.id || null,
         used,
         limit,
       },
@@ -174,7 +135,6 @@ export const getTeamInfo = async (req, res) => {
     return res.status(500).json({ message: "Failed to load team info" });
   }
 };
-
 
 /**
  * ==============================
@@ -224,19 +184,18 @@ export const deleteTeam = async (req, res) => {
 
     const team = await prisma.washTeam.findUnique({
       where: { id: teamId },
-      include: { members: true },
     });
 
     if (!team || team.createdBy !== req.user.id) {
       return res.status(404).json({ message: "Team not found" });
     }
 
-    // Delete team users
-    await prisma.user.deleteMany({
+    // ✅ Delete wash staff
+    await prisma.washStaff.deleteMany({
       where: { washTeamId: teamId },
     });
 
-    // Delete team record
+    // ✅ Delete team
     await prisma.washTeam.delete({
       where: { id: teamId },
     });
@@ -247,3 +206,68 @@ export const deleteTeam = async (req, res) => {
     return res.status(500).json({ message: "Failed to delete team" });
   }
 };
+
+/**
+ * ==============================
+ * WASH STAFF LOGIN
+ * ==============================
+ */
+export const washStaffLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    const staff = await prisma.washStaff.findFirst({
+      where: {
+        email: email.toLowerCase().trim(),
+        isActive: true,
+      },
+      include: {
+        team: true,
+      },
+    });
+
+    if (!staff) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, staff.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: staff.id,
+        type: "wash-staff",
+        teamId: staff.washTeamId,
+        crmType: "WASH",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: "Wash staff login successful",
+      token,
+      user: {
+        id: staff.id,
+        type: "wash-staff",
+        name: staff.name,
+        role: "team",
+        email: staff.email,
+        teamId: staff.washTeamId,
+        crmType: "wash",
+      },
+    });
+  } catch (error) {
+    console.error("❌ Wash Staff Login Error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+

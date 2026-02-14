@@ -7,9 +7,6 @@ import {
 import { useTheme } from "../../contexts/ThemeContext";
 import { IndianRupee } from "lucide-react";
 
-<IndianRupee className="w-6 h-6 text-[#29BAED]" />
-
-
 const API = import.meta.env.VITE_API_BASE_URL;
 
 function Reports() {
@@ -17,12 +14,27 @@ function Reports() {
     const [activeTab, setActiveTab] = useState("analytics");
     const [billings, setBillings] = useState([]);
     const [services, setServices] = useState([]);
+    const [clients, setClients] = useState([]); // ✅ MOVE HERE
     const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        fetch(`${API}/api/washing-clients`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then(res => res.json())
+            .then(data => setClients(Array.isArray(data) ? data : []))
+            .catch(err => console.error("Client fetch error:", err));
+    }, []);
 
     // Helper function to apply conditional classes based on theme
     const getStyles = (lightClasses, darkClasses) => {
         return isDark ? darkClasses : lightClasses;
     };
+
+
 
     // Fetch data
     useEffect(() => {
@@ -179,6 +191,7 @@ function Reports() {
         );
     }
 
+
     return (
         <div className={`min-h-screen p-8 transition-all duration-300 ${getStyles(
             "bg-[#f0fbff] text-slate-800",
@@ -188,18 +201,26 @@ function Reports() {
             <div className="flex items-center gap-3 mb-6">
                 <button
                     onClick={() => setActiveTab('analytics')}
-                    className={`px-6 py-3 font-medium rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${getTabButtonStyles(activeTab === 'analytics')}`}
+                    className={`px-6 py-3 rounded-full ${getTabButtonStyles(activeTab === 'analytics')}`}
                 >
                     Analytics
                 </button>
 
                 <button
                     onClick={() => setActiveTab('reports')}
-                    className={`px-6 py-3 font-medium rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${getTabButtonStyles(activeTab === 'reports')}`}
+                    className={`px-6 py-3 rounded-full ${getTabButtonStyles(activeTab === 'reports')}`}
                 >
                     Reports
                 </button>
+
+                <button
+                    onClick={() => setActiveTab('clients')}
+                    className={`px-6 py-3 rounded-full ${getTabButtonStyles(activeTab === 'clients')}`}
+                >
+                    Clients
+                </button>
             </div>
+
 
             {/* Analytics Tab */}
             {activeTab === 'analytics' && (
@@ -595,7 +616,54 @@ function Reports() {
                         </div>
                     </div>
                 </div>
+
             )}
+            {/* Clients Tab */}
+            {activeTab === 'clients' && (
+                <div className={`rounded-xl shadow ${getStyles("bg-white", "bg-gray-800")}`}>
+                    <div className="px-6 py-4 border-b">
+                        <h3 className="text-lg font-semibold">Client Directory</h3>
+                        <p className="text-sm text-gray-500">
+                            Complete list of all clients and their vehicles
+                        </p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className={getStyles("bg-gray-50", "bg-gray-700")}>
+                                <tr>
+                                    <th className="px-6 py-3 text-left">Client</th>
+                                    <th className="px-6 py-3 text-left">Phone</th>
+                                    <th className="px-6 py-3 text-left">Email</th>
+                                    <th className="px-6 py-3 text-left">Vehicle</th>
+                                    <th className="px-6 py-3 text-left">Reg No</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {clients.map(c => (
+                                    <tr key={c.id} className="border-t">
+                                        <td className="px-6 py-4 font-medium">{c.fullName}</td>
+                                        <td className="px-6 py-4">{c.phone}</td>
+                                        <td className="px-6 py-4">{c.email}</td>
+                                        <td className="px-6 py-4">
+                                            {c.year} {c.vehicleMake} {c.vehicleModel}
+                                        </td>
+                                        <td className="px-6 py-4">{c.regNumber}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {clients.length === 0 && (
+                            <div className="p-6 text-center text-gray-500">
+                                No clients found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

@@ -5,7 +5,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 export default function BikeReminderCard({ reminder, index, refresh }) {
   const { isDark } = useTheme();
-  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
   
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({

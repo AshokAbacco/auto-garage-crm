@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, requireActivePlan } from "../middleware/authMiddleware.js";
 import {
     getMetaData,
     getLocalMakes,

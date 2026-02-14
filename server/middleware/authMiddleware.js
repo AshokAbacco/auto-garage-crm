@@ -1,16 +1,17 @@
+// server/middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import prisma from "../models/prismaClient.js";
 
 dotenv.config();
- 
-dotenv.config();
 
 export const protect = async (req, res, next) => {
-  console.log("AUTH USER:", req.user);
   try {
     const authHeader = req.headers.authorization;
 
+    // ===============================
+    // TOKEN CHECK
+    // ===============================
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "No token provided" });
     }
@@ -20,43 +21,77 @@ export const protect = async (req, res, next) => {
 
     /**
      * =====================================
-     * STAFF AUTH (CarStaff table)
+     * 🧑‍🔧 BIKE TEAM AUTH
      * =====================================
      */
-   if (decoded.type === "staff") {
-     const login = await prisma.carStaffLogin.findUnique({
-       where: { id: decoded.id }, // 🔑 MATCH JWT ID
-       include: {
-         staff: true,
-       },
-     });
+    if (decoded.type === "bike_team") {
+      req.user = {
+        id: decoded.id,
+        type: "bike_team",
+        ownerId: decoded.ownerId,
+        teamId: decoded.teamId,
+      };
+      return next();
+    }
 
-     if (!login || !login.isActive || !login.staff) {
-       return res.status(401).json({
-         message: "Staff not found or inactive",
-       });
-     }
+    // ======================================================
+    // CAR STAFF AUTH (inherits owner plan)
+    // ======================================================
+    if (decoded.type === "staff") {
+      const login = await prisma.carStaffLogin.findUnique({
+        where: { id: decoded.id },
+        include: { staff: true },
+      });
 
-     const owner = await prisma.user.findUnique({
-       where: { id: login.ownerId },
-       select: { plan: true },
-     });
+      if (!login || !login.isActive || !login.staff) {
+        return res
+          .status(401)
+          .json({ message: "Staff not found or inactive" });
+      }
 
-     req.user = {
-       id: login.staff.id,
-       type: "staff",
-       role: login.staff.role,
-       ownerId: login.ownerId,
-       plan: owner?.plan || "BASIC", // ✅ INHERIT OWNER PLAN
-     };
+      const owner = await prisma.user.findUnique({
+        where: { id: login.ownerId },
+        select: { plan: true },
+      });
 
-     return next();
-   }
+      req.user = {
+        id: login.staff.id,
+        type: "staff",
+        role: login.staff.role || "staff",
+        ownerId: login.ownerId,
+        plan: owner?.plan || "BASIC", // ✅ inherit owner plan
+      };
 
+      return next();
+    }
+
+    // ======================================================
+    // WASH STAFF AUTH
+    // ======================================================
+    if (decoded.type === "wash-staff") {
+      const staff = await prisma.washStaff.findUnique({
+        where: { id: decoded.id },
+      });
+
+      if (!staff || !staff.isActive) {
+        return res
+          .status(401)
+          .json({ message: "Wash staff not found or inactive" });
+      }
+
+      req.user = {
+        id: staff.id,
+        type: "wash-staff",
+        role: "wash-staff",
+        teamId: staff.washTeamId,
+      };
+
+      return next();
+    }
 
     /**
      * =====================================
-     * OWNER AUTH (User table)
+     * 👑 OWNER AUTH (User table)
      * =====================================
      */
     const user = await prisma.user.findUnique({
@@ -67,32 +102,28 @@ export const protect = async (req, res, next) => {
         email: true,
         role: true,
         plan: true,
-        parentUserId: true,
         allowedCrms: true,
+        referredByUserId: true,
+        parentUserId: true,
       },
     });
 
     if (!user) {
-      return res.status(401).json({
-        message: "User not found or deleted",
-      });
+      return res.status(401).json({ message: "User not found" });
     }
 
-    // ✅ FIX: explicitly set type = "owner"
     req.user = {
       ...user,
-      type: "owner",
-      role: user.role, // keep as-is ("user")
+      type: "owner", // 🔑 VERY IMPORTANT
     };
 
-    next();
+    return next();
   } catch (error) {
     console.error("❌ Auth Middleware Error:", error);
 
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         message: "Token expired, please login again",
-        expiredAt: error.expiredAt,
       });
     }
 
@@ -102,3 +133,18 @@ export const protect = async (req, res, next) => {
   }
 };
 
+export const requireActivePlan = (req, res, next) => {
+  // Staff inherits owner plan
+  if (req.user.type === "staff") return next();
+
+  if (!req.user.planExpiry) return next();
+
+  if (new Date(req.user.planExpiry) < new Date()) {
+    return res.status(403).json({
+      message: "Your subscription has expired. Please upgrade.",
+      code: "PLAN_EXPIRED",
+    });
+  }
+
+  next();
+};

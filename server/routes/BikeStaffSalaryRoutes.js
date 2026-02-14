@@ -6,8 +6,8 @@ import {
   payBikeStaffSalary,
   getBikeSalaryHistory,
   deleteBikeStaff
-
 } from "../controllers/BikestaffSalaryController.js";
+
 
 const router = express.Router();
 

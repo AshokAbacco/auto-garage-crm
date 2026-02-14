@@ -66,26 +66,43 @@ export default function PublicNavbar() {
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-3 group">
+                   <Link to="/" className="flex items-center gap-3 group">
                         <div className="relative">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-indigo-500/60 transition-all">
-                                <Car className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl  flex items-center justify-center   group-hover:shadow-indigo-500/60 transition-all overflow-hidden">
+                            {/* <img
+                                src="Logos/logo3.png"
+                                alt="Motor Desk Logo"
+                                className="w-full h-full object-cover"
+                            /> */}
+                            <img
+                                src={isDark ? "/Logos/darkL.png" : "/Logos/logo3.png"}
+                                alt="Motor Desk Logo"
+                                className="w-full h-full object-contain"
+                            />
+
                             </div>
-                            <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
-                        </div>
+
+                         </div>
+
                         <div className="flex flex-col">
                             <span
-                                className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
+                            className={`text-xl sm:text-2xl font-bold ${
+                                isDark ? "text-white" : "text-gray-900"
+                            }`}
                             >
-                                Motor <span className="text-indigo-500">Desk</span>
+                            Motor <span className="text-indigo-500">Desk</span>
                             </span>
+
                             <span
-                                className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                            className={`text-xs ${
+                                isDark ? "text-gray-400" : "text-gray-600"
+                            }`}
                             >
-                                Garage Management
+                            Garage Management
                             </span>
                         </div>
                     </Link>
+
 
                     {/* Right Side Section */}
                     <div className="flex items-center gap-3">

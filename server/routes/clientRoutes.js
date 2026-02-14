@@ -7,7 +7,7 @@ import {
     updateClient,
     deleteClient,
 } from "../controllers/clientController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, requireActivePlan  } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -15,10 +15,10 @@ const router = express.Router();
 router.use(protect);
 
 // CRUD
-router.get("/", getClients);
-router.get("/:id", getClientById);
-router.post("/", createClient);
-router.put("/:id", updateClient);
-router.delete("/:id", deleteClient);
+router.get("/", requireActivePlan, getClients);
+router.get("/:id",requireActivePlan, getClientById);
+router.post("/",requireActivePlan , createClient);
+router.put("/:id",requireActivePlan, updateClient);
+router.delete("/:id",requireActivePlan, deleteClient);
 
 export default router;

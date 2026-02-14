@@ -56,7 +56,7 @@ export const Hero = ({
           >
             Pricing that scales
           </span>
-          <span className="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+          <span className="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent py-4">
             with your business
           </span>
         </h1>
@@ -71,44 +71,71 @@ export const Hero = ({
       </div>
 
       {/* Monthly / Yearly Switch */}
-      <div className="flex items-center justify-center gap-4 pt-4">
-        <span
-          className={`text-sm font-medium ${
-            billingPeriod === "monthly" ? "text-white" : "text-gray-500"
-          }`}
-        >
-          Monthly
-        </span>
+<div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+  {/* Monthly */}
+  <span
+    className={`text-sm font-medium transition ${
+      billingPeriod === "monthly"
+        ? isDark
+          ? "text-white"
+          : "text-gray-900"
+        : isDark
+        ? "text-gray-400"
+        : "text-gray-500"
+    }`}
+  >
+    Monthly
+  </span>
 
-        <button
-          onClick={() =>
-            setBillingPeriod(billingPeriod === "monthly" ? "yearly" : "monthly")
-          }
-          className={`relative w-16 h-8 rounded-full transition ${
-            billingPeriod === "yearly"
-              ? "bg-gradient-to-r from-violet-500 to-fuchsia-500"
-              : "bg-gray-700"
-          }`}
-        >
-          <div
-            className={`absolute top-1 w-6 h-6 bg-white rounded-full transition ${
-              billingPeriod === "yearly" ? "translate-x-9" : "translate-x-1"
-            }`}
-          />
-        </button>
+  {/* Toggle */}
+  <button
+    onClick={() =>
+      setBillingPeriod(billingPeriod === "monthly" ? "yearly" : "monthly")
+    }
+    className={`relative w-16 h-8 rounded-full transition-colors duration-300
+      ${
+        billingPeriod === "yearly"
+          ? "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+          : isDark
+          ? "bg-gray-700"
+          : "bg-gray-300"
+      }
+    `}
+  >
+    <div
+      className={`absolute top-1 left-1 w-6 h-6 rounded-full transition-transform duration-300
+        ${
+          billingPeriod === "yearly"
+            ? "translate-x-8 bg-white"
+            : isDark
+            ? "bg-white"
+            : "bg-gray-900"
+        }
+      `}
+    />
+  </button>
 
-        <span
-          className={`text-sm font-medium ${
-            billingPeriod === "yearly" ? "text-white" : "text-gray-500"
-          }`}
-        >
-          Yearly
-        </span>
+  {/* Yearly */}
+  <span
+    className={`text-sm font-medium transition ${
+      billingPeriod === "yearly"
+        ? isDark
+          ? "text-white"
+          : "text-gray-900"
+        : isDark
+        ? "text-gray-400"
+        : "text-gray-500"
+    }`}
+  >
+    Yearly
+  </span>
 
-        <span className="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-bold">
-          Save 10%
-        </span>
-      </div>
+  {/* Save Badge */}
+  <span className="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-bold shadow-sm">
+    Save 10%
+  </span>
+</div>
+
 
       {/* Bike / Washing Buttons */}
       <div className="flex justify-center gap-4 mt-6">

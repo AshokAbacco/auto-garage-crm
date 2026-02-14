@@ -111,7 +111,14 @@ export default function ClientDetail() {
 
         setClient(data);
         setFormData(data);
-        setActiveImage(data.adImage || data.bikeImage || data.carImage || "");
+        setActiveImage(
+          data.adImage ||
+          data.bikeImage ||
+          data.carImage ||
+          (Array.isArray(data.damageImages) ? data.damageImages[0] : "") ||
+          ""
+        );
+
       } catch (err) {
         console.error("Fetch client error:", err);
         setError(err.response?.data?.message || err.message || "Failed to load client");
@@ -245,6 +252,16 @@ export default function ClientDetail() {
   const vehicleModel = client.bikeModel || client.vehicleModel || "N/A";
   const vehicleColor = client.color || "N/A";
 
+  // ✅ Damage images (safe fallback)
+  const damageImages = Array.isArray(client?.damageImages)
+    ? client.damageImages
+    : [];
+
+    const defaultImage =
+  client.adImage ||
+  client.bikeImage ||
+  client.carImage ||
+  fallbackImage;
 
   return (
     <div
@@ -353,70 +370,75 @@ export default function ClientDetail() {
             </div>
           </div>
 
-          {/* Vehicle Image Viewer */}
-          <div className="p-6">
+         {/* ================= VEHICLE IMAGE VIEWER ================= */}
+          <div className="flex h-[420px] md:h-[480px] overflow-hidden rounded-b-2xl">
+            
+            {/* ================= MAIN IMAGE ================= */}
             <div
-              className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
-                isDark ? "bg-gray-700/50" : "bg-gray-50"
-              }`}
-              style={{ height: "400px" }}
+              className="relative flex-1 min-w-[300px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 cursor-move select-none"
+            
             >
-              <div
-                className="w-full h-full flex items-center justify-center cursor-move select-none"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onWheel={handleWheel}
-              >
-                <img
-                  src={activeImage || fallbackImage}
-                  alt={`${vehicleMake} ${vehicleModel}`}
-                  className="max-w-full max-h-full object-contain transition-transform duration-200"
-                  style={{
-                    transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${scale})`,
+              {/* ❌ Cancel selected damage image */}
+              {activeImage && client?.damageImages?.includes(activeImage) && (
+                <button
+                  onClick={() => {
+                    setActiveImage(defaultImage);
+                    setScale(1);
+                    setRotation({ x: -20, y: 0 });
                   }}
-                  draggable={false}
-                />
-              </div>
-              
-              {/* View Controls */}
-              <div className="absolute top-4 right-4 flex gap-2">
-                {["Front", "Side", "Back"].map((view) => (
+                  className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/60 text-white hover:bg-black transition"
+                  title="Cancel damage image"
+                >
+                  <X size={18} />
+                </button>
+              )}
+
+              {/* Main Image */}
+              <img
+                src={activeImage || defaultImage}
+                alt={`${vehicleMake} ${vehicleModel}`}
+                className="max-w-[90%] max-h-[90%] object-contain transition-transform duration-200"
+                style={{
+                  transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${scale})`,
+                }}
+                draggable={false}
+              />
+            </div>
+
+            {/* ================= DAMAGE IMAGES (RIGHT SIDE) ================= */}
+            {damageImages.length > 0 && (
+              <div
+                className={`w-28 min-w-[112px] p-2 space-y-2 overflow-y-auto border-l ${
+                  isDark ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+                }`}
+              >
+                {damageImages.map((img, idx) => (
                   <button
-                    key={view}
+                    key={idx}
                     onClick={() => {
-                      setCurrentView(view);
-                      setRotation({ x: -20, y: view === "Side" ? 90 : view === "Back" ? 180 : 0 });
+                      setActiveImage(img);
+                      setScale(1);
+                      setRotation({ x: -20, y: 0 });
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                      currentView === view
-                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
+                    className={`w-full h-20 rounded-lg overflow-hidden border transition ${
+                      activeImage === img
+                        ? "border-blue-500 ring-2 ring-blue-400"
                         : isDark
-                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                        : "bg-white text-gray-700 hover:bg-gray-100 shadow-sm"
+                        ? "border-gray-600 hover:border-blue-400"
+                        : "border-gray-300 hover:border-blue-400"
                     }`}
                   >
-                    {view}
+                    <img
+                      src={img}
+                      alt={`Damage ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
+            )}
+          </div>  
 
-              {/* Reset View Button */}
-              <button
-                onClick={() => {
-                  setRotation({ x: -20, y: 0 });
-                  setScale(1);
-                }}
-                className={`absolute bottom-4 right-4 p-3 rounded-lg transition-all duration-300 hover:scale-110 ${
-                  isDark ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-white text-gray-700 hover:bg-gray-100 shadow-lg"
-                }`}
-                title="Reset View"
-              >
-                <RotateCw size={20} />
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Stats Grid */}

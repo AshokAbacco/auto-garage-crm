@@ -22,8 +22,32 @@ import {
 } from "react-icons/fi";
 import { FaCar, FaRupeeSign, FaWhatsapp } from "react-icons/fa";
 import { useTheme } from "../../contexts/ThemeContext";
+import { Toaster, toast } from "react-hot-toast";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+
+const approvalMeta = {
+  PENDING: {
+    label: "Pending Customer Approval",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  APPROVED: {
+    label: "Approved by Customer",
+    color: "bg-green-100 text-green-800",
+  },
+  REJECTED: {
+    label: "Rejected by Customer",
+    color: "bg-red-100 text-red-800",
+  },
+  CONDITION_REQUESTED: {
+    label: "Approved with Conditions",
+    color: "bg-orange-100 text-orange-800",
+  },
+  READY_SENT: {
+    label: "Vehicle Ready (Sent)",
+    color: "bg-green-100 text-green-800",
+  },
+};
 
 const apiRequest = async (url, options = {}) => {
   const token = localStorage.getItem("token");
@@ -66,26 +90,24 @@ export default function ServiceDetail() {
   const [service, setService] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [waError, setWaError] = useState("");
+
+  const loadService = async () => {
+    try {
+      // Don't set loading to true here to avoid flickering on refresh
+      const res = await apiRequest(`/api/services/${id}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load service");
+      setService(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadService = async () => {
-      try {
-        setLoading(true);
-        const res = await apiRequest(`/api/services/${id}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to load service");
-        }
-
-        setService(data);
-      } catch (err) {
-        console.error("Error loading service:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadService();
   }, [id]);
 
@@ -184,6 +206,52 @@ export default function ServiceDetail() {
     isDark ? "border-gray-700" : "border-gray-100"
   }`;
 
+  const sendWhatsAppApproval = async () => {
+    try {
+      setSendingWhatsApp(true);
+      setWaError("");
+
+      const res = await apiRequest(`/api/services/${service.id}/whatsapp`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to send WhatsApp");
+
+      // 🔁 Refresh service after sending
+      const refresh = await apiRequest(`/api/services/${service.id}`);
+      const updated = await refresh.json();
+      setService(updated);
+    } catch (err) {
+      setWaError(err.message);
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
+  const handleSendReadyAlert = async () => {
+    if (!window.confirm("Notify the client and mark as Paid?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/services/${id}/whatsapp-ready`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        toast.success("Ready alert sent & Status updated to Paid!");
+        // This will now correctly refresh the UI state from the DB
+        loadService();
+      } else {
+        const errData = await res.json();
+        toast.error(errData.message || "Failed to update status");
+      }
+    } catch (err) {
+      toast.error("Network error");
+    }
+  };
+
   return (
     <div
       className={`min-h-screen lg:ml-16 transition-colors duration-300 ${
@@ -210,7 +278,7 @@ export default function ServiceDetail() {
               Service #{service.id}
               <span
                 className={`px-3 py-0.5 text-xs rounded-full border font-medium uppercase tracking-wide ${getStatusStyles(
-                  service.status
+                  service.status,
                 )}`}
               >
                 {service.status}
@@ -219,6 +287,20 @@ export default function ServiceDetail() {
           </div>
         </div>
         <div className="flex gap-2">
+          {service.approvalStatus === "READY_SENT" ? (
+            <div className="flex items-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-xl font-bold border border-green-200">
+              <FiCheckCircle className="w-5 h-5" />
+              Ready Alert Sent
+            </div>
+          ) : (
+            <button
+              onClick={handleSendReadyAlert}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg font-semibold"
+            >
+              <FiCheckCircle className="w-5 h-5" />
+              Mark as Ready & Notify
+            </button>
+          )}
           <button
             onClick={() => window.print()}
             className={`p-2 rounded-lg border transition-all ${
@@ -229,13 +311,14 @@ export default function ServiceDetail() {
           >
             <FiPrinter className="w-5 h-5" />
           </button>
-          <Link
-            to={`/services/${id}/edit`}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all"
-          >
-            <FiFileText />{" "}
-            <span className="hidden sm:inline">Edit Service</span>
-          </Link>
+          {service.approvalStatus !== "APPROVED" && (
+            <Link
+              to={`/services/${id}/edit`}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+            >
+              Edit Service
+            </Link>
+          )}
         </div>
       </div>
 
@@ -387,7 +470,7 @@ export default function ServiceDetail() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <FaCar className="text-2xl text-blue-500" />
-                        <span className="font-mono text-sm font-bold bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
+                        <span className="font-mono text-sm font-bold text-white bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
                           {service.client.regNumber}
                         </span>
                       </div>
@@ -422,8 +505,11 @@ export default function ServiceDetail() {
                         className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border dark:border-gray-700"
                       >
                         <img
-                          src={file.data}
-                          alt={file.fileName}
+                          src={file.mediaUrl}
+                          alt={file.fileName || "Image"}
+                          onError={(e) => {
+                            e.currentTarget.src = "/image-placeholder.png";
+                          }}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           loading="lazy"
                         />
@@ -537,6 +623,69 @@ export default function ServiceDetail() {
                     Ready to finalize? Generate an invoice instantly.
                   </p>
 
+                  {/* WhatsApp Approval */}
+                  <div className="mt-4 border-t pt-4">
+                    {waError && (
+                      <div className="text-xs text-red-500 mb-2">{waError}</div>
+                    )}
+
+                    {/* Approval Status */}
+                    <div className="mb-4 p-4 rounded-xl border">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                          <FaWhatsapp className="text-green-500" /> WhatsApp
+                          Approval
+                        </h4>
+
+                        {service.approvalStatus ? (
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              approvalMeta[service.approvalStatus]?.color
+                            }`}
+                          >
+                            {approvalMeta[service.approvalStatus]?.label}
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
+                            Not Sent
+                          </span>
+                        )}
+                      </div>
+
+                      {service.approvalAt && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Updated on{" "}
+                          {new Date(service.approvalAt).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      disabled={
+                        sendingWhatsApp ||
+                        ["PENDING", "APPROVED"].includes(service.approvalStatus)
+                      }
+                      onClick={sendWhatsAppApproval}
+                      className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 mb-2
+    ${
+      service.approvalStatus === "APPROVED"
+        ? "bg-green-200 text-green-800 cursor-not-allowed"
+        : service.approvalStatus === "PENDING"
+          ? "bg-yellow-200 text-yellow-800 cursor-not-allowed"
+          : "bg-green-600 hover:bg-green-700 text-white"
+    }`}
+                    >
+                      <FaWhatsapp />
+                      {service.approvalStatus === "APPROVED"
+                        ? "Approved via WhatsApp"
+                        : service.approvalStatus === "PENDING"
+                          ? "Waiting for Customer"
+                          : sendingWhatsApp
+                            ? "Sending..."
+                            : "Send WhatsApp Approval"}
+                    </button>
+                  </div>
+
                   <Link
                     to="/billing/new"
                     state={{
@@ -548,7 +697,7 @@ export default function ServiceDetail() {
                     <FiClipboard className="w-5 h-5" /> Generate Invoice
                   </Link>
 
-                  <div className="grid grid-cols-2 gap-3 mt-3">
+                  {/* <div className="grid grid-cols-2 gap-3 mt-3">
                     <button
                       className={`flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold border transition-colors ${
                         isDark
@@ -567,7 +716,7 @@ export default function ServiceDetail() {
                     >
                       <FiSmartphone className="w-5 h-5" /> SMS
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>

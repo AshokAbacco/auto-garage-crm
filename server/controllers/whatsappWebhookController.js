@@ -41,6 +41,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
       /* ================= OPT-IN / OPT-OUT ================= */
 
       if (actionText === "Yes, Send Updates") {
+        // CAR
         await prisma.client.updateMany({
           where: { phone: last10 },
           data: {
@@ -49,6 +50,18 @@ export const handleWhatsAppWebhook = async (req, res) => {
             whatsappOptinSource: "whatsapp_button",
           },
         });
+
+        // BIKE
+        await prisma.bike.updateMany({
+          where: { phone: last10 },
+          data: {
+            whatsappOptin: true,
+            whatsappOptinAt: now,
+            whatsappOptinSource: "whatsapp_button",
+          },
+        });
+
+        console.log("✅ Opt-in updated for car & bike");
         return res.sendStatus(200);
       }
 
@@ -57,6 +70,13 @@ export const handleWhatsAppWebhook = async (req, res) => {
           where: { phone: last10 },
           data: { whatsappOptin: false },
         });
+
+        await prisma.bike.updateMany({
+          where: { phone: last10 },
+          data: { whatsappOptin: false },
+        });
+
+        console.log("❌ Opt-out updated for car & bike");
         return res.sendStatus(200);
       }
 
@@ -251,6 +271,12 @@ export const handleWhatsAppWebhook = async (req, res) => {
           data: { whatsappOptin: false },
         });
 
+        await prisma.bike.updateMany({
+          where: { phone: last10 },
+          data: { whatsappOptin: false },
+        });
+
+        console.log("❌ STOP opt-out updated for car & bike");
         return res.sendStatus(200);
       }
 

@@ -1,5 +1,6 @@
 import prisma from "../models/prismaClient.js";
 import { getOwnerUserId } from "../utils/getAdminId.js";
+import { sendBikeFinalInvoiceWhatsApp } from "../controllers/bikeWhatsappController.js";
 
 /* ============================================================
    GET ALL BIKE INVOICES
@@ -9,12 +10,11 @@ export const getBikeInvoices = async (req, res) => {
   try {
     const ownerUserId = getOwnerUserId(req.user);
 
-   const role = String(req.user.role).toLowerCase();
+    const role = String(req.user.role).toLowerCase();
 
     const whereCondition = {
       ownerUserId,
     };
-
 
     const invoices = await prisma.bikeInvoice.findMany({
       where: whereCondition,
@@ -28,21 +28,50 @@ export const getBikeInvoices = async (req, res) => {
 
     // Calculate totals for each invoice
     const fixedInvoices = invoices.map((inv) => {
-      const partsSubtotal = inv.invoiceItems
-        ?.filter(item => item.type === 'Part')
-        .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-      
-      const laborSubtotal = inv.invoiceItems
-        ?.filter(item => item.type === 'Labor')
-        .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-      
-      const cgstTotal = inv.invoiceItems
-        ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.cgst) / 100), 0) || 0;
-      
-      const sgstTotal = inv.invoiceItems
-        ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.sgst) / 100), 0) || 0;
-      
-      const grandTotal = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal - (Number(inv.discount) || 0);
+      const partsSubtotal =
+        inv.invoiceItems
+          ?.filter((item) => item.type === "Part")
+          .reduce(
+            (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+            0,
+          ) || 0;
+
+      const laborSubtotal =
+        inv.invoiceItems
+          ?.filter((item) => item.type === "Labor")
+          .reduce(
+            (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+            0,
+          ) || 0;
+
+      const cgstTotal =
+        inv.invoiceItems?.reduce(
+          (sum, item) =>
+            sum +
+            (Number(item.quantity) *
+              Number(item.unitPrice) *
+              Number(item.cgst)) /
+              100,
+          0,
+        ) || 0;
+
+      const sgstTotal =
+        inv.invoiceItems?.reduce(
+          (sum, item) =>
+            sum +
+            (Number(item.quantity) *
+              Number(item.unitPrice) *
+              Number(item.sgst)) /
+              100,
+          0,
+        ) || 0;
+
+      const grandTotal =
+        partsSubtotal +
+        laborSubtotal +
+        cgstTotal +
+        sgstTotal -
+        (Number(inv.discount) || 0);
       const balanceDue = grandTotal - (Number(inv.advancePaid) || 0);
 
       return {
@@ -76,7 +105,7 @@ export const getBikeInvoiceById = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const invoice = await prisma.bikeInvoice.findFirst({
-     where: { id, ownerUserId },
+      where: { id, ownerUserId },
       include: {
         bike: true,
         bikeServices: true,
@@ -89,21 +118,46 @@ export const getBikeInvoiceById = async (req, res) => {
     }
 
     // Calculate complete billing summary
-    const partsSubtotal = invoice.invoiceItems
-      ?.filter(item => item.type === 'Part')
-      .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-    
-    const laborSubtotal = invoice.invoiceItems
-      ?.filter(item => item.type === 'Labor')
-      .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-    
-    const cgstTotal = invoice.invoiceItems
-      ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.cgst) / 100), 0) || 0;
-    
-    const sgstTotal = invoice.invoiceItems
-      ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.sgst) / 100), 0) || 0;
-    
-    const grandTotal = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal - (Number(invoice.discount) || 0);
+    const partsSubtotal =
+      invoice.invoiceItems
+        ?.filter((item) => item.type === "Part")
+        .reduce(
+          (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+          0,
+        ) || 0;
+
+    const laborSubtotal =
+      invoice.invoiceItems
+        ?.filter((item) => item.type === "Labor")
+        .reduce(
+          (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+          0,
+        ) || 0;
+
+    const cgstTotal =
+      invoice.invoiceItems?.reduce(
+        (sum, item) =>
+          sum +
+          (Number(item.quantity) * Number(item.unitPrice) * Number(item.cgst)) /
+            100,
+        0,
+      ) || 0;
+
+    const sgstTotal =
+      invoice.invoiceItems?.reduce(
+        (sum, item) =>
+          sum +
+          (Number(item.quantity) * Number(item.unitPrice) * Number(item.sgst)) /
+            100,
+        0,
+      ) || 0;
+
+    const grandTotal =
+      partsSubtotal +
+      laborSubtotal +
+      cgstTotal +
+      sgstTotal -
+      (Number(invoice.discount) || 0);
     const balanceDue = grandTotal - (Number(invoice.advancePaid) || 0);
 
     res.json({
@@ -130,11 +184,10 @@ export const getBikeInvoiceById = async (req, res) => {
 export const createBikeInvoice = async (req, res) => {
   try {
     const ownerUserId = getOwnerUserId(req.user);
-    const role = String(req.user.role).toLowerCase();
 
     const {
       bikeId,
-      serviceId,              // ✅ NEW (optional)
+      serviceId,
       vehicle,
       serviceCategory,
       serviceSubCategory,
@@ -162,8 +215,10 @@ export const createBikeInvoice = async (req, res) => {
       }
     }
 
-    if (!Array.isArray(normalizedItems)) {
-      normalizedItems = [];
+    if (!Array.isArray(normalizedItems) || normalizedItems.length === 0) {
+      return res.status(400).json({
+        message: "At least one invoice item is required",
+      });
     }
 
     if (!bikeId) {
@@ -173,15 +228,16 @@ export const createBikeInvoice = async (req, res) => {
     /* ===============================
        BIKE OWNERSHIP CHECK
     =============================== */
-   const bike = await prisma.bike.findFirst({
+    const bike = await prisma.bike.findFirst({
       where: { id: Number(bikeId), ownerUserId },
     });
+
     if (!bike) {
       return res.status(403).json({ message: "Unauthorized bike access" });
     }
 
     /* ===============================
-       🔥 FETCH SERVICE BILLING (FIX)
+       FETCH SERVICE DISCOUNT DATA
     =============================== */
     let serviceDiscount = 0;
     let serviceDiscountType = "Fixed Amount";
@@ -207,28 +263,32 @@ export const createBikeInvoice = async (req, res) => {
     /* ===============================
        CALCULATE TOTALS
     =============================== */
-    const partsSubtotal =
-      normalizedItems
-        ?.filter(i => i.type === "Part")
-        .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0) || 0;
+    const partsSubtotal = normalizedItems
+      .filter((i) => i.type === "Part")
+      .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
 
-    const laborSubtotal =
-      normalizedItems
-        ?.filter(i => i.type === "Labor")
-        .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0) || 0;
+    const laborSubtotal = normalizedItems
+      .filter((i) => i.type === "Labor")
+      .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
 
-    const cgstTotal =
-      normalizedItems
-        ?.reduce((s, i) => s + (Number(i.quantity) * Number(i.unitPrice) * Number(i.cgst || 0)) / 100, 0) || 0;
+    const cgstTotal = normalizedItems.reduce(
+      (s, i) =>
+        s +
+        (Number(i.quantity) * Number(i.unitPrice) * Number(i.cgst || 0)) / 100,
+      0,
+    );
 
-    const sgstTotal =
-      normalizedItems
-        ?.reduce((s, i) => s + (Number(i.quantity) * Number(i.unitPrice) * Number(i.sgst || 0)) / 100, 0) || 0;
+    const sgstTotal = normalizedItems.reduce(
+      (s, i) =>
+        s +
+        (Number(i.quantity) * Number(i.unitPrice) * Number(i.sgst || 0)) / 100,
+      0,
+    );
 
     const baseAmount = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal;
 
     /* ===============================
-       DISCOUNT & ADVANCE (FIX)
+       DISCOUNT + ADVANCE
     =============================== */
     const finalDiscountType = discountType || serviceDiscountType;
 
@@ -244,6 +304,12 @@ export const createBikeInvoice = async (req, res) => {
 
     const grandTotal = baseAmount - discount;
     const balanceDue = grandTotal - finalAdvancePaid;
+
+    if (grandTotal <= 0) {
+      return res.status(400).json({
+        message: "Invalid total amount",
+      });
+    }
 
     /* ===============================
        CREATE INVOICE
@@ -277,7 +343,7 @@ export const createBikeInvoice = async (req, res) => {
         createdById: req.user.id,
 
         invoiceItems: {
-          create: normalizedItems.map(item => ({
+          create: normalizedItems.map((item) => ({
             type: item.type,
             name: item.type === "Labor" ? "Labor" : item.name || "Unnamed Part",
             quantity: Number(item.quantity),
@@ -289,7 +355,7 @@ export const createBikeInvoice = async (req, res) => {
                 Number(item.quantity) *
                 Number(item.unitPrice) *
                 (1 + (Number(item.cgst || 0) + Number(item.sgst || 0)) / 100)
-              ).toFixed(2)
+              ).toFixed(2),
             ),
           })),
         },
@@ -300,13 +366,26 @@ export const createBikeInvoice = async (req, res) => {
       },
     });
 
-    res.status(201).json({
+    /* ===============================
+       🔥 AUTO SEND WHATSAPP
+    =============================== */
+
+    // If you want only send when Paid → wrap in if(status === "Paid")
+    sendBikeFinalInvoiceWhatsApp(invoice.id, ownerUserId)
+      .then(() => {
+        console.log("✅ Bike final invoice WhatsApp sent");
+      })
+      .catch((err) => {
+        console.error("⚠️ Bike WhatsApp failed:", err.message);
+      });
+
+    return res.status(201).json({
       message: "Bike invoice created successfully",
       invoice,
     });
   } catch (error) {
     console.error("createBikeInvoice error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to create bike invoice",
       error: error.message,
     });
@@ -317,7 +396,7 @@ export const createBikeInvoice = async (req, res) => {
    UPDATE BIKE INVOICE
    PUT /api/bike-invoices/:id
 ============================================================ */
- 
+
 export const updateBikeInvoice = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -344,46 +423,54 @@ export const updateBikeInvoice = async (req, res) => {
     });
 
     if (!invoice) {
-      return res.status(404).json({ message: "Invoice not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ message: "Invoice not found or unauthorized" });
     }
 
     /* 🔁 NORMALIZE ITEMS */
     let items = parsedInvoiceItems;
     if (typeof items === "string") {
-      try { items = JSON.parse(items); } catch { items = []; }
+      try {
+        items = JSON.parse(items);
+      } catch {
+        items = [];
+      }
     }
     if (!Array.isArray(items)) items = [];
 
     /* 🔢 ONE-LINE TOTAL CALCULATION */
-const partsSubtotal = items
-  .filter(i => i.type === "Part")
-  .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
+    const partsSubtotal = items
+      .filter((i) => i.type === "Part")
+      .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
 
-const laborSubtotal = items
-  .filter(i => i.type === "Labor")
-  .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
+    const laborSubtotal = items
+      .filter((i) => i.type === "Labor")
+      .reduce((s, i) => s + Number(i.quantity) * Number(i.unitPrice), 0);
 
-const cgstTotal = items.reduce(
-  (s, i) =>
-    s + (Number(i.quantity) * Number(i.unitPrice) * Number(i.cgst || 0)) / 100,
-  0
-);
+    const cgstTotal = items.reduce(
+      (s, i) =>
+        s +
+        (Number(i.quantity) * Number(i.unitPrice) * Number(i.cgst || 0)) / 100,
+      0,
+    );
 
-const sgstTotal = items.reduce(
-  (s, i) =>
-    s + (Number(i.quantity) * Number(i.unitPrice) * Number(i.sgst || 0)) / 100,
-  0
-);
+    const sgstTotal = items.reduce(
+      (s, i) =>
+        s +
+        (Number(i.quantity) * Number(i.unitPrice) * Number(i.sgst || 0)) / 100,
+      0,
+    );
 
-const baseAmount = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal;
+    const baseAmount = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal;
 
-const discount =
-  discountType === "Percentage"
-    ? (baseAmount * Number(discountValue || 0)) / 100
-    : Number(discountValue || 0);
+    const discount =
+      discountType === "Percentage"
+        ? (baseAmount * Number(discountValue || 0)) / 100
+        : Number(discountValue || 0);
 
-const grandTotal = baseAmount - discount;
-const balanceDue = grandTotal - Number(advancePaid || 0);
+    const grandTotal = baseAmount - discount;
+    const balanceDue = grandTotal - Number(advancePaid || 0);
 
     /* 💾 UPDATE INVOICE */
     const updatedInvoice = await prisma.bikeInvoice.update({
@@ -411,7 +498,7 @@ const balanceDue = grandTotal - Number(advancePaid || 0);
 
         invoiceItems: {
           deleteMany: {},
-          create: items.map(i => ({
+          create: items.map((i) => ({
             type: i.type,
             name: i.type === "Labor" ? "Labor" : i.name || "Unnamed Part",
             quantity: Number(i.quantity),
@@ -419,8 +506,9 @@ const balanceDue = grandTotal - Number(advancePaid || 0);
             cgst: Number(i.cgst || 0),
             sgst: Number(i.sgst || 0),
             total: Number(
-              (Number(i.quantity) * Number(i.unitPrice)) *
-              (1 + (Number(i.cgst || 0) + Number(i.sgst || 0)) / 100)
+              Number(i.quantity) *
+                Number(i.unitPrice) *
+                (1 + (Number(i.cgst || 0) + Number(i.sgst || 0)) / 100),
             ),
           })),
         },
@@ -428,13 +516,17 @@ const balanceDue = grandTotal - Number(advancePaid || 0);
       include: { bike: true, invoiceItems: true },
     });
 
-    res.json({ message: "Invoice updated successfully", invoice: updatedInvoice });
+    res.json({
+      message: "Invoice updated successfully",
+      invoice: updatedInvoice,
+    });
   } catch (err) {
     console.error("updateBikeInvoice error:", err);
-    res.status(500).json({ message: "Failed to update invoice", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update invoice", error: err.message });
   }
 };
-
 
 /* ============================================================
    DELETE BIKE INVOICE

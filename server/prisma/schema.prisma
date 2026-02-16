@@ -121,8 +121,7 @@ model User {
   createdBikeServices   BikeService[]   @relation("CreatedBikeServices")
   ownedBikeInvoices     BikeInvoice[]   @relation("OwnerBikeInvoices")
   createdBikeInvoices   BikeInvoice[]   @relation("CreatedBikeInvoices")
-  ownedBikeReminders    BikeReminder[]  @relation("OwnerBikeReminders")
-  createdBikeReminders  BikeReminder[]  @relation("CreatedBikeReminders")
+  bikeReminders         BikeReminder[]
   ownedBikeOcrRecords   BikeOcrRecord[] @relation("OwnerBikeOcrRecords")
   createdBikeOcrRecords BikeOcrRecord[] @relation("CreatedBikeOcrRecords")
   bikeStaffs            BikeStaff[]
@@ -132,14 +131,16 @@ model User {
   washingClients WashingClient[]
   washTeams      WashTeam[]      @relation("AdminWashTeams")
 
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
   staffs               Staff[]
   washingStaffs        WashingStaff[]
   washingStaffSalaries WashingStaffSalary[]
   dynamicTables        DynamicTable[]
   whatsAppSessions     WhatsAppSession[]
   whatsAppMessages     WhatsAppMessage[]
+  bikeWhatsAppSessions BikeWhatsAppSession[]
+  bikeWhatsAppMessages BikeWhatsAppMessage[]
 }
 
 //car db schemas
@@ -599,10 +600,13 @@ model Bike {
   ownerUser User @relation("OwnerBikes", fields: [ownerUserId], references: [id])
   createdBy User @relation("CreatedBikes", fields: [createdById], references: [id])
 
-  bikeServices   BikeService[]
-  bikeInvoices   BikeInvoice[]
-  bikeReminders  BikeReminder[]
-  bikeOcrRecords BikeOcrRecord[]
+  bikeServices        BikeService[]
+  bikeInvoices        BikeInvoice[]
+  bikeReminders       BikeReminder[]
+  bikeOcrRecords      BikeOcrRecord[]
+  whatsappOptin       Boolean         @default(false)
+  whatsappOptinAt     DateTime?
+  whatsappOptinSource String?
 
   createdAt DateTime @default(now())
 
@@ -661,6 +665,20 @@ model BikeService {
   serviceItems ServiceItem[]
   serviceMedia BikeServiceMedia[]
 
+  bikeWhatsAppSessions BikeWhatsAppSession[]
+  bikeWhatsAppMessages BikeWhatsAppMessage[]
+
+  // ===== REVIEW SYSTEM =====
+  reviewSentAt    DateTime?
+  reviewRating    Int?
+  reviewSource    String?
+  reviewMessageId String?
+  // ✅ APPROVAL WORKFLOW (FIXED)
+  approvalStatus  String? // ❌ NO DEFAULT
+  approvalNote    String?
+  approvalAt      DateTime?
+  approvalSource  WhatsAppApprovalSource?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -703,6 +721,8 @@ model BikeInvoice {
 
   invoiceItems InvoiceItem[]
 
+  bikeWhatsAppMessages BikeWhatsAppMessage[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -728,26 +748,28 @@ model InvoiceItem {
 model BikeReminder {
   id Int @id @default(autoincrement())
 
-  bikeClientId Int
-  bike         Bike @relation(fields: [bikeClientId], references: [id], onDelete: Cascade)
+  bikeId Int
+  userId Int?
 
-  ownerUserId Int
-  createdById Int?
+  serviceDate DateTime
+  note        String?  @db.Text
 
-  ownerUser User  @relation("OwnerBikeReminders", fields: [ownerUserId], references: [id])
-  createdBy User? @relation("CreatedBikeReminders", fields: [createdById], references: [id])
+  remind15At DateTime?
+  remind7At  DateTime?
 
-  message    String
-  remindDate DateTime
-  remindTime String?
-  isDone     Boolean  @default(false)
+  sent15 Boolean @default(false)
+  sent7  Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([ownerUserId])
-  @@index([createdById])
-  @@index([bikeClientId])
+  bike Bike  @relation(fields: [bikeId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([serviceDate])
+  @@index([remind15At])
+  @@index([remind7At])
+  @@index([bikeId])
 }
 
 model BikeOcrRecord {
@@ -823,6 +845,7 @@ model BikeServiceMedia {
   fileName String?
   mimeType String?
   data     Bytes
+  r2Url    String?
 
   createdAt DateTime @default(now())
 }
@@ -1195,6 +1218,56 @@ model WhatsAppMessage {
   @@index([userId])
   @@index([serviceId])
   @@index([invoiceId])
+}
+
+model BikeWhatsAppSession {
+  phone         String   @id // E.164 format
+  bikeServiceId Int
+  userId        Int
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bikeService BikeService @relation(fields: [bikeServiceId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bikeServiceId])
+  @@index([userId])
+}
+
+model BikeWhatsAppMessage {
+  id     Int    @id @default(autoincrement())
+  phone  String
+  userId Int
+
+  bikeServiceId Int?
+  bikeInvoiceId Int?
+
+  template  String
+  messageId String?
+  status    String
+  error     String?
+
+  createdAt DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bikeService BikeService? @relation(fields: [bikeServiceId], references: [id], onDelete: SetNull)
+  bikeInvoice BikeInvoice? @relation(fields: [bikeInvoiceId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([userId])
+  @@index([bikeServiceId])
+  @@index([bikeInvoiceId])
+}
+
+model BikeWhatsAppLog {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  direction String // outbound | inbound
+  payload   Json
+  response  Json?
+  status    String
+  createdAt DateTime @default(now())
 }
 
 //Admin Tables

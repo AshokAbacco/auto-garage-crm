@@ -25,9 +25,17 @@ import {
   CreditCard,
   IndianRupee,
 } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa"; // ✅ Added Import
 import { useTheme } from "../../contexts/ThemeContext";
 import { Toaster, toast } from "react-hot-toast";
-import { FiCalendar, FiTool, FiPlus, FiFileText, FiEye, FiTrash2 } from "react-icons/fi";
+import {
+  FiCalendar,
+  FiTool,
+  FiPlus,
+  FiFileText,
+  FiEye,
+  FiTrash2,
+} from "react-icons/fi";
 import api from "../../utils/axiosInstance";
 
 const fallbackImage = "https://via.placeholder.com/300x200?text=No+Image";
@@ -69,8 +77,32 @@ export default function ClientDetail() {
 
   const totalBilled = clientInvoices.reduce(
     (sum, inv) => sum + Number(inv.grandTotal || inv.totalAmount || 0),
-    0
+    0,
   );
+
+  // ✅ WHATSAPP HANDLER
+  const handleManualWhatsApp = async () => {
+    if (
+      !window.confirm(
+        `Send 'Vehicle Received' message to ${client?.phone || "this client"}?`,
+      )
+    )
+      return;
+
+    try {
+      // Using the api instance (Axios) consistent with the rest of the file
+      const res = await api.put(`/api/bikes/${id}`, { sendWhatsApp: true });
+
+      if (res.status === 200) {
+        toast.success("WhatsApp Receipt Sent!");
+      } else {
+        toast.error(res.data?.message || "Failed to send WhatsApp");
+      }
+    } catch (err) {
+      console.error("WhatsApp error:", err);
+      toast.error(err.response?.data?.message || "Error connecting to server");
+    }
+  };
 
   // Fetch client invoices
   useEffect(() => {
@@ -78,7 +110,9 @@ export default function ClientDetail() {
       try {
         const res = await api.get("/api/bike-invoices");
         const invoicesArray = Array.isArray(res.data) ? res.data : [];
-        const filtered = invoicesArray.filter((inv) => inv.bikeId === Number(id));
+        const filtered = invoicesArray.filter(
+          (inv) => inv.bikeId === Number(id),
+        );
         setClientInvoices(filtered);
       } catch (err) {
         console.error("Fetch invoices error:", err);
@@ -113,17 +147,20 @@ export default function ClientDetail() {
         setFormData(data);
         setActiveImage(
           data.adImage ||
-          data.bikeImage ||
-          data.carImage ||
-          (Array.isArray(data.damageImages) ? data.damageImages[0] : "") ||
-          ""
+            data.bikeImage ||
+            data.carImage ||
+            (Array.isArray(data.damageImages) ? data.damageImages[0] : "") ||
+            "",
         );
-
       } catch (err) {
         console.error("Fetch client error:", err);
-        setError(err.response?.data?.message || err.message || "Failed to load client");
-        toast.error(err.response?.data?.message || err.message || "Failed to load client");
-        
+        setError(
+          err.response?.data?.message || err.message || "Failed to load client",
+        );
+        toast.error(
+          err.response?.data?.message || err.message || "Failed to load client",
+        );
+
         // If 403 or 404, redirect back
         if (err.response?.status === 403 || err.response?.status === 404) {
           setTimeout(() => navigate("/bike-clients"), 2000);
@@ -175,7 +212,7 @@ export default function ClientDetail() {
       await api.put(`/api/bikes/${id}`, formData);
       toast.success("Client updated successfully");
       setIsEditMode(false);
-      
+
       // Refresh client data
       const res = await api.get(`/api/bikes/${id}`);
       setClient(res.data);
@@ -224,9 +261,7 @@ export default function ClientDetail() {
   if (error || !client) {
     return (
       <div
-        className={`min-h-screen p-6 ${
-          isDark ? "bg-gray-900" : "bg-gray-100"
-        }`}
+        className={`min-h-screen p-6 ${isDark ? "bg-gray-900" : "bg-gray-100"}`}
       >
         <Toaster />
         <div
@@ -257,11 +292,8 @@ export default function ClientDetail() {
     ? client.damageImages
     : [];
 
-    const defaultImage =
-  client.adImage ||
-  client.bikeImage ||
-  client.carImage ||
-  fallbackImage;
+  const defaultImage =
+    client.adImage || client.bikeImage || client.carImage || fallbackImage;
 
   return (
     <div
@@ -308,6 +340,18 @@ export default function ClientDetail() {
               </>
             ) : (
               <>
+                {/* ✅ WhatsApp Button Added Here */}
+                <button
+                  onClick={handleManualWhatsApp}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-all duration-300 hover:scale-105 shadow-lg"
+                  title="Send WhatsApp Receipt"
+                >
+                  <FaWhatsapp size={20} />
+                  <span className="font-medium hidden sm:inline">
+                    Send Receipt
+                  </span>
+                </button>
+
                 <button
                   onClick={() => setIsEditMode(true)}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 shadow-lg"
@@ -354,15 +398,21 @@ export default function ClientDetail() {
                   <div className="flex items-center gap-3">
                     <FiCalendar className="text-white/80" size={20} />
                     <div>
-                      <p className="text-xs text-white/70 uppercase font-medium">Last Service</p>
+                      <p className="text-xs text-white/70 uppercase font-medium">
+                        Last Service
+                      </p>
                       <p className="text-white font-semibold">{lastService}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <FiTool className="text-white/80" size={20} />
                     <div>
-                      <p className="text-xs text-white/70 uppercase font-medium">Total Services</p>
-                      <p className="text-white font-semibold">{totalServices}</p>
+                      <p className="text-xs text-white/70 uppercase font-medium">
+                        Total Services
+                      </p>
+                      <p className="text-white font-semibold">
+                        {totalServices}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -370,14 +420,10 @@ export default function ClientDetail() {
             </div>
           </div>
 
-         {/* ================= VEHICLE IMAGE VIEWER ================= */}
+          {/* ================= VEHICLE IMAGE VIEWER ================= */}
           <div className="flex h-[420px] md:h-[480px] overflow-hidden rounded-b-2xl">
-            
             {/* ================= MAIN IMAGE ================= */}
-            <div
-              className="relative flex-1 min-w-[300px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 cursor-move select-none"
-            
-            >
+            <div className="relative flex-1 min-w-[300px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 cursor-move select-none">
               {/* ❌ Cancel selected damage image */}
               {activeImage && client?.damageImages?.includes(activeImage) && (
                 <button
@@ -409,7 +455,9 @@ export default function ClientDetail() {
             {damageImages.length > 0 && (
               <div
                 className={`w-28 min-w-[112px] p-2 space-y-2 overflow-y-auto border-l ${
-                  isDark ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+                  isDark
+                    ? "border-gray-600 bg-gray-800"
+                    : "border-gray-200 bg-white"
                 }`}
               >
                 {damageImages.map((img, idx) => (
@@ -424,8 +472,8 @@ export default function ClientDetail() {
                       activeImage === img
                         ? "border-blue-500 ring-2 ring-blue-400"
                         : isDark
-                        ? "border-gray-600 hover:border-blue-400"
-                        : "border-gray-300 hover:border-blue-400"
+                          ? "border-gray-600 hover:border-blue-400"
+                          : "border-gray-300 hover:border-blue-400"
                     }`}
                   >
                     <img
@@ -437,8 +485,7 @@ export default function ClientDetail() {
                 ))}
               </div>
             )}
-          </div>  
-
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -483,8 +530,8 @@ export default function ClientDetail() {
                   activeTab === tab
                     ? "border-b-2 border-blue-500 text-blue-500"
                     : isDark
-                    ? "text-gray-400 hover:text-gray-200"
-                    : "text-gray-600 hover:text-gray-900"
+                      ? "text-gray-400 hover:text-gray-200"
+                      : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 {tab}
@@ -744,7 +791,9 @@ export default function ClientDetail() {
                               isDark ? "text-white" : "text-gray-800"
                             }`}
                           >
-                            {service.serviceName || service.description || "Service"}
+                            {service.serviceName ||
+                              service.description ||
+                              "Service"}
                           </h3>
                           <p
                             className={`text-sm mt-1 ${
@@ -827,7 +876,9 @@ export default function ClientDetail() {
                             }`}
                           >
                             {new Date(inv.createdAt).toLocaleDateString()} • ₹
-                            {(inv.grandTotal || inv.totalAmount || 0).toFixed(2)}
+                            {(inv.grandTotal || inv.totalAmount || 0).toFixed(
+                              2,
+                            )}
                           </p>
                         </div>
                         <span
@@ -863,7 +914,9 @@ export default function ClientDetail() {
         {(client.notes || isEditMode) && (
           <div
             className={`rounded-2xl shadow-lg border p-6 transition-all duration-300 ${
-              isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-100"
             }`}
           >
             <h2
@@ -974,7 +1027,16 @@ function InfoCard({ icon, label, value, isDark, color = "blue" }) {
   );
 }
 
-function InputField({ icon, label, name, value, onChange, isDark, type = "text", iconColor }) {
+function InputField({
+  icon,
+  label,
+  name,
+  value,
+  onChange,
+  isDark,
+  type = "text",
+  iconColor,
+}) {
   return (
     <div className="w-full">
       <label
@@ -1034,11 +1096,13 @@ function Section({ title, children, isDark }) {
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
-        <h4 className={`font-semibold text-lg ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{title}</h4>
+        <h4
+          className={`font-semibold text-lg ${isDark ? "text-gray-200" : "text-gray-700"}`}
+        >
+          {title}
+        </h4>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {children}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
     </div>
   );
 }

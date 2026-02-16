@@ -9,13 +9,13 @@ export const getBikeReminders = async (req, res) => {
   try {
     const ownerUserId = getOwnerUserId(req.user);
 
-    const whereCondition =
-      req.user.role === "user"
-        ? { ownerUserId }
-        : { ownerUserId, createdById: req.user.id };
-
+    // ✅ UPDATED: Filter via Bike relationship (Clean Architecture)
     const reminders = await prisma.bikeReminder.findMany({
-      where: whereCondition,
+      where: {
+        bike: {
+          ownerUserId: ownerUserId,
+        },
+      },
       include: {
         bike: {
           select: {
@@ -26,7 +26,8 @@ export const getBikeReminders = async (req, res) => {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      // ✅ UPDATED: Order by serviceDate ascending
+      orderBy: { serviceDate: "asc" },
     });
 
     res.json({
@@ -52,11 +53,14 @@ export const getBikeReminderById = async (req, res) => {
     const id = Number(req.params.id);
     const ownerUserId = getOwnerUserId(req.user);
 
+    // ✅ UPDATED: Filter via Bike relationship
     const reminder = await prisma.bikeReminder.findFirst({
-      where:
-        req.user.role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: {
+        id: id,
+        bike: {
+          ownerUserId: ownerUserId,
+        },
+      },
       include: {
         bike: {
           select: {
@@ -95,35 +99,36 @@ export const getBikeReminderById = async (req, res) => {
 ===================================================== */
 export const createBikeReminder = async (req, res) => {
   try {
-    const ownerUserId = getOwnerUserId(req.user);
+    // ✅ UPDATED: Destructure new fields
+    const { bikeId, serviceDate, note } = req.body;
 
-    const {
-      bikeClientId,
-      bikeId, // fallback
-      message,
-      remindDate,
-      remindTime,
-    } = req.body;
-
-    const finalBikeId = bikeClientId || bikeId;
-
-    if (!finalBikeId || !message || !remindDate) {
+    if (!bikeId || !serviceDate) {
       return res.status(400).json({
         success: false,
-        message: "bikeClientId, message and remindDate are required",
+        message: "bikeId and serviceDate are required",
       });
     }
 
-    // 🔐 Bike ownership check
+    const parsedBikeId = Number(bikeId);
+    if (isNaN(parsedBikeId)) {
+      return res.status(400).json({ message: "Invalid bikeId" });
+    }
+
+    const serviceDateObj = new Date(serviceDate);
+
+    // ✅ UPDATED: Auto calculate reminders (15 days and 7 days before)
+    const remind15At = new Date(serviceDateObj);
+    remind15At.setDate(remind15At.getDate() - 15);
+
+    const remind7At = new Date(serviceDateObj);
+    remind7At.setDate(remind7At.getDate() - 7);
+
+    // 🔐 Bike ownership check (Simplified)
     const bike = await prisma.bike.findFirst({
-      where:
-        req.user.role === "user"
-          ? { id: Number(finalBikeId), ownerUserId }
-          : {
-              id: Number(finalBikeId),
-              ownerUserId,
-              createdById: req.user.id,
-            },
+      where: {
+        id: parsedBikeId,
+        ownerUserId: getOwnerUserId(req.user),
+      },
     });
 
     if (!bike) {
@@ -133,15 +138,18 @@ export const createBikeReminder = async (req, res) => {
       });
     }
 
+    // ✅ UPDATED: Create with new schema fields
     const reminder = await prisma.bikeReminder.create({
       data: {
-        bikeClientId: Number(finalBikeId),
-        message: message.trim(),
-        remindDate: new Date(remindDate),
-        remindTime: remindTime || null,
-
-        ownerUserId,
-        createdById: req.user.id,
+        bikeId: parsedBikeId,
+        userId: req.user.id,
+        serviceDate: serviceDateObj,
+        note: note || null,
+        remind15At,
+        remind7At,
+      },
+      include: {
+        bike: true,
       },
     });
 
@@ -167,11 +175,14 @@ export const updateBikeReminder = async (req, res) => {
     const id = Number(req.params.id);
     const ownerUserId = getOwnerUserId(req.user);
 
+    // ✅ UPDATED: Check existence via Bike relationship
     const exists = await prisma.bikeReminder.findFirst({
-      where:
-        req.user.role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: {
+        id: id,
+        bike: {
+          ownerUserId: ownerUserId,
+        },
+      },
     });
 
     if (!exists) {
@@ -181,16 +192,33 @@ export const updateBikeReminder = async (req, res) => {
       });
     }
 
+    // ✅ UPDATED: Handle new fields (serviceDate, note)
+    const { serviceDate, note } = req.body;
+
+    let updatedData = {
+      note,
+    };
+
+    // If serviceDate changes, recalc reminders and reset sent flags
+    if (serviceDate) {
+      const newServiceDate = new Date(serviceDate);
+
+      const remind15At = new Date(newServiceDate);
+      remind15At.setDate(remind15At.getDate() - 15);
+
+      const remind7At = new Date(newServiceDate);
+      remind7At.setDate(remind7At.getDate() - 7);
+
+      updatedData.serviceDate = newServiceDate;
+      updatedData.remind15At = remind15At;
+      updatedData.remind7At = remind7At;
+      updatedData.sent15 = false; // Reset tracking
+      updatedData.sent7 = false; // Reset tracking
+    }
+
     const updated = await prisma.bikeReminder.update({
       where: { id },
-      data: {
-        message: req.body.message,
-        remindDate: req.body.remindDate
-          ? new Date(req.body.remindDate)
-          : undefined,
-        remindTime: req.body.remindTime,
-        isDone: req.body.isDone,
-      },
+      data: updatedData,
       include: {
         bike: true,
       },
@@ -219,11 +247,14 @@ export const deleteBikeReminder = async (req, res) => {
     const id = Number(req.params.id);
     const ownerUserId = getOwnerUserId(req.user);
 
+    // ✅ UPDATED: Check existence via Bike relationship
     const reminder = await prisma.bikeReminder.findFirst({
-      where:
-        req.user.role === "user"
-          ? { id, ownerUserId }
-          : { id, ownerUserId, createdById: req.user.id },
+      where: {
+        id: id,
+        bike: {
+          ownerUserId: ownerUserId,
+        },
+      },
     });
 
     if (!reminder) {

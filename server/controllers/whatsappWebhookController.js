@@ -8,9 +8,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
     const value = change?.value;
     const message = value?.messages?.[0];
 
-    if (!message) {
-      return res.sendStatus(200);
-    }
+    if (!message) return res.sendStatus(200);
 
     console.log("========== INCOMING WHATSAPP ==========");
     console.log(JSON.stringify(message, null, 2));
@@ -21,10 +19,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
     ======================================================== */
     const normalizePhone = (phone) => {
       const digits = String(phone).replace(/\D/g, "");
-
       if (digits.length === 10) return `91${digits}`;
       if (digits.length === 12 && digits.startsWith("91")) return digits;
-
       return digits;
     };
 
@@ -40,11 +36,10 @@ export const handleWhatsAppWebhook = async (req, res) => {
       console.log("Button clicked:", actionText);
       console.log("From phone:", fullPhone);
 
-      if (!fullPhone || !actionText) {
-        return res.sendStatus(200);
-      }
+      if (!actionText) return res.sendStatus(200);
 
-      /* ================= OPT-IN (CAR + BIKE SAFE) ================= */
+      /* ================= OPT-IN / OPT-OUT ================= */
+
       if (actionText === "Yes, Send Updates") {
         await prisma.client.updateMany({
           where: { phone: last10 },
@@ -139,17 +134,20 @@ export const handleWhatsAppWebhook = async (req, res) => {
 
       /* ================= APPROVE / REJECT ================= */
 
-      /* ---------- CAR SESSION ---------- */
-      const carSession = await prisma.whatsAppSession.findUnique({
-        where: { phone: fullPhone },
+      const carSession = await prisma.whatsAppSession.findFirst({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
       });
 
-      if (carSession) {
-        if (carSession.expiresAt < new Date()) {
-          console.log("❌ Car session expired");
-          return res.sendStatus(200);
-        }
+      const bikeSession = await prisma.bikeWhatsAppSession.findFirst({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
+      });
 
+      /* ---------- HANDLE CAR ---------- */
+      if (carSession && carSession.expiresAt > new Date()) {
         if (actionText === "Approve Service") {
           await prisma.service.update({
             where: { id: carSession.serviceId },
@@ -179,17 +177,8 @@ export const handleWhatsAppWebhook = async (req, res) => {
         return res.sendStatus(200);
       }
 
-      /* ---------- BIKE SESSION ---------- */
-      const bikeSession = await prisma.bikeWhatsAppSession.findUnique({
-        where: { phone: fullPhone },
-      });
-
-      if (bikeSession) {
-        if (bikeSession.expiresAt < new Date()) {
-          console.log("❌ Bike session expired");
-          return res.sendStatus(200);
-        }
-
+      /* ---------- HANDLE BIKE ---------- */
+      if (bikeSession && bikeSession.expiresAt > new Date()) {
         if (actionText === "Approve Service") {
           await prisma.bikeService.update({
             where: { id: bikeSession.bikeServiceId },
@@ -219,12 +208,12 @@ export const handleWhatsAppWebhook = async (req, res) => {
         return res.sendStatus(200);
       }
 
-      console.log("❌ No session found for:", fullPhone);
+      console.log("❌ No valid session found for:", fullPhone);
       return res.sendStatus(200);
     }
 
     /* ========================================================
-       HANDLE TEXT (STOP)
+       HANDLE TEXT (STOP + SESSION EXTEND)
     ======================================================== */
     if (message.type === "text") {
       const text = message.text?.body?.trim().toLowerCase();
@@ -239,13 +228,15 @@ export const handleWhatsAppWebhook = async (req, res) => {
       }
 
       /* Extend CAR session */
-      const carSession = await prisma.whatsAppSession.findUnique({
-        where: { phone: fullPhone },
+      const carSession = await prisma.whatsAppSession.findFirst({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
       });
 
       if (carSession) {
         await prisma.whatsAppSession.update({
-          where: { phone: fullPhone },
+          where: { id: carSession.id },
           data: {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },
@@ -253,13 +244,15 @@ export const handleWhatsAppWebhook = async (req, res) => {
       }
 
       /* Extend BIKE session */
-      const bikeSession = await prisma.bikeWhatsAppSession.findUnique({
-        where: { phone: fullPhone },
+      const bikeSession = await prisma.bikeWhatsAppSession.findFirst({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
       });
 
       if (bikeSession) {
         await prisma.bikeWhatsAppSession.update({
-          where: { phone: fullPhone },
+          where: { id: bikeSession.id },
           data: {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },

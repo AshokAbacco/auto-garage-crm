@@ -587,7 +587,7 @@ model Bike {
 
   bikeImage    String?
   adImage      String?
-  damageImages String[]
+  damageImages Json? // ⚠️ Change to Json (like car)
 
   receiverName String?
   color        String?
@@ -600,18 +600,28 @@ model Bike {
   ownerUser User @relation("OwnerBikes", fields: [ownerUserId], references: [id])
   createdBy User @relation("CreatedBikes", fields: [createdById], references: [id])
 
-  bikeServices        BikeService[]
-  bikeInvoices        BikeInvoice[]
-  bikeReminders       BikeReminder[]
-  bikeOcrRecords      BikeOcrRecord[]
-  whatsappOptin       Boolean         @default(false)
+  bikeServices   BikeService[]
+  bikeInvoices   BikeInvoice[]
+  bikeReminders  BikeReminder[]
+  bikeOcrRecords BikeOcrRecord[]
+
+  /**
+   * ================= WHATSAPP OPT-IN =================
+   */
+  whatsappOptin       Boolean   @default(false)
   whatsappOptinAt     DateTime?
   whatsappOptinSource String?
 
   createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt // ✅ ADD THIS
 
+  /**
+   * ================= INDEXES =================
+   */
+  @@unique([ownerUserId, regNumber]) // ✅ IMPORTANT
   @@index([ownerUserId])
   @@index([createdById])
+  @@index([regNumber])
 }
 
 model BikeService {

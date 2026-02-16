@@ -180,8 +180,10 @@ export const handleWhatsAppWebhook = async (req, res) => {
       }
 
       /* ---------- BIKE SESSION ---------- */
-      const bikeSession = await prisma.bikeWhatsAppSession.findUnique({
-        where: { phone: fullPhone },
+      const bikeSession = await prisma.bikeWhatsAppSession.findFirst({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
       });
 
       if (bikeSession) {

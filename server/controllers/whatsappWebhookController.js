@@ -1,4 +1,4 @@
-//whatsappWebhookController.js
+// whatsappWebhookController.js
 import prisma from "../models/prismaClient.js";
 
 export const handleWhatsAppWebhook = async (req, res) => {
@@ -17,18 +17,13 @@ export const handleWhatsAppWebhook = async (req, res) => {
     console.log("========================================");
 
     /* ========================================================
-       PHONE NORMALIZER (12 DIGIT E.164 WITHOUT +)
+       PHONE NORMALIZER
     ======================================================== */
     const normalizePhone = (phone) => {
       const digits = String(phone).replace(/\D/g, "");
 
-      if (digits.length === 10) {
-        return `91${digits}`;
-      }
-
-      if (digits.length === 12 && digits.startsWith("91")) {
-        return digits;
-      }
+      if (digits.length === 10) return `91${digits}`;
+      if (digits.length === 12 && digits.startsWith("91")) return digits;
 
       return digits;
     };
@@ -43,15 +38,15 @@ export const handleWhatsAppWebhook = async (req, res) => {
       const actionText = message.button?.text?.trim();
 
       console.log("Button clicked:", actionText);
-      console.log("From phone (normalized):", fullPhone);
+      console.log("From phone:", fullPhone);
 
       if (!fullPhone || !actionText) {
         return res.sendStatus(200);
       }
 
-      /* ================= OPT-IN ================= */
+      /* ================= OPT-IN (CAR + BIKE SAFE) ================= */
       if (actionText === "Yes, Send Updates") {
-        const result = await prisma.client.updateMany({
+        await prisma.client.updateMany({
           where: { phone: last10 },
           data: {
             whatsappOptin: true,
@@ -60,18 +55,15 @@ export const handleWhatsAppWebhook = async (req, res) => {
           },
         });
 
-        console.log("Opt-in updated rows:", result.count);
         return res.sendStatus(200);
       }
 
-      /* ================= OPT-OUT ================= */
       if (actionText === "No, Thanks") {
-        const result = await prisma.client.updateMany({
+        await prisma.client.updateMany({
           where: { phone: last10 },
           data: { whatsappOptin: false },
         });
 
-        console.log("Opt-out updated rows:", result.count);
         return res.sendStatus(200);
       }
 
@@ -84,83 +76,150 @@ export const handleWhatsAppWebhook = async (req, res) => {
       };
 
       if (ratingMap[actionText]) {
-        const client = await prisma.client.findFirst({
+        /* ---------- CAR REVIEW ---------- */
+        const carClient = await prisma.client.findFirst({
           where: { phone: last10 },
         });
 
-        if (!client) return res.sendStatus(200);
+        if (carClient) {
+          const carService = await prisma.service.findFirst({
+            where: {
+              clientId: carClient.id,
+              reviewSentAt: { not: null },
+              reviewRating: null,
+            },
+            orderBy: { reviewSentAt: "desc" },
+          });
 
-        const service = await prisma.service.findFirst({
-          where: {
-            clientId: client.id,
-            reviewSentAt: { not: null },
-            reviewRating: null,
-          },
-          orderBy: {
-            reviewSentAt: "desc",
-          },
+          if (carService) {
+            await prisma.service.update({
+              where: { id: carService.id },
+              data: {
+                reviewRating: ratingMap[actionText],
+                reviewSource: "whatsapp",
+              },
+            });
+
+            console.log("⭐ Car review saved:", carService.id);
+            return res.sendStatus(200);
+          }
+        }
+
+        /* ---------- BIKE REVIEW ---------- */
+        const bikeClient = await prisma.bike.findFirst({
+          where: { phone: last10 },
         });
 
-        if (!service) return res.sendStatus(200);
+        if (bikeClient) {
+          const bikeService = await prisma.bikeService.findFirst({
+            where: {
+              clientId: bikeClient.id,
+              reviewSentAt: { not: null },
+              reviewRating: null,
+            },
+            orderBy: { reviewSentAt: "desc" },
+          });
 
-        await prisma.service.update({
-          where: { id: service.id },
-          data: {
-            reviewRating: ratingMap[actionText],
-            reviewSource: "whatsapp",
-          },
-        });
+          if (bikeService) {
+            await prisma.bikeService.update({
+              where: { id: bikeService.id },
+              data: {
+                reviewRating: ratingMap[actionText],
+                reviewSource: "whatsapp",
+              },
+            });
 
-        console.log(
-          `⭐ Review saved for service ${service.id}:`,
-          ratingMap[actionText],
-        );
+            console.log("⭐ Bike review saved:", bikeService.id);
+            return res.sendStatus(200);
+          }
+        }
 
         return res.sendStatus(200);
       }
 
       /* ================= APPROVE / REJECT ================= */
 
-      const session = await prisma.whatsAppSession.findUnique({
+      /* ---------- CAR SESSION ---------- */
+      const carSession = await prisma.whatsAppSession.findUnique({
         where: { phone: fullPhone },
       });
 
-      if (!session) {
-        console.log("❌ No session found for phone:", fullPhone);
+      if (carSession) {
+        if (carSession.expiresAt < new Date()) {
+          console.log("❌ Car session expired");
+          return res.sendStatus(200);
+        }
+
+        if (actionText === "Approve Service") {
+          await prisma.service.update({
+            where: { id: carSession.serviceId },
+            data: {
+              approvalStatus: "APPROVED",
+              approvalSource: "whatsapp",
+              approvalAt: new Date(),
+            },
+          });
+
+          console.log("✅ Car service approved:", carSession.serviceId);
+        }
+
+        if (actionText === "Reject / Contact Garage") {
+          await prisma.service.update({
+            where: { id: carSession.serviceId },
+            data: {
+              approvalStatus: "REJECTED",
+              approvalSource: "whatsapp",
+              approvalAt: new Date(),
+            },
+          });
+
+          console.log("❌ Car service rejected:", carSession.serviceId);
+        }
+
         return res.sendStatus(200);
       }
 
-      if (session.expiresAt < new Date()) {
-        console.log("❌ Session expired for phone:", fullPhone);
+      /* ---------- BIKE SESSION ---------- */
+      const bikeSession = await prisma.bikeWhatsAppSession.findUnique({
+        where: { phone: fullPhone },
+      });
+
+      if (bikeSession) {
+        if (bikeSession.expiresAt < new Date()) {
+          console.log("❌ Bike session expired");
+          return res.sendStatus(200);
+        }
+
+        if (actionText === "Approve Service") {
+          await prisma.bikeService.update({
+            where: { id: bikeSession.bikeServiceId },
+            data: {
+              approvalStatus: "APPROVED",
+              approvalSource: "whatsapp",
+              approvalAt: new Date(),
+            },
+          });
+
+          console.log("✅ Bike service approved:", bikeSession.bikeServiceId);
+        }
+
+        if (actionText === "Reject / Contact Garage") {
+          await prisma.bikeService.update({
+            where: { id: bikeSession.bikeServiceId },
+            data: {
+              approvalStatus: "REJECTED",
+              approvalSource: "whatsapp",
+              approvalAt: new Date(),
+            },
+          });
+
+          console.log("❌ Bike service rejected:", bikeSession.bikeServiceId);
+        }
+
         return res.sendStatus(200);
       }
 
-      if (actionText === "Approve Service") {
-        await prisma.service.update({
-          where: { id: session.serviceId },
-          data: {
-            approvalStatus: "APPROVED",
-            approvalSource: "whatsapp",
-            approvalAt: new Date(),
-          },
-        });
-
-        console.log("✅ Service approved:", session.serviceId);
-      }
-
-      if (actionText === "Reject / Contact Garage") {
-        await prisma.service.update({
-          where: { id: session.serviceId },
-          data: {
-            approvalStatus: "REJECTED",
-            approvalSource: "whatsapp",
-            approvalAt: new Date(),
-          },
-        });
-
-        console.log("❌ Service rejected:", session.serviceId);
-      }
-
+      console.log("❌ No session found for:", fullPhone);
       return res.sendStatus(200);
     }
 
@@ -170,36 +229,41 @@ export const handleWhatsAppWebhook = async (req, res) => {
     if (message.type === "text") {
       const text = message.text?.body?.trim().toLowerCase();
 
-      console.log("Text received:", text);
-      console.log("From phone (normalized):", fullPhone);
-
-      if (!fullPhone) {
-        return res.sendStatus(200);
-      }
-
       if (text === "stop") {
-        const result = await prisma.client.updateMany({
+        await prisma.client.updateMany({
           where: { phone: last10 },
           data: { whatsappOptin: false },
         });
 
-        console.log("STOP updated rows:", result.count);
         return res.sendStatus(200);
       }
 
-      const existingSession = await prisma.whatsAppSession.findUnique({
+      /* Extend CAR session */
+      const carSession = await prisma.whatsAppSession.findUnique({
         where: { phone: fullPhone },
       });
 
-      if (existingSession) {
+      if (carSession) {
         await prisma.whatsAppSession.update({
           where: { phone: fullPhone },
           data: {
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           },
         });
+      }
 
-        console.log("🔄 Session extended for:", fullPhone);
+      /* Extend BIKE session */
+      const bikeSession = await prisma.bikeWhatsAppSession.findUnique({
+        where: { phone: fullPhone },
+      });
+
+      if (bikeSession) {
+        await prisma.bikeWhatsAppSession.update({
+          where: { phone: fullPhone },
+          data: {
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        });
       }
 
       return res.sendStatus(200);

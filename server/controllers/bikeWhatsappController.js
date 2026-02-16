@@ -254,41 +254,43 @@ export const sendBikeServiceNotification = async (req, res) => {
    BIKE FINAL INVOICE WHATSAPP (PRODUCTION SAFE)
 ========================================================= */
 export const sendBikeFinalInvoiceWhatsApp = async (invoiceId, ownerUserId) => {
+  const numericId = Number(invoiceId);
+
+  if (!numericId) {
+    throw new Error("Invalid invoice ID");
+  }
+
+  const invoice = await prisma.bikeInvoice.findFirst({
+    where: { id: numericId, ownerUserId },
+    include: { bike: true, ownerUser: true },
+  });
+
+  if (!invoice) {
+    throw new Error("Invoice not found");
+  }
+
+  if (!invoice.bike?.phone) {
+    throw new Error("Customer phone not found");
+  }
+
+  const to = normalizePhone(invoice.bike.phone);
+
+  console.log("📄 Generating Final Invoice PDF...");
+
+  /* 1️⃣ Generate PDF (critical) */
+  const pdfUrl = await generateBikeFinalInvoicePDF(invoice.id);
+
+  if (!pdfUrl || !pdfUrl.startsWith("http")) {
+    throw new Error("PDF generation failed");
+  }
+
+  console.log("✅ PDF Generated:", pdfUrl);
+
+  /* 2️⃣ Send Template */
+  let messageId = null;
+
   try {
-    const numericId = Number(invoiceId);
-
-    if (!numericId) {
-      throw new Error("Invalid invoice ID");
-    }
-
-    const invoice = await prisma.bikeInvoice.findFirst({
-      where: { id: numericId, ownerUserId },
-      include: { bike: true, ownerUser: true },
-    });
-
-    if (!invoice) {
-      throw new Error("Invoice not found");
-    }
-
-    if (!invoice.bike?.phone) {
-      throw new Error("Customer phone not found");
-    }
-
-    const to = normalizePhone(invoice.bike.phone);
-
-    console.log("📄 Generating Final Invoice PDF...");
-
-    /* 1️⃣ GENERATE PDF FIRST (IMPORTANT CHANGE) */
-    const pdfUrl = await generateBikeFinalInvoicePDF(invoice.id);
-
-    if (!pdfUrl || !pdfUrl.startsWith("http")) {
-      throw new Error("PDF generation failed or invalid URL");
-    }
-
-    console.log("✅ PDF Generated:", pdfUrl);
-
-    /* 2️⃣ SEND TEMPLATE */
-    const messageId = await sendWhatsAppTemplate({
+    messageId = await sendWhatsAppTemplate({
       to,
       templateName: "final_invoice_summary",
       languageCode: "en",
@@ -300,8 +302,12 @@ export const sendBikeFinalInvoiceWhatsApp = async (invoiceId, ownerUserId) => {
     });
 
     console.log("✅ Template sent");
+  } catch (err) {
+    console.error("⚠️ Template send failed:", err.message);
+  }
 
-    /* 3️⃣ SEND PDF DOCUMENT */
+  /* 3️⃣ Send PDF */
+  try {
     await sendWhatsAppDocument({
       to,
       documentUrl: pdfUrl,
@@ -309,22 +315,26 @@ export const sendBikeFinalInvoiceWhatsApp = async (invoiceId, ownerUserId) => {
     });
 
     console.log("✅ PDF sent via WhatsApp");
+  } catch (err) {
+    console.error("⚠️ PDF send failed:", err.message);
+  }
 
-    /* 4️⃣ LOG MESSAGE */
+  /* 4️⃣ Log Message (non-critical) */
+  try {
     await prisma.bikeWhatsAppMessage.create({
       data: {
         phone: to,
         userId: ownerUserId,
         bikeInvoiceId: invoice.id,
         template: "final_invoice_summary",
-        messageId: messageId || null,
+        messageId: messageId,
         status: "sent",
       },
     });
-
-    console.log("🎉 Final invoice complete & logged");
-  } catch (error) {
-    console.error("❌ Bike Final Invoice Error:", error.message);
-    throw error;
+  } catch (err) {
+    console.error("⚠️ Logging failed:", err.message);
   }
+
+  console.log("🎉 Final invoice process completed");
 };
+

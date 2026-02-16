@@ -58,6 +58,9 @@ import invoiceRenderRoutes from "./routes/invoiceRender.routes.js";
 import cron from "node-cron";
 import { startReminderScheduler } from "./jobs/reminderScheduler.js";
 import { startReviewScheduler } from "./services/reviewScheduler.js";
+import bikeWhatsappRoutes from "./routes/bikeWhatsappRoutes.js";
+import { runBikeReminderCheck } from "./services/bikeReminderScheduler.js";
+import { startBikeReviewScheduler } from "./services/bikeReviewScheduler.js";
 
 // console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -118,6 +121,9 @@ app.use(
 
 startReminderScheduler();
 startReviewScheduler();
+runBikeReminderCheck();
+startBikeReviewScheduler();
+
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
   "/api/payments/razorpay-webhook",
@@ -184,6 +190,7 @@ app.use("/api/carstaff-salary", carstaffSalaryRoutes);
 
 app.use("/api", serviceApprovalRoutes);
 app.use("/api", whatsappRoutes);
+app.use("/api/bike-service", bikeWhatsappRoutes);
 
 app.use("/api/dynamic-tables", dynamicTableRoutes);
 app.use("/api/dynamic-columns", dynamicColumnRoutes);

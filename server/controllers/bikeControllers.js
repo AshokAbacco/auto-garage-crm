@@ -1,5 +1,6 @@
 import prisma from "../models/prismaClient.js";
 import { getOwnerUserId } from "../utils/getAdminId.js";
+import { sendWhatsAppTemplate } from "../services/whatsappService.js"; // ✅ Added Import
 
 /* ===========================
    IMAGE SIZE LIMIT (5MB)
@@ -13,12 +14,62 @@ function isBase64TooLarge(base64) {
 }
 
 /* ===========================
+   WHATSAPP HELPER FUNCTION (Adapted for Bike)
+=========================== */
+const triggerBikeReceivedWhatsApp = async (bike, ownerUserId) => {
+  try {
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { companyName: true },
+    });
+
+    if (!bike?.phone) {
+      console.log("❌ WhatsApp skipped — phone missing");
+      return;
+    }
+
+    // Normalize phone to E.164 (India example)
+    let rawPhone = bike.phone.replace(/\D/g, "");
+
+    if (rawPhone.length === 10) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    if (!rawPhone.startsWith("91")) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    const to = rawPhone;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_receive",
+      languageCode: "en",
+      variables: [
+        bike.ownerName || "Customer", // ✅ Bike uses ownerName
+        bike.regNumber || "N/A",
+        owner?.companyName || "Motor Desk",
+      ],
+    });
+
+    console.log(`✅ Opt-in template sent to ${to}`);
+  } catch (error) {
+    console.error(
+      `❌ Failed to send WhatsApp template to ${bike?.phone}`,
+      error?.response?.data || error.message,
+    );
+  }
+};
+
+/* ===========================
    CREATE BIKE
    POST /api/bikes
 =========================== */
 export const createBike = async (req, res) => {
   try {
-    const data = req.body;
+    // 1. Separate the WhatsApp flag from the data
+    const { sendWhatsApp, ...data } = req.body;
+
     const ownerUserId = getOwnerUserId(req.user);
 
     if (
@@ -83,10 +134,16 @@ export const createBike = async (req, res) => {
         adImage: data.adImage || null,
         damageImages: data.damageImages || [],
 
-        ownerUserId,            // ✅ OWNER (USER)TEAM_MEMBER
+        ownerUserId, // ✅ OWNER (USER)TEAM_MEMBER
         createdById: req.user.id, // ✅ CREATOR (USER / )
       },
     });
+
+    // 2. TRIGGER WHATSAPP IF FLAG IS TRUE
+    if (sendWhatsApp) {
+      // We don't 'await' this to prevent slowing down the HTTP response
+      triggerBikeReceivedWhatsApp(bike, ownerUserId).catch(console.error);
+    }
 
     res.status(201).json(bike);
   } catch (err) {
@@ -103,7 +160,7 @@ export const getBikes = async (req, res) => {
   try {
     const ownerUserId = getOwnerUserId(req.user);
 
-   const role = String(req.user.role).toLowerCase();
+    const role = String(req.user.role).toLowerCase();
 
     const whereCondition = {
       ownerUserId: ownerUserId,
@@ -132,7 +189,7 @@ export const getBikeById = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const bike = await prisma.bike.findFirst({
-      where: { id, ownerUserId }
+      where: { id, ownerUserId },
     });
 
     if (!bike) {
@@ -153,11 +210,15 @@ export const getBikeById = async (req, res) => {
 export const updateBike = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const data = req.body;
     const ownerUserId = getOwnerUserId(req.user);
     const role = String(req.user.role).toLowerCase();
 
-    const result = await prisma.bike.updateMany({
+    // 1. Separate the WhatsApp flag from the update data
+    const { sendWhatsApp, ...data } = req.body;
+
+    // 2. Update using singular 'update' to get the object back (similar to clientController)
+    // Note: Using { id, ownerUserId } in where clause ensures ownership security
+    const bike = await prisma.bike.update({
       where: { id, ownerUserId },
       data: {
         ownerName: data.fullName,
@@ -183,13 +244,23 @@ export const updateBike = async (req, res) => {
       },
     });
 
-    if (result.count === 0) {
-      return res.status(403).json({ message: "Unauthorized update attempt" });
+    // 3. TRIGGER WHATSAPP IF FLAG IS TRUE
+    if (sendWhatsApp) {
+      triggerBikeReceivedWhatsApp(bike, ownerUserId).catch(console.error);
     }
 
-    res.json({ message: "Bike updated successfully" });
+    // Return the updated bike object
+    res.json(bike);
   } catch (err) {
     console.error("updateBike error:", err);
+
+    // Handle case where bike is not found or unauthorized (Prisma P2025 error)
+    if (err.code === "P2025") {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized update attempt or Bike not found" });
+    }
+
     res.status(500).json({ message: "Bike update failed" });
   }
 };
@@ -217,7 +288,7 @@ export const deleteBike = async (req, res) => {
     }
 
     const result = await prisma.bike.deleteMany({
-      where: { id, ownerUserId }
+      where: { id, ownerUserId },
     });
 
     if (result.count === 0) {

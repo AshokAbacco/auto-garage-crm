@@ -1,5 +1,6 @@
 import prisma from "../models/prismaClient.js";
 import { getOwnerUserId } from "../utils/getAdminId.js";
+import { sendWhatsAppTemplate } from "../services/whatsappService.js"; // ✅ Added Import
 
 /* =====================================================
    SERVICE TYPES (GLOBAL)
@@ -31,8 +32,8 @@ export const getBikeServices = async (req, res) => {
     const role = String(req.user.role).toLowerCase();
 
     const whereCondition = {
-        ownerUserId,
-      };
+      ownerUserId,
+    };
 
     const services = await prisma.bikeService.findMany({
       where: whereCondition,
@@ -51,25 +52,61 @@ export const getBikeServices = async (req, res) => {
       // Check if serviceItems exist and have data
       const hasServiceItems = s.serviceItems && s.serviceItems.length > 0;
 
-      let partsSubtotal, laborSubtotal, cgstTotal, sgstTotal, grandTotal, balanceDue;
+      let partsSubtotal,
+        laborSubtotal,
+        cgstTotal,
+        sgstTotal,
+        grandTotal,
+        balanceDue;
 
       if (hasServiceItems) {
         // Calculate from service items if they exist
-        partsSubtotal = s.serviceItems
-          ?.filter(item => item.type === 'Part')
-          .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-        
-        laborSubtotal = s.serviceItems
-          ?.filter(item => item.type === 'Labor')
-          .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-        
-        cgstTotal = s.serviceItems
-          ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.cgst) / 100), 0) || 0;
-        
-        sgstTotal = s.serviceItems
-          ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.sgst) / 100), 0) || 0;
-        
-        grandTotal = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal - (Number(s.discount) || 0);
+        partsSubtotal =
+          s.serviceItems
+            ?.filter((item) => item.type === "Part")
+            .reduce(
+              (sum, item) =>
+                sum + Number(item.quantity) * Number(item.unitPrice),
+              0,
+            ) || 0;
+
+        laborSubtotal =
+          s.serviceItems
+            ?.filter((item) => item.type === "Labor")
+            .reduce(
+              (sum, item) =>
+                sum + Number(item.quantity) * Number(item.unitPrice),
+              0,
+            ) || 0;
+
+        cgstTotal =
+          s.serviceItems?.reduce(
+            (sum, item) =>
+              sum +
+              (Number(item.quantity) *
+                Number(item.unitPrice) *
+                Number(item.cgst)) /
+                100,
+            0,
+          ) || 0;
+
+        sgstTotal =
+          s.serviceItems?.reduce(
+            (sum, item) =>
+              sum +
+              (Number(item.quantity) *
+                Number(item.unitPrice) *
+                Number(item.sgst)) /
+                100,
+            0,
+          ) || 0;
+
+        grandTotal =
+          partsSubtotal +
+          laborSubtotal +
+          cgstTotal +
+          sgstTotal -
+          (Number(s.discount) || 0);
         balanceDue = grandTotal - (Number(s.advancePaid) || 0);
       } else {
         // ✅ FIX: Use stored values from database if serviceItems are missing
@@ -100,7 +137,6 @@ export const getBikeServices = async (req, res) => {
     });
   }
 };
-
 
 /* =====================================================
    GET SERVICES BY CLIENT
@@ -164,27 +200,62 @@ export const getBikeServiceById = async (req, res) => {
     }
 
     // ✅ FIX: Check if serviceItems exist and have data
-    const hasServiceItems = service.serviceItems && service.serviceItems.length > 0;
+    const hasServiceItems =
+      service.serviceItems && service.serviceItems.length > 0;
 
-    let partsSubtotal, laborSubtotal, cgstTotal, sgstTotal, grandTotal, balanceDue;
+    let partsSubtotal,
+      laborSubtotal,
+      cgstTotal,
+      sgstTotal,
+      grandTotal,
+      balanceDue;
 
     if (hasServiceItems) {
       // Calculate from service items if they exist
-      partsSubtotal = service.serviceItems
-        ?.filter(item => item.type === 'Part')
-        .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-      
-      laborSubtotal = service.serviceItems
-        ?.filter(item => item.type === 'Labor')
-        .reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitPrice)), 0) || 0;
-      
-      cgstTotal = service.serviceItems
-        ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.cgst) / 100), 0) || 0;
-      
-      sgstTotal = service.serviceItems
-        ?.reduce((sum, item) => sum + ((Number(item.quantity) * Number(item.unitPrice)) * Number(item.sgst) / 100), 0) || 0;
-      
-      grandTotal = partsSubtotal + laborSubtotal + cgstTotal + sgstTotal - (Number(service.discount) || 0);
+      partsSubtotal =
+        service.serviceItems
+          ?.filter((item) => item.type === "Part")
+          .reduce(
+            (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+            0,
+          ) || 0;
+
+      laborSubtotal =
+        service.serviceItems
+          ?.filter((item) => item.type === "Labor")
+          .reduce(
+            (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+            0,
+          ) || 0;
+
+      cgstTotal =
+        service.serviceItems?.reduce(
+          (sum, item) =>
+            sum +
+            (Number(item.quantity) *
+              Number(item.unitPrice) *
+              Number(item.cgst)) /
+              100,
+          0,
+        ) || 0;
+
+      sgstTotal =
+        service.serviceItems?.reduce(
+          (sum, item) =>
+            sum +
+            (Number(item.quantity) *
+              Number(item.unitPrice) *
+              Number(item.sgst)) /
+              100,
+          0,
+        ) || 0;
+
+      grandTotal =
+        partsSubtotal +
+        laborSubtotal +
+        cgstTotal +
+        sgstTotal -
+        (Number(service.discount) || 0);
       balanceDue = grandTotal - (Number(service.advancePaid) || 0);
     } else {
       // ✅ FIX: Use stored values from database if serviceItems are missing
@@ -226,9 +297,7 @@ export const createBikeService = async (req, res) => {
     const rawSubServiceId = req.body.subServiceId;
 
     const normalizedCategoryId =
-      rawCategoryId && Number(rawCategoryId) > 0
-        ? Number(rawCategoryId)
-        : null;
+      rawCategoryId && Number(rawCategoryId) > 0 ? Number(rawCategoryId) : null;
 
     const normalizedSubServiceId =
       rawSubServiceId && Number(rawSubServiceId) > 0
@@ -288,11 +357,13 @@ export const createBikeService = async (req, res) => {
     const finalCategoryId = normalizedCategoryId;
     const finalSubServiceId = normalizedSubServiceId;
 
-    const finalCategoryText =
-      !finalCategoryId ? (categoryText?.trim() || null) : null;
+    const finalCategoryText = !finalCategoryId
+      ? categoryText?.trim() || null
+      : null;
 
-    const finalSubServiceText =
-      !finalSubServiceId ? (subServiceText?.trim() || null) : null;
+    const finalSubServiceText = !finalSubServiceId
+      ? subServiceText?.trim() || null
+      : null;
 
     if (!finalCategoryId && !finalCategoryText) {
       return res.status(400).json({
@@ -310,19 +381,17 @@ export const createBikeService = async (req, res) => {
        CALCULATIONS
     ===================================================== */
     const partsSubtotal = items
-      .filter(i => i.type === "Part")
+      .filter((i) => i.type === "Part")
       .reduce(
-        (sum, i) =>
-          sum + Number(i.quantity || 0) * Number(i.unitPrice || 0),
-        0
+        (sum, i) => sum + Number(i.quantity || 0) * Number(i.unitPrice || 0),
+        0,
       );
 
     const laborSubtotal = items
-      .filter(i => i.type === "Labor")
+      .filter((i) => i.type === "Labor")
       .reduce(
-        (sum, i) =>
-          sum + Number(i.quantity || 0) * Number(i.unitPrice || 0),
-        0
+        (sum, i) => sum + Number(i.quantity || 0) * Number(i.unitPrice || 0),
+        0,
       );
 
     const cgstTotal = items.reduce(
@@ -332,7 +401,7 @@ export const createBikeService = async (req, res) => {
           Number(i.unitPrice || 0) *
           Number(i.cgst || 0)) /
           100,
-      0
+      0,
     );
 
     const sgstTotal = items.reduce(
@@ -342,24 +411,20 @@ export const createBikeService = async (req, res) => {
           Number(i.unitPrice || 0) *
           Number(i.sgst || 0)) /
           100,
-      0
+      0,
     );
 
     const discount =
       discountType === "Fixed Amount"
         ? Number(discountValue || 0)
-        : ((partsSubtotal +
-            laborSubtotal +
-            cgstTotal +
-            sgstTotal) *
+        : ((partsSubtotal + laborSubtotal + cgstTotal + sgstTotal) *
             Number(discountValue || 0)) /
           100;
 
     const grandTotal =
       partsSubtotal + laborSubtotal + cgstTotal + sgstTotal - discount;
 
-    const balanceDue =
-      grandTotal - Number(advancePaid || 0);
+    const balanceDue = grandTotal - Number(advancePaid || 0);
 
     /* =====================================================
        CREATE SERVICE (FINAL)
@@ -371,11 +436,11 @@ export const createBikeService = async (req, res) => {
         },
 
         // ✅ Dropdown (optional) - using proper Prisma relation syntax
-        ...(finalCategoryId && { 
-          category: { connect: { id: finalCategoryId } } 
+        ...(finalCategoryId && {
+          category: { connect: { id: finalCategoryId } },
         }),
-        ...(finalSubServiceId && { 
-          subService: { connect: { id: finalSubServiceId } } 
+        ...(finalSubServiceId && {
+          subService: { connect: { id: finalSubServiceId } },
         }),
 
         // ✅ Typed (optional)
@@ -384,9 +449,7 @@ export const createBikeService = async (req, res) => {
 
         inDate: new Date(inDate),
         outDate: outDate ? new Date(outDate) : null,
-        expectedDelivery: expectedDelivery
-          ? new Date(expectedDelivery)
-          : null,
+        expectedDelivery: expectedDelivery ? new Date(expectedDelivery) : null,
 
         status: status || "Pending",
         priority: priority || "Normal",
@@ -405,20 +468,17 @@ export const createBikeService = async (req, res) => {
 
         invoiceStatus: invoiceStatus || "draft",
 
-         ownerUser: {
-            connect: { id: ownerUserId },
-          },
-          createdBy: {
-            connect: { id: req.user.id },
-          },
+        ownerUser: {
+          connect: { id: ownerUserId },
+        },
+        createdBy: {
+          connect: { id: req.user.id },
+        },
 
         serviceItems: {
-          create: items.map(item => ({
+          create: items.map((item) => ({
             type: item.type,
-            name:
-              item.type === "Labor"
-                ? "Labor"
-                : item.name || "Unnamed Part",
+            name: item.type === "Labor" ? "Labor" : item.name || "Unnamed Part",
             quantity: Number(item.quantity || 0),
             unitPrice: Number(item.unitPrice || 0),
             cgst: Number(item.cgst || 0),
@@ -427,18 +487,15 @@ export const createBikeService = async (req, res) => {
               (
                 Number(item.quantity || 0) *
                 Number(item.unitPrice || 0) *
-                (1 +
-                  (Number(item.cgst || 0) +
-                    Number(item.sgst || 0)) /
-                    100)
-              ).toFixed(2)
+                (1 + (Number(item.cgst || 0) + Number(item.sgst || 0)) / 100)
+              ).toFixed(2),
             ),
           })),
         },
 
         serviceMedia: {
           create:
-            req.files?.map(file => ({
+            req.files?.map((file) => ({
               fileName: file.originalname,
               mimeType: file.mimetype,
               data: file.buffer,
@@ -463,8 +520,6 @@ export const createBikeService = async (req, res) => {
     });
   }
 };
-
-
 
 /* =====================================================
    UPDATE SERVICE
@@ -518,11 +573,13 @@ export const updateBikeService = async (req, res) => {
     const normalizedSubServiceId =
       subServiceId && Number(subServiceId) > 0 ? Number(subServiceId) : null;
 
-    const finalCategoryText =
-      !normalizedCategoryId ? categoryText?.trim() || null : null;
+    const finalCategoryText = !normalizedCategoryId
+      ? categoryText?.trim() || null
+      : null;
 
-    const finalSubServiceText =
-      !normalizedSubServiceId ? subServiceText?.trim() || null : null;
+    const finalSubServiceText = !normalizedSubServiceId
+      ? subServiceText?.trim() || null
+      : null;
 
     if (!normalizedCategoryId && !finalCategoryText) {
       return res.status(400).json({ message: "Category is required" });
@@ -560,17 +617,17 @@ export const updateBikeService = async (req, res) => {
 
     if (items.length > 0) {
       partsSubtotal = items
-        .filter(i => i.type === "Part")
+        .filter((i) => i.type === "Part")
         .reduce(
           (s, i) => s + Number(i.quantity || 0) * Number(i.unitPrice || 0),
-          0
+          0,
         );
 
       laborSubtotal = items
-        .filter(i => i.type === "Labor")
+        .filter((i) => i.type === "Labor")
         .reduce(
           (s, i) => s + Number(i.quantity || 0) * Number(i.unitPrice || 0),
-          0
+          0,
         );
 
       cgstTotal = items.reduce(
@@ -580,7 +637,7 @@ export const updateBikeService = async (req, res) => {
             Number(i.unitPrice || 0) *
             Number(i.cgst || 0)) /
             100,
-        0
+        0,
       );
 
       sgstTotal = items.reduce(
@@ -590,7 +647,7 @@ export const updateBikeService = async (req, res) => {
             Number(i.unitPrice || 0) *
             Number(i.sgst || 0)) /
             100,
-        0
+        0,
       );
 
       discount =
@@ -663,9 +720,7 @@ export const updateBikeService = async (req, res) => {
 
       inDate: new Date(inDate),
       outDate: outDate ? new Date(outDate) : null,
-      expectedDelivery: expectedDelivery
-        ? new Date(expectedDelivery)
-        : null,
+      expectedDelivery: expectedDelivery ? new Date(expectedDelivery) : null,
 
       status,
       priority,
@@ -686,12 +741,9 @@ export const updateBikeService = async (req, res) => {
 
     if (items.length > 0) {
       updateData.serviceItems = {
-        create: items.map(item => ({
+        create: items.map((item) => ({
           type: item.type,
-          name:
-            item.type === "Labor"
-              ? "Labor"
-              : item.name || "Unnamed Part",
+          name: item.type === "Labor" ? "Labor" : item.name || "Unnamed Part",
           quantity: Number(item.quantity || 0),
           unitPrice: Number(item.unitPrice || 0),
           cgst: Number(item.cgst || 0),
@@ -700,11 +752,8 @@ export const updateBikeService = async (req, res) => {
             (
               Number(item.quantity || 0) *
               Number(item.unitPrice || 0) *
-              (1 +
-                (Number(item.cgst || 0) +
-                  Number(item.sgst || 0)) /
-                  100)
-            ).toFixed(2)
+              (1 + (Number(item.cgst || 0) + Number(item.sgst || 0)) / 100)
+            ).toFixed(2),
           ),
         })),
       };
@@ -712,7 +761,7 @@ export const updateBikeService = async (req, res) => {
 
     if (req.files?.length > 0) {
       updateData.serviceMedia = {
-        create: req.files.map(file => ({
+        create: req.files.map((file) => ({
           fileName: file.originalname,
           mimeType: file.mimetype,
           data: file.buffer,
@@ -746,7 +795,6 @@ export const updateBikeService = async (req, res) => {
     });
   }
 };
-
 
 /* =====================================================
    DELETE SERVICE
@@ -804,10 +852,7 @@ export const getCategoriesByBike = async (req, res) => {
 
     const categories = await prisma.bikeServiceCategory.findMany({
       where: {
-        OR: [
-          { bikeBrand: bike.bikeBrand },
-          { bikeBrand: null },
-        ],
+        OR: [{ bikeBrand: bike.bikeBrand }, { bikeBrand: null }],
       },
       include: {
         subServices: true,
@@ -831,7 +876,7 @@ export const getCategoriesByBike = async (req, res) => {
 export const generateInvoice = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    
+
     const service = await prisma.bikeService.findUnique({
       where: { id },
       include: {
@@ -855,7 +900,7 @@ export const generateInvoice = async (req, res) => {
     // TODO: Implement PDF generation logic here
     // You can use libraries like pdfkit, puppeteer, or jsPDF
 
-    res.json({ 
+    res.json({
       message: "Invoice generated successfully",
       invoiceUrl: `/invoices/service-${id}.pdf`,
     });
@@ -874,7 +919,7 @@ export const generateInvoice = async (req, res) => {
 export const sendInvoice = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    
+
     const service = await prisma.bikeService.findUnique({
       where: { id },
       include: {
@@ -889,7 +934,7 @@ export const sendInvoice = async (req, res) => {
     // Update invoice status
     await prisma.bikeService.update({
       where: { id },
-      data: { 
+      data: {
         invoiceStatus: "sent",
         invoiceSentAt: new Date(),
       },
@@ -898,7 +943,7 @@ export const sendInvoice = async (req, res) => {
     // TODO: Implement email sending logic here
     // You can use nodemailer or similar
 
-    res.json({ 
+    res.json({
       message: "Invoice sent successfully",
       sentTo: service.client.email,
     });
@@ -930,5 +975,130 @@ export const getServiceMedia = async (req, res) => {
   } catch (err) {
     console.error("getServiceMedia error:", err);
     res.status(500).json({ message: "Failed to load media" });
+  }
+};
+
+/* ============================================================
+   ✅ WHATSAPP INTEGRATION FUNCTIONS
+============================================================ */
+
+/* ============================================================
+   Send WhatsApp Approval (Estimate)
+   @route   POST /api/bike-services/:id/whatsapp
+   @access  Private
+============================================================ */
+export const sendBikeServiceApproval = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+    const ownerId = getOwnerUserId(req.user);
+
+    const service = await prisma.bikeService.findFirst({
+      where: { id: serviceId, ownerUserId },
+      include: { client: true },
+    });
+
+    if (!service || !service.client?.phone) {
+      return res
+        .status(404)
+        .json({ message: "Service or Client phone not found" });
+    }
+
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { companyName: true },
+    });
+
+    // Normalize phone to E.164 (India example)
+    let rawPhone = service.client.phone.replace(/\D/g, "");
+    const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_estimate", // Ensure this template exists in Meta
+      languageCode: "en",
+      variables: [
+        service.client.ownerName,
+        service.grandTotal ? `₹${service.grandTotal}` : "0",
+        new Date(service.inDate).toLocaleDateString(),
+        owner?.companyName || "Motor Desk",
+      ],
+    });
+
+    // Update Service Approval Status
+    const updatedService = await prisma.bikeService.update({
+      where: { id: service.id },
+      data: {
+        approvalStatus: "PENDING",
+        approvalAt: new Date(),
+      },
+    });
+
+    return res.json({
+      message: "WhatsApp Estimate sent!",
+      service: updatedService,
+    });
+  } catch (error) {
+    console.error("WhatsApp Approval error:", error);
+    res.status(500).json({ message: "Failed to send approval" });
+  }
+};
+
+/* ============================================================
+   Send Vehicle Ready WhatsApp
+   @route   POST /api/bike-services/:id/whatsapp-ready
+   @access  Private
+============================================================ */
+export const sendBikeVehicleReadyWhatsApp = async (req, res) => {
+  try {
+    const serviceId = Number(req.params.id);
+    const ownerId = getOwnerUserId(req.user);
+
+    const service = await prisma.bikeService.findFirst({
+      where: { id: serviceId, ownerUserId },
+      include: { client: true },
+    });
+
+    if (!service || !service.client?.phone) {
+      return res
+        .status(404)
+        .json({ message: "Service or Client phone not found" });
+    }
+
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { companyName: true },
+    });
+
+    const rawPhone = service.client.phone.replace(/\D/g, "");
+    const to = rawPhone.startsWith("91") ? rawPhone : `91${rawPhone}`;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_ready",
+      languageCode: "en",
+      variables: [
+        service.client.ownerName,
+        service.client.regNumber,
+        owner?.companyName || "Our Garage",
+      ],
+    });
+
+    // ✅ Update status
+    const updatedService = await prisma.bikeService.update({
+      where: { id: service.id },
+      data: {
+        status: "Paid", // Or "Completed" based on business logic
+        approvalStatus: "READY_SENT",
+        approvalAt: new Date(),
+      },
+    });
+
+    return res.json({
+      message: "Vehicle Ready notification sent!",
+      service: updatedService,
+    });
+  } catch (error) {
+    console.error("WhatsApp Ready error:", error);
+    res.status(500).json({ message: "Failed to send notification" });
   }
 };

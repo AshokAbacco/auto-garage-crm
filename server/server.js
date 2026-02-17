@@ -62,6 +62,10 @@ import bikeWhatsappRoutes from "./routes/bikeWhatsappRoutes.js";
 import { runBikeReminderCheck } from "./services/bikeReminderScheduler.js";
 import { startBikeReviewScheduler } from "./services/bikeReviewScheduler.js";
 import washWhatsappRoutes from "./routes/washWhatsAppRoutes.js";
+import { startWashReviewScheduler } from "./services/washReviewScheduler.js";
+import washingReminderRoutes from "./routes/washingReminderRoutes.js";
+import {washReminderscheduler} from "./services/washReminderScheduler.js";
+
 // console.log("Models in Prisma:", Object.keys(prisma));
 
 // Load environment variables
@@ -123,6 +127,8 @@ startReminderScheduler();
 startReviewScheduler();
 runBikeReminderCheck();
 startBikeReviewScheduler();
+startWashReviewScheduler();
+washReminderscheduler();
 
 // 🔥 RAW BODY for Razorpay webhook (/api/payments)
 app.post(
@@ -228,6 +234,7 @@ app.use("/api/washing-staff", washingStaffRoutes);
 app.use("/api/washing-staff-salary", washingStaffSalaryRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api", serviceMediaRoutes);
+app.use("/api/washing-reminders", washingReminderRoutes);
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

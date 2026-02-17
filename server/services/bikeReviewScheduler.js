@@ -4,7 +4,7 @@ import { sendWhatsAppTemplate } from "./whatsappService.js";
 
 export const startBikeReviewScheduler = () => {
   // Runs every day at 10:00 AM
-  cron.schedule("* * * * *", async () => {
+  cron.schedule("* 10 * * *", async () => {
     console.log("🏍️ Running BIKE review scheduler...");
 
     try {

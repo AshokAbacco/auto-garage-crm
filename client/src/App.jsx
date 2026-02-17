@@ -242,7 +242,7 @@ function App() {
           <Route path="washing-upgrade" element={<Upgra />} />
           <Route path="washing-alerts" element={<SMSalert />} />
           <Route path="washing-plan" element={<Plan />} />
-          <Route path="/wservices-details/:id" element={<WServiceDetails />} />
+          <Route path="wservices-details/:id" element={<WServiceDetails />} />
           <Route path="/add-service" element={<AddNewServiceForm />} />
           <Route path="/add-service/:id" element={<AddNewServiceForm />} />
           <Route path="washProfile" element={<WashingProfile />} />

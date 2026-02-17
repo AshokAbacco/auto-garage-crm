@@ -159,10 +159,9 @@ export const createWashingService = async (req, res) => {
       notes,
       partsCost,
       partsGst,
+      estimatedTotal,
       status,
     } = req.body;
-
-    const estimatedTotal = calculateTotalWithGst(partsCost, partsGst);
 
     const service = await prisma.washingService.create({
       data: {
@@ -173,7 +172,7 @@ export const createWashingService = async (req, res) => {
         notes,
         partsCost: Number(partsCost || 0),
         partsGst: Number(partsGst || 0),
-        estimatedTotal,
+        estimatedTotal: Number(estimatedTotal || 0),
         status: status || "PENDING",
       },
     });
@@ -184,6 +183,7 @@ export const createWashingService = async (req, res) => {
     res.status(500).json({ message: "Failed to create washing service" });
   }
 };
+
 
 /* ================================
    UPDATE WASHING SERVICE
@@ -200,13 +200,9 @@ export const updateWashingService = async (req, res) => {
       notes,
       partsCost,
       partsGst,
+      estimatedTotal,
       status,
     } = req.body;
-
-    const estimatedTotal =
-      partsCost !== undefined || partsGst !== undefined
-        ? calculateTotalWithGst(partsCost ?? 0, partsGst ?? 0)
-        : undefined;
 
     const updatedService = await prisma.washingService.update({
       where: { id: serviceId },
@@ -216,11 +212,10 @@ export const updateWashingService = async (req, res) => {
         subServiceId: subServiceId ? Number(subServiceId) : undefined,
         date: date ? new Date(date) : undefined,
         notes,
-        partsCost:
-          partsCost !== undefined ? Number(partsCost) : undefined,
-        partsGst:
-          partsGst !== undefined ? Number(partsGst) : undefined,
-        estimatedTotal,
+        partsCost: partsCost !== undefined ? Number(partsCost) : undefined,
+        partsGst: partsGst !== undefined ? Number(partsGst) : undefined,
+        estimatedTotal:
+          estimatedTotal !== undefined ? Number(estimatedTotal) : undefined,
         status,
       },
     });

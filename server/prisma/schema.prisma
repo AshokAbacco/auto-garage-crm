@@ -143,6 +143,7 @@ model User {
   bikeWhatsAppMessages BikeWhatsAppMessage[]
   washWhatsAppSessions WashWhatsAppSession[]
   washWhatsAppMessages WashWhatsAppMessage[]
+  washingReminders     WashingReminder[]
 }
 
 //car db schemas
@@ -992,14 +993,15 @@ model WashingClient {
   userId           Int?
   createdAt        DateTime @default(now())
 
-  user                User?            @relation(fields: [userId], references: [id])
+  user                User?             @relation(fields: [userId], references: [id])
   washingServices     WashingService[]
   washBillings        WashBilling[]
   invoices            Invoice[]
   washTeamId          Int? // WASH TEAM
-  whatsappOptin       Boolean          @default(false)
+  whatsappOptin       Boolean           @default(false)
   whatsappOptinAt     DateTime?
   whatsappOptinSource String?
+  washingReminders    WashingReminder[]
 }
 
 model WashingServiceCategory {
@@ -1210,6 +1212,33 @@ model WashingSalaryHistory {
   paidDate   DateTime?
 
   createdAt DateTime @default(now())
+}
+
+model WashingReminder {
+  id Int @id @default(autoincrement())
+
+  washingClientId Int
+  userId          Int?
+
+  nextWashDate  DateTime
+  note          String?   @db.Text
+  vehicleNumber String?
+  remind3DaysAt DateTime?
+  remind1DayAt  DateTime?
+
+  sent3Days Boolean @default(false)
+  sent1Day  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  washingClient WashingClient @relation(fields: [washingClientId], references: [id], onDelete: Cascade)
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([nextWashDate])
+  @@index([remind3DaysAt])
+  @@index([remind1DayAt])
+  @@index([washingClientId])
 }
 
 model WhatsAppSession {

@@ -61,7 +61,7 @@ import { startReviewScheduler } from "./services/reviewScheduler.js";
 import bikeWhatsappRoutes from "./routes/bikeWhatsappRoutes.js";
 import { runBikeReminderCheck } from "./services/bikeReminderScheduler.js";
 import { startBikeReviewScheduler } from "./services/bikeReviewScheduler.js";
-
+import washWhatsappRoutes from "./routes/washWhatsAppRoutes.js";
 // console.log("Models in Prisma:", Object.keys(prisma));
 
 // Load environment variables
@@ -197,6 +197,8 @@ app.use("/api/dynamic-columns", dynamicColumnRoutes);
 app.use("/api/dynamic-rows", dynamicRowRoutes);
 app.use("/api/dynamic", dynamicReadRoutes);
 app.use("/api", invoiceRenderRoutes);
+
+app.use("/api/washing-services", washWhatsappRoutes);
 
 /* -----------------------------------------------------
    🚀 Mount API Routes

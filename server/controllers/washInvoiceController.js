@@ -1,4 +1,5 @@
 import prisma from "../models/prismaClient.js";
+import { sendWashFinalInvoiceWhatsApp } from "./washWhatsappController.js";
 
 /* =========================================================
    GET ALL WASH BILLINGS
@@ -72,11 +73,9 @@ export const createWashBilling = async (req, res) => {
     const {
       washingClientId,
       serviceIds = [],
-
       partsCost = 0,
       partsGst = 0,
       grandTotal,
-
       paymentMode,
       status = "PENDING",
       dueDate,
@@ -84,12 +83,14 @@ export const createWashBilling = async (req, res) => {
     } = req.body;
 
     if (!washingClientId || !grandTotal) {
-      return res
-        .status(400)
-        .json({ message: "washingClientId & grandTotal are required" });
+      return res.status(400).json({
+        message: "washingClientId & grandTotal are required",
+      });
     }
 
-    /* ✅ Ownership check */
+    /* ===============================
+       OWNERSHIP CHECK
+    =============================== */
     const client = await prisma.washingClient.findFirst({
       where: {
         id: Number(washingClientId),
@@ -103,7 +104,9 @@ export const createWashBilling = async (req, res) => {
 
     const invoiceNumber = `WASH-${Date.now()}`;
 
-    /* ✅ Create billing */
+    /* ===============================
+       CREATE BILLING
+    =============================== */
     const billing = await prisma.washBilling.create({
       data: {
         invoiceNumber,
@@ -122,22 +125,39 @@ export const createWashBilling = async (req, res) => {
       },
     });
 
-    /* ✅ Link services */
+    /* ===============================
+       LINK SERVICES
+    =============================== */
     if (serviceIds.length > 0) {
       await prisma.washBillingService.createMany({
-        data: serviceIds.map(id => ({
+        data: serviceIds.map((id) => ({
           washBillingId: billing.id,
           washingServiceId: Number(id),
         })),
       });
 
-      /* If invoice paid, mark services PAID */
+      // ✅ IMPORTANT: ServiceStatus must use enum values
       if (status === "PAID") {
         await prisma.washingService.updateMany({
           where: { id: { in: serviceIds.map(Number) } },
-          data: { status: "PAID" },
+          data: { status: "COMPLETED" }, // ✅ FIXED
         });
       }
+    }
+
+    /* ===============================
+       🔥 AUTO SEND WHATSAPP (non-blocking)
+    =============================== */
+    if (client.whatsappOptin) {
+      sendWashFinalInvoiceWhatsApp(billing.id, req.user.id)
+        .then(() => {
+          console.log("✅ Wash final invoice WhatsApp triggered");
+        })
+        .catch((err) => {
+          console.error("⚠️ Wash WhatsApp failed:", err.message);
+        });
+    } else {
+      console.log("ℹ️ Wash client not opted-in. WhatsApp skipped.");
     }
 
     res.status(201).json({
@@ -164,6 +184,9 @@ export const updateWashBilling = async (req, res) => {
           userId: req.user.id,
         },
       },
+      include: {
+        washingClient: true,
+      },
     });
 
     if (!billing) {
@@ -185,7 +208,9 @@ export const updateWashBilling = async (req, res) => {
       },
     });
 
-    /* If marked PAID → update services */
+    /* ===============================
+       UPDATE LINKED SERVICES STATUS
+    =============================== */
     if (req.body.status === "PAID") {
       const links = await prisma.washBillingService.findMany({
         where: { washBillingId: updated.id },
@@ -193,9 +218,9 @@ export const updateWashBilling = async (req, res) => {
 
       await prisma.washingService.updateMany({
         where: {
-          id: { in: links.map(l => l.washingServiceId) },
+          id: { in: links.map((l) => l.washingServiceId) },
         },
-        data: { status: "PAID" },
+        data: { status: "COMPLETED" }, // ✅ FIXED
       });
     }
 
@@ -229,7 +254,6 @@ export const deleteWashBilling = async (req, res) => {
       return res.status(404).json({ message: "Billing not found" });
     }
 
-    /* unlink services */
     await prisma.washBillingService.deleteMany({
       where: { washBillingId: billing.id },
     });

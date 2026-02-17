@@ -141,6 +141,8 @@ model User {
   whatsAppMessages     WhatsAppMessage[]
   bikeWhatsAppSessions BikeWhatsAppSession[]
   bikeWhatsAppMessages BikeWhatsAppMessage[]
+  washWhatsAppSessions WashWhatsAppSession[]
+  washWhatsAppMessages WashWhatsAppMessage[]
 }
 
 //car db schemas
@@ -612,7 +614,7 @@ model Bike {
   whatsappOptinAt     DateTime?
   whatsappOptinSource String?
 
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt // ✅ ADD THIS
 
   /**
@@ -990,11 +992,14 @@ model WashingClient {
   userId           Int?
   createdAt        DateTime @default(now())
 
-  user            User?            @relation(fields: [userId], references: [id])
-  washingServices WashingService[]
-  washBillings    WashBilling[]
-  invoices        Invoice[]
-  washTeamId      Int? // WASH TEAM
+  user                User?            @relation(fields: [userId], references: [id])
+  washingServices     WashingService[]
+  washBillings        WashBilling[]
+  invoices            Invoice[]
+  washTeamId          Int? // WASH TEAM
+  whatsappOptin       Boolean          @default(false)
+  whatsappOptinAt     DateTime?
+  whatsappOptinSource String?
 }
 
 model WashingServiceCategory {
@@ -1033,6 +1038,8 @@ model WashingServiceMedia {
   url       String
   mimeType  String?
   fileName  String?
+  data      Bytes
+  r2Url     String?
   createdAt DateTime @default(now())
 
   @@map("washing_service_media")
@@ -1062,8 +1069,22 @@ model WashingService {
 
   billings WashBillingService[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // ===== APPROVAL WORKFLOW =====
+  approvalStatus String?
+  approvalNote   String?
+  approvalAt     DateTime?
+  approvalSource WhatsAppApprovalSource?
+
+  // ===== REVIEW SYSTEM =====
+  reviewSentAt    DateTime?
+  reviewRating    Int?
+  reviewSource    String?
+  reviewMessageId String?
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  washWhatsAppSessions WashWhatsAppSession[]
+  washWhatsAppMessages WashWhatsAppMessage[]
 
   @@map("washing_services")
 }
@@ -1089,8 +1110,9 @@ model WashBilling {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  washingClient WashingClient        @relation(fields: [washingClientId], references: [id])
-  services      WashBillingService[]
+  washingClient        WashingClient         @relation(fields: [washingClientId], references: [id])
+  services             WashBillingService[]
+  washWhatsAppMessages WashWhatsAppMessage[]
 
   @@index([washingClientId])
   @@map("wash_billings")
@@ -1278,6 +1300,46 @@ model BikeWhatsAppLog {
   response  Json?
   status    String
   createdAt DateTime @default(now())
+}
+
+model WashWhatsAppSession {
+  phone            String   @id // E.164 format
+  washingServiceId Int
+  userId           Int
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  washingService WashingService @relation(fields: [washingServiceId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([washingServiceId])
+  @@index([userId])
+}
+
+model WashWhatsAppMessage {
+  id     Int    @id @default(autoincrement())
+  phone  String
+  userId Int
+
+  washingServiceId Int?
+  washBillingId    Int?
+
+  template  String
+  messageId String?
+  status    String
+  error     String?
+
+  createdAt DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  washingService WashingService? @relation(fields: [washingServiceId], references: [id], onDelete: SetNull)
+  washBilling    WashBilling?    @relation(fields: [washBillingId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([userId])
+  @@index([washingServiceId])
+  @@index([washBillingId])
 }
 
 //Admin Tables

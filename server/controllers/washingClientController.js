@@ -1,12 +1,56 @@
 // server/controllers/washingClientController.js
 import prisma from "../models/prismaClient.js";
 import { z } from "zod";
-
+import { sendWhatsAppTemplate } from "../services/whatsappService.js";
 /**
  * ===========================
  * Validation Schemas
  * ===========================
  */
+
+/* ===========================
+   WHATSAPP HELPER (WASH)
+=========================== */
+const triggerWashingReceivedWhatsApp = async (client) => {
+  try {
+    if (!client?.phone) {
+      console.log("❌ WhatsApp skipped — phone missing");
+      return;
+    }
+
+    // Normalize phone (India example)
+    let rawPhone = client.phone.replace(/\D/g, "");
+
+    if (rawPhone.length === 10) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    if (!rawPhone.startsWith("91")) {
+      rawPhone = `91${rawPhone}`;
+    }
+
+    const to = rawPhone;
+
+    await sendWhatsAppTemplate({
+      to,
+      templateName: "vehicle_receive", // same template or create wash-specific
+      languageCode: "en",
+      variables: [
+        client.fullName || "Customer",
+        client.regNumber || "N/A",
+        "Your Wash Center",
+      ],
+    });
+
+    console.log(`✅ Wash opt-in template sent to ${to}`);
+  } catch (error) {
+    console.error(
+      `❌ Failed to send WhatsApp template to ${client?.phone}`,
+      error?.response?.data || error.message,
+    );
+  }
+};
+
 const washingClientSchema = z.object({
   fullName: z.string().min(2),
   phone: z.string().min(6),
@@ -14,8 +58,8 @@ const washingClientSchema = z.object({
   vehicleMake: z.string().min(1),
   vehicleModel: z.string().min(1),
 
-  email: z.string().email().optional().nullable(),       // <-- ADDED
-  regNumber: z.string().optional().nullable(),           // <-- ADDED
+  email: z.string().email().optional().nullable(), // <-- ADDED
+  regNumber: z.string().optional().nullable(), // <-- ADDED
 
   mainImage: z.string().optional().nullable(),
   additionalImages: z.array(z.string()).optional().nullable(),
@@ -83,23 +127,26 @@ export const getWashingClientById = async (req, res) => {
  */
 export const createWashingClient = async (req, res) => {
   try {
-    const parsed = washingClientSchema.parse(req.body);
+    const { sendWhatsApp, ...body } = req.body;
 
-    const data = {
-      ...parsed,
-    };
+    const parsed = washingClientSchema.parse(body);
 
-    // OWNER creates client
+    const data = { ...parsed };
+
     if (req.user.type === "owner") {
       data.userId = req.user.id;
     }
 
-    // WASH STAFF creates client
     if (req.user.type === "wash-staff") {
       data.washTeamId = req.user.teamId;
     }
 
     const client = await prisma.washingClient.create({ data });
+
+    // ✅ Trigger WhatsApp
+    if (sendWhatsApp) {
+      triggerWashingReceivedWhatsApp(client).catch(console.error);
+    }
 
     res.status(201).json(client);
   } catch (err) {
@@ -113,7 +160,6 @@ export const createWashingClient = async (req, res) => {
   }
 };
 
-
 /**
  * ===========================
  * UPDATE washing client
@@ -124,16 +170,19 @@ export const updateWashingClient = async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    if (!id) return res.status(400).json({ message: "Invalid client ID" });
+    const { sendWhatsApp, ...body } = req.body;
 
-    const parsed = washingClientSchema.partial().parse(req.body);
+    const parsed = washingClientSchema.partial().parse(body);
 
     const updated = await prisma.washingClient.update({
       where: { id },
-      data: {
-        ...parsed,
-      },
+      data: parsed,
     });
+
+    // ✅ Trigger WhatsApp
+    if (sendWhatsApp) {
+      triggerWashingReceivedWhatsApp(updated).catch(console.error);
+    }
 
     return res.json(updated);
   } catch (err) {
@@ -141,6 +190,7 @@ export const updateWashingClient = async (req, res) => {
     return res.status(500).json({ message: "Failed to update washing client" });
   }
 };
+
 
 /**
  * ===========================
@@ -179,4 +229,3 @@ export const deleteWashingClient = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-

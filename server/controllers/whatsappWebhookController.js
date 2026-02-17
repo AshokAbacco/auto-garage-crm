@@ -61,7 +61,17 @@ export const handleWhatsAppWebhook = async (req, res) => {
           },
         });
 
-        console.log("✅ Opt-in updated for car & bike");
+        // ✅ STEP 1: WASH
+        await prisma.washingClient.updateMany({
+          where: { phone: last10 },
+          data: {
+            whatsappOptin: true,
+            whatsappOptinAt: now,
+            whatsappOptinSource: "whatsapp_button",
+          },
+        });
+
+        console.log("✅ Opt-in updated for car, bike & wash");
         return res.sendStatus(200);
       }
 
@@ -76,7 +86,13 @@ export const handleWhatsAppWebhook = async (req, res) => {
           data: { whatsappOptin: false },
         });
 
-        console.log("❌ Opt-out updated for car & bike");
+        // ✅ STEP 1: WASH
+        await prisma.washingClient.updateMany({
+          where: { phone: last10 },
+          data: { whatsappOptin: false },
+        });
+
+        console.log("❌ Opt-out updated for car, bike & wash");
         return res.sendStatus(200);
       }
 
@@ -149,6 +165,35 @@ export const handleWhatsAppWebhook = async (req, res) => {
           }
         }
 
+        // ✅ STEP 2: WASH REVIEW
+        const washClient = await prisma.washingClient.findFirst({
+          where: { phone: last10 },
+        });
+
+        if (washClient) {
+          const washService = await prisma.washingService.findFirst({
+            where: {
+              clientId: washClient.id,
+              reviewSentAt: { not: null },
+              reviewRating: null,
+            },
+            orderBy: { reviewSentAt: "desc" },
+          });
+
+          if (washService) {
+            await prisma.washingService.update({
+              where: { id: washService.id },
+              data: {
+                reviewRating: rating,
+                reviewSource: "whatsapp",
+              },
+            });
+
+            console.log("⭐ Wash review saved:", washService.id);
+            return res.sendStatus(200);
+          }
+        }
+
         return res.sendStatus(200);
       }
 
@@ -167,6 +212,13 @@ export const handleWhatsAppWebhook = async (req, res) => {
         },
       });
 
+      // ✅ STEP 3: Fetch Wash Session
+      const washSession = await prisma.washWhatsAppSession.findFirst({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
+      });
+
       // Filter only valid (not expired)
       const validCar =
         carSession && carSession.expiresAt && carSession.expiresAt > now
@@ -178,15 +230,24 @@ export const handleWhatsAppWebhook = async (req, res) => {
           ? bikeSession
           : null;
 
-      // Decide which session is newer
+      // ✅ STEP 4: Validate Wash Session
+      const validWash =
+        washSession && washSession.expiresAt && washSession.expiresAt > now
+          ? washSession
+          : null;
+
+      // ✅ STEP 5: Update Active Session Logic
       let activeType = null;
 
-      if (validCar && validBike) {
-        activeType = validBike.expiresAt > validCar.expiresAt ? "bike" : "car";
-      } else if (validBike) {
-        activeType = "bike";
-      } else if (validCar) {
-        activeType = "car";
+      const sessions = [
+        validCar && { type: "car", expiresAt: validCar.expiresAt },
+        validBike && { type: "bike", expiresAt: validBike.expiresAt },
+        validWash && { type: "wash", expiresAt: validWash.expiresAt },
+      ].filter(Boolean);
+
+      if (sessions.length > 0) {
+        sessions.sort((a, b) => b.expiresAt - a.expiresAt);
+        activeType = sessions[0].type;
       }
 
       if (!activeType) {
@@ -220,6 +281,38 @@ export const handleWhatsAppWebhook = async (req, res) => {
           });
 
           console.log("❌ Bike service rejected:", validBike.bikeServiceId);
+        }
+
+        return res.sendStatus(200);
+      }
+
+      // ✅ STEP 6: Add Washing Approval Handling
+      /* ---------- HANDLE WASH ---------- */
+      if (activeType === "wash") {
+        if (actionText === "Approve Service") {
+          await prisma.washingService.update({
+            where: { id: validWash.washingServiceId },
+            data: {
+              approvalStatus: "APPROVED",
+              approvalSource: "whatsapp",
+              approvalAt: now,
+            },
+          });
+
+          console.log("✅ Wash service approved:", validWash.washingServiceId);
+        }
+
+        if (actionText === "Reject / Contact Garage") {
+          await prisma.washingService.update({
+            where: { id: validWash.washingServiceId },
+            data: {
+              approvalStatus: "REJECTED",
+              approvalSource: "whatsapp",
+              approvalAt: now,
+            },
+          });
+
+          console.log("❌ Wash service rejected:", validWash.washingServiceId);
         }
 
         return res.sendStatus(200);
@@ -276,7 +369,13 @@ export const handleWhatsAppWebhook = async (req, res) => {
           data: { whatsappOptin: false },
         });
 
-        console.log("❌ STOP opt-out updated for car & bike");
+        // ✅ STEP 7: Extend STOP Handling
+        await prisma.washingClient.updateMany({
+          where: { phone: last10 },
+          data: { whatsappOptin: false },
+        });
+
+        console.log("❌ STOP opt-out updated for car, bike & wash");
         return res.sendStatus(200);
       }
 
@@ -292,6 +391,17 @@ export const handleWhatsAppWebhook = async (req, res) => {
 
       // Extend BIKE session
       await prisma.bikeWhatsAppSession.updateMany({
+        where: {
+          OR: [{ phone: fullPhone }, { phone: last10 }],
+        },
+        data: {
+          expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      // ✅ STEP 8: Extend Session Extension Logic
+      // Extend WASH session
+      await prisma.washWhatsAppSession.updateMany({
         where: {
           OR: [{ phone: fullPhone }, { phone: last10 }],
         },

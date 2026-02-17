@@ -171,6 +171,15 @@ export const getBikes = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
+    console.log(
+      "BIKES FETCHED:",
+      bikes.map((b) => ({
+        id: b.id,
+        bikeImageLength: b.bikeImage?.length || 0,
+        bikeImageStart: b.bikeImage?.substring(0, 30),
+      })),
+    );
+
     res.json(bikes);
   } catch (err) {
     console.error("getBikes error:", err);
@@ -211,57 +220,65 @@ export const updateBike = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const ownerUserId = getOwnerUserId(req.user);
-    const role = String(req.user.role).toLowerCase();
 
-    // 1. Separate the WhatsApp flag from the update data
     const { sendWhatsApp, ...data } = req.body;
 
-    // 2. Update using singular 'update' to get the object back (similar to clientController)
-    // Note: Using { id, ownerUserId } in where clause ensures ownership security
+    // Build update object safely
+    const updateData = {
+      ownerName: data.fullName,
+      phone: data.phone,
+      email: data.email || null,
+      address: data.address || null,
+      receiverName: data.receiverName || null,
+
+      bikeBrand: data.vehicleMake,
+      bikeModel: data.vehicleModel,
+      bikeYear: data.vehicleYear ? Number(data.vehicleYear) : null,
+
+      regNumber: data.regNumber,
+      vin: data.vin || null,
+
+      color: data.color || null,
+      fuel: data.fuel || null,
+      notes: data.notes || null,
+    };
+
+    // 🔥 CRITICAL FIX:
+    // Only update images if they are explicitly provided
+
+    if (data.carImage !== undefined) {
+      updateData.bikeImage = data.carImage;
+    }
+
+    if (data.adImage !== undefined) {
+      updateData.adImage = data.adImage;
+    }
+
+    if (data.damageImages !== undefined) {
+      updateData.damageImages = data.damageImages;
+    }
+
     const bike = await prisma.bike.update({
       where: { id, ownerUserId },
-      data: {
-        ownerName: data.fullName,
-        phone: data.phone,
-        email: data.email || null,
-        address: data.address || null,
-        receiverName: data.receiverName || null,
-
-        bikeBrand: data.vehicleMake,
-        bikeModel: data.vehicleModel,
-        bikeYear: data.vehicleYear ? Number(data.vehicleYear) : null,
-
-        regNumber: data.regNumber,
-        vin: data.vin || null,
-
-        color: data.color || null,
-        fuel: data.fuel || null,
-        notes: data.notes || null,
-
-        bikeImage: data.carImage || null,
-        adImage: data.adImage || null,
-        damageImages: data.damageImages || [],
-      },
+      data: updateData,
     });
 
-    // 3. TRIGGER WHATSAPP IF FLAG IS TRUE
+    // Trigger WhatsApp if requested
     if (sendWhatsApp) {
       triggerBikeReceivedWhatsApp(bike, ownerUserId).catch(console.error);
     }
 
-    // Return the updated bike object
-    res.json(bike);
+    return res.json(bike);
   } catch (err) {
     console.error("updateBike error:", err);
 
-    // Handle case where bike is not found or unauthorized (Prisma P2025 error)
     if (err.code === "P2025") {
       return res
         .status(403)
         .json({ message: "Unauthorized update attempt or Bike not found" });
     }
 
-    res.status(500).json({ message: "Bike update failed" });
+    return res.status(500).json({ message: "Bike update failed" });
   }
 };
 

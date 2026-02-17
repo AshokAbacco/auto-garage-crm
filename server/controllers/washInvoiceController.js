@@ -1,5 +1,5 @@
 import prisma from "../models/prismaClient.js";
-import { sendWashFinalInvoiceWhatsApp } from "./washWhatsappController.js";
+import { sendWashFinalInvoiceWhatsApp } from "./washWhatsAppController.js";
 
 /* =========================================================
    GET ALL WASH BILLINGS

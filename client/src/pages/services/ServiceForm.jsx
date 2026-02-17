@@ -1290,7 +1290,7 @@ export default function ServiceForm() {
           </div>
 
           {/* Invoice Actions Section */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <h3 className="font-semibold text-lg">Invoice Actions</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <button
@@ -1313,7 +1313,7 @@ export default function ServiceForm() {
                 <FiDownload /> Preview Invoice
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* Submit */}
           <div className="flex justify-end">

@@ -65,6 +65,7 @@ import washWhatsappRoutes from "./routes/washWhatsAppRoutes.js";
 import { startWashReviewScheduler } from "./services/washReviewScheduler.js";
 import washingReminderRoutes from "./routes/washingReminderRoutes.js";
 import {washReminderscheduler} from "./services/washReminderScheduler.js";
+import userKycRoutes from "./routes/userKyc.routes.js";
 
 // console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -175,6 +176,8 @@ app.use((req, res, next) => {
 });
 
 app.use("/uploads", express.static("uploads"));
+
+app.use("/api/profile", userKycRoutes);
 
 // bike routes
 app.use("/api/bikes", bikeRoutes);

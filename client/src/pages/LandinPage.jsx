@@ -1,372 +1,410 @@
-// src/pages/Landing.jsx
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import {
-    ArrowRight, Play, Shield, Zap, Users, BarChart3,
-    CheckCircle, Star, Clock, Wrench, FileText,
-    TrendingUp, Award, Headphones, Gauge, Car,
-    Calendar, CreditCard, Bell, Settings
-} from "lucide-react";
+  FiArrowRight,
+  FiPlay,
+  FiShield,
+  FiZap,
+  FiUsers,
+  FiBarChart,
+  FiCheckCircle,
+  FiStar,
+  FiClock,
+  FiSettings,
+  FiActivity,
+  FiCpu,
+  FiCreditCard,
+  FiTerminal,
+  FiDollarSign,
+  FiPlayCircle,
+  FiCalendar,
+  FiFileText,
+  FiBell,
+  FiBox,
+  FiHeadphones,
+} from "react-icons/fi";
 import Footer from "../components/Footer.jsx";
 import WatchDemo from "../components/WatchDemo.jsx";
 
 export default function LandingPage() {
-    const navigate = useNavigate();
-    const { isDark } = useTheme();
-    const [activeFeature, setActiveFeature] = useState(0);
-    const [openDemo, setOpenDemo] = useState(false);
+  const navigate = useNavigate();
+  const { isDark } = useTheme();
+  const [activeFeature, setActiveFeature] = useState(0);
+  const [openDemo, setOpenDemo] = useState(false);
 
-    // Auto-rotate features
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setActiveFeature((prev) => (prev + 1) % 4);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
-    const features = [
-        {
-            icon: Wrench,
-            title: "Smart Job Management",
-            description: "AI-powered job scheduling and tracking with real-time updates",
-            color: "from-blue-500 to-cyan-500",
-            stats: "50% faster workflow"
-        },
-        {
-            icon: Users,
-            title: "Customer Portal",
-            description: "Give customers real-time updates on their vehicle status",
-            color: "from-purple-500 to-pink-500",
-            stats: "98% satisfaction rate"
-        },
-        {
-            icon: BarChart3,
-            title: "Advanced Analytics",
-            description: "Deep insights into your business performance and growth",
-            color: "from-orange-500 to-red-500",
-            stats: "3x revenue growth"
-        },
-        {
-            icon: Shield,
-            title: "Enterprise Security",
-            description: "Bank-level encryption and automated backups",
-            color: "from-green-500 to-emerald-500",
-            stats: "99.9% uptime"
-        }
-    ];
+  const stats = [
+    { value: "10,000+", label: "ACTIVE NODES", icon: FiCpu },
+    { value: "2M+", label: "JOBS VERIFIED", icon: FiCheckCircle },
+    { value: "99.9%", label: "UPTIME SLA", icon: FiActivity },
+    { value: "4.9/5", label: "STABILITY RATING", icon: FiStar },
+  ];
 
-    const testimonials = [
-        {
-            name: "Rajesh Kumar",
-            company: "Kumar Auto Works",
-            image: "https://i.pravatar.cc/150?img=1",
-            rating: 5,
-            text: "Motor Desk transformed our garage operations. We've doubled our efficiency and customer satisfaction is through the roof!"
-        },
-        {
-            name: "Priya Sharma",
-            company: "Speedy Motors",
-            image: "https://i.pravatar.cc/150?img=2",
-            rating: 5,
-            text: "The analytics dashboard alone is worth it. We can now make data-driven decisions that have increased our revenue by 40%."
-        },
-        {
-            name: "Ahmed Ali",
-            company: "Elite Auto Care",
-            image: "https://i.pravatar.cc/150?img=3",
-            rating: 5,
-            text: "Customer love the real-time updates. It's reduced our phone calls by 70% and improved our Google reviews significantly."
-        }
-    ];
+  const features = [
+    {
+      icon: FiTerminal,
+      title: "Smart Scheduling",
+      description:
+        "AI-powered job scheduling and tracking with real-time updates",
+      stats: "50% FASTER WORKFLOW",
+    },
+    {
+      icon: FiUsers,
+      title: "Customer Node",
+      description: "Give customers real-time updates on their vehicle status",
+      stats: "98% SATISFACTION RATE",
+    },
+    {
+      icon: FiBarChart,
+      title: "Data Analytics",
+      description: "Deep insights into your business performance and growth",
+      stats: "3X REVENUE GROWTH",
+    },
+    {
+      icon: FiShield,
+      title: "Secure Registry",
+      description: "Bank-level encryption and automated backups",
+      stats: "99.9% UPTIME SLA",
+    },
+  ];
 
-    const stats = [
-        { value: "10,000+", label: "Active Garages", icon: Car },
-        { value: "2M+", label: "Jobs Completed", icon: CheckCircle },
-        { value: "99.9%", label: "Uptime", icon: Gauge },
-        { value: "4.9/5", label: "User Rating", icon: Star }
-    ];
+  // DATA FOR THE UPLOADED SCREENSHOT SECTION
+  const garageTools = [
+    {
+      icon: FiCalendar,
+      title: "Smart Scheduling",
+      desc: "AI-powered appointment system that maximizes your bay utilization.",
+    },
+    {
+      icon: FiFileText,
+      title: "Digital Invoicing",
+      desc: "Create and send professional invoices in seconds.",
+    },
+    {
+      icon: FiBell,
+      title: "Automated Reminders",
+      desc: "Never miss a service appointment with smart notifications.",
+    },
+    {
+      icon: FiCreditCard,
+      title: "Payment Processing",
+      desc: "Accept all payment methods with integrated POS solutions.",
+    },
+    {
+      icon: FiBox,
+      title: "Inventory Management",
+      desc: "Track parts and supplies with automatic reorder alerts.",
+    },
+    {
+      icon: FiHeadphones,
+      title: "24/7 Support",
+      desc: "Get help whenever you need it from our dedicated expert team.",
+    },
+  ];
 
-    return (
-        <div className={`min-h-screen ${isDark ? 'text-white' : 'text-gray-900'} pt-[5%]`}>
-            {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center px-6 pt-32 pb-20">
-                {/* Background Decoration */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-20 right-20 w-96 h-96 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-pink-500/20 to-orange-500/20 rounded-full blur-3xl"></div>
-                </div>
-
-                <div className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-                    {/* Left Content */}
-                    <div className="space-y-8">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg">
-                            <Zap className="w-4 h-4" />
-                            <span className="text-sm font-medium">
-                                Trusted by 10,000+ garages worldwide
-                            </span>
-                        </div>
-
-                        <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                            <span className="block">The Future of</span>
-                            <span className="block py-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                                Garage Management
-                            </span>
-                        </h1>
-
-                        <p className={`text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'} max-w-lg leading-relaxed`}>
-                            Streamline operations, delight customers, and grow your automotive business with our AI-powered CRM platform.
-                        </p>
-
-                        <div className="flex flex-wrap gap-4">
-                            <button
-                                onClick={() => navigate("/pricing")}
-                                className="group px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-3"
-                            >
-                                <span>Start Free Trial</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            </button>
-
-                            <button
-                                className="group px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-3"
-                                onClick={() => setOpenDemo(true)}
-                                >
-                                Watch Demo
-                            </button>
-                            
-
-                            {/* Demo Modal */}
-                            <WatchDemo
-                                isOpen={openDemo}
-                                onClose={() => setOpenDemo(false)}
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-8 ">
-                            <div className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-green-500" />
-                                <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Bank-level Security</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-blue-500" />
-                                <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>24/7 Support</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Content - Feature Display */}
-                    <div className="relative">
-                        <div className={`rounded-3xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'
-                            }`}>
-                            <div className="p-8">
-                                <div className="grid grid-cols-2 gap-4 mb-8">
-                                    {features.map((feature, index) => {
-                                        const Icon = feature.icon;
-                                        return (
-                                            <button
-                                                key={index}
-                                                onClick={() => setActiveFeature(index)}
-                                                className={`p-4 rounded-2xl transition-all ${activeFeature === index
-                                                    ? `bg-gradient-to-r ${feature.color} text-white shadow-lg scale-105`
-                                                    : isDark
-                                                        ? 'bg-gray-800 hover:bg-gray-750 text-gray-300'
-                                                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                                                    }`}
-                                            >
-                                                <Icon className="w-8 h-8 mx-auto mb-2" />
-                                                <p className="text-xs font-medium">{feature.title}</p>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                        {features[activeFeature].title}
-                                    </h3>
-                                    <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                                        {features[activeFeature].description}
-                                    </p>
-                                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                                        }`}>
-                                        <TrendingUp className="w-4 h-4 text-green-500" />
-                                        <span className="text-sm font-medium">{features[activeFeature].stats}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="absolute -top-4 -right-4 px-4 py-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-semibold shadow-lg animate-bounce">
-                            Live Now!
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Stats Section */}
-            <section className={`py-20 px-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid md:grid-cols-4 gap-8">
-                        {stats.map((stat, index) => {
-                            const Icon = stat.icon;
-                            return (
-                                <div
-                                    key={index}
-                                    className={`text-center p-8 rounded-2xl transition-all hover:scale-105 ${isDark
-                                        ? 'bg-gray-800 border border-gray-700'
-                                        : 'bg-gray-50 border border-gray-200 shadow-lg'
-                                        }`}
-                                >
-                                    <Icon className="w-12 h-12 mx-auto mb-4 text-indigo-500" />
-                                    <div className="text-4xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                                        {stat.value}
-                                    </div>
-                                    <div className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        {stat.label}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Features Grid */}
-            <section className="py-20 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16 space-y-4">
-                        <h2 className="text-4xl lg:text-5xl font-bold">
-                            Everything You Need to
-                            <span className="block bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                                Run Your Garage
-                            </span>
-                        </h2>
-                        <p className={`text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'} max-w-3xl mx-auto`}>
-                            Comprehensive tools designed specifically for modern automotive workshops
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            { icon: Calendar, title: "Smart Scheduling", desc: "AI-powered appointment system that maximizes your bay utilization" },
-                            { icon: FileText, title: "Digital Invoicing", desc: "Create and send professional invoices in seconds" },
-                            { icon: Bell, title: "Automated Reminders", desc: "Never miss a service appointment with smart notifications" },
-                            { icon: CreditCard, title: "Payment Processing", desc: "Accept all payment methods with integrated POS" },
-                            { icon: Settings, title: "Inventory Management", desc: "Track parts and supplies with automatic reorder alerts" },
-                            { icon: Headphones, title: "24/7 Support", desc: "Get help whenever you need it from our expert team" }
-                        ].map((item, index) => {
-                            const Icon = item.icon;
-                            return (
-                                <div
-                                    key={index}
-                                    className={`group p-8 rounded-2xl transition-all hover:scale-105 ${isDark
-                                        ? 'bg-gray-900 border border-gray-800 hover:border-gray-700'
-                                        : 'bg-white border border-gray-200 shadow-lg hover:shadow-xl'
-                                        }`}
-                                >
-                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                        <Icon className="w-7 h-7 text-white" />
-                                    </div>
-                                    <h3 className={`text-xl font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                        {item.title}
-                                    </h3>
-                                    <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-                                        {item.desc}
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Testimonials */}
-            <section className={`py-20 px-6 ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16 space-y-4">
-                        <h2 className="text-4xl lg:text-5xl font-bold">
-                            Loved by Garage Owners
-                            <span className="block bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                                Worldwide
-                            </span>
-                        </h2>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {testimonials.map((testimonial, index) => (
-                            <div
-                                key={index}
-                                className={`p-8 rounded-2xl transition-all hover:scale-105 ${isDark
-                                    ? 'bg-gray-800 border border-gray-700'
-                                    : 'bg-gray-50 border border-gray-200 shadow-lg'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-4 mb-6">
-                                    <img
-                                        src={testimonial.image}
-                                        alt={testimonial.name}
-                                        className="w-14 h-14 rounded-full border-2 border-indigo-500"
-                                    />
-                                    <div>
-                                        <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                            {testimonial.name}
-                                        </h4>
-                                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                            {testimonial.company}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-1 mb-4">
-                                    {[...Array(testimonial.rating)].map((_, i) => (
-                                        <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                                    ))}
-                                </div>
-                                <p className={`italic ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    "{testimonial.text}"
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="py-20 px-6">
-                <div className="max-w-4xl mx-auto text-center">
-                    <div className="p-12 rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 relative overflow-hidden shadow-2xl">
-                        <div className="relative z-10 space-y-6">
-                            <Award className="w-16 h-16 mx-auto text-yellow-400" />
-                            <h2 className="text-4xl lg:text-5xl font-bold text-white">
-                                Ready to Transform Your Garage?
-                            </h2>
-                            <p className="text-xl text-white/90 max-w-2xl mx-auto">
-                                Join thousands of successful garage owners. Start your free 7-day trial today.
-                            </p>
-                            <div className="flex flex-wrap gap-4 justify-center pt-4">
-                                <button
-                                    onClick={() => navigate("/pricing")}
-                                    className="group px-8 py-4 rounded-xl bg-white text-indigo-600 font-semibold shadow-lg hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-3"
-                                >
-                                    <span>Start Free Trial</span>
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <button
-                                    onClick={() => navigate("/login")}
-                                    className="px-8 py-4 rounded-xl border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-all"
-                                >
-                                    Sign In
-                                </button>
-                            </div>
-                            <p className="text-sm text-white/80 pt-4">
-                                No credit card required • 7-day free trial • Cancel anytime
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            {/* Footer */}
-
-            <Footer />
+  return (
+    <div
+      className={`min-h-screen transition-colors duration-500 ${isDark ? "bg-[#000814] text-white" : "bg-white text-black"}`}
+    >
+      {/* --- System Deployment (Hero) --- */}
+      <section className="relative min-h-screen flex items-center justify-center px-6 pt-32 pb-20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-20">
+          <div className="absolute top-20 right-20 w-[500px] h-[500px] bg-[#001F3F] rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-20 left-20 w-[500px] h-[500px] bg-[#001F3F]/10 rounded-full blur-[120px]"></div>
         </div>
-    );
+
+        <div className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-10">
+            <div
+              className={`inline-flex items-center gap-3 px-4 py-1.5 rounded-lg border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}
+            >
+              {/* VISIBILITY FIX: Switched from static #001F3F to dynamic white/navy */}
+              <span
+                className={`text-[9px] font-black uppercase tracking-[0.3em] ${isDark ? "text-white" : "text-[#001F3F]"}`}
+              >
+                V1.0 PERFORMANCE UPDATE LIVE
+              </span>
+            </div>
+
+            {/* Title Correction: Applied #001F3F for Light Mode */}
+            <h1
+              className={`text-6xl lg:text-8xl font-black tracking-tighter leading-[0.9] uppercase ${isDark ? "text-white" : "text-[#001F3F]"}`}
+            >
+              The Operating <br />
+              <span className="font-light italic lowercase">System.</span>
+            </h1>
+
+            <p
+              className={`text-lg max-w-lg leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}
+            >
+              A precision-engineered CRM to manage bike, car, and washing
+              services. Automate your workflow with professional node tiers.
+            </p>
+
+            <div className="flex flex-wrap gap-5">
+              <button
+                onClick={() => navigate("/pricing")}
+                className="group px-10 py-4 rounded-xl bg-[#001F3F] text-white font-bold text-[11px] uppercase tracking-[0.3em] shadow-2xl hover:bg-black transition-all flex items-center gap-3 active:scale-95 border border-white/10"
+              >
+                Initialize Network{" "}
+                <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => setOpenDemo(true)}
+                className={`px-10 py-4 rounded-xl border-2 font-bold text-[11px] uppercase tracking-[0.3em] transition-all flex items-center gap-3 ${isDark ? "border-white/10 hover:bg-white/5" : "border-[#CBD5E1] hover:bg-slate-50 text-[#001F3F]"}`}
+              >
+                <FiPlayCircle size={18} />
+                Watch Demo
+              </button>
+            </div>
+
+            <div className="space-y-3 pt-4">
+              {[
+                "Automated Service & Invoice Ledger",
+                "One-Click WhatsApp Approval Flow",
+                "Integrated Referral & Revenue Network",
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <FiCheckCircle className="text-green-500" size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    {item}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Content - Interface Hub */}
+          <div className="relative group">
+            <div
+              className={`rounded-[2rem] border-2 overflow-hidden shadow-2xl transition-all duration-500 ${isDark ? "bg-[#001F3F] border-white/5" : "bg-white border-[#CBD5E1]"}`}
+            >
+              <div
+                className={`p-1.5 border-b flex gap-2 ${isDark ? "bg-white/5 border-white/5" : "bg-[#F8FAFC] border-[#CBD5E1]"}`}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+              </div>
+              <div className="p-10">
+                <div className="grid grid-cols-2 gap-4 mb-10">
+                  {features.map((feature, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveFeature(index)}
+                      className={`p-6 rounded-2xl transition-all border-2 ${
+                        activeFeature === index
+                          ? "bg-[#001F3F] border-[#001F3F] text-white shadow-xl"
+                          : isDark
+                            ? "bg-white/5 border-white/5 text-slate-500"
+                            : "bg-[#F8FAFC] border-[#CBD5E1] text-slate-400"
+                      }`}
+                    >
+                      <feature.icon className="w-5 h-5 mx-auto mb-3" />
+                      <p className="text-[9px] font-bold uppercase tracking-[0.2em] leading-none">
+                        {feature.title}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-6 animate-in slide-in-from-bottom-4">
+                  <h3
+                    className={`text-2xl font-bold uppercase italic ${isDark ? "text-white" : "text-[#001F3F]"}`}
+                  >
+                    {features[activeFeature].title}
+                  </h3>
+                  <p
+                    className={`text-[12px] font-medium leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                  >
+                    {features[activeFeature].description}
+                  </p>
+                  <div
+                    className={`inline-flex items-center gap-3 px-4 py-2 rounded-lg border ${isDark ? "bg-white/5 border-white/10" : "bg-[#F8FAFC] border-[#CBD5E1]"}`}
+                  >
+                    <FiActivity className="text-[#001F3F]" size={14} />
+                    <span
+                      className={`text-[9px] font-bold uppercase tracking-[0.25em] ${isDark ? "text-white" : "text-[#001F3F]"}`}
+                    >
+                      {features[activeFeature].stats}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Settlement Widget Node */}
+            <div
+              className={`absolute -bottom-6 -left-10 p-5 rounded-2xl border-2 shadow-2xl animate-bounce-slow ${isDark ? "bg-[#000814] border-white/10" : "bg-white border-[#CBD5E1]"}`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-green-500 text-white flex items-center justify-center">
+                  <FiDollarSign />
+                </div>
+                <div>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                    Settlement
+                  </p>
+                  <p
+                    className={`text-sm font-black tracking-tight ${isDark ? "text-white" : "text-[#001F3F]"}`}
+                  >
+                    ₹1,24,500.00
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className={`py-3 px-6 ${isDark ? "bg-[#000814]" : "bg-slate-50/50"}`}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <h2
+              className={`text-4xl md:text-5xl font-black tracking-tighter uppercase mb-4 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+            >
+              Everything You Need to <br />
+              <span className="text-indigo-500 lowercase italic font-light">
+                Run Your Garage
+              </span>
+            </h2>
+            <p className="text-slate-500 text-[11px] font-black uppercase tracking-[0.3em]">
+              Comprehensive tools designed specifically for modern automotive
+              workshops
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {garageTools.map((tool, i) => (
+              <div
+                key={i}
+                className={`p-10 rounded-[2rem] border-2 transition-all duration-500 group hover:-translate-y-2 ${
+                  isDark
+                    ? "bg-[#001F3F] border-white/5 hover:border-indigo-500/50 shadow-2xl"
+                    : "bg-white border-slate-100 hover:border-indigo-500/30 shadow-sm hover:shadow-xl"
+                }`}
+              >
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-colors ${
+                    isDark
+                      ? "bg-indigo-500/20 text-indigo-400"
+                      : "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white"
+                  }`}
+                >
+                  <tool.icon size={28} />
+                </div>
+                <h3
+                  className={`text-lg font-black uppercase tracking-tight mb-3 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+                >
+                  {tool.title}
+                </h3>
+                <p
+                  className={`text-[13px] font-medium leading-relaxed ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                >
+                  {tool.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- Feature Intelligence Hub --- */}
+      <section className="max-w-7xl mx-auto px-6 py-32">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+          <div className="max-w-2xl">
+            {/* VISIBILITY FIX: Applied dynamic text color for Dark Mode visibility */}
+            <span
+              className={`font-bold text-[11px] uppercase tracking-[0.4em] block mb-3 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+            >
+              Core Architecture
+            </span>
+            <h2
+              className={`text-4xl font-bold tracking-tight uppercase ${isDark ? "text-white" : "text-[#001F3F]"}`}
+            >
+              Engineered for Service Excellence.
+            </h2>
+          </div>
+          <p className="text-slate-500 text-[13px] font-medium max-w-sm">
+            Our modular system adapts to your workflow, providing deep insights
+            into every service job and transaction.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <FeatureCard
+            icon={<FiSettings />}
+            title="Service Management"
+            desc="Real-time tracking of service lifecycles, progress milestones, and automated digital approvals."
+            isDark={isDark}
+          />
+          <FeatureCard
+            icon={<FiUsers />}
+            title="Resource Allocation"
+            desc="Comprehensive staff profiles, efficiency metrics, and automated payroll for your mechanical teams."
+            isDark={isDark}
+          />
+          <FeatureCard
+            icon={<FiDollarSign />}
+            title="Financial Ledger"
+            desc="Generate precision-grade invoices and track revenue streams with granular reporting tools."
+            isDark={isDark}
+          />
+        </div>
+      </section>
+
+      {/* --- Stats Ledger Protocol --- */}
+      <section
+        className={`py-24 px-6 border-y ${isDark ? "bg-[#001F3F]/20 border-white/5" : "bg-[#F8FAFC] border-[#CBD5E1]"}`}
+      >
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
+          {stats.map((stat, index) => (
+            <div key={index} className="text-center space-y-3 group">
+              <stat.icon className="w-5 h-5 mx-auto text-slate-400 group-hover:text-[#001F3F] transition-colors" />
+              <div
+                className={`text-5xl font-black tracking-tighter ${isDark ? "text-white" : "text-[#001F3F]"}`}
+              >
+                {stat.value}
+              </div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <WatchDemo isOpen={openDemo} onClose={() => setOpenDemo(false)} />
+    </div>
+  );
 }
+
+const FeatureCard = ({ icon, title, desc, isDark }) => (
+  <div
+    className={`p-8 rounded-2xl border transition-all group ${
+      isDark
+        ? "bg-white/5 border-white/10 hover:border-[#001F3F]"
+        : "bg-white border-[#CBD5E1] hover:border-[#001F3F]"
+    }`}
+  >
+    <div className="w-12 h-12 bg-[#F8FAFC] text-[#001F3F] rounded-xl flex items-center justify-center mb-6 group-hover:bg-[#001F3F] group-hover:text-white transition-all shadow-sm">
+      {React.cloneElement(icon, { size: 24 })}
+    </div>
+    <h3
+      className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-3 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+    >
+      {title}
+    </h3>
+    <p className="text-slate-500 text-[13px] leading-relaxed font-medium">
+      {desc}
+    </p>
+  </div>
+);

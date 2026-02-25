@@ -268,96 +268,134 @@ export default function ServicesList() {
 
         {/* Filters & Search Bar */}
         <div
-          className="rounded-xl border p-4 shadow-sm"
+          className="rounded-xl border p-4 shadow-sm transition-all duration-300"
           style={{ backgroundColor: colors.cardBg, borderColor: colors.border }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-            {/* Search */}
-            <div className="relative">
-              <FiSearch
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 opacity-50"
-                size={18}
+          {/* 1. Changed grid to handle mobile (1 col), tablet (2 col), and desktop (4 col).
+      2. Removed 'items-end' to allow elements to align naturally.
+      3. Added 'gap-y-5' for better vertical breathing room on mobile.
+  */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            {/* Search - Full width on mobile */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-[10px] font-bold uppercase tracking-wider opacity-60 ml-1"
                 style={{ color: colors.textSecondary }}
-              />
-              <input
-                type="text"
-                placeholder="Search client, reg, status..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-                style={{
-                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                }}
-              />
+              >
+                Search Vehicle
+              </label>
+              <div className="relative">
+                <FiSearch
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 opacity-50"
+                  size={18}
+                  style={{ color: colors.textSecondary }}
+                />
+                <input
+                  type="text"
+                  placeholder="Client name, reg number..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                  style={{
+                    backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                    borderColor: colors.border,
+                    color: colors.textPrimary,
+                  }}
+                />
+              </div>
             </div>
 
             {/* Category Filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style={{
-                backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                borderColor: colors.border,
-                color: colors.textPrimary,
-              }}
-            >
-              <option value="">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-[10px] font-bold uppercase tracking-wider opacity-60 ml-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Category
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none shadow-sm cursor-pointer"
+                style={{
+                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Status Filter */}
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-4 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style={{
-                backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                borderColor: colors.border,
-                color: colors.textPrimary,
-              }}
-            >
-              <option value="">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-              <option value="Paid">Paid</option>
-            </select>
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-[10px] font-bold uppercase tracking-wider opacity-60 ml-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Payment Status
+              </label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none shadow-sm cursor-pointer"
+                style={{
+                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
+              >
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
 
-            {/* Date Filter */}
-            <div className="flex items-center gap-2">
-              <FiCalendar size={18} style={{ color: colors.textSecondary }} />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{
-                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                }}
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{
-                  backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                }}
-              />
+            {/* Date Range - Improved for Mobile */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-[10px] font-bold uppercase tracking-wider opacity-60 ml-1"
+                style={{ color: colors.textSecondary }}
+              >
+                Date Range
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-2 py-2.5 text-xs sm:text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    style={{
+                      backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                    }}
+                  />
+                </div>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-2 py-2.5 text-xs sm:text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    style={{
+                      backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard

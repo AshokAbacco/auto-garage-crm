@@ -260,24 +260,25 @@ export default function ServiceDetail() {
     >
       {/* Top Navigation Bar */}
       <div
-        className={`sticky top-0 z-10 px-6 py-4 backdrop-blur-md border-b flex items-center justify-between ${
+        className={`sticky top-0 z-20 px-4 sm:px-6 py-3 sm:py-4 backdrop-blur-md border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
           isDark
             ? "bg-gray-900/80 border-gray-800"
             : "bg-white/80 border-gray-200"
         }`}
       >
-        <div className="flex items-center gap-4">
+        {/* Left Side: Navigation & Title */}
+        <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
           <Link
             to="/services"
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 shrink-0 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             <FiArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
-            <h1 className="text-xl font-bold flex items-center gap-3">
-              Service #{service.id}
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold flex flex-wrap items-center gap-2">
+              <span className="truncate">Service #{service.id}</span>
               <span
-                className={`px-3 py-0.5 text-xs rounded-full border font-medium uppercase tracking-wide ${getStatusStyles(
+                className={`px-2.5 py-0.5 text-[10px] sm:text-xs rounded-full border font-bold uppercase tracking-wide ${getStatusStyles(
                   service.status,
                 )}`}
               >
@@ -286,24 +287,27 @@ export default function ServiceDetail() {
             </h1>
           </div>
         </div>
-        <div className="flex gap-2">
+
+        {/* Right Side: Actions - Now Scrollable on small mobile */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
           {service.approvalStatus === "READY_SENT" ? (
-            <div className="flex items-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-xl font-bold border border-green-200">
-              <FiCheckCircle className="w-5 h-5" />
-              Ready Alert Sent
+            <div className="flex shrink-0 items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-xl text-xs sm:text-sm font-bold border border-green-200">
+              <FiCheckCircle className="w-4 h-4" />
+              <span className="whitespace-nowrap">Ready Alert Sent</span>
             </div>
           ) : (
             <button
               onClick={handleSendReadyAlert}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg font-semibold"
+              className="flex shrink-0 items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md text-xs sm:text-sm font-bold whitespace-nowrap"
             >
-              <FiCheckCircle className="w-5 h-5" />
-              Mark as Ready & Notify
+              <FiCheckCircle className="w-4 h-4" />
+              Notify
             </button>
           )}
+
           <button
             onClick={() => window.print()}
-            className={`p-2 rounded-lg border transition-all ${
+            className={`p-2 shrink-0 rounded-lg border transition-all ${
               isDark
                 ? "border-gray-700 hover:bg-gray-800"
                 : "border-gray-300 hover:bg-gray-100"
@@ -311,12 +315,13 @@ export default function ServiceDetail() {
           >
             <FiPrinter className="w-5 h-5" />
           </button>
+
           {service.approvalStatus !== "APPROVED" && (
             <Link
               to={`/services/${id}/edit`}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+              className="px-4 py-2 shrink-0 rounded-lg bg-blue-600 text-white text-xs sm:text-sm font-bold whitespace-nowrap"
             >
-              Edit Service
+              Edit
             </Link>
           )}
         </div>

@@ -1,23 +1,20 @@
-//client/src/payment/PaymentModal.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FaAward,
-  FaChevronRight,
-  FaCheckCircle,
-  FaLock,
-  FaUser,
-  FaBuilding,
-  FaEnvelope,
-  FaPhone,
-  FaShieldAlt,
-  FaTimes,
-  FaTag,
-  FaBolt,
-  FaStar,
-  FaCreditCard,
-  FaIdCard,
-} from "react-icons/fa";
+  FiUser,
+  FiBriefcase,
+  FiMail,
+  FiPhone,
+  FiMapPin,
+  FiHash,
+  FiShield,
+  FiX,
+  FiCheckCircle,
+  FiActivity,
+  FiCpu,
+  FiLock,
+  FiChevronRight,
+} from "react-icons/fi";
 
 const PaymentModal = ({
   show,
@@ -40,14 +37,12 @@ const PaymentModal = ({
     phone: "",
     address: "",
     referenceCode: "",
-    gstNumber: "", // Added GST number field
+    gstNumber: "",
   });
   const [errors, setErrors] = useState({});
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
   const navigate = useNavigate();
 
-  // Load Razorpay script when component mounts
   useEffect(() => {
     if (document.getElementById("razorpay-js")) {
       setRazorpayLoaded(true);
@@ -61,17 +56,10 @@ const PaymentModal = ({
     document.body.appendChild(script);
   }, []);
 
-  // Handle navigation when payment is successful
   useEffect(() => {
     if (showSuccess && paymentResponse) {
       const timer = setTimeout(() => {
         onComplete(plan, formData);
-
-        const cleanPlan = {
-          name: plan.name,
-          numericPrice: plan.numericPrice,
-        };
-
         const finalPriceCalc =
           billingPeriod === "yearly"
             ? Math.round(plan.numericPrice * 12 * 0.9)
@@ -79,29 +67,23 @@ const PaymentModal = ({
 
         const stateData = {
           paymentData: {
-            plan: cleanPlan,
+            plan: { name: plan.name, numericPrice: plan.numericPrice },
             billingPeriod,
             finalPrice: finalPriceCalc,
             formData,
-            paymentId: paymentResponse.paymentId, // FIXED
-            subscriptionId: paymentResponse.subscriptionId, // added
+            paymentId: paymentResponse.paymentId,
+            subscriptionId: paymentResponse.subscriptionId,
           },
         };
 
-        // 🔥 Dynamic redirect by plan type
-        if (planType === "car") {
-          navigate("/car-register", { state: stateData });
-        } else if (planType === "bike") {
-          navigate("/bike-register", { state: stateData });
-        } else if (planType === "washing") {
-          navigate("/washing-register", { state: stateData });
-        } else {
-          navigate("/car-register", { state: stateData });
-        }
-
+        const routes = {
+          car: "/car-register",
+          bike: "/bike-register",
+          washing: "/washing-register",
+        };
+        navigate(routes[planType] || "/car-register", { state: stateData });
         setIsProcessing(false);
       }, 2000);
-
       return () => clearTimeout(timer);
     }
   }, [
@@ -117,7 +99,6 @@ const PaymentModal = ({
 
   useEffect(() => {
     if (isUpgradePage && userData) {
-
       const autoName =
         userData.name ||
         userData.fullName ||
@@ -125,7 +106,6 @@ const PaymentModal = ({
         userData.ownerName ||
         userData.firstName + " " + (userData.lastName || "") ||
         "";
-
       setFormData({
         name: autoName.trim(),
         companyName: userData.companyName || "",
@@ -138,7 +118,6 @@ const PaymentModal = ({
     }
   }, [isUpgradePage, userData]);
 
-
   if (!show || !plan) return null;
 
   const finalPrice =
@@ -148,794 +127,359 @@ const PaymentModal = ({
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Required";
-    if (!formData.companyName.trim()) newErrors.companyName = "Required";
+    if (!formData.name.trim()) newErrors.name = "ID Required";
+    if (!formData.companyName.trim()) newErrors.companyName = "Entity Required";
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
-      newErrors.email = "Invalid email";
-    if (!formData.phone.match(/^[0-9]{10}$/)) newErrors.phone = "Invalid phone";
-    // GST validation (optional but if provided should be valid)
+      newErrors.email = "Invalid Syntax";
+    if (!formData.phone.match(/^[0-9]{10}$/))
+      newErrors.phone = "Invalid Protocol";
     if (
       formData.gstNumber &&
       !formData.gstNumber.match(
-        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
+        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
       )
     ) {
-      newErrors.gstNumber = "Invalid GST number";
+      newErrors.gstNumber = "Invalid Format";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // const handlePayment = async () => {
-  //   if (!validateForm()) return;
-  //   if (!razorpayLoaded) return alert("Razorpay is still loading…");
-
-  //   setIsProcessing(true);
-
-  //   const API =
-  //     window.location.hostname === "localhost"
-  //       ? "http://localhost:5001"
-  //       : "https://auto-garage-crm-zrxc.onrender.com";
-
-  //   // 1️⃣ Create subscription on backend
-  //   const subRes = await fetch(`${API}/api/payments/create-subscription`, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({
-  //       plan: {
-  //         name: plan.name,
-  //         numericPrice: plan.numericPrice,
-  //       },
-  //       billingPeriod,
-  //       customer: { ...formData },
-  //     }),
-  //   });
-
-  //   const data = await subRes.json();
-  //   // if (!data.success) {
-  //   //   alert(data.error || "Failed to create subscription");
-  //   //   setIsProcessing(false);
-  //   //   return;
-  //   // }
-
-  //   if (!data || !data.success) {
-  //     console.error("Create-subscription response:", data);
-  //     alert(data?.error || "Failed to create subscription");
-  //     setIsProcessing(false);
-  //     return;
-  //   }
-
-  //   if (!data.subscription || !data.subscription.id) {
-  //     console.error("Missing subscription in response:", data);
-  //     alert("Subscription not created correctly. Check server logs.");
-  //     setIsProcessing(false);
-  //     return;
-  //   }
-
-  //   const subscription = data.subscription;
-  //   const razorpayKey = data.razorpayKey;
-
-  //   // 2️⃣ Razorpay Checkout
-  //   const options = {
-  //     key: razorpayKey,
-  //     subscription_id: subscription.id,
-  //     name: "Abacco Technology",
-  //     description: `${plan.name} Plan`,
-  //     theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
-
-  //     prefill: {
-  //       name: formData.name,
-  //       email: formData.email,
-  //       contact: formData.phone,
-  //     },
-
-  //     handler: async function (response) {
-  //       // Razorpay returns correct payment + subscription IDs
-  //       const subscriptionId = response.razorpay_subscription_id;
-  //       const paymentId = response.razorpay_payment_id;
-
-  //       // 🔥 For localhost, verify manually
-  //       if (window.location.hostname === "localhost") {
-  //         await fetch(`${API}/api/payments/verify-payment-localhost`, {
-  //           method: "POST",
-  //           headers: { "Content-Type": "application/json" },
-  //           body: JSON.stringify({
-  //             subscriptionId,
-  //             paymentId,
-  //           }),
-  //         });
-  //       }
-
-  //       // Save for UI
-  //       setPaymentResponse({
-  //         paymentId,
-  //         subscriptionId,
-  //         signature: response.razorpay_signature,
-  //       });
-
-  //       setShowSuccess(true);
-  //     },
-
-  //   };
-
-  //   const rzp = new window.Razorpay(options);
-
-  //   // 3️⃣ Handle failures & dismiss
-  //   rzp.on("payment.failed", function () {
-  //     alert("Payment failed. Please try again.");
-  //     setIsProcessing(false);
-  //   });
-
-  //   rzp.on("checkout.closed", function () {
-  //     setIsProcessing(false);
-  //   });
-
-  //   rzp.open();
-  // };
-
   const handlePayment = async () => {
     if (!validateForm()) return;
-    if (!razorpayLoaded) {
-      alert("Razorpay is still loading…");
-      return;
-    }
-
+    if (!razorpayLoaded) return alert("System Syncing: Razorpay not ready.");
     const API =
       window.location.hostname === "localhost"
         ? "http://localhost:5001"
         : "https://auto-garage-crm-zrxc.onrender.com";
 
-    // ✅ Step 0: check email already registered (ONLY for new registration, not upgrade)
-    if (!isUpgradePage) {
-      try {
-        const checkRes = await fetch(`${API}/api/user/check-email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: formData.email }),
-        });
-
-        const checkData = await checkRes.json();
-
-        if (!checkRes.ok || !checkData.success) {
-          console.error("Email check error:", checkData);
-          alert(
-            checkData?.message ||
-            "Unable to verify email right now. Please try again."
-          );
-          return;
-        }
-
-        if (checkData.exists) {
-          // Email already registered → stop payment and ask to login / use different email
-          alert(
-            "This email is already registered.\n\nPlease login using this email and password, or use a different email ID for new registration."
-          );
-          return; // ⛔ Do NOT continue to payment
-        }
-      } catch (err) {
-        console.error("Email check failed:", err);
-        alert("Unable to verify email right now. Please try again.");
-        return;
-      }
-    }
-
-    // ✅ Only reach here if email is OK (or it's upgrade page)
     setIsProcessing(true);
-
-    // 1️⃣ Create subscription on backend
-    const subRes = await fetch(`${API}/api/payments/create-subscription`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan: {
-          name: plan.name,
-          numericPrice: plan.numericPrice,
+    try {
+      const subRes = await fetch(`${API}/api/payments/create-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: { name: plan.name, numericPrice: plan.numericPrice },
+          billingPeriod,
+          customer: { ...formData },
+        }),
+      });
+      const data = await subRes.json();
+      const rzp = new window.Razorpay({
+        key: data.razorpayKey,
+        subscription_id: data.subscription.id,
+        name: "Abacco Technology",
+        description: `${plan.name} Node Activation`,
+        theme: { color: "#001F3F" },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone,
         },
-        billingPeriod,
-        customer: { ...formData },
-      }),
-    });
-
-    const data = await subRes.json();
-
-    if (!data || !data.success) {
-      console.error("Create-subscription response:", data);
-      alert(data?.error || "Failed to create subscription");
-      setIsProcessing(false);
-      return;
-    }
-
-    if (!data.subscription || !data.subscription.id) {
-      console.error("Missing subscription in response:", data);
-      alert("Subscription not created correctly. Check server logs.");
-      setIsProcessing(false);
-      return;
-    }
-
-    const subscription = data.subscription;
-    const razorpayKey = data.razorpayKey;
-
-    // 2️⃣ Razorpay Checkout
-    const options = {
-      key: razorpayKey,
-      subscription_id: subscription.id,
-      name: "Abacco Technology",
-      description: `${plan.name} Plan`,
-      theme: { color: isDark ? "#8B5CF6" : "#7C3AED" },
-
-      prefill: {
-        name: formData.name,
-        email: formData.email,
-        contact: formData.phone,
-      },
-
-      handler: async function (response) {
-        const subscriptionId = response.razorpay_subscription_id;
-        const paymentId = response.razorpay_payment_id;
-
-        if (window.location.hostname === "localhost") {
-          await fetch(`${API}/api/payments/verify-payment-localhost`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              subscriptionId,
-              paymentId,
-            }),
+        handler: async (response) => {
+          setPaymentResponse({
+            paymentId: response.razorpay_payment_id,
+            subscriptionId: response.razorpay_subscription_id,
           });
-        }
-
-        setPaymentResponse({
-          paymentId,
-          subscriptionId,
-          signature: response.razorpay_signature,
-        });
-
-        setShowSuccess(true);
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-
-    // 3️⃣ Handle failures & dismiss
-    rzp.on("payment.failed", function () {
-      alert("Payment failed. Please try again.");
+          setShowSuccess(true);
+        },
+      });
+      rzp.open();
+    } catch (e) {
+      alert("Initialization Failed.");
+    } finally {
       setIsProcessing(false);
-    });
-
-    rzp.on("checkout.closed", function () {
-      setIsProcessing(false);
-    });
-
-    rzp.open();
+    }
   };
-
-  
-  const formFields = [
-    {
-      key: "name",
-      label: "Full Name",
-      type: "text",
-      icon: FaUser,
-      placeholder: "John Doe",
-    },
-    {
-      key: "companyName",
-      label: "Company Name",
-      type: "text",
-      icon: FaBuilding,
-      placeholder: "Acme Inc.",
-    },
-    {
-      key: "address",
-      label: "Business Address",
-      type: "text",
-      icon: FaBuilding,
-      placeholder: "Full business address",
-    },
-    {
-      key: "email",
-      label: "Email Address",
-      type: "email",
-      icon: FaEnvelope,
-      placeholder: "john@example.com",
-    },
-    {
-      key: "phone",
-      label: "Phone Number",
-      type: "tel",
-      icon: FaPhone,
-      placeholder: "9876543210",
-    },
-    {
-      key: "gstNumber",
-      label: "GST Number",
-      type: "text",
-      icon: FaIdCard,
-      placeholder: "22AAAAA0000A1Z5",
-      optional: true,
-    },
-  ];
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 ${show ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-500 ${show ? "opacity-100" : "opacity-0 pointer-events-none"}`}
     >
-      {/* Backdrop with blur */}
       <div
-        className="absolute inset-0 transition-all duration-300 bg-gradient-to-br from-black/80 via-purple-900/20 to-black/80 backdrop-blur-xl"
+        className="absolute inset-0 bg-[#000814]/90 backdrop-blur-md"
         onClick={onClose}
-        style={{ backdropFilter: "blur(12px)" }}
       ></div>
 
-      {/* Modal Container */}
       <div
-        className={`relative rounded-3xl shadow-2xl w-full max-w-2xl transition-all duration-500 transform ${show ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          } ${isDark
-            ? "bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700/50"
-            : "bg-white"
-          } max-h-[95vh] flex flex-col overflow-hidden`}
+        className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-[2rem] border transition-all duration-500 transform ${show ? "scale-100" : "scale-95"} ${
+          isDark
+            ? "bg-[#000814] border-white/10 shadow-2xl"
+            : "bg-white border-[#CBD5E1] shadow-xl"
+        }`}
       >
-        {/* Decorative gradient overlay */}
-        <div className="absolute top-0 left-0 right-0 h-48 pointer-events-none bg-gradient-to-br from-violet-600/20 via-fuchsia-500/20 to-transparent blur-3xl"></div>
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className={`absolute top-4 right-4 p-2 rounded-full ${isDark
-              ? "bg-gray-800/80 hover:bg-gray-700 text-gray-300"
-              : "bg-white/90 hover:bg-gray-100 text-gray-700"
-            } backdrop-blur-sm transition-all duration-200 z-10 shadow-lg hover:scale-110 group`}
+        {/* Header Protocol */}
+        <div
+          className={`px-8 py-6 border-b flex items-center justify-between ${isDark ? "border-white/5 bg-[#001F3F]/30" : "bg-[#F8FAFC] border-[#CBD5E1]"}`}
         >
-          <FaTimes className="w-5 h-5 transition-transform duration-200 group-hover:rotate-90" />
-        </button>
-
-        {showSuccess ? (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 py-12 space-y-6 text-center">
-            {/* Success animation */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full opacity-50 bg-gradient-to-r from-green-400 to-emerald-500 blur-2xl animate-pulse"></div>
-              <div className="relative flex items-center justify-center w-24 h-24 rounded-full shadow-2xl bg-gradient-to-br from-green-400 to-emerald-500">
-                <FaCheckCircle className="w-12 h-12 text-white animate-bounce" />
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-[#001F3F] rounded-xl text-white shadow-lg">
+              <FiCpu size={20} />
             </div>
-
-            <div className="space-y-3">
-              <h2 className="text-3xl font-bold text-transparent bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text">
-                Payment Successful!
+            <div>
+              <h2
+                className={`text-[11px] font-black uppercase tracking-[0.3em] leading-none mb-1 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+              >
+                Order Protocol
               </h2>
               <p
-                className={`text-lg ${isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                className={`text-lg font-black uppercase tracking-tight italic leading-none ${isDark ? "text-white" : "text-[#001F3F]"}`}
               >
-                Your subscription is being activated
+                {plan.name} Activation
               </p>
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <FaBolt className="w-4 h-4 text-yellow-500 animate-pulse" />
-                <span className={isDark ? "text-gray-400" : "text-gray-500"}>
-                  Redirecting to registration...
-                </span>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="w-full max-w-xs pt-6">
-              <div
-                className={`w-full h-2 overflow-hidden rounded-full ${isDark ? "bg-gray-700" : "bg-gray-200"
-                  }`}
-              >
-                <div className="h-full rounded-full shadow-lg bg-gradient-to-r from-green-400 to-emerald-500 animate-progress"></div>
-              </div>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+          >
+            <FiX size={20} />
+          </button>
+        </div>
+
+        {showSuccess ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in zoom-in duration-500">
+            <FiCheckCircle size={80} className="text-green-500 mb-6" />
+            <h3
+              className={`text-3xl font-black uppercase italic mb-2 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+            >
+              Transmission Successful
+            </h3>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+              Activating Operational Node...
+            </p>
+          </div>
         ) : (
-          <div className="flex flex-col flex-1 overflow-hidden">
-            {/* Scrollable content area */}
-            <div className="flex-1 p-6 space-y-6 overflow-y-auto sm:p-8">
-              {/* Header with icon */}
-              <div className="relative space-y-4 text-center">
-                <div className="inline-flex p-4 shadow-lg rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm">
-                  <div className="relative">
-                    <FaAward className="w-10 h-10 text-violet-500 animate-pulse" />
-                    <FaStar
-                      className="absolute w-3 h-3 text-yellow-400 -top-1 -right-1 animate-spin"
-                      style={{ animationDuration: "3s" }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="text-2xl font-bold text-transparent sm:text-3xl bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text">
-                    Complete Your Order
-                  </h2>
-                  <p
-                    className={`text-sm sm:text-base mt-2 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
-                  >
-                    Subscribe to{" "}
-                    <span className="font-bold text-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text">
-                      {plan.name}
-                    </span>{" "}
-                    plan
-                  </p>
-                </div>
-
-                {/* Billing period badge */}
-                {billingPeriod === "yearly" && (
-                  <div className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-green-600 border rounded-full bg-green-500/10 border-green-500/20">
-                    <FaBolt className="w-3 h-3" />
-                    Save 10% with yearly billing
-                  </div>
-                )}
-              </div>
-
-              {/* Form Fields - Responsive Grid */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {formFields.map((field) => {
-                  const Icon = field.icon;
-                  return (
-                    <div key={field.key} className="space-y-2">
-                      <label
-                        className={`block text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"
-                          }`}
-                      >
-                        {field.label}{" "}
-                        {field.optional && (
-                          <span className="text-xs font-normal text-gray-500">
-                            (Optional)
-                          </span>
-                        )}
-                      </label>
-
-                      {/* IF UPGRADE PAGE → SHOW READ-ONLY STYLING */}
-                      {isUpgradePage ? (
-                        <div className="relative group">
-                          <div
-                            className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${isDark ? "text-gray-400" : "text-gray-500"
-                              }`}
-                          >
-                            <Icon className="w-5 h-5" />
-                          </div>
-
-                          <div
-                            className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 text-sm font-medium 
-                    ${isDark
-                                ? "bg-gray-800/80 border-gray-700 text-white"
-                                : "bg-gray-100 border-gray-300 text-gray-700"
-                              }
-                    backdrop-blur-sm`}
-                          >
-                            {formData[field.key] || "—"}
-                          </div>
-                        </div>
-                      ) : (
-                        /* NORMAL PAYMENT PAGE INPUT */
-                        <div className="relative group">
-                          <div
-                            className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${focusedField === field.key
-                                ? "text-violet-400 scale-110"
-                                : errors[field.key]
-                                  ? "text-red-400"
-                                  : isDark
-                                    ? "text-gray-400"
-                                    : "text-gray-500"
-                              }`}
-                          >
-                            <Icon className="w-5 h-5" />
-                          </div>
-
-                          <input
-                            type={field.type}
-                            value={formData[field.key]}
-                            onChange={(e) => {
-                              setFormData({
-                                ...formData,
-                                [field.key]: e.target.value,
-                              });
-                              setErrors({ ...errors, [field.key]: "" });
-                            }}
-                            onFocus={() => setFocusedField(field.key)}
-                            onBlur={() => setFocusedField(null)}
-                            className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 text-sm font-medium relative ${errors[field.key]
-                                ? "border-red-500 focus:border-red-500 bg-red-50/50 dark:bg-red-900/10"
-                                : focusedField === field.key
-                                  ? "border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.02]"
-                                  : isDark
-                                    ? "bg-gray-800/80 border-gray-600 hover:border-gray-500 focus:border-violet-500"
-                                    : "bg-gray-50 border-gray-200 hover:border-gray-300 focus:border-violet-500"
-                              } focus:outline-none backdrop-blur-sm ${isDark
-                                ? "text-white placeholder-gray-500"
-                                : "text-gray-900 placeholder-gray-400"
-                              }`}
-                            placeholder={field.placeholder}
-                          />
-
-                          {errors[field.key] && (
-                            <p className="flex items-center gap-1 mt-1.5 text-xs text-red-500 animate-fadeIn font-medium">
-                              <span className="inline-block w-1 h-1 bg-red-500 rounded-full"></span>
-                              {errors[field.key]}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Reference Code Field - Full Width */}
-              <div className="space-y-2">
-                <label
-                  className={`block text-sm font-semibold ${isDark ? "text-gray-300" : "text-gray-700"
-                    }`}
+          <div className="flex-1 overflow-y-auto p-8 grid lg:grid-cols-5 gap-10">
+            {/* Identity Form (Left) */}
+            <div className="lg:col-span-3 space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <FiUser className="text-[#001F3F]" />
+                <span
+                  className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
                 >
-                  Reference Code{" "}
-                  <span className="text-xs font-normal text-gray-500">
-                    (Optional)
-                  </span>
-                </label>
-                <div className="relative group">
-                  <div
-                    className={`absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none transition-all duration-200 z-10 ${focusedField === "referenceCode"
-                        ? "text-violet-400 scale-110"
-                        : isDark
-                          ? "text-gray-400"
-                          : "text-gray-500"
-                      }`}
-                  >
-                    <FaTag className="w-5 h-5" />
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.referenceCode}
-                    onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        referenceCode: e.target.value,
-                      });
-                    }}
-                    onFocus={() => setFocusedField("referenceCode")}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-12 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 text-sm font-medium relative ${focusedField === "referenceCode"
-                        ? "border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.01]"
-                        : isDark
-                          ? "bg-gray-800/80 border-gray-600 hover:border-gray-500 focus:border-violet-500"
-                          : "bg-gray-50 border-gray-200 hover:border-gray-300 focus:border-violet-500"
-                      } focus:outline-none backdrop-blur-sm ${isDark
-                        ? "text-white placeholder-gray-500"
-                        : "text-gray-900 placeholder-gray-400"
-                      }`}
-                    placeholder="Enter code if you have one"
+                  Identity Registry
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ProtocolInput
+                  label="Full Identity Name"
+                  icon={<FiUser />}
+                  value={formData.name}
+                  error={errors.name}
+                  readOnly={isUpgradePage}
+                  onChange={(v) => setFormData({ ...formData, name: v })}
+                  isDark={isDark}
+                />
+                <ProtocolInput
+                  label="Operational Entity"
+                  icon={<FiBriefcase />}
+                  value={formData.companyName}
+                  error={errors.companyName}
+                  readOnly={isUpgradePage}
+                  onChange={(v) => setFormData({ ...formData, companyName: v })}
+                  isDark={isDark}
+                />
+                <ProtocolInput
+                  label="Transmission Email"
+                  icon={<FiMail />}
+                  value={formData.email}
+                  error={errors.email}
+                  readOnly={isUpgradePage}
+                  onChange={(v) => setFormData({ ...formData, email: v })}
+                  isDark={isDark}
+                />
+                <ProtocolInput
+                  label="Contact Protocol"
+                  icon={<FiPhone />}
+                  value={formData.phone}
+                  error={errors.phone}
+                  readOnly={isUpgradePage}
+                  onChange={(v) => setFormData({ ...formData, phone: v })}
+                  isDark={isDark}
+                />
+                <div className="md:col-span-2">
+                  <ProtocolInput
+                    label="Physical Infrastructure Address"
+                    icon={<FiMapPin />}
+                    value={formData.address}
+                    readOnly={isUpgradePage}
+                    onChange={(v) => setFormData({ ...formData, address: v })}
+                    isDark={isDark}
                   />
                 </div>
-              </div>
-
-              {/* Payment Summary Card */}
-              <div
-                className={`relative p-5 rounded-2xl overflow-hidden ${isDark
-                    ? "bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50"
-                    : "bg-gradient-to-br from-gray-50 to-white border border-gray-200"
-                  } backdrop-blur-sm transition-all duration-300 hover:shadow-xl`}
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 blur-3xl"></div>
-
-                <div className="relative space-y-3">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-600/20">
-                    <span
-                      className={`text-sm font-semibold ${isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
-                    >
-                      Order Summary
-                    </span>
-                    <FaCreditCard
-                      className={`w-4 h-4 ${isDark ? "text-gray-500" : "text-gray-400"
-                        }`}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
-                    >
-                      Plan
-                    </span>
-                    <span className="font-bold text-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text">
-                      {plan.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"
-                        }`}
-                    >
-                      Billing Period
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {billingPeriod === "yearly" && (
-                        <span className="px-2 py-0.5 text-xs font-bold text-green-600 bg-green-500/10 rounded-full border border-green-500/20">
-                          -10%
-                        </span>
-                      )}
-                      <span className="font-semibold">
-                        {billingPeriod === "yearly" ? "Yearly" : "Monthly"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {billingPeriod === "yearly" && (
-                    <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-green-500/5 border-green-500/20">
-                      <span
-                        className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"
-                          }`}
-                      >
-                        Per month equivalent
-                      </span>
-                      <span className="text-sm font-bold text-green-500">
-                        ₹{Math.round(finalPrice / 12)}/mo
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-600/20">
-                    <span className="text-base font-bold">Total Amount</span>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text">
-                        ₹{finalPrice}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {billingPeriod === "yearly"
-                          ? "billed annually"
-                          : "billed monthly"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Security Badge */}
-              <div
-                className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${isDark
-                    ? "bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-violet-500/10 border border-blue-500/20"
-                    : "bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50"
-                  }`}
-              >
-                <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
-                  <FaShieldAlt className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold">Secure Payment Gateway</p>
-                  <p
-                    className={`text-xs mt-0.5 ${isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
-                  >
-                    Powered by Razorpay • 256-bit SSL encryption
-                  </p>
-                </div>
+                <ProtocolInput
+                  label="GST Identification"
+                  icon={<FiHash />}
+                  value={formData.gstNumber}
+                  error={errors.gstNumber}
+                  readOnly={isUpgradePage}
+                  optional
+                  onChange={(v) => setFormData({ ...formData, gstNumber: v })}
+                  isDark={isDark}
+                />
+                <ProtocolInput
+                  label="Reference Code"
+                  icon={<FiActivity />}
+                  value={formData.referenceCode}
+                  optional
+                  onChange={(v) =>
+                    setFormData({ ...formData, referenceCode: v })
+                  }
+                  isDark={isDark}
+                />
               </div>
             </div>
 
-            {/* Fixed bottom section with buttons */}
-            <div
-              className={`p-6 pt-4 ${isDark
-                  ? "bg-gray-900/50 border-t border-gray-700/50"
-                  : "bg-white border-t border-gray-100"
-                } backdrop-blur-sm`}
-            >
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={onClose}
-                  className={`px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 flex-1 text-sm ${isDark
-                      ? "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
-                    } hover:scale-[1.02] active:scale-95`}
+            {/* Summary Node (Right) */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <FiShield className="text-[#001F3F]" />
+                <span
+                  className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePayment}
-                  disabled={isProcessing}
-                  className="relative px-6 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-600 bg-size-200 bg-pos-0 hover:bg-pos-100 text-white font-bold transition-all duration-500 flex items-center justify-center gap-2 text-sm disabled:opacity-70 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-95 flex-1 shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 overflow-hidden group"
-                >
-                  <div className="absolute inset-0 transition-transform duration-1000 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:translate-x-full"></div>
-                  {isProcessing ? (
-                    <>
-                      <div className="w-5 h-5 border-white rounded-full border-3 border-t-transparent animate-spin"></div>
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaLock className="w-4 h-4" />
-                      <span>Pay ₹{finalPrice}</span>
-                      <FaChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Security Footer */}
-              <div className="flex items-center justify-center gap-2 pt-4 text-xs">
-                <FaLock
-                  className={`w-3 h-3 ${isDark ? "text-gray-500" : "text-gray-400"
-                    }`}
-                />
-                <span className={isDark ? "text-gray-500" : "text-gray-500"}>
-                  Your payment information is secure and encrypted
+                  Financial Summary
                 </span>
               </div>
+
+              <div
+                className={`p-6 rounded-3xl border-2 ${isDark ? "bg-white/5 border-white/5" : "bg-[#F8FAFC] border-[#CBD5E1]"}`}
+              >
+                <div className="space-y-4 mb-6">
+                  <SummaryLine
+                    label="Selected Node"
+                    value={plan.name}
+                    isDark={isDark}
+                  />
+                  <SummaryLine
+                    label="Cycle"
+                    value={billingPeriod}
+                    highlight
+                    isDark={isDark}
+                  />
+                  {billingPeriod === "yearly" && (
+                    <SummaryLine
+                      label="Efficiency Discount"
+                      value="-10%"
+                      success
+                      isDark={isDark}
+                    />
+                  )}
+                </div>
+
+                <div className="pt-6 border-t border-slate-200 text-center">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                    Total Transmission Value
+                  </p>
+                  <div
+                    className={`text-5xl font-black tracking-tighter mb-1 ${isDark ? "text-white" : "text-[#001F3F]"}`}
+                  >
+                    ₹{finalPrice}
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">
+                    {billingPeriod === "yearly"
+                      ? "Billed Annually"
+                      : "Billed Monthly"}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`p-4 rounded-2xl flex items-center gap-4 border-2 ${isDark ? "bg-[#001F3F]/20 border-white/5" : "bg-[#F8FAFC] border-[#CBD5E1]"}`}
+              >
+                <FiLock className="text-[#001F3F]" />
+                <p
+                  className={`text-[9px] font-black uppercase leading-relaxed tracking-tight ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
+                >
+                  Encrypted Transmission via{" "}
+                  <span className="text-blue-600">Razorpay Hub</span>. <br />
+                  256-bit SSL Secure Protocol active.
+                </p>
+              </div>
+
+              <button
+                onClick={handlePayment}
+                disabled={isProcessing}
+                className="w-full py-4 rounded-xl bg-[#001F3F] text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-xl hover:bg-black border border-white/10 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {isProcessing ? (
+                  <FiActivity className="animate-spin" />
+                ) : (
+                  <>
+                    <FiLock /> Execute Payment <FiChevronRight />
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
       </div>
-
-      <style>{`
-                @keyframes progress {
-                    0% { width: 0%; }
-                    100% { width: 100%; }
-                }
-                
-                @keyframes fadeIn {
-                    from {
-                        opacity: 0;
-                        transform: translateY(-4px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-10px); }
-                }
-
-                .animate-progress {
-                    animation: progress 2s ease-in-out;
-                }
-
-                .animate-fadeIn {
-                    animation: fadeIn 0.3s ease-out;
-                }
-
-                .animate-float {
-                    animation: float 3s ease-in-out infinite;
-                }
-
-                .bg-size-200 {
-                    background-size: 200% 100%;
-                }
-
-                .bg-pos-0 {
-                    background-position: 0% 0%;
-                }
-
-                .bg-pos-100 {
-                    background-position: 100% 0%;
-                }
-
-                /* Custom scrollbar */
-                .overflow-y-auto::-webkit-scrollbar {
-                    width: 6px;
-                }
-
-                .overflow-y-auto::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-
-                .overflow-y-auto::-webkit-scrollbar-thumb {
-                    background: rgba(139, 92, 246, 0.3);
-                    border-radius: 3px;
-                }
-
-                .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-                    background: rgba(139, 92, 246, 0.5);
-                }
-            `}</style>
     </div>
   );
 };
+
+const ProtocolInput = ({
+  label,
+  icon,
+  value,
+  error,
+  readOnly,
+  optional,
+  onChange,
+  isDark,
+}) => (
+  <div className="space-y-2">
+    <label
+      className={`text-[10px] font-black uppercase tracking-widest ml-1 ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
+    >
+      {label}{" "}
+      {optional && <span className="opacity-30 italic">(Optional)</span>}
+    </label>
+    <div className="relative group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#001F3F]">
+        {icon}
+      </div>
+      <input
+        value={value}
+        readOnly={readOnly}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 transition-all text-[12px] font-bold ${
+          readOnly ? "opacity-60 cursor-not-allowed" : ""
+        } ${
+          isDark
+            ? "bg-white/5 border-white/10 focus:border-white text-white"
+            : "bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#001F3F] text-[#001F3F]"
+        } ${error ? "border-red-500/50" : ""}`}
+      />
+      {error && (
+        <p className="text-[9px] text-red-500 font-bold uppercase mt-1 ml-1">
+          {error}
+        </p>
+      )}
+    </div>
+  </div>
+);
+
+const SummaryLine = ({ label, value, highlight, success, isDark }) => (
+  <div className="flex justify-between items-center">
+    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+      {label}
+    </span>
+    <span
+      className={`text-[12px] font-black uppercase ${
+        success
+          ? "text-green-500"
+          : highlight
+            ? "text-blue-600"
+            : isDark
+              ? "text-white"
+              : "text-[#001F3F]"
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
 
 export default PaymentModal;

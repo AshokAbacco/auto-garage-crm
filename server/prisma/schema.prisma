@@ -87,9 +87,27 @@ model User {
 
   // 💳 Payments & Referrals
   payments         Payment[]
-  myReferralCode   String    @unique
+  payouts          ReferralPayout[]
+  myReferralCode   String           @unique
   referredByCode   String?
   referredByUserId Int?
+
+  // 🔹 Payout & KYC (for referral earnings)
+  upiId       String?
+  bankAccount String?
+  accountName String?
+  bankName    String?
+  branch      String?
+  ifscCode    String?
+  panNumber   String?
+
+  panDocument     Bytes?
+  panDocumentType String?
+
+  bankProofDocument Bytes?
+  bankProofType     String?
+
+  kycStatus String @default("NOT_SUBMITTED")
 
   referralsMade  Referral[] @relation("UserReferralsMade")
   referralRecord Referral?  @relation("UserReferralReceived")
@@ -105,6 +123,9 @@ model User {
   staffMembers     CarStaff[]
   carStaffLogins   CarStaffLogin[]
   carStaffSalaries CarStaffSalary[]
+
+  referredByPartnerId Int?
+  referredByPartner   ReferralPartner? @relation(fields: [referredByPartnerId], references: [id])
 
   // 🔗 PARENT USER (FOR MULTI-CRM / SUB-USER LOGIN)
   parentUserId    Int?
@@ -144,6 +165,8 @@ model User {
   washWhatsAppSessions WashWhatsAppSession[]
   washWhatsAppMessages WashWhatsAppMessage[]
   washingReminders     WashingReminder[]
+  supportSnapshot      UserSupportSnapshot?
+  isSuspended          Boolean               @default(false)
 }
 
 //car db schemas
@@ -232,6 +255,8 @@ model Service {
   reviewRating    Int?
   reviewSource    String?
   reviewMessageId String?
+
+  @@index([clientId])
 }
 
 model ServiceMedia {
@@ -528,6 +553,9 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 model DynamicTable {
@@ -608,9 +636,6 @@ model Bike {
   bikeReminders  BikeReminder[]
   bikeOcrRecords BikeOcrRecord[]
 
-  /**
-   * ================= WHATSAPP OPT-IN =================
-   */
   whatsappOptin       Boolean   @default(false)
   whatsappOptinAt     DateTime?
   whatsappOptinSource String?
@@ -618,9 +643,6 @@ model Bike {
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt // ✅ ADD THIS
 
-  /**
-   * ================= INDEXES =================
-   */
   @@unique([ownerUserId, regNumber]) // ✅ IMPORTANT
   @@index([ownerUserId])
   @@index([createdById])
@@ -694,6 +716,8 @@ model BikeService {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([ownerUserId])
 }
 
 model BikeInvoice {
@@ -1117,6 +1141,8 @@ model WashBilling {
   washWhatsAppMessages WashWhatsAppMessage[]
 
   @@index([washingClientId])
+  @@index([userId])
+  @@index([status])
   @@map("wash_billings")
 }
 
@@ -1385,24 +1411,42 @@ model Admin {
 }
 
 model ReferralPartner {
-  id Int @id @default(autoincrement())
-
-  name     String
-  email    String @unique
-  phone    String
-  password String // ✅ ADD THIS
-  upiId    String
-  address  String
-
+  id           Int    @id @default(autoincrement())
+  name         String
+  email        String @unique
+  phone        String
+  password     String
+  address      String
   referralCode String @unique
 
-  totalReferrals Int   @default(0)
-  totalEarnings  Float @default(0)
+  // --- Financial & KYC Registry ---
+  upiId       String?
+  bankAccount String?
+  accountName String?
+  bankName    String?
+  branch      String?
+  ifscCode    String?
+  panNumber   String?
 
-  isActive Boolean @default(true)
+  // 🔥 KYC Documents Stored as Binary (Bytes)
+  panDocument     Bytes? // PAN file (PDF/JPG/PNG)
+  panDocumentType String? // MIME type (image/jpeg, application/pdf)
 
+  bankProofDocument Bytes? // Cancelled cheque / passbook
+  bankProofType     String? // MIME type
+
+  // KYC Status: PENDING, VERIFIED, REJECTED
+  kycStatus String @default("PENDING")
+
+  // --- Performance Metrics ---
+  totalReferrals Int     @default(0)
+  totalEarnings  Float   @default(0)
+  isActive       Boolean @default(true)
+
+  // --- Relations ---
   referrals Referral[]
   payouts   ReferralPayout[]
+  users     User[] // Referrer relationship
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1452,19 +1496,81 @@ model ReferralSettings {
 model ReferralPayout {
   id Int @id @default(autoincrement())
 
-  partnerId Int
-  partner   ReferralPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId Int?
+  userId    Int?
+
+  partner ReferralPartner? @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  user    User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amount Float
-
   status PayoutStatus @default(PENDING)
 
   transactionReference String?
   paidAt               DateTime?
 
+  // 🔥 ADD THESE
+  cycleStart DateTime?
+  cycleEnd   DateTime?
+  cycleLabel String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([partnerId])
+  @@index([userId])
   @@index([status])
+}
+
+//support
+
+model UserSupportSnapshot {
+  userId Int  @id
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentPlan PlanType
+  planExpiry  DateTime?
+  isActive    Boolean
+
+  allowedCrms CrmType[]
+
+  // Car CRM
+  carTotalClients      Int   @default(0)
+  carTotalServices     Int   @default(0)
+  carCompletedServices Int   @default(0)
+  carTotalRevenue      Float @default(0)
+
+  // Bike CRM
+  bikeTotalServices Int   @default(0)
+  bikeTotalRevenue  Float @default(0)
+
+  // Wash CRM
+  washTotalServices Int   @default(0)
+  washTotalRevenue  Float @default(0)
+
+  // Billing
+  totalInvoices Int   @default(0)
+  totalPaid     Float @default(0)
+  totalPending  Float @default(0)
+
+  // Payments
+  totalPayments       Int       @default(0)
+  lastPaymentDate     DateTime?
+  failedPaymentsCount Int       @default(0)
+
+  updatedAt DateTime @updatedAt
+}
+
+model SupportActionLog {
+  id Int @id @default(autoincrement())
+
+  adminId Int
+  userId  Int
+
+  action String
+  meta   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([userId])
 }

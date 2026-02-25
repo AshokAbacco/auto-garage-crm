@@ -303,12 +303,7 @@ export default function ClientDetail() {
   };
 
   const handleManualWhatsApp = async () => {
-    if (
-      !window.confirm(
-        "Send 'Vehicle Received' message?",
-      )
-    )
-      return;
+    if (!window.confirm("Send 'Vehicle Received' message?")) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -448,116 +443,150 @@ export default function ClientDetail() {
           <span className="font-medium">Back to Clients</span>
         </Link>
 
-        {/* Hero Section with Background Image */}
-        <div className="relative rounded-2xl overflow-hidden shadow-xl">
-          {/* Background Image */}
-          <div className="relative h-100 sm:h-[600px]">
-            <img
-              src={
-                client.carImage ||
-                `https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80`
-              }
-              alt="vehicle"
-              className="w-full h-full object-cover"
-            />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
-          </div>
+        {/* Hero Section Container */}
+        <div
+          className="relative rounded-2xl overflow-hidden shadow-xl transition-all duration-300"
+          style={{
+            backgroundColor: colors.bgCard,
+            border: `1px solid ${colors.border}`,
+          }}
+        >
+          {/* isDark helper for this scope */}
+          {(() => {
+            const isDark = colors.layoutBg === "#020617";
+            const textMain = isDark ? "text-white" : "text-slate-900";
+            const textSub = isDark ? "text-slate-400" : "text-slate-500";
 
-          {/* Content Overlay */}
-          <div className="absolute inset-0 p-6 sm:p-8">
-            {/* Top Right Buttons */}
-            <div className="flex justify-between items-start mb-6">
-              <Link
-                to="/clients"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300"
-                style={{
-                  backgroundColor: colors.hoverBg,
-                  color: colors.textSecondary,
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                <FiArrowLeft className="w-4 h-4" />
-                <span className="font-medium">Back</span>
-              </Link>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleManualWhatsApp}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg transition-all duration-300 hover:scale-105"
-                >
-                  <FaWhatsapp className="w-4 h-4" />
-                  <span className="font-medium">Send Receipt</span>
-                </button>
-                <button
-                  onClick={handleScanNavigate}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
-                >
-                  <FiCamera className="w-4 h-4" />
-                  <span className="font-medium">Scan RC</span>
-                </button>
-              </div>
-            </div>
+            return (
+              <div className="flex flex-col relative">
+                {/* Background Image */}
+                <div className="relative h-56 sm:h-72 w-full shrink-0 bg-slate-200">
+                  <img
+                    src={
+                      client.carImage ||
+                      `https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=2070&q=80`
+                    }
+                    alt="vehicle"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
-            {/* Client Info */}
-            <div className="flex items-start gap-4 mb-6">
-              {/* Client Initial */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                {client.fullName?.charAt(0)?.toUpperCase() || "C"}
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
-                  {client.fullName}
-                </h1>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="px-3 py-1 bg-green-500 text-white text-sm font-medium rounded-full">
-                    ACTIVE CLIENT
-                  </span>
-                  <span className="text-white/80 text-sm font-mono">
-                    {client.regNumber}
-                  </span>
+                {/* Content Area */}
+                <div className="p-5 sm:p-6 flex flex-col gap-6">
+                  {/* Top Actions */}
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <Link
+                      to="/clients"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all w-full sm:w-auto justify-center"
+                      style={{
+                        backgroundColor: colors.hoverBg,
+                        color: colors.textPrimary,
+                        border: `1px solid ${colors.border}`,
+                      }}
+                    >
+                      <FiArrowLeft className="w-4 h-4" />
+                      <span className="font-bold text-sm">Back</span>
+                    </Link>
+
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={handleManualWhatsApp}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 text-white hover:bg-green-700 shadow-md active:scale-95 transition-all"
+                      >
+                        <FaWhatsapp className="w-4 h-4" />
+                        <span className="font-bold text-xs uppercase tracking-wide">
+                          Receipt
+                        </span>
+                      </button>
+                      <button
+                        onClick={handleScanNavigate}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md active:scale-95 transition-all"
+                      >
+                        <FiCamera className="w-4 h-4" />
+                        <span className="font-bold text-xs uppercase tracking-wide">
+                          Scan RC
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Identity & Vehicle Details */}
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-2xl shadow-lg shrink-0">
+                        {client.fullName?.charAt(0)?.toUpperCase() || "C"}
+                      </div>
+                      <div className="min-w-0">
+                        <h1
+                          className={`text-2xl sm:text-3xl font-black leading-tight truncate ${textMain}`}
+                        >
+                          {client.fullName}
+                        </h1>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="px-2 py-0.5 bg-green-500 text-white text-[10px] font-black rounded uppercase">
+                            Active
+                          </span>
+                          <span
+                            className={`font-mono text-xs font-bold ${textSub}`}
+                          >
+                            {client.regNumber}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                      <div>
+                        <h2
+                          className={`text-xl sm:text-2xl font-bold ${textMain}`}
+                        >
+                          {client.vehicleMake} {client.vehicleModel}
+                        </h2>
+                        <div className="mt-2">
+                          <p
+                            className={`text-[10px] uppercase font-black tracking-widest ${textSub}`}
+                          >
+                            Lifetime Value
+                          </p>
+                          <p className="text-3xl font-black text-blue-600">
+                            ₹{totalBilled.toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Spec Cards Grid */}
+                      <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                        <SpecCard
+                          icon={<BsFuelPumpFill />}
+                          label="Fuel"
+                          value={client.fuel}
+                          colors={colors}
+                        />
+                        <SpecCard
+                          icon={<FiUsers />}
+                          label="Seats"
+                          value={client.seats}
+                          colors={colors}
+                        />
+                        <SpecCard
+                          icon={<FiHash />}
+                          label="Color"
+                          value={client.color || "N/A"}
+                          colors={colors}
+                        />
+                        <SpecCard
+                          icon={<FiTool />}
+                          label="Body"
+                          value={client.bodyType || "SUV"}
+                          colors={colors}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Vehicle Info */}
-            <div className="mb-6">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                {client.vehicleMake} {client.vehicleModel}
-              </h2>
-              <p className="text-white/80 text-sm">Total Lifetime Value</p>
-              <p className="text-2xl font-bold text-white">
-                ₹{totalBilled.toFixed(2)}
-              </p>
-            </div>
-
-            {/* Vehicle Specifications */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <SpecCard
-                icon={<BsFuelPumpFill />}
-                label="FUEL TYPE"
-                value={client.fuel}
-                colors={colors}
-              />
-              <SpecCard
-                icon={<FiUsers />}
-                label="SEATS"
-                value={client.seats}
-                colors={colors}
-              />
-              <SpecCard
-                icon={<FiHash />}
-                label="COLOR"
-                value={client.color || "N/A"}
-                colors={colors}
-              />
-              <SpecCard
-                icon={<FiTool />}
-                label="BODY TYPE"
-                value={client.bodyType || "SUV"}
-                colors={colors}
-              />
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         {/* Contact Information */}
@@ -1223,14 +1252,37 @@ function SpecCard({ icon, label, value, colors }) {
   const isDark = colors.layoutBg === "#020617";
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white">
+    <div
+      className={`rounded-xl p-3 border transition-all duration-300 shadow-sm ${
+        isDark ? "bg-white/5 border-white/10" : "bg-white border-slate-200"
+      }`}
+      style={{
+        backgroundColor: !isDark ? colors.bgCard : undefined,
+      }}
+    >
+      <div className="flex flex-col gap-2">
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            isDark ? "bg-white/10 text-blue-400" : "bg-blue-50 text-blue-600"
+          }`}
+        >
           {icon}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-white/80 uppercase">{label}</p>
-          <p className="text-white font-semibold">{value}</p>
+        <div>
+          <p
+            className={`text-[10px] font-bold uppercase tracking-wider ${
+              isDark ? "text-slate-400" : "text-slate-500"
+            }`}
+          >
+            {label}
+          </p>
+          <p
+            className={`text-sm font-bold leading-tight ${
+              isDark ? "text-white" : "text-slate-900"
+            }`}
+          >
+            {value}
+          </p>
         </div>
       </div>
     </div>

@@ -1,5 +1,3 @@
-// --- FULL FINAL CODE FOR PricingPage.jsx ---
-
 import React, { useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import {
@@ -11,7 +9,7 @@ import {
   FAQSection,
 } from "./PricingComponents";
 import PaymentModal from "./PaymentModal";
-import { Zap, Star, Crown, ArrowRight, MessageCircle } from "lucide-react";
+import { FiZap, FiStar, FiAward, FiCpu } from "react-icons/fi";
 import Footer from "../components/Footer.jsx";
 
 export default function ModernPricingPage() {
@@ -19,208 +17,229 @@ export default function ModernPricingPage() {
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
-
-  // 🔹 planType = car | bike | washing
   const [planType, setPlanType] = useState("car");
 
-  // =========================
-  // 🚗 CAR PLANS (Default)
-  // =========================
+  // --- Plan Metadata (Standardized pricing nodes) ---
   const carPlans = [
     {
       id: "basic",
-      name: "Basic",
-      tagline: "For small garages",
+      name: "Basic Node",
+      tagline: "Entry-level infrastructure",
       numericPrice: 1000,
-      icon: Zap,
+      icon: FiZap,
       features: [
-        "Upload RC images (up to 10/day)",
-        "Basic OCR extraction",
-        "Save history locally",
-        "CSV/EXCEL, PDF export",
-        "Email support",
+        "RC Image Uploads (10/day)",
+        "Standard OCR Extraction",
+        "Local History Cache",
+        "Export CSV/PDF",
+        "Technical Support",
       ],
     },
     {
       id: "standard",
-      name: "Standard",
-      tagline: "Most popular choice",
+      name: "Standard Node",
+      tagline: "Optimized for high-volume",
       numericPrice: 2000,
-      icon: Star,
+      icon: FiStar,
       badge: "POPULAR",
       features: [
-        "Unlimited uploads",
-        "High-accuracy OCR",
-        "Priority support",
-        "Export CSV, PDF",
-        "SMS/WhatsApp Alerts",
-        "Team accounts (up to 3)",
+        "Unlimited Node Uploads",
+        "High-Precision OCR",
+        "Priority Support Tier",
+        "Advanced Data Export",
+        "SMS/WhatsApp Protocols",
+        "Team Access (3 Nodes)",
       ],
     },
     {
       id: "premium",
-      name: "Premium",
-      tagline: "For growing businesses",
+      name: "Premium Node",
+      tagline: "Enterprise-grade control",
       numericPrice: 3000,
-      icon: Crown,
+      icon: FiAward,
       badge: "BEST VALUE",
       features: [
-        "Everything in Standard",
-        "Team accounts (up to 10)",
-        "Maintenance Alert SMS",
-        "Bulk processing",
-        "Dedicated manager",
-        "Auto Invoice",
-        "Staff Salary Management",
-        "Online Payment Options",
+        "Full Standard Features",
+        "Team Access (10 Nodes)",
+        "Maintenance Alert Logic",
+        "Bulk Processing Engine",
+        "Dedicated Account Manager",
+        "Automated Invoicing",
+        "Payroll Management",
+        "Integrated Gateways",
       ],
     },
   ];
 
-  // =========================
-  // 🏍 BIKE PLANS
-  // =========================
   const bikePlans = [
     {
       id: "basic",
-      name: "Basic",
-      tagline: "For small garages",
+      name: "Basic Node",
+      tagline: "Compact garage setup",
       numericPrice: 600,
-      icon: Zap,
+      icon: FiZap,
       features: [
-        "Upload RC images (up to 10/day)",
-        "Basic OCR extraction",
-        "Save history locally",
-        "CSV/EXCEL, PDF export",
-        "Email support",
+        "RC Image Uploads (10/day)",
+        "Standard OCR Extraction",
+        "Local History Cache",
+        "Export CSV/PDF",
+        "Technical Support",
       ],
     },
     {
       id: "standard",
-      name: "Standard",
-      tagline: "Most popular choice",
+      name: "Standard Node",
+      tagline: "Enhanced efficiency",
       numericPrice: 1200,
-      icon: Star,
+      icon: FiStar,
       badge: "POPULAR",
       features: [
-        "Unlimited uploads",
-        "High-accuracy OCR",
-        "Priority support",
-        "Export CSV, PDF",
-        "SMS/WhatsApp Alerts",
-        "Team accounts (up to 3)",
+        "Unlimited Node Uploads",
+        "High-Precision OCR",
+        "Priority Support Tier",
+        "Advanced Data Export",
+        "SMS/WhatsApp Protocols",
+        "Team Access (3 Nodes)",
       ],
     },
     {
       id: "premium",
-      name: "Premium",
-      tagline: "For growing businesses",
+      name: "Premium Node",
+      tagline: "Elite fleet management",
       numericPrice: 2000,
-      icon: Crown,
+      icon: FiAward,
       badge: "BEST VALUE",
       features: [
-        "Everything in Standard",
-        "Team accounts (up to 10)",
-        "Maintenance Alert SMS",
-        "Bulk processing",
-        "Dedicated manager",
-        "Auto Invoice",
-        "Staff Salary Management",
-        "Online Payment Options",
+        "Full Standard Features",
+        "Team Access (10 Nodes)",
+        "Maintenance Alert Logic",
+        "Bulk Processing Engine",
+        "Dedicated Account Manager",
+        "Automated Invoicing",
+        "Payroll Management",
+        "Integrated Gateways",
       ],
     },
   ];
 
-  // =========================
-  // 🚿 WASHING PLANS
-  // =========================
   const washingPlans = [
     {
       id: "standard",
-      name: "Standard",
-      tagline: "Most popular choice",
+      name: "Standard Node",
+      tagline: "Queue management ready",
       numericPrice: 500,
-      icon: Star,
+      icon: FiStar,
       badge: "POPULAR",
       features: [
-        "Unlimited uploads",
-        "Priority support",
-        "Export CSV, PDF",
-        "SMS/WhatsApp Alerts",
-        "Team accounts (up to 3)",
+        "Unlimited Queue Uploads",
+        "Priority Support Tier",
+        "Advanced Data Export",
+        "SMS/WhatsApp Protocols",
+        "Team Access (3 Nodes)",
       ],
     },
-
     {
       id: "premium",
-      name: "Premium",
-      tagline: "For growing businesses",
+      name: "Premium Node",
+      tagline: "Scale-ready infrastructure",
       numericPrice: 1000,
-      icon: Crown,
+      icon: FiAward,
       badge: "BEST VALUE",
       features: [
-        "Everything in Standard",
-        "Team accounts (up to 10)",
-        "Maintenance Alert SMS",
-        "Bulk processing",
-        "Dedicated manager",
-        "Auto Invoice",
-        "Staff Salary Management",
-        "Online Payment Options",
+        "Full Standard Features",
+        "Team Access (10 Nodes)",
+        "Maintenance Alert Logic",
+        "Bulk Processing Engine",
+        "Dedicated Account Manager",
+        "Automated Invoicing",
+        "Payroll Management",
+        "Integrated Gateways",
       ],
     },
   ];
 
-  // ================ PLAN SWITCHING ================
-  let activePlans = carPlans;
-  if (planType === "bike") activePlans = bikePlans;
-  if (planType === "washing") activePlans = washingPlans;
+  let activePlans =
+    planType === "bike"
+      ? bikePlans
+      : planType === "washing"
+        ? washingPlans
+        : carPlans;
 
-  // ====================================================
-  // 🎯 On Plan Select → open payment modal
-  // ====================================================
   const handlePlanSelect = (plan) => {
     setSelectedPlan(plan);
     setShowModal(true);
   };
 
-  // Parent does NOT redirect (Option B)
-  const handlePaymentComplete = () => {
-    setShowModal(false);
-  };
-
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 mt-[5%] ${isDark
-        ? "bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white"
-        : "bg-gradient-to-b from-white via-gray-50 to-white text-gray-900"
-        }`}
+      className={`min-h-screen transition-colors duration-500 pt-32 ${
+        isDark ? "bg-[#000814] text-white" : "bg-white text-[#001F3F]"
+      }`}
     >
-      {/* Hero Section */}
-      <Hero
-        isDark={isDark}
-        billingPeriod={billingPeriod}
-        setBillingPeriod={setBillingPeriod}
-        planType={planType}
-        setPlanType={setPlanType}
-      />
+      {/* --- Section Header --- */}
+      <div className="max-w-7xl mx-auto px-6 mb-20 text-center">
+        <div
+          className={`inline-flex items-center gap-3 px-4 py-2 rounded-xl border mb-8 ${
+            isDark
+              ? "bg-white/5 border-white/10"
+              : "bg-slate-50 border-slate-200"
+          }`}
+        >
+          <span
+            className={`flex gap-3 text-[9px] font-black uppercase tracking-[0.3em] ${isDark ? "text-white" : "text-[#001F3F]"}`}
+          >
+            <FiCpu  size={18} />
+            Subscription Protocols
+          </span>
+        </div>
 
-      {/* Pricing Cards */}
-      <section className="relative z-10 px-4 pb-10 sm:px-6">
-        <div className={`max-w-6xl mx-auto gap-6
-          ${activePlans.length === 1
-            ? "flex justify-center"
-            : activePlans.length === 2
-              ? "grid grid-cols-1 md:grid-cols-2 justify-center"
-              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-          }
-        `}>
+        {/* Color Correction: Applied #001F3F for Light Mode Headings */}
+        <h1
+          className={`text-5xl lg:text-7xl font-black tracking-tighter mb-6 uppercase ${
+            isDark ? "text-white" : "text-[#001F3F]"
+          }`}
+        >
+          Pricing{" "}
+          <span className="font-light italic lowercase">Infrastructure.</span>
+        </h1>
+
+        <p
+          className={`text-lg max-w-2xl mx-auto font-medium ${
+            isDark ? "text-slate-400" : "text-slate-500"
+          }`}
+        >
+          Select the operational tier that aligns with your garage nodes.
+          Flexible billing cycles for global scalability.
+        </p>
+      </div>
+
+      {/* --- Control HUD (Billing & Plan Type) --- */}
+      <div className="max-w-7xl mx-auto mb-16 px-6">
+        <Hero
+          isDark={isDark}
+          billingPeriod={billingPeriod}
+          setBillingPeriod={setBillingPeriod}
+          planType={planType}
+          setPlanType={setPlanType}
+        />
+      </div>
+
+      {/* --- Pricing Matrix --- */}
+      <section className="relative z-10 px-6 pb-24">
+        <div
+          className={`max-w-7xl mx-auto gap-8 ${
+            activePlans.length === 1
+              ? "flex justify-center"
+              : activePlans.length === 2
+                ? "grid grid-cols-1 md:grid-cols-2 lg:max-w-4xl"
+                : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          }`}
+        >
           {activePlans.map((plan) => (
             <div
               key={plan.id}
-              className="mx-auto w-full max-w-[320px]"
+              className="animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
-
               <PricingCard
                 plan={plan}
                 billingPeriod={billingPeriod}
@@ -233,23 +252,31 @@ export default function ModernPricingPage() {
         </div>
       </section>
 
-      <StatsSection isDark={isDark} />
+      {/* --- Supplemental Registry Sections --- */}
+      <div
+        className={`border-t ${isDark ? "border-white/5 bg-[#001F3F]/20" : "border-slate-100 bg-slate-50"}`}
+      >
+        <StatsSection isDark={isDark} />
+      </div>
+
       <TrustSection isDark={isDark} />
-      <TestimonialSection isDark={isDark} />
+
+      <div className={isDark ? "bg-[#000814]" : "bg-white"}>
+        <TestimonialSection isDark={isDark} />
+      </div>
+
       <FAQSection isDark={isDark} />
 
-      {/* Payment Modal */}
+      {/* --- Transmission Components --- */}
       <PaymentModal
         show={showModal}
         plan={selectedPlan}
         billingPeriod={billingPeriod}
         isDark={isDark}
-        planType={planType} // <-- Important for Option B
+        planType={planType}
         onClose={() => setShowModal(false)}
-        onComplete={handlePaymentComplete}
+        onComplete={() => setShowModal(false)}
       />
-
-      <Footer />
     </div>
   );
 }

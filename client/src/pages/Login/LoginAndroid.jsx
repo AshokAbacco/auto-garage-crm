@@ -1,53 +1,35 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Car,
-  Bike,
-  Droplets,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Loader2,
-  ChevronRight,
-  UserCircle2,
-  Building2,
-} from "lucide-react";
-import PublicLayout from "../../components/PublicLayout";
+  FiTruck,
+  FiActivity,
+  FiBox,
+  FiMail,
+  FiLock,
+  FiEye,
+  FiEyeOff,
+  FiChevronRight,
+  FiShield,
+  FiLogIn,
+  FiCpu,
+  FiChevronLeft,
+} from "react-icons/fi";
+import { useTheme } from "../../contexts/ThemeContext";
 
-// Update this path if needed
 const LOGO_PATH = "/Logos/transLogo.png";
 
 const CRM_TYPES = [
-  {
-    key: "car",
-    label: "Car",
-    icon: Car,
-    activeClass:
-      "border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600",
-  },
-  {
-    key: "bike",
-    label: "Bike",
-    icon: Bike,
-    activeClass:
-      "border-orange-600 bg-orange-50 text-orange-700 ring-1 ring-orange-600",
-  },
-  {
-    key: "wash",
-    label: "Wash",
-    icon: Droplets,
-    activeClass:
-      "border-cyan-600 bg-cyan-50 text-cyan-700 ring-1 ring-cyan-600",
-  },
+  { key: "car", label: "Car Node", icon: FiTruck },
+  { key: "bike", label: "Bike Node", icon: FiActivity },
+  { key: "wash", label: "Wash Node", icon: FiBox },
 ];
 
 export default function LoginAndroid() {
+  const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [crmType, setCrmType] = useState("car");
-  const [loginMode, setLoginMode] = useState("owner"); // owner | staff
-  const [formData, setFormData] = useState({
-    identifier: "",
-    password: "",
-  });
+  const [loginMode, setLoginMode] = useState("owner");
+  const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -69,7 +51,7 @@ export default function LoginAndroid() {
     }
 
     if (loginMode === "staff" && !formData.identifier.includes("@")) {
-      setError("Staff must login using email");
+      setError("Staff must login using email address");
       setLoading(false);
       return;
     }
@@ -78,243 +60,304 @@ export default function LoginAndroid() {
       let loginUrl = "";
       let payload = {};
 
-      // 👷 STAFF LOGIN
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+      // ================= STAFF LOGIN =================
       if (loginMode === "staff") {
         if (crmType === "wash") {
-          loginUrl = `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/teams/wash-staff/login`;
+          loginUrl = `${BASE_URL}/api/teams/wash-staff/login`;
           payload = {
-            email: formData.identifier.toLowerCase(),
+            email: formData.identifier.trim().toLowerCase(),
             password: formData.password,
           };
         } else if (crmType === "car") {
-          loginUrl = `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/staff-auth/login`;
+          loginUrl = `${BASE_URL}/api/staff-auth/login`;
           payload = {
-            email: formData.identifier.toLowerCase(),
+            email: formData.identifier.trim().toLowerCase(),
             password: formData.password,
             crmType: "CAR",
           };
         } else {
-          loginUrl = `${
-            import.meta.env.VITE_API_BASE_URL
-          }/api/bikes-team/login`;
+          loginUrl = `${BASE_URL}/api/bikes-team/login`;
           payload = {
-            email: formData.identifier.toLowerCase(),
+            email: formData.identifier.trim().toLowerCase(),
             password: formData.password,
             crmType: crmType.toUpperCase(),
           };
         }
       }
-      // 👤 OWNER LOGIN
+
+      // ================= OWNER LOGIN =================
       else {
-        loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+        loginUrl = `${BASE_URL}/api/auth/login`;
         payload = {
-          identifier: formData.identifier,
+          identifier: formData.identifier.trim(),
           password: formData.password,
           crmType,
         };
       }
 
-      const res = await fetch(loginUrl, {
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        setError(data.message || "Invalid login credentials");
+      if (!response.ok) {
+        setError(data.message || "Invalid login");
         setLoading(false);
         return;
       }
 
+      // Save auth
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("crmType", crmType);
 
-      window.location.href = `/${crmType}-dashboard`;
+      // Navigate
+      navigate(`/${crmType}-dashboard`);
     } catch (err) {
-      console.error(err);
-      setError("Server connection failed. Please try again.");
+      console.error("Login error:", err);
+      setError("Server error. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <PublicLayout>
-      <div className="min-h-screen bg-white text-slate-800 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm flex flex-col gap-6">
-          {/* === HEADER SECTION === */}
-          {/* Added a bottom border and padding to separate it cleanly from the form */}
-          <div className="flex flex-col items-center justify-center pb-6 border-b border-slate-100">
-            <div className="w-32 h-auto mb-3">
-              <img
-                src={LOGO_PATH}
-                alt="The Motor Desk"
-                className="w-full h-full object-contain"
-                onError={(e) => (e.target.style.display = "none")}
-              />
-            </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Welcome Back
-            </h1>
-            <p className="text-slate-500 text-xs font-medium mt-1">
-              Sign in to manage your garage
-            </p>
+    <div
+      className={`min-h-screen transition-colors duration-500 flex flex-col ${
+        isDark ? "bg-[#000814] text-white" : "bg-white text-black"
+      }`}
+    >
+      {/* --- Terminal Mobile Header --- */}
+      <div
+        className={`w-full py-4 px-5 border-b flex justify-between items-center ${
+          isDark
+            ? "border-white/5 bg-[#001F3F]/30"
+            : "border-slate-100 bg-[#F8FAFC]"
+        }`}
+      >
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"
+        >
+          <FiChevronLeft size={16} /> Home
+        </button>
+        <div className="flex items-center gap-2">
+          <FiActivity className="text-green-500" size={14} />
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">
+            Auth_Gateway: Live
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col justify-center items-center p-6">
+        {/* --- System Registry Header --- */}
+        <div className="text-center mb-8">
+          <div className="w-24 h-auto mx-auto mb-4">
+            <img
+              src={LOGO_PATH}
+              alt="MotorDesk"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-md border mb-4 ${
+              isDark
+                ? "bg-white/5 border-white/10"
+                : "bg-slate-50 border-slate-200"
+            }`}
+          >
+            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-[#001F3F]">
+              V1.0 Mobile Protocol
+            </span>
+          </div>
+          <h1
+            className={`text-3xl font-black tracking-tighter uppercase mb-2 ${
+              isDark ? "text-white" : "text-[#001F3F]"
+            }`}
+          >
+            Node{" "}
+            <span className="font-light italic lowercase">Authentication.</span>
+          </h1>
+        </div>
+
+        {/* --- Mobile Authentication Console --- */}
+        <div
+          className={`relative w-full max-w-sm rounded-[1.5rem] border-2 transition-all duration-500 overflow-hidden ${
+            isDark
+              ? "bg-[#001F3F] border-white/5 shadow-2xl"
+              : "bg-white border-[#CBD5E1] shadow-xl"
+          }`}
+        >
+          {/* OS Navigation UI Dots */}
+          <div
+            className={`px-4 py-2 border-b flex gap-1.5 ${isDark ? "bg-white/5" : "bg-[#F8FAFC]"}`}
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-red-500/80"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/80"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500/80"></div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* === SELECTORS === */}
-            <div className="space-y-4">
-              {/* 1. CRM Type Selector (Cards) */}
-              {/* Borders are now slate-300 (darker) by default for better visibility */}
-              <div className="grid grid-cols-3 gap-3">
-                {CRM_TYPES.map(({ key, label, icon: Icon, activeClass }) => {
-                  const isSelected = crmType === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setCrmType(key)}
-                      className={`relative py-3 px-2 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-2
-                      ${
-                        isSelected
-                          ? activeClass + " shadow-sm"
-                          : "bg-white border-slate-300 text-slate-400 hover:border-slate-400 hover:bg-slate-50"
-                      }`}
-                    >
-                      <Icon size={22} strokeWidth={2} />
-                      <span className="text-[11px] font-bold uppercase tracking-wide">
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 2. Login Mode Toggle */}
-              <div className="bg-slate-100 p-1.5 rounded-xl flex relative border border-slate-200">
-                <div
-                  className={`absolute inset-y-1.5 w-[calc(50%-6px)] bg-white shadow-sm border border-slate-200 rounded-lg transition-all duration-300 ease-out
-                ${
-                  loginMode === "staff"
-                    ? "translate-x-[100%] left-1.5"
-                    : "translate-x-0 left-1.5"
-                }
-                `}
-                />
+          <div className="p-6">
+            {/* Infrastructure Selector HUB */}
+            <div className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl p-1 grid grid-cols-3 gap-1 mb-6 shadow-inner">
+              {CRM_TYPES.map(({ key, label, icon: Icon }) => (
                 <button
-                  type="button"
-                  onClick={() => setLoginMode("owner")}
-                  className={`flex-1 relative z-10 py-2.5 text-sm font-bold flex items-center justify-center gap-2 transition-colors
-                  ${
-                    loginMode === "owner" ? "text-slate-900" : "text-slate-500"
+                  key={key}
+                  onClick={() => setCrmType(key)}
+                  className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${
+                    crmType === key
+                      ? "bg-[#001F3F] text-white shadow-lg"
+                      : "text-slate-400"
                   }`}
                 >
-                  <Building2 size={16} /> Owner
+                  <Icon className="mx-auto mb-1" size={14} />
+                  {label}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setLoginMode("staff")}
-                  className={`flex-1 relative z-10 py-2.5 text-sm font-bold flex items-center justify-center gap-2 transition-colors
-                  ${
-                    loginMode === "staff" ? "text-slate-900" : "text-slate-500"
-                  }`}
-                >
-                  <UserCircle2 size={16} /> Staff
-                </button>
-              </div>
+              ))}
             </div>
 
-            {/* === INPUT FIELDS === */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 ml-1">
-                  {loginMode === "staff" ? "Staff Email" : "Username / Email"}
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                    <Mail size={18} />
-                  </div>
-                  {/* Darker border (slate-300) for inputs */}
-                  <input
-                    name="identifier"
-                    value={formData.identifier}
-                    onChange={handleChange}
-                    placeholder={
-                      loginMode === "staff" ? "employee@example.com" : "admin"
-                    }
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all font-medium text-sm"
-                  />
-                </div>
-              </div>
+            {/* Login Mode Toggle Protocol */}
+            <div className="relative flex w-full p-1 bg-[#F8FAFC] border border-[#CBD5E1] rounded-lg mb-8">
+              <div
+                className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded shadow transition-all duration-500 ${
+                  loginMode === "staff" ? "translate-x-full" : "translate-x-0"
+                } bg-[#001F3F]`}
+              />
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 ml-1">
-                  Password
+              <button
+                onClick={() => setLoginMode("owner")}
+                className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                  loginMode === "owner" ? "text-white" : "text-slate-400"
+                }`}
+              >
+                Owner Node
+              </button>
+              <button
+                onClick={() => setLoginMode("staff")}
+                className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                  loginMode === "staff" ? "text-white" : "text-slate-400"
+                }`}
+              >
+                Staff Node
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <InputField
+                label="Identity ID"
+                icon={<FiMail />}
+                name="identifier"
+                value={formData.identifier}
+                onChange={handleChange}
+                placeholder="Username or Email"
+                isDark={isDark}
+              />
+
+              <div className="space-y-2 relative">
+                <label
+                  className={`text-[9px] font-black uppercase tracking-widest ml-1 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
+                >
+                  <FiLock className="text-blue-500" /> Access Protocol
                 </label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                    <Lock size={18} />
-                  </div>
-                  {/* Darker border (slate-300) for inputs */}
+                <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="••••••••"
-                    className="w-full pl-11 pr-11 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all font-medium text-sm"
+                    required
+                    className={`w-full px-4 py-3 rounded-lg border-2 outline-none transition-all text-[11px] font-bold ${
+                      isDark
+                        ? "bg-white/5 border-white/10 focus:border-white text-white"
+                        : "bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#001F3F] text-[#001F3F]"
+                    }`}
+                    placeholder="Access Token"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? (
+                      <FiEyeOff size={14} />
+                    ) : (
+                      <FiEye size={14} />
+                    )}
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* === ERROR & SUBMIT === */}
-            {error && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                {error}
-              </div>
-            )}
-
-            <button
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-md shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-70 disabled:active:scale-100"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  <span>Verifying...</span>
-                </>
-              ) : (
-                <>
-                  <span>Login</span>
-                  <ChevronRight size={18} />
-                </>
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500 text-red-500 text-xs rounded-lg mb-3">
+                  {error}
+                </div>
               )}
-            </button>
-          </form>
+              {/* Initialize Command Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-lg bg-[#001F3F] text-white font-black text-[10px] uppercase tracking-[0.25em] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <FiActivity className="animate-spin" />
+                ) : (
+                  <>
+                    Initialize Node <FiLogIn />
+                  </>
+                )}
+              </button>
+            </form>
 
-          <div className="text-center space-y-2 pt-4">
-            <p className="text-[10px] text-slate-400 font-medium">
-              © Abacco Technology • V2.0 Mobile
-            </p>
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+              <div className="flex items-center justify-center gap-2 text-[8px] font-black uppercase tracking-widest text-slate-400">
+                <FiShield className="text-green-500" />
+                <span>Secure Transmission: 256-Bit</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* --- Micro Registry Footer --- */}
+        <p className="mt-8 text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">
+          © MotorDesk Platform • Android V2.0
+        </p>
       </div>
-    </PublicLayout>
+    </div>
   );
 }
+
+const InputField = ({
+  label,
+  icon,
+  name,
+  value,
+  onChange,
+  placeholder,
+  isDark,
+}) => (
+  <div className="space-y-2">
+    <label
+      className={`text-[9px] font-black uppercase tracking-widest ml-1 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
+    >
+      {React.cloneElement(icon, { size: 14, className: "text-blue-500" })}{" "}
+      {label}
+    </label>
+    <input
+      type="text"
+      name={name}
+      value={value}
+      onChange={onChange}
+      required
+      className={`w-full px-4 py-3 rounded-lg border-2 outline-none transition-all text-[11px] font-bold ${
+        isDark
+          ? "bg-white/5 border-white/10 focus:border-white text-white"
+          : "bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#001F3F] text-[#001F3F]"
+      }`}
+      placeholder={placeholder}
+    />
+  </div>
+);

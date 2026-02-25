@@ -1,6 +1,15 @@
 import React, { useState } from "react";
+import {
+  FiPlay,
+  FiX,
+  FiActivity,
+  FiVideo,
+  FiChevronLeft,
+} from "react-icons/fi";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function WatchDemo({ isOpen, onClose }) {
+  const { isDark } = useTheme();
   const [selectedVideo, setSelectedVideo] = useState(null);
 
   if (!isOpen) return null;
@@ -10,303 +19,183 @@ export default function WatchDemo({ isOpen, onClose }) {
       id: 1,
       title: "English",
       subtitle: "Product Overview",
-      src: "/Videos/English.mp4",
-      gradient: "from-green-500 to-teal-500",
+      src: "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/vedios/English.mp4",
     },
     {
       id: 2,
       title: "Telugu",
-      subtitle: "తెలుగు వివరణ",
-      src: "/Videos/Telugu-website.mp4",
-      gradient: "from-green-500 to-teal-500",
+      subtitle: "తెలుగు వివರಣ",
+      src: "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/vedios/Telugu-website.mp4",
     },
     {
       id: 3,
       title: "Kannada",
       subtitle: "ಕನ್ನಡ ವಿವರಣೆ",
-      src: "/Videos/Kannada.mp4",
-      gradient: "from-green-500 to-teal-500",
+      src: "https://pub-42af405ceba340aebd5fb14bbd59d42d.r2.dev/vedios/Kannada.mp4",
     },
   ];
 
-  const handleVideoClick = (video) => {
-    setSelectedVideo(video);
-  };
-
-  const closeFullscreen = () => {
-    setSelectedVideo(null);
-  };
-
   return (
-    <>
-      {/* Main Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 sm:p-6 py-15">
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-            backgroundSize: '32px 32px'
-          }}></div>
-        </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      {/* OS Backdrop Protocol */}
+      <div
+        className="absolute inset-0 bg-[#000814]/90 backdrop-blur-md"
+        onClick={onClose}
+      ></div>
 
-        <div className="relative w-full top-20 max-w-[900px] max-h-[85vh] overflow-hidden rounded-3xl bg-white shadow-[0_25px_80px_-15px_rgba(0,0,0,0.3)]">
-          {/* Header */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200/80 px-6 py-6 sm:px-10 sm:py-8">
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/40 to-purple-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-            
-            <div className="relative flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-1.5 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-                  <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent tracking-tight">
-                    Product Demos
-                  </h2>
-                </div>
-                <p className="text-sm sm:text-base text-gray-600 ml-5 font-medium">
-                  Experience our product in multiple languages
-                </p>
-              </div>
-              
-              <button
-                onClick={onClose}
-                className="group flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:bg-red-50 hover:text-red-600 transition-all duration-300 shadow-sm hover:shadow-md"
-                aria-label="Close"
+      {/* Main Terminal Window - Responsive height logic applied */}
+      <div
+        className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-[1.5rem] sm:rounded-[2rem] border transition-all duration-500 shadow-2xl ${
+          isDark ? "bg-[#000814] border-white/10" : "bg-white border-[#CBD5E1]"
+        }`}
+      >
+        {/* Window Header Utility - Optimized for Mobile Padding */}
+        <div
+          className={`px-5 py-4 sm:px-8 sm:py-5 border-b flex items-center justify-between ${
+            isDark
+              ? "border-white/5 bg-[#001F3F]/30"
+              : "bg-[#F8FAFC] border-[#CBD5E1]"
+          }`}
+        >
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+            </div>
+            <div className="h-4 w-[1px] bg-slate-300 mx-1 sm:mx-2"></div>
+            <div>
+              <h2
+                className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] leading-none mb-1 ${
+                  isDark ? "text-white" : "text-[#001F3F]"
+                }`}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:rotate-90 duration-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+                System.Media_Player
+              </h2>
+              <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                V1.0 DEMO PROTOCOLS
+              </p>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            className={`p-2 rounded-xl transition-all ${
+              isDark
+                ? "hover:bg-white/5 text-slate-400"
+                : "hover:bg-slate-200 text-[#001F3F]"
+            }`}
+          >
+            <FiX size={18} />
+          </button>
+        </div>
 
-          {/* Videos Grid */}
-          <div className="overflow-y-auto max-h-[calc(65vh-180px)] p-6 sm:p-10">
-            <div className="grid gap-6 sm:gap-8 lg:gap-10 grid-cols-1 md:grid-cols-3 lg:grid-cols-2">
-              {videos.map((video, index) => (
+        {/* Video Grid Deployment - Internal Scroll Locked to Parent height */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-8 lg:p-12">
+          {!selectedVideo ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+              {videos.map((video) => (
                 <div
                   key={video.id}
-                  className="group cursor-pointer"
-                  onClick={() => handleVideoClick(video)}
-                  style={{
-                    animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
-                  }}
+                  onClick={() => setSelectedVideo(video)}
+                  className="group cursor-pointer space-y-3 sm:space-y-4"
                 >
-                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.03] border border-gray-200/50">
-                    {/* Gradient Border Effect */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${video.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl`}></div>
-                    
-                    {/* Video Container */}
-                    <div className="relative aspect-video bg-gray-900 rounded-3xl overflow-hidden">
-                      <video
-                        className="w-full h-full object-cover"
-                        preload="metadata"
-                      >
-                        <source src={video.src} type="video/mp4" />
-                      </video>
-                      
-                      {/* Overlay Gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                      
-                      {/* Play Button Overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                        <div className="relative">
-                          {/* Pulsing Ring */}
-                          <div className="absolute inset-0 rounded-full bg-white/30 animate-ping"></div>
-                          
-                          {/* Play Button */}
-                          <div className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br ${video.gradient} flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300`}>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-10 w-10 sm:h-12 sm:w-12 text-white ml-1"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Language Badge */}
-                      <div className="absolute top-4 left-4">
-                        <div className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${video.gradient} text-white text-xs font-semibold shadow-lg backdrop-blur-sm`}>
-                          {video.title}
-                        </div>
+                  <div
+                    className={`relative aspect-video rounded-xl sm:rounded-2xl border-2 overflow-hidden transition-all duration-500 group-hover:scale-[1.02] ${
+                      isDark
+                        ? "bg-[#001F3F] border-white/5"
+                        : "bg-[#F8FAFC] border-[#CBD5E1] group-hover:border-[#001F3F]"
+                    }`}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#001F3F] text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                        <FiPlay className="ml-1" size={20} sm:size={24} />
                       </div>
                     </div>
+                    <div className="absolute inset-0 bg-[#000814]/20 group-hover:bg-transparent transition-all"></div>
                   </div>
-                  
-                  {/* Video Info */}
-                  <div className="mt-5 px-2">
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
-                      {video.title}
+
+                  <div className="px-1 text-center sm:text-left">
+                    <h3
+                      className={`text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] mb-1 ${
+                        isDark ? "text-white" : "text-[#001F3F]"
+                      }`}
+                    >
+                      {video.title} Node
                     </h3>
-                    <p className="text-sm sm:text-base text-gray-600 font-medium">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
                       {video.subtitle}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-gray-200/80 bg-gradient-to-r from-gray-50 to-slate-50 px-6 py-5 sm:px-10 sm:py-6">
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-gray-500 font-medium">
-                Click any video to watch
-              </p>
-              <button
-                onClick={onClose}
-                className="px-6 py-2.5 sm:px-8 sm:py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-xl font-semibold hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Video Modal - Centered with Fixed Size */}
-      {selectedVideo && (
-        <div className="fixed inset-0 z-[60] bg-black/10 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 mt-[150px]">
-          {/* Video Container */}
-          <div className="relative w-full max-w-5xl mx-auto">
-            {/* Top Bar with Controls */}
-         
-            <div className="mb-4 flex items-center justify-between">
-              {/* Back Button */}
-              {/* <button
-                onClick={closeFullscreen}
-                className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 border border-white/20 hover:border-white/40 shadow-lg"
-                aria-label="Go back"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:-translate-x-1 duration-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+          ) : (
+            <div className="animate-in fade-in zoom-in-95 duration-500 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <button
+                  onClick={() => setSelectedVideo(null)}
+                  className="flex items-center gap-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-400 transition-colors"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M15 19l-7-7 7-7"
+                  <FiChevronLeft /> Return
+                </button>
+                <div className="flex items-center gap-2">
+                  <FiActivity
+                    className="text-green-500 animate-pulse"
+                    size={12}
                   />
-                </svg>
-                <span className="text-sm sm:text-base">Back</span>
-              </button> */}
-
-              {/* Video Title */}
-              <div className="text-center flex-1 mx-4">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg">
-                  {selectedVideo.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-white/80 mt-1 drop-shadow">
-                  {selectedVideo.subtitle}
-                </p>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    STREAMING_ACTIVE
+                  </span>
+                </div>
               </div>
 
-              {/* Close Button */}
-              <button
-                onClick={closeFullscreen}
-                className="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-red-500/90 backdrop-blur-md hover:bg-red-600 text-white transition-all duration-300 shadow-lg hover:shadow-red-500/50 border border-red-400/30"
-                aria-label="Close"
+              <div
+                className={`rounded-xl sm:rounded-2xl border-2 overflow-hidden shadow-2xl bg-black ${
+                  isDark ? "border-white/10" : "border-[#CBD5E1]"
+                }`}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 sm:h-7 sm:w-7 transition-transform group-hover:rotate-90 duration-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Video Player - Fixed Aspect Ratio */}
-            <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
-              <div className="aspect-video">
                 <video
                   controls
                   autoPlay
-                  className="w-full h-full object-contain py-10"
+                  className="w-full h-auto max-h-[40vh] sm:max-h-[50vh]"
                 >
                   <source src={selectedVideo.src} type="video/mp4" />
                 </video>
               </div>
-              
+            </div>
+          )}
+        </div>
+
+        {/* System Registry Footer - Compact for Mobile */}
+        <div
+          className={`px-5 py-4 sm:px-8 sm:py-5 border-t flex flex-col sm:flex-row items-center justify-between gap-4 ${
+            isDark
+              ? "border-white/5 bg-[#001F3F]/10"
+              : "bg-[#F8FAFC] border-[#CBD5E1]"
+          }`}
+        >
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <FiVideo className="text-blue-500" size={14} />
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                Nodes: 03
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FiActivity className="text-green-500" size={14} />
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                Sync: Optimized
+              </span>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#001F3F] text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all border border-white/10 shadow-lg active:scale-95"
+          >
+            Close Stream
+          </button>
         </div>
-      )}
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes ping {
-          75%, 100% {
-            transform: scale(1.5);
-            opacity: 0;
-          }
-        }
-
-        .animate-ping {
-          animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        /* Custom Scrollbar */
-        .overflow-y-auto::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 10px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
-          border-radius: 10px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #2563eb, #7c3aed);
-        }
-
-        /* Smooth video transitions */
-        video {
-          transition: all 0.3s ease;
-        }
-      `}</style>
-    </>
+      </div>
+    </div>
   );
 }

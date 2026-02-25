@@ -1,33 +1,23 @@
-// client/src/payment/PricingComponents.jsx
 import React, { useState } from "react";
 import {
-  Check,
-  X,
-  Zap,
-  Star,
-  Crown,
-  ChevronRight,
-  CreditCard,
-  Smartphone,
-  ArrowRight,
-  CheckCircle,
-  Gift,
-  Timer,
-  HeartHandshake,
-  BadgeCheck,
-  Shield,
-  Award,
-  Sparkles,
-  Users,
-  Rocket,
-  TrendingUp,
-  Lock,
-  MessageCircle,
-} from "lucide-react";
+  FiCheck,
+  FiZap,
+  FiStar,
+  FiAward,
+  FiChevronRight,
+  FiArrowRight,
+  FiActivity,
+  FiCpu,
+  FiShield,
+  FiUsers,
+  FiClock,
+  FiUser,
+  FiTerminal,
+  FiTruck,
+  FiSettings,
+} from "react-icons/fi";
 
-// Hero Section Component
-// --- ONLY UPDATED HERO COMPONENT (FULL FILE UNCHANGED EXCEPT THIS PART) ---
-
+// --- HERO COMPONENT ---
 export const Hero = ({
   isDark,
   billingPeriod,
@@ -35,149 +25,122 @@ export const Hero = ({
   planType,
   setPlanType,
 }) => (
-  <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20">
-    <div className="max-w-7xl mx-auto text-center space-y-6">
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 backdrop-blur-sm">
-        <Sparkles className="w-4 h-4 text-violet-400" />
-        <span
-          className={`text-sm font-medium ${
-            isDark ? "text-violet-300" : "text-violet-700"
-          }`}
-        >
-          Limited time offer - Save up to 10%
-        </span>
-      </div>
-
-      {/* Main Heading */}
+  <section className="relative z-10 px-6 py-12 sm:py-20">
+    <div className="max-w-7xl mx-auto text-center space-y-10 w-full">
+      {/* Infrastructure Tag Protocol */}
+      <span className="text-[#001F3F] font-black text-[10px] uppercase tracking-[0.4em] block mb-2">
+        Infrastructure Costs
+      </span>
       <div className="space-y-4">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-          <span
-            className={`block mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
-          >
-            Pricing that scales
-          </span>
-          <span className="block bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent py-4">
-            with your business
+        <h1
+          className={`text-5xl lg:text-7xl font-black uppercase ${isDark ? "text-white" : "text-[#001F3F]"}`}
+        >
+          Flexible Pricing for <br />
+          <span className="font-light italic lowercase">
+            Every Service Type.
           </span>
         </h1>
-
-        <p
-          className={`text-lg sm:text-xl max-w-2xl mx-auto ${
-            isDark ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
-          Start free, upgrade when you need to. No hidden fees, no surprises.
-        </p>
       </div>
-
-      {/* Monthly / Yearly Switch */}
-<div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-  {/* Monthly */}
-  <span
-    className={`text-sm font-medium transition ${
-      billingPeriod === "monthly"
-        ? isDark
-          ? "text-white"
-          : "text-gray-900"
-        : isDark
-        ? "text-gray-400"
-        : "text-gray-500"
-    }`}
-  >
-    Monthly
-  </span>
-
-  {/* Toggle */}
-  <button
-    onClick={() =>
-      setBillingPeriod(billingPeriod === "monthly" ? "yearly" : "monthly")
-    }
-    className={`relative w-16 h-8 rounded-full transition-colors duration-300
-      ${
-        billingPeriod === "yearly"
-          ? "bg-gradient-to-r from-violet-500 to-fuchsia-500"
-          : isDark
-          ? "bg-gray-700"
-          : "bg-gray-300"
-      }
-    `}
-  >
-    <div
-      className={`absolute top-1 left-1 w-6 h-6 rounded-full transition-transform duration-300
-        ${
-          billingPeriod === "yearly"
-            ? "translate-x-8 bg-white"
-            : isDark
-            ? "bg-white"
-            : "bg-gray-900"
-        }
-      `}
-    />
-  </button>
-
-  {/* Yearly */}
-  <span
-    className={`text-sm font-medium transition ${
-      billingPeriod === "yearly"
-        ? isDark
-          ? "text-white"
-          : "text-gray-900"
-        : isDark
-        ? "text-gray-400"
-        : "text-gray-500"
-    }`}
-  >
-    Yearly
-  </span>
-
-  {/* Save Badge */}
-  <span className="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-bold shadow-sm">
-    Save 10%
-  </span>
-</div>
-
-
-      {/* Bike / Washing Buttons */}
-      <div className="flex justify-center gap-4 mt-6">
-        <button
-          onClick={() => setPlanType("car")}
-          className={`px-4 py-2 rounded-xl font-semibold ${
-            planType === "car"
-              ? "bg-violet-600 text-white"
-              : "bg-gray-200 text-gray-700"
+      {/* --- Premium Hardware Synchronization Banner --- */}
+      <div className="max-w-7xl mx-auto relative group">
+        <div
+          className={`p-8 md:p-10 rounded-[2.5rem] border-2 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 transition-all duration-500 ${
+            isDark
+              ? "bg-[#001F3F] border-white/10 shadow-2xl"
+              : "bg-[#001F3F] border-[#001F3F] text-white shadow-xl"
           }`}
         >
-          Car Pricing Plan
-        </button>
-        <button
-          onClick={() => setPlanType("bike")}
-          className={`px-4 py-2 rounded-xl font-semibold ${
-            planType === "bike"
-              ? "bg-violet-600 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-        >
-          Bike Pricing Plan
-        </button>
+          {/* Decorative Background Node */}
+          <FiCpu className="absolute right-[-5%] top-[-10%] w-64 h-64 opacity-5 pointer-events-none" />
 
-        <button
-          onClick={() => setPlanType("washing")}
-          className={`px-4 py-2 rounded-xl font-semibold ${
-            planType === "washing"
-              ? "bg-violet-600 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-        >
-          Washing Pricing Plan
-        </button>
+          <div className="flex flex-col md:flex-row items-center gap-6 relative z-10 text-center md:text-left">
+            <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
+              <FiAward size={32} className="text-white" />
+            </div>
+            <div>
+              <div className="inline-flex items-center bg-red-600 px-3 py-1 rounded-md mb-3">
+                <span className="text-[9px] font-black uppercase tracking-widest text-white">
+                  Limited Time Offer
+                </span>
+              </div>
+              <h3 className="text-2xl font-black uppercase tracking-tight italic mb-2">
+                Premium Hardware Synchronization
+              </h3>
+              <p className="text-blue-100/60 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                Activate Yearly Premium{" "}
+                <span className="text-white">for Car or Bike CRM</span> to{" "}
+                <br />
+                receive a{" "}
+                <span className="text-amber-400">
+                  Lenovo Tab (₹12,500 Value)
+                </span>{" "}
+                free of cost.
+              </p>
+            </div>
+          </div>
 
-        
+          {/* Complimentary Status Widget */}
+          <div className="relative z-10 border-2 border-white/20 bg-white/5 backdrop-blur-md p-6 rounded-2xl min-w-[240px] text-center">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-1">
+              Equipment Status
+            </p>
+            <p className="text-xl font-black italic uppercase tracking-tighter">
+              Complimentary
+            </p>
+          </div>
+        </div>
+      </div>{" "}
+      {/* Module Selector HUB - Responsive Protocol */}
+      <div className="mt-12 inline-grid grid-cols-2 sm:flex bg-[#F8FAFC] p-1.5 rounded-2xl border border-[#CBD5E1] w-full max-w-sm sm:max-w-max mx-auto gap-1 sm:gap-0 shadow-inner">
+        {["car", "bike", "washing"].map((type) => (
+          <button
+            key={type}
+            onClick={() => setPlanType(type)}
+            className={`px-4 sm:px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${
+              planType === type
+                ? "bg-[#001F3F] text-white shadow-xl scale-[1.02] sm:scale-100"
+                : "text-slate-400 hover:text-[#001F3F]"
+            } ${type === "washing" ? "col-span-2 sm:col-span-1" : ""}`}
+          >
+            {type} CRM
+          </button>
+        ))}
+      </div>
+      {/* Cycle Toggle HUD */}
+      <div className="flex items-center justify-center gap-6">
+        <span
+          className={`text-[11px] font-black uppercase tracking-widest ${billingPeriod === "monthly" ? "text-[#001F3F]" : "text-slate-400"}`}
+        >
+          Monthly
+        </span>
+        <button
+          onClick={() =>
+            setBillingPeriod(billingPeriod === "monthly" ? "yearly" : "monthly")
+          }
+          className="relative w-14 h-7 rounded-full bg-[#001F3F] p-1 transition-all"
+        >
+          <div
+            className={`w-5 h-5 rounded-full bg-white transition-all duration-300 ${
+              billingPeriod === "yearly" ? "translate-x-7" : "translate-x-0"
+            }`}
+          />
+        </button>
+        <div className="flex items-center gap-3">
+          <span
+            className={`text-[11px] font-black uppercase tracking-widest ${billingPeriod === "yearly" ? "text-[#001F3F]" : "text-slate-400"}`}
+          >
+            Yearly
+          </span>
+          <span className="text-green-600 text-[10px] font-black uppercase tracking-widest">
+            (Save 20%)
+          </span>
+        </div>
       </div>
     </div>
   </section>
 );
 
-// Pricing Card Component
+// --- PRICING CARD COMPONENT ---
 export const PricingCard = ({
   plan,
   billingPeriod,
@@ -186,316 +149,196 @@ export const PricingCard = ({
   isPopular,
 }) => {
   const Icon = plan.icon;
-  const yearlyDiscount = 0.1;
   const finalPrice =
     billingPeriod === "yearly"
-      ? Math.round(plan.numericPrice * 12 * (1 - yearlyDiscount))
+      ? Math.round(plan.numericPrice * 12 * 0.8)
       : plan.numericPrice;
-  const monthlyEquivalent =
+  const monthlyEq =
     billingPeriod === "yearly"
       ? Math.round(finalPrice / 12)
       : plan.numericPrice;
 
   return (
-    <div className={`relative ${isPopular ? "lg:scale-105 lg:-mt-4" : ""}`}>
-      {/* Popular Badge */}
+    <div className="relative h-full flex flex-col">
+      {/* Industrial Badge Tab */}
       {plan.badge && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xs font-bold shadow-lg shadow-violet-500/25 flex items-center gap-1.5">
-            <Star className="w-3 h-3 fill-current" />
+        <div className="absolute -top-3 left-6 z-20">
+          <div className="px-5 py-1.5 rounded-md bg-[#001F3F] text-white text-[9px] font-black uppercase tracking-[0.2em] shadow-md border border-white/10">
             {plan.badge}
           </div>
         </div>
       )}
 
       <div
-        className={`h-full rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] ${
+        className={`h-full rounded-[2rem] border-2 p-10 flex flex-col transition-all duration-300 ${
           isPopular
-            ? `bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-2xl shadow-violet-500/25 border-2 border-violet-400/50`
+            ? "border-[#001F3F] shadow-2xl bg-white scale-[1.02]"
             : isDark
-            ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-violet-500/50"
-            : "bg-white border-2 border-gray-200 hover:border-violet-500/50 shadow-xl"
+              ? "bg-[#000814] border-slate-800"
+              : "bg-white border-slate-100 shadow-sm"
         }`}
       >
-        {/* Icon */}
-        <div
-          className={`inline-flex p-3 rounded-2xl mb-6 ${
-            isPopular
-              ? "bg-white/20 backdrop-blur-sm"
-              : "bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10"
-          }`}
-        >
-          <Icon
-            className={`w-7 h-7 ${
-              isPopular ? "text-white" : "text-violet-500"
-            }`}
-          />
-        </div>
-
-        {/* Plan Name */}
-        <div className="mb-6">
-          <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-          <p
-            className={`text-sm ${
-              isPopular
-                ? "text-white/80"
-                : isDark
-                ? "text-gray-400"
-                : "text-gray-600"
-            }`}
+        <div className="flex justify-between items-start mb-10">
+          <div
+            className={`p-4 rounded-xl ${isDark ? "bg-slate-800 text-white" : "bg-slate-50 text-[#001F3F]"}`}
           >
-            {plan.tagline}
-          </p>
-        </div>
-
-        {/* Price */}
-        <div className="mb-8">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-5xl font-bold">₹{monthlyEquivalent}</span>
-            <span
-              className={`text-lg ${
-                isPopular
-                  ? "text-white/70"
-                  : isDark
-                  ? "text-gray-400"
-                  : "text-gray-600"
-              }`}
-            >
-              /mo
-            </span>
+            <Icon size={24} />
           </div>
-          {billingPeriod === "yearly" && (
-            <p
-              className={`text-sm ${
-                isPopular
-                  ? "text-white/70"
-                  : isDark
-                  ? "text-gray-400"
-                  : "text-gray-600"
-              }`}
+          <div className="text-right">
+            <h3
+              className={`text-sm font-black uppercase tracking-widest ${isDark ? "text-white" : "text-[#001F3F]"}`}
             >
-              ₹{finalPrice} billed annually
+              {plan.name}
+            </h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              {plan.tagline}
             </p>
-          )}
+          </div>
         </div>
 
-        {/* Features */}
-        <ul className="space-y-4 mb-8">
+        <div className="mb-12 flex items-baseline gap-1">
+          <span
+            className={`text-5xl font-black tracking-tighter ${isDark ? "text-white" : "text-[#001F3F]"}`}
+          >
+            ₹{monthlyEq}
+          </span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            /Month
+          </span>
+        </div>
+
+        <ul className="space-y-5 mb-12 flex-1">
           {plan.features.map((feature, idx) => (
-            <li key={idx} className="flex items-start gap-3">
-              <div
-                className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
-                  isPopular ? "bg-white/20" : "bg-green-500/10"
-                }`}
+            <li key={idx} className="flex items-center gap-3">
+              <FiCheck className="text-green-500 stroke-[4]" size={16} />
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest ${isDark ? "text-slate-300" : "text-[#001F3F]"}`}
               >
-                <Check
-                  className={`w-3 h-3 ${
-                    isPopular ? "text-white" : "text-green-500"
-                  }`}
-                />
-              </div>
-              <span className="text-sm">{feature}</span>
+                {feature}
+              </span>
             </li>
           ))}
         </ul>
 
-        {/* CTA Button */}
+        {/* --- Button Design --- */}
         <button
           onClick={() => onSelect(plan)}
-          className={`w-full py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
+          className={`w-full py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all border-2 flex items-center justify-center gap-3 shadow-lg active:scale-95 ${
             isPopular
-              ? "bg-white text-violet-600 hover:bg-gray-50 shadow-lg"
-              : "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
+              ? "bg-[#001F3F] border-[#001F3F] text-white hover:bg-black"
+              : isDark
+                ? "bg-transparent border-slate-800 text-white hover:bg-slate-800"
+                : "bg-white border-slate-200 text-[#001F3F] hover:border-black"
           }`}
         >
-          <span>Get Started</span>
-          <ArrowRight className="w-5 h-5" />
+          Initialize {plan.name} <FiArrowRight className="opacity-50" />
         </button>
       </div>
     </div>
   );
 };
 
-// Trust Section Component
-export const TrustSection = ({ isDark }) => {
-  const features = [
-    { icon: Shield, label: "Bank-level Security", desc: "Your data is safe" },
-    {
-      icon: HeartHandshake,
-      label: "24/7 Support",
-      desc: "Always here to help",
-    },
-    { icon: BadgeCheck, label: "7-Day Guarantee", desc: "Risk-free trial" },
-    { icon: Timer, label: "Instant Setup", desc: "Start in minutes" },
-  ];
-
-  return (
-    <section
-      className={`relative z-10 px-4 sm:px-6 py-16 ${
-        isDark ? "bg-gray-900/50" : "bg-gray-50"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <div key={index} className="text-center space-y-3">
-                <div
-                  className={`inline-flex p-4 rounded-2xl ${
-                    isDark ? "bg-violet-500/10" : "bg-violet-50"
-                  }`}
-                >
-                  <Icon className="w-8 h-8 text-violet-500" />
-                </div>
-                <div>
-                  <p
-                    className={`font-semibold mb-1 ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {item.label}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    {item.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+// --- TRUST REGISTRY ---
+export const TrustSection = ({ isDark }) => (
+  <section
+    className={`py-20 px-6 border-y ${isDark ? "bg-[#000814] border-slate-800" : "bg-slate-50 border-slate-100"}`}
+  >
+    <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
+      {[
+        { icon: FiShield, label: "Secure", desc: "Encrypted Protocol" },
+        { icon: FiActivity, label: "Operational", desc: "24/7 Node Support" },
+        { icon: FiAward, label: "Integrity", desc: "Refund Guarantee" },
+        { icon: FiClock, label: "Instant", desc: "Zero-Latency Setup" },
+      ].map((item, i) => (
+        <div key={i} className="space-y-2 group">
+          <item.icon
+            className={`mx-auto transition-colors ${isDark ? "text-slate-400 group-hover:text-white" : "text-slate-400 group-hover:text-[#001F3F]"}`}
+            size={24}
+          />
+          <p
+            className={`text-[11px] font-black uppercase tracking-[0.3em] ${isDark ? "text-white" : "text-[#001F3F]"}`}
+          >
+            {item.label}
+          </p>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">
+            {item.desc}
+          </p>
         </div>
-      </div>
-    </section>
-  );
-};
+      ))}
+    </div>
+  </section>
+);
 
-// Stats Component
-export const StatsSection = ({ isDark }) => {
-  const stats = [
-    { value: "50K+", label: "Active Users", icon: Users },
-    { value: "99.9%", label: "Uptime", icon: Rocket },
-    { value: "4.9/5", label: "User Rating", icon: Star },
-    { value: "24/7", label: "Support", icon: HeartHandshake },
-  ];
-
-  return (
-    <section className="relative z-10 px-4 sm:px-6 py-12">
-      <div className="max-w-7xl mx-auto">
-        <div
-          className={`rounded-3xl p-8 sm:p-12 ${
-            isDark
-              ? "bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-gray-700"
-              : "bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-100"
-          }`}
-        >
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={index} className="text-center space-y-2">
-                  <Icon className="w-8 h-8 mx-auto text-violet-500 mb-3" />
-                  <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-                    {stat.value}
-                  </div>
-                  <p
-                    className={`text-sm ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    {stat.label}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// Testimonial Component
+// --- TESTIMONIAL AUDIT ---
 export const TestimonialSection = ({ isDark }) => {
   const testimonials = [
     {
-      name: "Rajesh Kumar",
-      role: "Garage Owner",
-      image: "👨‍💼",
-      text: "This platform has transformed our workflow. OCR accuracy is impressive!",
+      name: "R. Kumar",
+      role: "Node Operator",
+      icon: <FiUser />,
+      text: "Workflow efficiency maximized. OCR infrastructure is top-tier.",
     },
     {
-      name: "Priya Sharma",
-      role: "Fleet Manager",
-      image: "👩‍💼",
-      text: "Best investment for our business. Support team is incredibly responsive.",
+      name: "P. Sharma",
+      role: "Fleet Controller",
+      icon: <FiTerminal />,
+      text: "Best-in-class support. Deployment was instantaneous.",
     },
     {
-      name: "Amit Patel",
-      role: "Auto Service",
-      image: "👨‍🔧",
-      text: "The maintenance alerts feature has saved us thousands in repair costs.",
+      name: "A. Patel",
+      role: "Admin Node",
+      icon: <FiSettings />,
+      text: "Maintenance protocols are highly reliable. ROI is evident.",
     },
   ];
 
   return (
-    <section className="relative z-10 px-4 sm:px-6 py-16">
+    <section className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Trusted by{" "}
-            <span className="bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-              thousands
-            </span>
-          </h2>
-          <p
-            className={`text-lg ${isDark ? "text-gray-400" : "text-gray-600"}`}
+        <div className="text-center mb-20">
+          <h2
+            className={`text-3xl font-black uppercase tracking-tighter ${isDark ? "text-white" : "text-[#001F3F]"}`}
           >
-            See what our customers have to say
-          </p>
+            Trusted by{" "}
+            <span className="font-light italic lowercase">thousands.</span>
+          </h2>
         </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
+        <div className="grid md:grid-cols-3 gap-8">
+          {testimonials.map((t, i) => (
             <div
-              key={index}
-              className={`p-6 rounded-2xl transition-all hover:scale-105 ${
+              key={i}
+              className={`p-10 rounded-[1.5rem] border-2 transition-all hover:-translate-y-2 ${
                 isDark
-                  ? "bg-gray-800/50 backdrop-blur-xl border border-gray-700"
-                  : "bg-white border border-gray-200 shadow-lg"
+                  ? "bg-[#001F3F]/10 border-slate-800"
+                  : "bg-white border-slate-100 shadow-xl shadow-slate-100"
               }`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-4xl">{testimonial.image}</div>
+              <div className="flex items-center gap-5 mb-8">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${
+                    isDark
+                      ? "bg-slate-800 text-white"
+                      : "bg-slate-50 text-[#001F3F] border border-slate-100 shadow-inner"
+                  }`}
+                >
+                  {t.icon}
+                </div>
                 <div>
-                  <p className="font-semibold">{testimonial.name}</p>
                   <p
-                    className={`text-sm ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-xs font-black uppercase italic ${isDark ? "text-white" : "text-[#001F3F]"}`}
                   >
-                    {testimonial.role}
+                    {t.name}
+                  </p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    {t.role}
                   </p>
                 </div>
               </div>
               <p
-                className={`text-sm leading-relaxed ${
-                  isDark ? "text-gray-300" : "text-gray-700"
-                }`}
+                className={`text-[10px] font-black uppercase tracking-widest leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}
               >
-                "{testimonial.text}"
+                "{t.text}"
               </p>
-              <div className="flex gap-1 mt-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                  />
-                ))}
-              </div>
             </div>
           ))}
         </div>
@@ -504,64 +347,81 @@ export const TestimonialSection = ({ isDark }) => {
   );
 };
 
-// FAQ Component
-export const FAQSection = ({ isDark }) => {
-  const [openIndex, setOpenIndex] = useState(null);
+// --- STATS LEDGER ---
+export const StatsSection = ({ isDark }) => (
+  <section className="py-24 px-6">
+    <div
+      className={`max-w-7xl mx-auto rounded-[2rem] p-12 border ${isDark ? "bg-[#001F3F] border-slate-800" : "bg-white border-slate-100 shadow-sm"}`}
+    >
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
+        {[
+          { label: "Active Nodes", val: "50K+" },
+          { label: "Global Uptime", val: "99.9%" },
+          { label: "Performance", val: "4.9/5" },
+          { label: "Latency", val: "<10ms" },
+        ].map((stat, i) => (
+          <div key={i}>
+            <div
+              className={`text-4xl font-black mb-1 uppercase ${isDark ? "text-white" : "text-[#001F3F]"}`}
+            >
+              {stat.val}
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+              {stat.label}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
 
+// --- FAQ REGISTRY ---
+export const FAQSection = ({ isDark }) => {
+  const [open, setOpen] = useState(null);
   const faqs = [
     {
-      question: "Can I change my plan later?",
+      question: "Can I adjust node tiers later?",
       answer:
-        "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.",
+        "Yes! You can upgrade or downgrade your plan tier at any time via the terminal console.",
     },
     {
-      question: "What payment methods do you accept?",
+      question: "Settlement Protocols?",
       answer:
-        "We accept UPI, credit cards, debit cards, and net banking for your convenience.",
-    },
-    {
-      question: "Is there a free trial available?",
-      answer:
-        "All plans come with a 7-day money-back guarantee. Try risk-free!",
+        "UPI, global cards, and industrial banking gateways are fully integrated.",
     },
   ];
 
   return (
-    <section className="relative z-10 px-4 sm:px-6 py-16">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Frequently Asked Questions
-          </h2>
-        </div>
-
+    <section className="py-24 px-6">
+      <div className="max-w-5xl mx-auto">
+        <h2
+          className={`text-2xl font-black uppercase tracking-tighter italic mb-12 text-center ${isDark ? "text-white" : "text-[#001F3F]"}`}
+        >
+          Protocol{" "}
+          <span className="font-light italic lowercase">Registry (FAQ).</span>
+        </h2>
         <div className="space-y-4">
-          {faqs.map((faq, index) => (
+          {faqs.map((faq, i) => (
             <div
-              key={index}
-              className={`rounded-2xl overflow-hidden transition-all ${
-                isDark
-                  ? "bg-gray-800/50 backdrop-blur-xl border border-gray-700"
-                  : "bg-white border border-gray-200 shadow-lg"
-              }`}
+              key={i}
+              className={`rounded-xl border transition-all ${isDark ? "border-slate-800 bg-[#001F3F]/10" : "border-slate-100 bg-white"}`}
             >
               <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full p-6 text-left flex items-center justify-between hover:bg-violet-500/5 transition-colors"
+                onClick={() => setOpen(open === i ? null : i)}
+                className="w-full p-6 text-left flex justify-between items-center group"
               >
-                <span className="font-semibold">{faq.question}</span>
-                <ChevronRight
-                  className={`w-5 h-5 transition-transform ${
-                    openIndex === index ? "rotate-90" : ""
-                  }`}
+                <span
+                  className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-white" : "text-[#001F3F]"}`}
+                >
+                  {faq.question}
+                </span>
+                <FiChevronRight
+                  className={`transition-transform duration-300 ${open === i ? "rotate-90" : ""} text-slate-400`}
                 />
               </button>
-              {openIndex === index && (
-                <div
-                  className={`px-6 pb-6 ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
+              {open === i && (
+                <div className="px-6 pb-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
                   {faq.answer}
                 </div>
               )}

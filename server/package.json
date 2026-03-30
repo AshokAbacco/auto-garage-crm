@@ -4,12 +4,13 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "postinstall": "prisma generate && PUPPETEER_CACHE_DIR=.cache npx puppeteer browsers install chrome",    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "postinstall": "prisma generate && PUPPETEER_CACHE_DIR=.cache npx puppeteer browsers install chrome",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
-  },  
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -39,7 +40,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11",
+    "nodemon": "^3.1.14",
     "prisma": "^6.18.0"
   }
 }

@@ -152,21 +152,24 @@ model User {
   washingClients WashingClient[]
   washTeams      WashTeam[]      @relation("AdminWashTeams")
 
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  staffs               Staff[]
-  washingStaffs        WashingStaff[]
-  washingStaffSalaries WashingStaffSalary[]
-  dynamicTables        DynamicTable[]
-  whatsAppSessions     WhatsAppSession[]
-  whatsAppMessages     WhatsAppMessage[]
-  bikeWhatsAppSessions BikeWhatsAppSession[]
-  bikeWhatsAppMessages BikeWhatsAppMessage[]
-  washWhatsAppSessions WashWhatsAppSession[]
-  washWhatsAppMessages WashWhatsAppMessage[]
-  washingReminders     WashingReminder[]
-  supportSnapshot      UserSupportSnapshot?
-  isSuspended          Boolean               @default(false)
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  staffs                    Staff[]
+  washingStaffs             WashingStaff[]
+  washingStaffSalaries      WashingStaffSalary[]
+  dynamicTables             DynamicTable[]
+  whatsAppSessions          WhatsAppSession[]
+  whatsAppMessages          WhatsAppMessage[]
+  bikeWhatsAppSessions      BikeWhatsAppSession[]
+  bikeWhatsAppMessages      BikeWhatsAppMessage[]
+  washWhatsAppSessions      WashWhatsAppSession[]
+  washWhatsAppMessages      WashWhatsAppMessage[]
+  washingReminders          WashingReminder[]
+  supportSnapshot           UserSupportSnapshot?
+  isSuspended               Boolean                    @default(false)
+  garageMarketplaceServices GarageMarketplaceService[]
+  marketplaceBookings       MarketplaceBooking[]
+  marketplacePackages       MarketplacePackage[]
 }
 
 //car db schemas
@@ -196,11 +199,12 @@ model Client {
   whatsappOptinAt     DateTime?
   whatsappOptinSource String?
 
-  user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  services  Service[]
-  invoices  Invoice[]
-  reminders Reminder[]
-  ocrs      OcrRecord[]
+  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services            Service[]
+  invoices            Invoice[]
+  reminders           Reminder[]
+  ocrs                OcrRecord[]
+  marketplaceBookings MarketplaceBooking[]
 
   @@unique([userId, regNumber])
   @@index([userId])
@@ -1573,4 +1577,141 @@ model SupportActionLog {
 
   @@index([adminId])
   @@index([userId])
+}
+
+// ==============================
+// MARKETPLACE LAYER (NEW)
+// ==============================
+
+model MarketplaceService {
+  id      Int     @id @default(autoincrement())
+  name    String
+  slug    String  @unique
+  crmType CrmType // CAR | BIKE | WASH
+
+  description String?
+  image       String? // ✅ ADD THIS
+  basePrice   Float?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  garageServices          GarageMarketplaceService[]
+  bookings                MarketplaceBooking[]
+  marketplacePackageItems MarketplacePackageItem[]
+
+  @@index([crmType])
+}
+
+model GarageMarketplaceService {
+  id Int @id @default(autoincrement())
+
+  // Garage Owner (User table)
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Service
+  serviceId Int
+  service   MarketplaceService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  // Garage-specific config
+  price    Float
+  duration Int? // in minutes (optional)
+
+  isActive Boolean @default(true)
+  discount Float?  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, serviceId])
+  @@index([serviceId])
+  @@index([userId])
+}
+
+model MarketplaceBooking {
+  id Int @id @default(autoincrement())
+
+  // Marketplace Service
+  serviceId Int
+  service   MarketplaceService @relation(fields: [serviceId], references: [id])
+
+  // Garage (User = owner)
+  garageId Int
+  garage   User @relation(fields: [garageId], references: [id])
+
+  // App user reference (external system)
+  appUserId String?
+
+  // Optional: vehicle reference from app
+  vehicleId String?
+
+  // Booking info
+  scheduledAt DateTime
+
+  // Snapshot (important!)
+  priceSnapshot Float
+
+  status MarketplaceBookingStatus @default(PENDING)
+
+  // CRM linking (after acceptance)
+  carServiceId     Int?
+  bikeServiceId    Int?
+  washingServiceId Int?
+
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([garageId])
+  @@index([serviceId])
+  @@index([status])
+}
+
+model MarketplacePackage {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  name        String // Basic / Standard / Premium
+  price       Float
+  isActive    Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items MarketplacePackageItem[]
+
+  @@index([userId])
+}
+
+model MarketplacePackageItem {
+  id Int @id @default(autoincrement())
+
+  packageId Int
+  serviceId Int
+
+  package MarketplacePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  service MarketplaceService @relation(fields: [serviceId], references: [id])
+
+  @@unique([packageId, serviceId]) // ✅ prevent duplicates
+  @@index([serviceId])
+}
+
+// ==============================
+// ENUM
+// ==============================
+
+enum MarketplaceBookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  TIMEOUT
+  CANCELLED
 }

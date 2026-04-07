@@ -203,84 +203,101 @@ export default function ModernLogin() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
 
- const handleSubmit = async (e) => {
-   e.preventDefault();
-   setIsLoading(true);
-   setError("");
+  const identifier = formData.identifier.trim();
+  const password = formData.password;
 
-   if (!formData.identifier || !formData.password) {
-     setError("Please fill in all fields");
-     setIsLoading(false);
-     return;
-   }
+  if (!identifier || !password) {
+    setError("Please fill in all fields");
+    setIsLoading(false);
+    return;
+  }
 
-   try {
-     /**
-      * =========================================
-      * STAFF vs OWNER LOGIN DETECTION
-      * =========================================
-      * Rule:
-      * - Staff → email only (CarStaff table)
-      * - Owner → email OR username (User table)
-      */
-     const isStaffLogin = formData.identifier.includes("@");
+  const isEmail = identifier.includes("@");
 
-     const loginUrl = isStaffLogin
-       ? `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`
-       : `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+  /**
+   * =========================================
+   * ROLE DETECTION
+   * =========================================
+   */
+  let loginUrl = "";
+  let payload = {};
 
-     const payload = isStaffLogin
-       ? {
-           email: formData.identifier,
-           password: formData.password,
-         }
-       : {
-           identifier: formData.identifier,
-           password: formData.password,
-           crmType: crmType,
-         };
+  // 🟦 CAR CRM
+// 🟦 CAR CRM (FINAL – WORKING)
+if (crmType === "car") {
+  if (isEmail) {
+    // ✅ CAR OWNER (email)
+    loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+    payload = {
+      identifier,
+      password,
+      crmType: "CAR",
+    };
+  } else {
+    // ✅ CAR STAFF (username / phone)
+    loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/staff-auth/login`;
+    payload = {
+      identifier,
+      password,
+    };
+  }
+}
+  // 🟩 BIKE CRM
+if (crmType === "bike") {
+  if (isEmail) {
+    // ✅ BIKE OWNER
+    loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`;
+    payload = {
+      identifier,
+      password,
+      crmType: "BIKE",
+    };
+  } else {
+    // ✅ BIKE TEAM LOGIN
+    loginUrl = `${import.meta.env.VITE_API_BASE_URL}/api/bikes-team/login`;
+    payload = {
+      identifier, // username OR email
+      password,
+    };
+  }
+}
 
-     const response = await fetch(loginUrl, {
-       method: "POST",
-       headers: {
-         "Content-Type": "application/json",
-       },
-       body: JSON.stringify(payload),
-     });
 
-     const data = await response.json();
+  try {
+    const response = await fetch(loginUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-     if (!response.ok) {
-       setError(data.message || "Invalid login");
-       setIsLoading(false);
-       return;
-     }
+    const data = await response.json();
 
-     /**
-      * =========================================
-      * SAVE TOKEN + USER (SINGLE SOURCE OF TRUTH)
-      * =========================================
-      */
-     localStorage.setItem("token", data.token);
-     localStorage.setItem("user", JSON.stringify(data.user));
-     localStorage.setItem("crmType", crmType);
+    if (!response.ok) {
+      setError(data.message || "Invalid login");
+      setIsLoading(false);
+      return;
+    }
 
-     /**
-      * =========================================
-      * REDIRECT
-      * =========================================
-      * Staff and Owner use same dashboard,
-      * backend restricts data automatically
-      */
-     window.location.href = `/${crmType}-dashboard`;
-   } catch (err) {
-     console.error("Login error:", err);
-     setError("Server error. Try again later.");
-   }
+    // ✅ SAVE SESSION
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("crmType", crmType.toUpperCase());
 
-   setIsLoading(false);
- };
+    // ✅ REDIRECT
+    window.location.href = `/${crmType}-dashboard`;
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("Server error. Try again later.");
+  }
+
+  setIsLoading(false);
+};
+
 
 
   const IconComponent = currentConfig.icon;

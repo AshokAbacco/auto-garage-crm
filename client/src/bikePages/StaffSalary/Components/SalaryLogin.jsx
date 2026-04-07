@@ -31,7 +31,7 @@ const SalaryLogin = () => {
       const res = await api.post("/api/auth/login", {
         identifier,
         password,
-        crmType: "SALARY",
+        crmType: "bike",
       });
 
       const user = res.data.user;

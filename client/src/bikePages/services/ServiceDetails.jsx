@@ -20,7 +20,11 @@ import {
   AlertCircle,
   Receipt,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Package,
+  FileDown,
+  Send,
+  Eye
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import api from "../../utils/axiosInstance";
@@ -152,22 +156,26 @@ const ServiceDetails = () => {
 
         {/* Status Badge */}
         <div className={`mb-8 p-6 rounded-2xl border-2 text-center animate-slide-down ${
-          service.status === "Paid"
+          service.status === "Completed"
             ? isDark
               ? "bg-green-500/20 border-green-500/50"
               : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+            : service.status === "In Progress"
+            ? isDark
+              ? "bg-blue-500/20 border-blue-500/50"
+              : "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200"
             : isDark
-            ? "bg-blue-500/20 border-blue-600/50"
+            ? "bg-orange-500/20 border-orange-500/50"
             : "bg-gradient-to-r from-orange-50 to-red-50 border-orange-200"
         }`}>
           <div className="flex items-center justify-center gap-3">
-            {service.status === "Paid" ? (
+            {service.status === "Completed" ? (
               <CheckCircle size={32} className="text-green-500" />
             ) : (
-              <Clock size={32} className="text-blue-600" />
+              <Clock size={32} className="text-orange-600" />
             )}
             <h2 className={`text-3xl font-bold ${
-              service.status === "Paid" ? "text-green-600" : "text-orange-600"
+              service.status === "Completed" ? "text-green-600" : "text-orange-600"
             }`}>
               {service.status}
             </h2>
@@ -175,7 +183,7 @@ const ServiceDetails = () => {
           <p className={`mt-2 text-sm ${
             isDark ? "text-gray-400" : "text-gray-600"
           }`}>
-            {service.status === "Paid" ? "Payment completed" : "Awaiting payment"}
+            {service.status === "Completed" ? "Service completed" : "Service in progress"}
           </p>
         </div>
 
@@ -197,21 +205,21 @@ const ServiceDetails = () => {
               <InfoRow
                 icon={<Tag size={18} className="text-blue-600" />}
                 label="Category"
-                value={service.category?.name}
+                value={service.category?.name || service.categoryText}
                 isDark={isDark}
               />
 
               <InfoRow
                 icon={<Wrench size={18} className="text-blue-600" />}
                 label="Sub Service"
-                value={service.subService?.name}
+                value={service.subService?.name || service.subServiceText}
                 isDark={isDark}
               />
 
               <InfoRow
                 icon={<Calendar size={18} className="text-blue-500" />}
-                label="Service Date"
-                value={new Date(service.date).toLocaleDateString("en-IN", {
+                label="Service In Date"
+                value={new Date(service.inDate).toLocaleDateString("en-IN", {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -219,6 +227,50 @@ const ServiceDetails = () => {
                 })}
                 isDark={isDark}
               />
+
+              {service.outDate && (
+                <InfoRow
+                  icon={<Calendar size={18} className="text-green-500" />}
+                  label="Service Out Date"
+                  value={new Date(service.outDate).toLocaleDateString("en-IN", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                  })}
+                  isDark={isDark}
+                />
+              )}
+
+              {service.expectedDelivery && (
+                <InfoRow
+                  icon={<Clock size={18} className="text-orange-500" />}
+                  label="Expected Delivery"
+                  value={new Date(service.expectedDelivery).toLocaleDateString("en-IN", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                  })}
+                  isDark={isDark}
+                />
+              )}
+
+              <InfoRow
+                icon={<Tag size={18} className="text-purple-500" />}
+                label="Priority"
+                value={service.priority}
+                isDark={isDark}
+              />
+
+              {service.assignedMechanic && (
+                <InfoRow
+                  icon={<User size={18} className="text-indigo-500" />}
+                  label="Assigned Mechanic"
+                  value={service.assignedMechanic}
+                  isDark={isDark}
+                />
+              )}
 
               {service.notes && (
                 <div className={`p-4 rounded-xl border-2 ${
@@ -229,12 +281,12 @@ const ServiceDetails = () => {
                   <div className="flex items-start gap-2 mb-2">
                     <FileText size={18} className="text-indigo-500 mt-1 flex-shrink-0" />
                     <span className={`font-semibold ${
-                      isDark ? "text-gray-300" : "text-gray-700"
+                      isDark ? "text-white" : "text-gray-900"
                     }`}>
-                      Notes
+                      Service Notes
                     </span>
                   </div>
-                  <p className={`ml-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                  <p className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
                     {service.notes}
                   </p>
                 </div>
@@ -242,7 +294,7 @@ const ServiceDetails = () => {
             </div>
           </div>
 
-          {/* Cost Breakdown */}
+          {/* Billing Summary */}
           <div className={`rounded-2xl shadow-xl border-2 p-6 transition-all duration-300 animate-slide-up ${
             isDark
               ? "bg-gray-800 border-gray-700"
@@ -252,61 +304,135 @@ const ServiceDetails = () => {
               isDark ? "text-white" : "text-gray-900"
             }`}>
               <IndianRupee size={24} className="text-green-500" />
-              Cost Breakdown
+              Billing Summary
             </h3>
 
-            <div className="space-y-4">
-              <CostRow
-                label="Parts Cost"
-                amount={(Number(service.partsCost || 0)).toFixed(2)}
-                isDark={isDark}
-              />
+            <div className="space-y-3">
+              <CostRow label="Parts Subtotal" amount={service.partsSubtotal?.toFixed(2) || "0.00"} isDark={isDark} />
+              <CostRow label="Labor Subtotal" amount={service.laborSubtotal?.toFixed(2) || "0.00"} isDark={isDark} />
+              <CostRow label="CGST Total" amount={service.cgstTotal?.toFixed(2) || "0.00"} isDark={isDark} />
+              <CostRow label="SGST Total" amount={service.sgstTotal?.toFixed(2) || "0.00"} isDark={isDark} />
+              
+              {service.discount > 0 && (
+                <CostRow 
+                  label={`Discount (${service.discountType})`} 
+                  amount={service.discount?.toFixed(2) || "0.00"} 
+                  isDark={isDark}
+                  isNegative
+                />
+              )}
+              
+              {service.advancePaid > 0 && (
+                <CostRow 
+                  label="Advance Paid" 
+                  amount={service.advancePaid?.toFixed(2) || "0.00"} 
+                  isDark={isDark}
+                />
+              )}
 
-              <CostRow
-                label={`Parts GST (${service.partsGst || 0}%)`}
-                amount={(Number(service.partsCost || 0) * Number(service.partsGst || 0) / 100).toFixed(2)}
-                isDark={isDark}
-                isSubItem
-              />
-
-              <CostRow
-                label="Labor Cost"
-                amount={(Number(service.laborCost || 0)).toFixed(2)}
-                isDark={isDark}
-              />
-
-              <CostRow
-                label={`Labor GST (${service.laborGst || 0}%)`}
-                amount={(Number(service.laborCost || 0) * Number(service.laborGst || 0) / 100).toFixed(2)}
-                isDark={isDark}
-                isSubItem
-              />
-
-              <div className={`pt-4 mt-4 border-t-2 ${
-                isDark ? "border-gray-700" : "border-gray-200"
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span className={`text-lg font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}>
-                    Total Amount
+              <div className={`border-t-2 pt-3 mt-3 ${isDark ? "border-gray-600" : "border-gray-300"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                    Grand Total
                   </span>
                   <span className="text-2xl font-bold text-green-600">
-                    ₹{(
-                      Number(service.cost || 0) ||
-                      (
-                        Number(service.partsCost || 0) +
-                        (Number(service.partsCost || 0) * Number(service.partsGst || 0)) / 100 +
-                        Number(service.laborCost || 0) +
-                        (Number(service.laborCost || 0) * Number(service.laborGst || 0)) / 100
-                      )
-                    ).toFixed(2)}
+                    ₹{service.grandTotal?.toFixed(2) || "0.00"}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className={`text-lg font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                    Balance Due
+                  </span>
+                  <span className={`text-2xl font-bold ${
+                    service.balanceDue > 0 ? "text-red-600" : "text-green-600"
+                  }`}>
+                    ₹{service.balanceDue?.toFixed(2) || "0.00"}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Invoice Status */}
+            <div className={`mt-6 p-4 rounded-xl ${
+              service.invoiceStatus === "sent"
+                ? isDark ? "bg-green-500/20" : "bg-green-50"
+                : service.invoiceStatus === "generated"
+                ? isDark ? "bg-blue-500/20" : "bg-blue-50"
+                : isDark ? "bg-gray-700" : "bg-gray-100"
+            }`}>
+              <p className={`text-sm font-semibold ${
+                service.invoiceStatus === "sent"
+                  ? "text-green-600"
+                  : service.invoiceStatus === "generated"
+                  ? "text-blue-600"
+                  : isDark ? "text-gray-400" : "text-gray-600"
+              }`}>
+                Invoice Status: {service.invoiceStatus?.toUpperCase() || "DRAFT"}
+              </p>
+              {service.invoiceSentAt && (
+                <p className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                  Sent on {new Date(service.invoiceSentAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Service Items */}
+        {service.serviceItems && service.serviceItems.length > 0 && (
+          <div className={`rounded-2xl shadow-xl border-2 p-6 mb-6 transition-all duration-300 animate-slide-up ${
+            isDark
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-100"
+          }`} style={{ animationDelay: "150ms" }}>
+            <h3 className={`flex items-center gap-2 text-xl font-bold mb-6 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}>
+              <Package size={24} className="text-blue-500" />
+              Service Items
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className={`border-b-2 ${isDark ? "border-gray-700" : "border-gray-200"}`}>
+                    <th className={`text-left py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>Type</th>
+                    <th className={`text-left py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>Item</th>
+                    <th className={`text-right py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>Qty</th>
+                    <th className={`text-right py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>Unit Price</th>
+                    <th className={`text-right py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>CGST %</th>
+                    <th className={`text-right py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>SGST %</th>
+                    <th className={`text-right py-3 px-4 ${isDark ? "text-gray-300" : "text-gray-700"}`}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {service.serviceItems.map((item, idx) => (
+                    <tr key={item.id || idx} className={`border-b ${isDark ? "border-gray-700" : "border-gray-100"}`}>
+                      <td className="py-3 px-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          item.type === "Part"
+                            ? isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-700"
+                            : isDark ? "bg-green-500/20 text-green-400" : "bg-green-100 text-green-700"
+                        }`}>
+                          {item.type}
+                        </span>
+                      </td>
+                      <td className={`py-3 px-4 ${isDark ? "text-white" : "text-gray-900"}`}>{item.name}</td>
+                      <td className={`py-3 px-4 text-right ${isDark ? "text-gray-300" : "text-gray-700"}`}>{item.quantity}</td>
+                      <td className={`py-3 px-4 text-right ${isDark ? "text-gray-300" : "text-gray-700"}`}>₹{Number(item.unitPrice).toFixed(2)}</td>
+                      <td className={`py-3 px-4 text-right ${isDark ? "text-gray-300" : "text-gray-700"}`}>{item.cgst}%</td>
+                      <td className={`py-3 px-4 text-right ${isDark ? "text-gray-300" : "text-gray-700"}`}>{item.sgst}%</td>
+                      <td className={`py-3 px-4 text-right font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        ₹{Number(item.total).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Client Information */}
         <div className={`rounded-2xl shadow-xl border-2 p-6 mb-6 transition-all duration-300 animate-slide-up ${
@@ -360,7 +486,7 @@ const ServiceDetails = () => {
         </div>
 
         {/* Media Files */}
-        {service.mediaFiles && service.mediaFiles.length > 0 && (
+        {service.serviceMedia && service.serviceMedia.length > 0 && (
           <div className={`rounded-2xl shadow-xl border-2 p-6 mb-6 transition-all duration-300 animate-slide-up ${
             isDark
               ? "bg-gray-800 border-gray-700"
@@ -374,19 +500,20 @@ const ServiceDetails = () => {
             </h3>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {service.mediaFiles.map((img, idx) => (
+              {service.serviceMedia.map((media, idx) => (
                 <div
-                  key={img.id || idx}
+                  key={media.id || idx}
                   className="group relative aspect-square rounded-xl overflow-hidden border-2 border-gray-300 hover:border-green-500 transition-all duration-300 hover:scale-105"
                 >
-                  <img
-                    src={img.data}
-                    alt={`Service ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                <img
+                  src={`${import.meta.env.VITE_API_BASE_URL}/api/bike-services/media/${media.id}`}
+                  className="w-full h-full object-cover"
+                />
+
+
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
                     <span className="text-white text-sm font-medium">
-                      Image {idx + 1}
+                      {media.fileName}
                     </span>
                   </div>
                 </div>
@@ -395,26 +522,51 @@ const ServiceDetails = () => {
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="flex justify-end animate-slide-up" style={{ animationDelay: "400ms" }}>
+        {/* Invoice Actions */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-slide-up" style={{ animationDelay: "350ms" }}>
+           
           <button
-            onClick={() => navigate(`/bill/new`, {
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-300 ${
+              isDark
+                ? "bg-green-600 hover:bg-green-500 text-white"
+                : "bg-green-500 hover:bg-green-600 text-white"
+            }`}
+          >
+            <Send size={16} />
+            Send Invoice
+          </button>
+
+         <button
+          onClick={() =>
+            navigate("/bill/new", {
               state: {
+                id: service.id,                       // ✅ serviceId
                 bikeId: service.client?.id,
                 clientName: service.client?.ownerName,
                 vehicle: `${service.client?.bikeBrand || ""} ${service.client?.bikeModel || ""}`.trim(),
-                serviceCategory: service.category?.name,
-                partsCost: service.partsCost,
-                laborCost: service.laborCost,
-                partsGst: service.partsGst,
-                laborGst: service.laborGst,
-              }
-            })}
-            className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 font-semibold"
-          >
-            <Receipt size={20} className="group-hover:scale-110 transition-transform" />
-            Create Invoice
-          </button>
+
+                serviceCategory:
+                  service.category?.name || service.categoryText,
+
+                serviceSubCategory:
+                  service.subService?.name || service.subServiceText,
+                  
+                serviceItems: service.serviceItems || [],
+
+                discountType: service.discountType,
+                discount: service.discount,
+                advancePaid: service.advancePaid,
+              },
+            })
+          }
+          className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-lg hover:scale-105"
+        >
+          <Receipt size={20} />
+          Create Invoice
+        </button>
+
+
+          
         </div>
       </div>
 
@@ -494,18 +646,16 @@ function InfoRow({ icon, label, value, isDark }) {
   );
 }
 
-function CostRow({ label, amount, isDark, isSubItem = false }) {
+function CostRow({ label, amount, isDark, isNegative = false }) {
   return (
-    <div className={`flex items-center justify-between ${isSubItem ? "pl-4" : ""}`}>
-      <span className={`${isSubItem ? "text-sm" : ""} ${
-        isDark ? "text-gray-300" : "text-gray-700"
-      }`}>
+    <div className="flex items-center justify-between">
+      <span className={isDark ? "text-gray-300" : "text-gray-700"}>
         {label}
       </span>
-      <span className={`font-semibold ${isSubItem ? "text-sm" : ""} ${
-        isDark ? "text-white" : "text-gray-900"
+      <span className={`font-semibold ${
+        isNegative ? "text-red-600" : isDark ? "text-white" : "text-gray-900"
       }`}>
-        ₹{amount}
+        {isNegative ? "-" : ""}₹{amount}
       </span>
     </div>
   );

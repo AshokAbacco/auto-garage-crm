@@ -1,3 +1,4 @@
+// prisma/Seed.js
 import XLSX from "xlsx";
 import prisma from "../models/prismaClient.js";
 import path from "path";
@@ -10,78 +11,106 @@ async function main() {
   console.log("🏍️ Starting Bike Services FULL Seeding...");
 
   try {
-    // 📌 EXCEL FILE LOCATION: server/services/BikeServicesList.xlsx
-    const filePath = path.resolve(__dirname, "../services/BikeServicesList.xlsx");
+    /* =====================================================
+       GET OWNER USER (REQUIRED)
+    ===================================================== */
+    const ownerUser = await prisma.user.findFirst({
+      where: { role: "user" }, // adjust if needed
+      orderBy: { id: "asc" },
+    });
+
+    if (!ownerUser) {
+      throw new Error("❌ No owner user found. Create a user first.");
+    }
+
+    console.log(`👤 Using ownerUserId: ${ownerUser.id}`);
+
+    /* =====================================================
+       EXCEL FILE
+    ===================================================== */
+    const filePath = path.resolve(
+      __dirname,
+      "../services/BikeServicesList.xlsx"
+    );
+
     console.log(`📂 Reading Excel from: ${filePath}`);
 
     const workbook = XLSX.readFile(filePath, { cellText: true });
     const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[ sheetName ];
+    const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
     console.log(`🧾 Total rows read from Excel: ${rows.length}`);
 
-    // ⚠️ OPTIONAL CLEANUP (USE ONLY ONCE TO RESET)
-    // ✅ SAFE CLEANUP — WILL NOT CRASH
-    if (prisma.bikeService) await prisma.bikeService.deleteMany();
-    if (prisma.bikeSubService) await prisma.bikeSubService.deleteMany();
-    if (prisma.bikeServiceCategory) await prisma.bikeServiceCategory.deleteMany();
-
+    /* =====================================================
+       SAFE CLEANUP (ORDER MATTERS)
+    ===================================================== */
+    await prisma.bikeService.deleteMany();
+    await prisma.bikeSubService.deleteMany();
+    await prisma.bikeServiceCategory.deleteMany();
 
     let currentCategory = null;
     let totalCategories = 0;
     let totalSubServices = 0;
 
+    /* =====================================================
+       PROCESS ROWS
+    ===================================================== */
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index];
       if (!row) continue;
 
-      const colA = (row[0] || "").trim(); // Category
-      const colB = (row[1] || "").trim(); // Sub-Service
-      const colC = (row[2] || "").trim(); // Description
-      const colD = (row[3] || "").trim(); // Brand
+      const colA = String(row[0] || "").trim(); // Category
+      const colB = String(row[1] || "").trim(); // Sub-Service
+      const colC = String(row[2] || "").trim(); // Description (unused)
+      const colD = String(row[3] || "").trim(); // Brand
 
-      // Skip empty row
       if (!colA && !colB) continue;
 
-      // ==============================
-      // ✅ CATEGORY ROW
-      // ==============================
+      /* ==============================
+         CATEGORY ROW
+      ============================== */
       if (colA && !colB) {
-        const cleanedName = colA.replace(/[\r\n\t\uFEFF\u200B\u00A0]/g, "").trim();
+        const cleanedName = colA
+          .replace(/[\r\n\t\uFEFF\u200B\u00A0]/g, "")
+          .trim();
+
         const bikeBrand = colD !== "" ? colD : null;
 
-        // Prevent duplicates (if Excel repeats category names)
-        const existingCategory = await prisma.bikeServiceCategory.findFirst({
-          where: {
-            name: cleanedName,
-            bikeBrand: bikeBrand,
-          },
-        });
+        const existingCategory =
+          await prisma.bikeServiceCategory.findFirst({
+            where: {
+              name: cleanedName,
+              bikeBrand,
+              ownerUserId: ownerUser.id,
+            },
+          });
 
         if (existingCategory) {
           currentCategory = existingCategory;
-          console.log(`📁 (SKIPPED - Already Exists) Category: ${cleanedName}`);
+          console.log(
+            `📁 (SKIPPED) Category: ${cleanedName} (${bikeBrand || "Universal"})`
+          );
           continue;
         }
 
-        // Create new category
         currentCategory = await prisma.bikeServiceCategory.create({
           data: {
             name: cleanedName,
-            bikeBrand: bikeBrand,
+            bikeBrand,
+            ownerUserId: ownerUser.id, // ✅ REQUIRED
           },
         });
 
         totalCategories++;
-        const brandLabel = bikeBrand ? `(${bikeBrand})` : "(Universal)";
-
-        console.log(`📁 Added Category: ${cleanedName} ${brandLabel}`);
+        console.log(
+          `📁 Added Category: ${cleanedName} (${bikeBrand || "Universal"})`
+        );
       }
 
-      // ==============================
-      // ✅ SUB-SERVICE ROW
-      // ==============================
+      /* ==============================
+         SUB-SERVICE ROW
+      ============================== */
       else if (currentCategory && colB) {
         const cleanedSub = colB
           .replace(/[\r\n\t\uFEFF\u200B\u00A0]/g, "")
@@ -90,7 +119,6 @@ async function main() {
 
         if (!cleanedSub) continue;
 
-        // Avoid duplicate sub-services
         const exists = await prisma.bikeSubService.findFirst({
           where: {
             name: cleanedSub,
@@ -99,32 +127,32 @@ async function main() {
         });
 
         if (exists) {
-          console.log(`   ➕ (SKIPPED - Already Exists) Sub-Service: ${cleanedSub}`);
+          console.log(`   ➕ (SKIPPED) Sub-Service: ${cleanedSub}`);
           continue;
         }
 
-       await prisma.bikeSubService.create({
+        await prisma.bikeSubService.create({
           data: {
             name: cleanedSub,
             categoryId: currentCategory.id,
           },
         });
 
-
         totalSubServices++;
         console.log(`   ➕ Added Sub-Service: ${cleanedSub}`);
       }
     }
 
-    // ==============================
-    // ✅ FINAL SUMMARY
-    // ==============================
+    /* =====================================================
+       SUMMARY
+    ===================================================== */
     console.log("\n🎉 BIKE SERVICES SEEDING COMPLETED!");
     console.log(`📦 Total Categories Added: ${totalCategories}`);
     console.log(`🧩 Total Sub-Services Added: ${totalSubServices}`);
 
     const summary = await prisma.bikeServiceCategory.groupBy({
       by: ["bikeBrand"],
+      where: { ownerUserId: ownerUser.id },
       _count: true,
     });
 
@@ -132,7 +160,6 @@ async function main() {
     summary.forEach((row) => {
       console.log(`   ${row.bikeBrand || "Universal"}: ${row._count}`);
     });
-
   } catch (error) {
     console.error("❌ SEEDING FAILED:", error);
   } finally {

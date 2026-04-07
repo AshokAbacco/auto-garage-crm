@@ -45,6 +45,9 @@ export const registerUser = async (req, res) => {
     const companyName = latestPayment?.companyName || null;
     const phone = latestPayment?.phone || null;
 
+    const planExpiry = latestPayment?.planExpiry
+  ? new Date(latestPayment.planExpiry)
+  : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     // Check duplicates
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
       prisma.user.findUnique({ where: { email: emailLower } }),
@@ -77,7 +80,7 @@ export const registerUser = async (req, res) => {
           username,
           password: hashedPassword,
           allowedCrms: [crmType.toUpperCase()],
-          plan,
+          plan: userPlan,
           planExpiry,
         },
       });
@@ -107,7 +110,7 @@ export const registerUser = async (req, res) => {
         role: "user",
         allowedCrms: [crmType.toUpperCase()],
         myReferralCode,
-        plan,
+        plan: userPlan,
         planExpiry,
       },
     });
@@ -125,12 +128,12 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
 /**
  * =============================================
  * LOGIN USER
  * =============================================
  */
+ 
 export const loginUser = async (req, res) => {
   try {
     const { identifier, password, crmType } = req.body;
@@ -145,80 +148,46 @@ export const loginUser = async (req, res) => {
 
     const user = await prisma.user.findFirst({
       where: isEmail
-        ? { email: identifier.toLowerCase() }
-        : { username: identifier },
+        ? { email: identifier.toLowerCase().trim() }
+        : { username: identifier.trim() },
     });
 
-    if (owner) {
-      const isMatch = await bcrypt.compare(password, owner.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-
-      // ✅ CRM restriction applies ONLY to owner
-      if (!owner.allowedCrms.includes(crmType.toUpperCase())) {
-        return res.status(403).json({
-          message: `You do not have access to the ${crmType} CRM`,
-        });
-      }
-
-      const token = generateToken({
-        id: owner.id,
-        role: "user",
-        type: "owner",
-        plan: owner.plan,
-      });
-
-      return res.status(200).json({
-        message: "Login successful",
-        token,
-        user: {
-          id: owner.id,
-          email: owner.email,
-          role: "user",
-          type: "owner",
-          plan: owner.plan,
-          allowedCrms: owner.allowedCrms,
-          crmType,
-        },
-      });
-    }
-
-    /**
-     * ============================
-     * 2️⃣ TRY STAFF LOGIN (CarStaff)
-     * ============================
-     */
-    const staff = await prisma.carStaff.findUnique({
-      where: { email: identifier.toLowerCase() },
-    });
-
-    if (!staff || !staff.isActive) {
+    if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const isStaffMatch = await bcrypt.compare(password, staff.password);
-    if (!isStaffMatch) {
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // ❗ Staff does NOT need allowedCrms check
+    // ✅ CRM ACCESS CHECK (OWNER + BIKE TEAM)
+    if (!user.allowedCrms.includes(crmType.toUpperCase())) {
+      return res.status(403).json({
+        message: `You do not have access to the ${crmType} CRM`,
+      });
+    }
+
+    // 🔐 Generate JWT
     const token = generateToken({
-      id: staff.id,
-      role: "staff",
-      type: "staff",
-      ownerId: staff.ownerId,
+      id: user.id,
+      role: user.role,
+      type: user.role === "user" ? "owner" : "team",
+      plan: user.plan,
     });
 
     return res.status(200).json({
       message: "Login successful",
       token,
       user: {
-        id: staff.id,
-        email: staff.email,
-        role: "staff",
-        type: "staff",
-        ownerId: staff.ownerId,
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        type: user.role === "user" ? "owner" : "team",
+        parentUserId: user.parentUserId || null,
+        plan: user.plan,
+        allowedCrms: user.allowedCrms,
         crmType,
       },
     });
@@ -229,6 +198,8 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+
+
 
 
 /**

@@ -23,6 +23,9 @@ export default function BikeAnalyticsView({
   clients = [],
   isDark,
 }) {
+  services = Array.isArray(services) ? services : [];
+  invoices = Array.isArray(invoices) ? invoices : [];
+
   const COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#06B6D4", "#8B5CF6"];
 
   const paidInvoices = invoices.filter(i => i.status === "Paid");

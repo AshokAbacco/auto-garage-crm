@@ -1,3 +1,4 @@
+// server/middleware/authMiddleware.js
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import prisma from "../models/prismaClient.js";
@@ -5,7 +6,6 @@ import prisma from "../models/prismaClient.js";
 dotenv.config();
 
 export const protect = async (req, res, next) => {
-  console.log("AUTH USER:", req.user);
   try {
     const authHeader = req.headers.authorization;
 
@@ -18,37 +18,51 @@ export const protect = async (req, res, next) => {
 
     /**
      * =====================================
-     * STAFF AUTH (CarStaff table)
+     * 🧑‍🔧 BIKE TEAM AUTH
      * =====================================
      */
-   if (decoded.type === "staff") {
-     const login = await prisma.carStaffLogin.findUnique({
-       where: { id: decoded.id }, // 🔑 MATCH JWT ID
-       include: {
-         staff: true,
-       },
-     });
-
-     if (!login || !login.isActive || !login.staff) {
-       return res.status(401).json({
-         message: "Staff not found or inactive",
-       });
-     }
-
-     req.user = {
-       id: login.staff.id, // actual staff id
-       type: "staff",
-       role: login.staff.role,
-       ownerId: login.ownerId,
-     };
-
-     return next();
-   }
-
+    if (decoded.type === "bike_team") {
+      req.user = {
+        id: decoded.id,
+        type: "bike_team",
+        ownerId: decoded.ownerId,
+        teamId: decoded.teamId,
+      };
+      return next();
+    }
 
     /**
      * =====================================
-     * OWNER AUTH (User table)
+     * 🚗 CAR STAFF AUTH
+     * =====================================
+     */
+    if (decoded.type === "staff") {
+      const login = await prisma.carStaffLogin.findUnique({
+        where: { id: decoded.id },
+        include: {
+          staff: true,
+        },
+      });
+
+      if (!login || !login.isActive || !login.staff) {
+        return res.status(401).json({
+          message: "Staff not found or inactive",
+        });
+      }
+
+      req.user = {
+        id: login.staff.id,
+        type: "staff",
+        role: login.staff.role,
+        ownerId: login.ownerId,
+      };
+
+      return next();
+    }
+
+    /**
+     * =====================================
+     * 👑 OWNER AUTH (User table)
      * =====================================
      */
     const user = await prisma.user.findUnique({
@@ -59,7 +73,6 @@ export const protect = async (req, res, next) => {
         email: true,
         role: true,
         plan: true,
-        parentUserId: true,
         allowedCrms: true,
       },
     });
@@ -70,10 +83,9 @@ export const protect = async (req, res, next) => {
       });
     }
 
-    // 🔐 Normalize role (important)
     req.user = {
       ...user,
-      role: user.role?.toUpperCase(),
+      type: "owner", // 🔑 VERY IMPORTANT
     };
 
     next();

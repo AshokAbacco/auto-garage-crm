@@ -72,6 +72,11 @@ model User {
   carStaffLogins   CarStaffLogin[]
   carStaffSalaries CarStaffSalary[]
 
+  // 🔗 PARENT USER (FOR MULTI-CRM / SUB-USER LOGIN)
+  parentUserId Int?
+  parentUser   User?  @relation("UserHierarchy", fields: [parentUserId], references: [id])
+  childUsers   User[] @relation("UserHierarchy")
+
   // 🏍️ BIKE CRM (OWNER DATA ONLY)
   ownedBikes            Bike[]          @relation("OwnerBikes")
   createdBikes          Bike[]          @relation("CreatedBikes")
@@ -86,12 +91,9 @@ model User {
   bikeStaffs            BikeStaff[]
   bikeTeams             BikeTeam[]
 
-  // 👷 BIKE TEAM (SEPARATE TABLE)
-  bikeTeams  BikeTeam[]
-  bikeStaffs BikeStaff[]
-
   // 🧼 WASHING
   washingClients WashingClient[]
+  washTeams      WashTeam[]      @relation("AdminWashTeams")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -117,8 +119,6 @@ model Client {
   adImage      String?
   staffPerson  String?
   receiverName String?
-  fuel         String?
-  seats        Int?
   damageImages Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -348,20 +348,20 @@ model CarStaff {
 
 model CarStaffLogin {
   id Int @id @default(autoincrement())
- 
+
   staffId Int
   staff   CarStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
- 
+
   ownerId Int
   owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
- 
+
   email    String  @unique
   password String
   isActive Boolean @default(true)
- 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- 
+
   @@unique([staffId])
   @@index([ownerId])
 }

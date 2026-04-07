@@ -221,10 +221,7 @@ export default function ModernLogin() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError("");
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -277,7 +274,7 @@ const handleSubmit = async (e) => {
         else {
           loginUrl = `${
             import.meta.env.VITE_API_BASE_URL
-          }/api/staff-auth/login`;
+          }/api/bikes-team/login`;
           payload = {
             email: formData.identifier.trim().toLowerCase(),
             password: formData.password,

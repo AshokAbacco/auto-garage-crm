@@ -1,3 +1,4 @@
+// StaffEditModal.jsx
 import React, { useState } from "react";
 import {
   X,
@@ -6,7 +7,6 @@ import {
   Mail,
   Lock,
   IndianRupee,
-  Calendar,
   TrendingDown,
   Loader2,
   Save,
@@ -20,7 +20,7 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     ...staff,
-    email: staff.login?.email || "Not Available",
+    email: staff.login?.email || "",
     password: "", // Default empty means "don't change"
   });
 
@@ -55,45 +55,6 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
       setLoading(false);
     }
   };
-
-  // Helper component for inputs to reduce repetition
-  const InputGroup = ({
-    label,
-    name,
-    icon: Icon,
-    type = "text",
-    placeholder,
-    value,
-    className = "",
-  }) => (
-    <div className={`space-y-1.5 ${className}`}>
-      <label
-        className={`text-xs font-semibold uppercase tracking-wider ${
-          isDark ? "text-slate-400" : "text-slate-500"
-        }`}
-      >
-        {label}
-      </label>
-      <div className="relative group">
-        <Icon
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
-          size={18}
-        />
-        <input
-          name={name}
-          type={type}
-          value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all ${
-            isDark
-              ? "bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-400"
-              : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
-          }`}
-        />
-      </div>
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
@@ -158,6 +119,8 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
                 name="name"
                 icon={User}
                 value={form.name}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="Staff Name"
               />
               <InputGroup
@@ -165,6 +128,8 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
                 name="role"
                 icon={Briefcase}
                 value={form.role}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="Job Title"
               />
               <InputGroup
@@ -172,6 +137,8 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
                 name="email"
                 icon={Mail}
                 value={form.email}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="email@example.com"
               />
               <InputGroup
@@ -180,6 +147,8 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
                 icon={Lock}
                 type="password"
                 value={form.password}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="Leave empty to keep current"
               />
             </div>
@@ -203,14 +172,18 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
                 icon={IndianRupee}
                 type="number"
                 value={form.baseSalary}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="0.00"
               />
               <InputGroup
                 label="Monthly Bonus"
-                name="bonus"
+                name="bonusDefault"
                 icon={IndianRupee}
                 type="number"
-                value={form.bonus}
+                value={form.bonusDefault}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="0.00"
               />
             </div>
@@ -229,27 +202,23 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputGroup
-                label="Leaves Taken"
-                name="leaves"
-                icon={Calendar}
-                type="number"
-                value={form.leaves}
-                placeholder="0"
-              />
-              <InputGroup
                 label="Deduction Per Leave"
                 name="deductionPerLeave"
                 icon={TrendingDown}
                 type="number"
                 value={form.deductionPerLeave}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="0.00"
               />
               <InputGroup
                 label="Extra Deductions"
-                name="extraDeductions"
+                name="extraDeductionsDefault"
                 icon={TrendingDown}
                 type="number"
-                value={form.extraDeductions}
+                value={form.extraDeductionsDefault}
+                onChange={handleChange}
+                isDark={isDark}
                 placeholder="0.00"
               />
             </div>
@@ -292,3 +261,44 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
     </div>
   );
 }
+
+// ✅ MOVED OUTSIDE: This prevents the component from re-mounting on every keystroke
+const InputGroup = ({
+  label,
+  name,
+  icon: Icon,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  isDark,
+  className = "",
+}) => (
+  <div className={`space-y-1.5 ${className}`}>
+    <label
+      className={`text-xs font-semibold uppercase tracking-wider ${
+        isDark ? "text-slate-400" : "text-slate-500"
+      }`}
+    >
+      {label}
+    </label>
+    <div className="relative group">
+      <Icon
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
+        size={18}
+      />
+      <input
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all ${
+          isDark
+            ? "bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-400"
+            : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
+        }`}
+      />
+    </div>
+  </div>
+);

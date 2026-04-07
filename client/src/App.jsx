@@ -78,8 +78,8 @@ import AddBilling from "./bikePages/Billing/AddBilling.jsx";
 import InvoiceBill from "./bikePages/Billing/InvoiceBill.jsx";
 import BikeProfile from "./components/BikeProfile.jsx";
 import ProformaInvoice from "./pages/billing/ProformaInvoice.jsx";
-import StaffManagement from "./pages/CarStaffManagement.jsx";
-import SalaryManagement from "./pages/CarSalaryManagement.jsx";
+import StaffManagement from "./pages/carStaff/CarStaffManagement.jsx";
+import SalaryManagement from "./pages/carStaff/CarSalaryManagement.jsx";
 
 import WashDashboard from "./washPages/WashDashboard.jsx";
 import ClientsDetails from "./washPages/client/ClientsDetails.jsx";
@@ -92,6 +92,7 @@ import SalaryPage from "./bikePages/StaffSalary/SalaryPage.jsx";
 import SalaryLogin from "./bikePages/StaffSalary/Components/SalaryLogin";
 import SalaryRegister from "./bikePages/StaffSalary/Components/SalaryRegister";
 import SalaryProtectedRoute from "./bikePages/StaffSalary/Components/SalaryProtectedRoute";
+import Teams from "./washPages/teams/Teams.jsx";
 import TeamLogin from "./bikePages/TeamAccounts/TeamLogin.jsx";
 import TeamRegister from "./bikePages/TeamAccounts/TeamRegister.jsx";
 import StaffSalaryContainer from "./bikePages/StaffSalary/StaffSalaryContainer.jsx";
@@ -161,7 +162,7 @@ function App() {
           <Route path="/staff-management" element={<StaffManagement />} />
           <Route path="/salary-management" element={<SalaryManagement />} />
         </Route>
-{/* 
+        {/* 
         <Route>
          
           <Route index element={<Navigate to="car-dashboard" />} />
@@ -248,6 +249,8 @@ function App() {
           <Route path="addclient" element={<Newclient />} />
           <Route path="/addclient/:id" element={<Newclient />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/teams" element={<Teams />} />
+
           <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
           <Route path="/billing/create-invoice" element={<NewInvoice />} />
           <Route path="/team-login" element={<TeamLogin />} />

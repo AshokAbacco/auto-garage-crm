@@ -5,6 +5,7 @@ import {
     ResponsiveContainer, Cell
 } from "recharts";
 import { useTheme } from "../../contexts/ThemeContext";
+import { IndianRupee } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -13,12 +14,27 @@ function Reports() {
     const [activeTab, setActiveTab] = useState("analytics");
     const [billings, setBillings] = useState([]);
     const [services, setServices] = useState([]);
+    const [clients, setClients] = useState([]); // ✅ MOVE HERE
     const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        fetch(`${API}/api/washing-clients`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then(res => res.json())
+            .then(data => setClients(Array.isArray(data) ? data : []))
+            .catch(err => console.error("Client fetch error:", err));
+    }, []);
 
     // Helper function to apply conditional classes based on theme
     const getStyles = (lightClasses, darkClasses) => {
         return isDark ? darkClasses : lightClasses;
     };
+
+
 
     // Fetch data
     useEffect(() => {
@@ -156,7 +172,7 @@ function Reports() {
     // Button styling function
     const getTabButtonStyles = (isActive) => {
         if (isActive) {
-            return "text-white bg-gradient-to-r from-sky-400 to-cyan-500 shadow-lg";
+            return "text-white bg-gradient-to-r from-blue-400 to-blue-500 shadow-lg";
         }
         return getStyles(
             "bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-blue-400",
@@ -175,6 +191,7 @@ function Reports() {
         );
     }
 
+
     return (
         <div className={`min-h-screen p-8 transition-all duration-300 ${getStyles(
             "bg-[#f0fbff] text-slate-800",
@@ -184,18 +201,26 @@ function Reports() {
             <div className="flex items-center gap-3 mb-6">
                 <button
                     onClick={() => setActiveTab('analytics')}
-                    className={`px-6 py-3 font-medium rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${getTabButtonStyles(activeTab === 'analytics')}`}
+                    className={`px-6 py-3 rounded-full ${getTabButtonStyles(activeTab === 'analytics')}`}
                 >
                     Analytics
                 </button>
 
                 <button
                     onClick={() => setActiveTab('reports')}
-                    className={`px-6 py-3 font-medium rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${getTabButtonStyles(activeTab === 'reports')}`}
+                    className={`px-6 py-3 rounded-full ${getTabButtonStyles(activeTab === 'reports')}`}
                 >
                     Reports
                 </button>
+
+                <button
+                    onClick={() => setActiveTab('clients')}
+                    className={`px-6 py-3 rounded-full ${getTabButtonStyles(activeTab === 'clients')}`}
+                >
+                    Clients
+                </button>
             </div>
+
 
             {/* Analytics Tab */}
             {activeTab === 'analytics' && (
@@ -209,14 +234,15 @@ function Reports() {
                             <div className="flex items-start justify-between">
                                 <div>
                                     <div className={`text-sm ${getStyles("text-gray-600", "text-gray-400")}`}>Total Revenue</div>
-                                    <div className={`mt-2 text-2xl font-bold ${getStyles("text-gray-900", "text-white")}`}>
+                                    <div className={`mt-2 text-2xl font-bold ${getStyles("text-blue-900", "text-white")}`}>
                                         ₹ {totalRevenue.toFixed(2)}
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-[#29BAED]/10">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-[#29BAED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                                    <span className="text-[#2BB0E6] text-2xl font-semibold leading-none">₹</span>
+
+
+
                                 </div>
                             </div>
                         </div>
@@ -332,7 +358,7 @@ function Reports() {
                         "border-slate-100",
                         "border-gray-700"
                     )}`}>
-                        <div className="px-6 py-5 text-white bg-gradient-to-r from-sky-400 to-cyan-500">
+                        <div className="px-6 py-5 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                             <h3 className="text-xl font-semibold">Revenue Over Time</h3>
                             <p className="text-sm opacity-90">Monthly revenue from invoices</p>
                         </div>
@@ -364,7 +390,7 @@ function Reports() {
                             "border-slate-100",
                             "border-gray-700"
                         )}`}>
-                            <div className="px-6 py-5 text-white bg-gradient-to-r from-sky-400 to-cyan-500">
+                            <div className="px-6 py-5 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                                 <h3 className="text-xl font-semibold">Invoice Status Distribution</h3>
                                 <p className="text-sm opacity-90">Breakdown of invoices by payment status</p>
                             </div>
@@ -404,7 +430,7 @@ function Reports() {
                             "border-slate-100",
                             "border-gray-700"
                         )}`}>
-                            <div className="px-6 py-5 text-white bg-gradient-to-r from-sky-400 to-cyan-500">
+                            <div className="px-6 py-5 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                                 <h3 className="text-xl font-semibold">Service Status Overview</h3>
                                 <p className="text-sm opacity-90">Completion and progress of all services</p>
                             </div>
@@ -445,7 +471,7 @@ function Reports() {
                         "border-slate-100",
                         "border-gray-700"
                     )}`}>
-                        <div className="px-6 py-5 text-white bg-gradient-to-r from-sky-400 to-cyan-500">
+                        <div className="px-6 py-5 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                             <h3 className="text-xl font-semibold">Top Services by Revenue</h3>
                             <p className="text-sm opacity-90">Highest-earning service categories</p>
                         </div>
@@ -475,7 +501,7 @@ function Reports() {
                         "border-slate-100",
                         "border-gray-700"
                     )}`}>
-                        <div className="px-6 py-5 text-white bg-gradient-to-r from-sky-400 to-cyan-500">
+                        <div className="px-6 py-5 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                             <h3 className="text-xl font-semibold">Top Clients</h3>
                             <p className="text-sm opacity-90">Clients with highest total spending</p>
                         </div>
@@ -510,7 +536,7 @@ function Reports() {
                         "bg-white",
                         "bg-gray-800"
                     )}`}>
-                        <div className="px-6 py-4 text-white bg-gradient-to-r from-cyan-400 to-teal-500">
+                        <div className="px-6 py-4 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                             <h3 className="text-lg font-semibold">Recent Invoices</h3>
                             <p className="text-sm opacity-90">Latest billing records</p>
                         </div>
@@ -549,7 +575,7 @@ function Reports() {
                         "bg-white",
                         "bg-gray-800"
                     )}`}>
-                        <div className="px-6 py-4 text-white bg-gradient-to-r from-cyan-400 to-teal-500">
+                        <div className="px-6 py-4 text-white bg-gradient-to-r from-blue-500 to-blue-500">
                             <h3 className="text-lg font-semibold">Recent Services</h3>
                             <p className="text-sm opacity-90">Latest completed and pending services</p>
                         </div>
@@ -590,7 +616,54 @@ function Reports() {
                         </div>
                     </div>
                 </div>
+
             )}
+            {/* Clients Tab */}
+            {activeTab === 'clients' && (
+                <div className={`rounded-xl shadow ${getStyles("bg-white", "bg-gray-800")}`}>
+                    <div className="px-6 py-4 border-b">
+                        <h3 className="text-lg font-semibold">Client Directory</h3>
+                        <p className="text-sm text-gray-500">
+                            Complete list of all clients and their vehicles
+                        </p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className={getStyles("bg-gray-50", "bg-gray-700")}>
+                                <tr>
+                                    <th className="px-6 py-3 text-left">Client</th>
+                                    <th className="px-6 py-3 text-left">Phone</th>
+                                    <th className="px-6 py-3 text-left">Email</th>
+                                    <th className="px-6 py-3 text-left">Vehicle</th>
+                                    <th className="px-6 py-3 text-left">Reg No</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {clients.map(c => (
+                                    <tr key={c.id} className="border-t">
+                                        <td className="px-6 py-4 font-medium">{c.fullName}</td>
+                                        <td className="px-6 py-4">{c.phone}</td>
+                                        <td className="px-6 py-4">{c.email}</td>
+                                        <td className="px-6 py-4">
+                                            {c.year} {c.vehicleMake} {c.vehicleModel}
+                                        </td>
+                                        <td className="px-6 py-4">{c.regNumber}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {clients.length === 0 && (
+                            <div className="p-6 text-center text-gray-500">
+                                No clients found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate, Outlet } from "react-router-dom";
+import { UsersRound } from "lucide-react";
+
 
 export default function WashingLayoutPage() {
     const { isDark, toggleTheme } = useTheme();
@@ -37,52 +39,66 @@ export default function WashingLayoutPage() {
             to: "/wash-dashboard",
             label: "Dashboard",
             icon: LayoutDashboard,
+            roles: ["user", "team"],
         },
-
         {
             to: "/washing-clients",
             label: "Clients",
             icon: Users,
+            roles: ["user", "team"],
         },
         {
             to: "/washing-services",
             label: "Services",
             icon: Wrench,
+            roles: ["user", "team"],
         },
-
         {
             to: "/washing-alerts",
             label: "Alerts",
             icon: MessageSquare,
+            roles: ["user", "team"],
         },
-
-
         {
             to: "/washing-Billing",
             label: "Billing",
             icon: Receipt,
+            roles: ["user", "team"],
         },
         {
             to: "/washing-reports",
             label: "Reports",
             icon: BarChart2,
+            roles: ["user", "team"],
         },
+
+        // 🔒 OWNER / ADMIN ONLY
         {
             to: "/washing-plan",
             label: "Your Plan",
             icon: IndianRupee,
+            roles: ["user"],
         },
         {
             to: "/washing-reference",
             label: "Reference",
             icon: Network,
+            roles: ["user"],
+        },
+        {
+            to: "/teams",
+            label: "Team",
+            icon: UsersRound,
+            roles: ["user"], // 🔁 renamed from Team Member → Team
         },
         {
             to: "/washing-upgrade",
             label: "Upgrade",
             icon: Crown,
+            roles: ["user"],
         },
     ];
+
 
     const [openProfileMenu, setOpenProfileMenu] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -116,9 +132,12 @@ export default function WashingLayoutPage() {
     }, []);
 
     const logout = () => {
-        localStorage.removeItem("auth");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("crmType");
         routerNavigate("/login", { replace: true });
     };
+
 
     return (
         <div
@@ -180,74 +199,60 @@ export default function WashingLayoutPage() {
 
                     {/* Navigation */}
                     <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
-                        {menu.map((item) => {
-                            const hasChildren = !!item.children && item.children.length > 0;
-                            const isParentActive =
-                                hasChildren &&
-                                item.children.some((child) => child.to === activeRoute);
-                            const isSingleActive = !hasChildren && activeRoute === item.to;
-                            const isActive = isParentActive || isSingleActive;
+                        {menu
+                            // ✅ FILTER MENU BY ROLE
+                            .filter(item => {
+                                // single menu
+                                if (!item.children) {
+                                    return item.roles?.includes(user?.role);
+                                }
 
-                            const Icon = item.icon;
-
-                            if (!hasChildren) {
-                                // Simple single link item
-                                return (
-                                    <button
-                                        key={item.to}
-                                        onClick={() => {
-                                            setActiveRoute(item.to);
-                                            setSidebarOpen(false);
-                                            routerNavigate(item.to);
-                                        }}
-                                        className={`
-                      w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
-                      ${isActive
-                                                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
-                                                : isDark
-                                                    ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                                                    : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
-                                            }
-                    `}
-                                    >
-                                        {Icon && (
-                                            <Icon
-                                                className={`w-5 h-5 flex-shrink-0 ${isActive
-                                                    ? "text-white"
-                                                    : isDark
-                                                        ? "text-gray-400"
-                                                        : "text-gray-500"
-                                                    }`}
-                                            />
-                                        )}
-                                        {sidebarExpanded && (
-                                            <span className="transition-opacity duration-300">
-                                                {item.label}
-                                            </span>
-                                        )}
-                                    </button>
+                                // dropdown → at least one child allowed
+                                return item.children.some(child =>
+                                    child.roles?.includes(user?.role)
                                 );
-                            }
+                            })
+                            .map((item) => {
+                                const hasChildren = !!item.children && item.children.length > 0;
 
-                            // Dropdown item
-                            const isOpen = openDropdowns[item.label];
+                                const allowedChildren = hasChildren
+                                    ? item.children.filter(child =>
+                                        child.roles?.includes(user?.role)
+                                    )
+                                    : [];
 
-                            return (
-                                <div key={item.label} className="space-y-1">
-                                    {/* Parent button */}
-                                    <button
-                                        onClick={() => toggleDropdown(item.label)}
-                                        className={`
-                      w-full flex items-center justify-between px-3 py-3 rounded-xl font-medium transition-all duration-200
-                      ${isActive
-                                                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
-                                                : isDark
-                                                    ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                                                    : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
-                                            }
-                    `}
-                                    >
-                                        <div className="flex items-center gap-3">
+                                const isParentActive =
+                                    hasChildren &&
+                                    allowedChildren.some(child => child.to === activeRoute);
+
+                                const isSingleActive =
+                                    !hasChildren && activeRoute === item.to;
+
+                                const isActive = isParentActive || isSingleActive;
+                                const Icon = item.icon;
+
+                                /* ===============================
+                                   SIMPLE MENU ITEM
+                                =============================== */
+                                if (!hasChildren) {
+                                    return (
+                                        <button
+                                            key={item.to}
+                                            onClick={() => {
+                                                setActiveRoute(item.to);
+                                                setSidebarOpen(false);
+                                                routerNavigate(item.to);
+                                            }}
+                                            className={`
+              w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
+              ${isActive
+                                                    ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
+                                                    : isDark
+                                                        ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                                        : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
+                                                }
+            `}
+                                        >
                                             {Icon && (
                                                 <Icon
                                                     className={`w-5 h-5 flex-shrink-0 ${isActive
@@ -258,57 +263,102 @@ export default function WashingLayoutPage() {
                                                         }`}
                                                 />
                                             )}
+
                                             {sidebarExpanded && (
                                                 <span className="transition-opacity duration-300">
                                                     {item.label}
                                                 </span>
                                             )}
-                                        </div>
-                                        {sidebarExpanded && (
-                                            <span className="flex-shrink-0">
-                                                {isOpen ? (
-                                                    <ChevronDown className="w-4 h-4" />
-                                                ) : (
-                                                    <ChevronRight className="w-4 h-4" />
-                                                )}
-                                            </span>
-                                        )}
-                                    </button>
+                                        </button>
+                                    );
+                                }
 
-                                    {/* Children */}
-                                    {sidebarExpanded && isOpen && (
-                                        <div className="pl-8 space-y-1">
-                                            {item.children.map((child) => {
-                                                const childActive = activeRoute === child.to;
-                                                return (
-                                                    <button
-                                                        key={child.to}
-                                                        onClick={() => {
-                                                            setActiveRoute(child.to);
-                                                            setSidebarOpen(false);
-                                                            routerNavigate(child.to);
-                                                        }}
-                                                        className={`
-                                w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                                ${childActive
-                                                                ? "bg-sky-500/90 text-white shadow-md"
-                                                                : isDark
-                                                                    ? "text-gray-300 hover:bg-gray-700 hover:text-white"
-                                                                    : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
-                                                            }
-                              `}
-                                                    >
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                                        <span>{child.label}</span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                /* ===============================
+                                   DROPDOWN MENU
+                                =============================== */
+                                const isOpen = openDropdowns[item.label];
+
+                                return (
+                                    <div key={item.label} className="space-y-1">
+                                        {/* Parent Button */}
+                                        <button
+                                            onClick={() => toggleDropdown(item.label)}
+                                            className={`
+              w-full flex items-center justify-between px-3 py-3 rounded-xl font-medium transition-all duration-200
+              ${isActive
+                                                    ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
+                                                    : isDark
+                                                        ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                                        : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
+                                                }
+            `}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {Icon && (
+                                                    <Icon
+                                                        className={`w-5 h-5 flex-shrink-0 ${isActive
+                                                            ? "text-white"
+                                                            : isDark
+                                                                ? "text-gray-400"
+                                                                : "text-gray-500"
+                                                            }`}
+                                                    />
+                                                )}
+
+                                                {sidebarExpanded && (
+                                                    <span className="transition-opacity duration-300">
+                                                        {item.label}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {sidebarExpanded && (
+                                                <span>
+                                                    {isOpen ? (
+                                                        <ChevronDown className="w-4 h-4" />
+                                                    ) : (
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    )}
+                                                </span>
+                                            )}
+                                        </button>
+
+                                        {/* Children */}
+                                        {sidebarExpanded && isOpen && (
+                                            <div className="pl-8 space-y-1">
+                                                {allowedChildren.map((child) => {
+                                                    const childActive = activeRoute === child.to;
+
+                                                    return (
+                                                        <button
+                                                            key={child.to}
+                                                            onClick={() => {
+                                                                setActiveRoute(child.to);
+                                                                setSidebarOpen(false);
+                                                                routerNavigate(child.to);
+                                                            }}
+                                                            className={`
+                      w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                      ${childActive
+                                                                    ? "bg-sky-500/90 text-white shadow-md"
+                                                                    : isDark
+                                                                        ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                                                                        : "text-gray-700 hover:bg-sky-50 hover:text-sky-600"
+                                                                }
+                    `}
+                                                        >
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                            <span>{child.label}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                     </nav>
+
 
                     {/* Logout */}
                     <div className="p-2">

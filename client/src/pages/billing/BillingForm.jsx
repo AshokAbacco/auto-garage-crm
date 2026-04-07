@@ -1,4 +1,3 @@
-// client/src/pages/billing/BillingForm.jsx
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import {
@@ -6,7 +5,6 @@ import {
   FiCalendar,
   FiUser,
   FiTool,
-  FiDollarSign,
   FiSave,
   FiX,
   FiArrowLeft,
@@ -18,13 +16,18 @@ import {
   FiCheckCircle,
   FiPlus,
 } from "react-icons/fi";
+import { MdOutlineCurrencyRupee } from "react-icons/md";
 import { useTheme } from "../../contexts/ThemeContext";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Auth helpers
+/* =========================
+   Helpers
+========================= */
+
 const getAuthToken = () =>
   localStorage.getItem("token") || localStorage.getItem("authToken");
+
 const fetchWithAuth = async (url, options = {}) => {
   const token = getAuthToken();
   const headers = {
@@ -41,7 +44,6 @@ const fetchWithAuth = async (url, options = {}) => {
   return response;
 };
 
-// Generate a temporary invoice number
 const generateTempInvoiceNumber = () => {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
@@ -51,13 +53,136 @@ const generateTempInvoiceNumber = () => {
   return `INV-${dateStr}-${random}`;
 };
 
-// Get initial form state
-const getInitialFormState = (
-  isEditMode,
-  preSelectedClientId,
-  serviceData,
-  invoiceData
-) => {
+// ✅ NEW COST UTILS FROM SERVICEFORM
+const num = (v) => (Number.isFinite(+v) ? +v : 0);
+
+const calculateRowTotal = (row) => {
+  const base = num(row.quantity) * num(row.unitPrice);
+  const cgst = (base * num(row.cgstRate)) / 100;
+  const sgst = (base * num(row.sgstRate)) / 100;
+  return base + cgst + sgst;
+};
+
+const calculateGrandTotal = (items = []) =>
+  items.reduce((sum, row) => sum + calculateRowTotal(row), 0);
+
+// ✅ NEW: Calculate tax breakdown
+const calculateTaxBreakdown = (items = []) => {
+  let partsAmount = 0;
+  let laborAmount = 0;
+  let partsCgst = 0;
+  let partsSgst = 0;
+  let laborCgst = 0;
+  let laborSgst = 0;
+
+  items.forEach((row) => {
+    const base = num(row.quantity) * num(row.unitPrice);
+    const cgst = (base * num(row.cgstRate)) / 100;
+    const sgst = (base * num(row.sgstRate)) / 100;
+
+    if (row.type === "part") {
+      partsAmount += base;
+      partsCgst += cgst;
+      partsSgst += sgst;
+    } else {
+      laborAmount += base;
+      laborCgst += cgst;
+      laborSgst += sgst;
+    }
+  });
+
+  return {
+    partsAmount,
+    laborAmount,
+    partsCgst,
+    partsSgst,
+    laborCgst,
+    laborSgst,
+  };
+};
+
+// ✅ NEW: Number to words converter
+const numberToWords = (num) => {
+  if (num === 0) return "Zero";
+
+  const ones = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  const thousands = ["", "Thousand", "Million", "Billion"];
+
+  const convertHundreds = (n) => {
+    let result = "";
+
+    if (n >= 100) {
+      result += ones[Math.floor(n / 100)] + " Hundred ";
+      n %= 100;
+    }
+
+    if (n >= 20) {
+      result += tens[Math.floor(n / 10)] + " ";
+      n %= 10;
+    }
+
+    if (n > 0) {
+      result += ones[n] + " ";
+    }
+
+    return result.trim();
+  };
+
+  let words = "";
+  let i = 0;
+
+  while (num > 0) {
+    if (num % 1000 !== 0) {
+      const hundreds = convertHundreds(num % 1000);
+      words = hundreds + " " + thousands[i] + " " + words;
+    }
+    num = Math.floor(num / 1000);
+    i++;
+  }
+
+  return words.trim() + " Only";
+};
+
+/* =========================
+   Initial Form State
+========================= */
+
+const getInitialFormState = (isEditMode, preSelectedClientId, invoiceData) => {
   const today = new Date().toISOString().split("T")[0];
 
   if (isEditMode && invoiceData) {
@@ -74,6 +199,11 @@ const getInitialFormState = (
       laborGst: invoiceData.laborGst || 0,
       taxes: invoiceData.taxes || 0,
       discounts: invoiceData.discounts || 0,
+      netAmount: invoiceData.netAmount || 0,
+      discountAmount: invoiceData.discountAmount || 0,
+      amountAfterDiscount: invoiceData.amountAfterDiscount || 0,
+      roundedAmount: invoiceData.roundedAmount || invoiceData.total || 0,
+      roundOffAmount: invoiceData.roundOffAmount || 0,
       total: invoiceData.total || 0,
       paymentMode: invoiceData.paymentMode || "",
       status: invoiceData.status || "Pending",
@@ -87,309 +217,258 @@ const getInitialFormState = (
       // Cost breakdown items from invoice data
       costItems: invoiceData.invoiceCostItems || [],
     };
-  } else if (serviceData) {
-    return {
-      invoiceNumber: generateTempInvoiceNumber(),
-      date: today,
-      customerId: preSelectedClientId || "",
-      vehicle: `${serviceData.client?.vehicleMake || ""} ${
-        serviceData.client?.vehicleModel || ""
-      }`,
-      mechanic: serviceData.mechanic || "",
-      description: serviceData.description || "",
-      partsCost: serviceData.partsCost || 0,
-      partsGst: serviceData.partsGst || 0,
-      laborCost: serviceData.laborCost || 0,
-      laborGst: serviceData.laborGst || 0,
-      taxes: 0,
-      discounts: 0,
-      total: serviceData.cost || 0,
-      paymentMode: "",
-      status: "Pending",
-      dueDate: "",
-      notes: serviceData.notes || "",
-      // Service details
-      serviceType: serviceData.category?.name || "",
-      serviceCategory: serviceData.category?.name || "",
-      serviceSubCategory: serviceData.subService?.name || "",
-      serviceNotes: serviceData.notes || "",
-      costItems: serviceData.costItems || [],
-    };
-  } else {
-    return {
-      invoiceNumber: generateTempInvoiceNumber(),
-      date: today,
-      customerId: preSelectedClientId || "",
-      vehicle: "",
-      mechanic: "",
-      description: "",
-      partsCost: 0,
-      partsGst: 0,
-      laborCost: 0,
-      laborGst: 0,
-      taxes: 0,
-      discounts: 0,
-      total: 0,
-      paymentMode: "",
-      status: "Pending",
-      dueDate: "",
-      notes: "",
-      // Service details
-      serviceType: "",
-      serviceCategory: "",
-      serviceSubCategory: "",
-      serviceNotes: "",
-      costItems: [],
-    };
   }
+
+  return {
+    invoiceNumber: generateTempInvoiceNumber(),
+    date: today,
+    customerId: preSelectedClientId || "",
+    vehicle: "",
+    mechanic: "",
+    description: "",
+    partsCost: 0,
+    partsGst: 0,
+    laborCost: 0,
+    laborGst: 0,
+    taxes: 0,
+    discounts: 0,
+    netAmount: 0,
+    discountAmount: 0,
+    amountAfterDiscount: 0,
+    roundedAmount: 0,
+    roundOffAmount: 0,
+    total: 0,
+    paymentMode: "",
+    status: "Pending",
+    dueDate: "",
+    notes: "",
+    // Service details
+    serviceType: "",
+    serviceCategory: "",
+    serviceSubCategory: "",
+    serviceNotes: "",
+    costItems: [],
+  };
 };
 
+/* =========================
+   Component
+========================= */
+
 export default function BillingForm() {
-  const { id } = useParams(); // ✅ EDIT MODE if id exists
+  const { id } = useParams();
   const isEditMode = Boolean(id);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isDark } = useTheme();
+
   const preSelectedClientId = location.state?.clientId || "";
-  const serviceData = location.state?.serviceData || null;
+  const serviceId = location.state?.serviceId;
+
   const [invoiceData, setInvoiceData] = useState(null);
-  const restoreDraft = location.state?.restoreForm;
-  const restoredInvoiceDraft = location.state?.invoiceDraft;
-  const autoSubmit = location.state?.autoSubmit;
-
-
-  const [form, setForm] = useState(() => {
-    if (restoreDraft && restoredInvoiceDraft) {
-      return restoredInvoiceDraft;
-    }
-
-    return getInitialFormState(
-      isEditMode,
-      preSelectedClientId,
-      serviceData,
-      invoiceData
-    );
-  });
-
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { isDark } = useTheme();
-  const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+  const restoreForm = location.state?.restoreForm;
+  const invoiceDraft = location.state?.invoiceDraft;
+  const autoSubmit = location.state?.autoSubmit;
 
-  // 1️⃣ Fetch clients
+
+  const [form, setForm] = useState(() =>
+    getInitialFormState(isEditMode, preSelectedClientId, null)
+  );
+
+  /* =========================
+     Fetch Clients
+  ========================= */
   useEffect(() => {
-    const loadClients = async () => {
-      try {
-        const res = await fetchWithAuth(
-          `${API_URL}/api/clients?page=1&limit=200`
-        );
-        const data = await res.json();
-        setClients(data.data || data || []);
-      } catch (err) {
-        console.error("Failed to load clients:", err);
-        setError("Failed to load clients");
-      }
-    };
-    loadClients();
+    fetchWithAuth(`${API_URL}/api/clients?page=1&limit=200`)
+      .then((r) => r.json())
+      .then((d) => setClients(d.data || d || []))
+      .catch(() => setError("Failed to load clients"));
   }, []);
 
-  // 2️⃣ Fetch invoice data if in edit mode
+  const selectedClient = clients.find(
+    (c) => String(c.id) === String(form.customerId)
+  );
+
+
   useEffect(() => {
-    if (isEditMode && id) {
-      const fetchInvoiceData = async () => {
-        try {
-          const res = await fetchWithAuth(`${API_URL}/api/invoices/${id}`);
-          const data = await res.json();
-          if (data) {
-            setInvoiceData(data);
-            setForm(
-              getInitialFormState(
-                isEditMode,
-                preSelectedClientId,
-                serviceData,
-                data
-              )
-            );
-          }
-        } catch (err) {
-          console.error("Failed to fetch invoice data:", err);
-          setError("Failed to load invoice data");
-        }
-      };
+    fetchWithAuth(`${API_URL}/api/user/profile`)
+      .then((r) => r.json())
+      .then(setUserProfile)
+      .catch(() => {});
+  }, []);
 
-      fetchInvoiceData();
-    }
-  }, [isEditMode, id, preSelectedClientId, serviceData]);
-
-  // 3️⃣ Fetch service data if serviceId is provided
+  /* =========================
+     Edit Invoice
+  ========================= */
   useEffect(() => {
-    if (serviceData && serviceData.id) {
-      const fetchServiceData = async () => {
-        try {
-          const res = await fetchWithAuth(
-            `${API_URL}/api/services/${serviceData.id}/billing`
-          );
-          const data = await res.json();
+    if (!isEditMode || !id) return;
 
-          if (data) {
-            setForm((prev) => ({
-              ...prev,
-              customerId: data.clientId,
-              vehicle: `${data.client?.vehicleMake || ""} ${
-                data.client?.vehicleModel || ""
-              }`,
-              serviceType: data.category?.name || "",
-              serviceCategory: data.category?.name || "",
-              serviceSubCategory: data.subService?.name || "",
-              serviceNotes: data.notes || "",
-              partsCost: data.partsCost || 0,
-              partsGst: data.partsGst || 0,
-              laborCost: data.laborCost || 0,
-              laborGst: data.laborGst || 0,
-              costItems: data.costItems || [],
-            }));
-          }
-        } catch (err) {
-          console.error("Failed to fetch service data:", err);
-        }
-      };
+    fetchWithAuth(`${API_URL}/api/invoices/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setInvoiceData(data);
+        setForm(getInitialFormState(true, preSelectedClientId, data));
+      })
+      .catch(() => setError("Failed to load invoice data"));
+  }, [isEditMode, id, preSelectedClientId]);
 
-      fetchServiceData();
-    }
-  }, [serviceData]);
-
-  // 4️⃣ Auto total calculation
   useEffect(() => {
-    const itemsTotal = calculateTotalFromItems();
-    const grandTotal = itemsTotal - Number(form.discounts || 0);
+  if (restoreForm && invoiceDraft) {
+    setForm(invoiceDraft);
+  }
+}, [restoreForm, invoiceDraft]);
 
-    if (grandTotal !== Number(form.total)) {
-      setForm((prev) => ({ ...prev, total: grandTotal }));
+
+  useEffect(() => {
+    if (autoSubmit && restoreForm && invoiceDraft) {
+      // wait for form to be restored
+      setTimeout(() => {
+        document.querySelector("form")?.requestSubmit();
+      }, 0);
     }
+  }, [autoSubmit, restoreForm, invoiceDraft]);
+
+
+  /* =========================
+     Service → Invoice
+  ========================= */
+  useEffect(() => {
+    if (!serviceId || isEditMode) return;
+
+    fetchWithAuth(`${API_URL}/api/services/${serviceId}/billing`)
+      .then((r) => r.json())
+      .then((data) =>
+        setForm((prev) => ({
+          ...prev,
+          customerId: data.client.id,
+          vehicle: `${data.client.vehicleMake} ${data.client.vehicleModel}`,
+          serviceType: data.category?.name || "",
+          serviceCategory: data.category?.name || "",
+          mechanic: data.assignedMechanic || "", // ✅ FIX
+          serviceSubCategory: data.subService?.name || "",
+          serviceNotes: data.notes || "",
+          partsCost: 0,
+          laborCost: 0,
+          costItems: data.costItems || [], // ✅ FIXED: Directly use service data
+        }))
+      )
+      .catch(() => setError("Failed to load service billing data"));
+  }, [serviceId, isEditMode]);
+
+  /* =========================
+     Totals
+  ========================= */
+  useEffect(() => {
+    // Calculate net amount (before discount)
+    const netAmount = calculateGrandTotal(form.costItems);
+
+    // Calculate discount amount
+    const discountAmount = Number(form.discounts || 0);
+
+    // Calculate amount after discount
+    const amountAfterDiscount = netAmount - discountAmount;
+
+    // Apply proper rounding (always round down)
+    const roundedAmount = Math.floor(amountAfterDiscount);
+
+    // Calculate round off amount (difference)
+    const roundOffAmount = amountAfterDiscount - roundedAmount;
+
+    // Set form state with proper values
+    setForm((p) => ({
+      ...p,
+      netAmount,
+      discountAmount,
+      amountAfterDiscount,
+      roundedAmount,
+      roundOffAmount,
+    }));
   }, [form.costItems, form.discounts]);
 
-
-  // 5️⃣ Submit handler
+  /* =========================
+     Submit
+  ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Validation
-      if (!form.customerId) throw new Error("Please select a customer");
-      const grandTotal = Number(form.total);
-
-      if (Number.isNaN(grandTotal) || grandTotal <= 0) {
-        throw new Error("Grand total must be greater than 0");
-      }
-
       const payload = {
-        invoiceNumber: form.invoiceNumber,
-        date: form.date,
+        ...form,
         clientId: Number(form.customerId),
-        vehicle: form.vehicle,
-        mechanic: form.mechanic,
-        description: form.description,
-        partsCost: Number(form.partsCost),
-        partsGst: Number(form.partsGst),
-        laborCost: Number(form.laborCost),
-        laborGst: Number(form.laborGst),
-        tax: Number(form.taxes),
-        discount: Number(form.discounts),
-        grandTotal: Number(form.total),
-        totalAmount: Number(form.total),
-        paymentMode: form.paymentMode,
-        status: form.status,
-        dueDate: form.dueDate ? new Date(form.dueDate) : null,
-        notes: form.notes,
-        serviceType: form.serviceType,
-        serviceCategory: form.serviceCategory,
-        serviceSubCategory: form.serviceSubCategory,
-        serviceNotes: form.serviceNotes,
+        grandTotal: Number(form.roundedAmount),
+        totalAmount: Number(form.roundedAmount),
         costItems: form.costItems,
       };
 
-      let res;
-      if (isEditMode) {
-        // ✅ EDIT MODE
-        res = await fetchWithAuth(`${API_URL}/api/invoices/${id}`, {
-          method: "PUT",
+      const res = await fetchWithAuth(
+        isEditMode
+          ? `${API_URL}/api/invoices/${id}`
+          : `${API_URL}/api/invoices`,
+        {
+          method: isEditMode ? "PUT" : "POST",
           body: JSON.stringify(payload),
-        });
-      } else {
-        // ✅ CREATE MODE
-        res = await fetchWithAuth(`${API_URL}/api/invoices`, {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to save invoice");
-      }
+        }
+      );
 
       const data = await res.json();
       navigate(`/billing/${data.invoice.id}`);
-    } catch (err) {
-      console.error("Error saving invoice:", err);
-      setError(err.message || "Failed to save invoice");
+    } catch {
+      setError("Failed to save invoice");
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper to handle form changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+
+  // ✅ NEW COST ITEM HANDLERS
+  const updateCostItem = (index, field, value) => {
+    const updated = [...form.costItems];
+    updated[index][field] = value;
+    setForm((p) => ({ ...p, costItems: updated }));
   };
 
-  // Helper to handle cost item changes
-  const handleCostItemChange = (index, field, value) => {
-    const updatedCostItems = [...form.costItems];
-    updatedCostItems[index] = {
-      ...updatedCostItems[index],
-      [field]: value,
-    };
-    setForm((prev) => ({ ...prev, costItems: updatedCostItems }));
-  };
-
-  // Add new cost item
   const addCostItem = () => {
-    const newItem = {
-      partName: "",
-      partCost: 0,
-      partGst: 0,
-      laborCost: 0,
-      laborGst: 0,
-    };
-    setForm((prev) => ({ ...prev, costItems: [...prev.costItems, newItem] }));
+    setForm((p) => ({
+      ...p,
+      costItems: [
+        ...p.costItems,
+        {
+          type: "part",
+          name: "",
+          quantity: 1,
+          unitPrice: "",
+          cgstRate: "",
+          sgstRate: "",
+        },
+      ],
+    }));
   };
 
-  // Remove cost item
   const removeCostItem = (index) => {
-    const updatedCostItems = form.costItems.filter((_, i) => i !== index);
-    setForm((prev) => ({ ...prev, costItems: updatedCostItems }));
+    setForm((p) => ({
+      ...p,
+      costItems: p.costItems.filter((_, i) => i !== index),
+    }));
   };
 
-  // Calculate total from cost items
-  const calculateTotalFromItems = () => {
-    return form.costItems.reduce((total, item) => {
-      const partTotal =
-        Number(item.partCost) +
-        (Number(item.partCost) * Number(item.partGst)) / 100;
-      const laborTotal =
-        Number(item.laborCost) +
-        (Number(item.laborCost) * Number(item.laborGst)) / 100;
-      return total + partTotal + laborTotal;
-    }, 0);
-  };
+  // ✅ NEW: Calculate tax breakdown for display
+  const taxBreakdown = calculateTaxBreakdown(form.costItems);
+
+  /* =========================
+     UI
+  ========================= */
 
   return (
     <div
       className={`min-h-screen p-1 lg:ml-16 ${
-        isDark ? " text-gray-100" : "bg-gray-50 text-gray-900"
+        isDark ? "text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
     >
       <div className="max-w-5xl mx-auto">
@@ -434,7 +513,7 @@ export default function BillingForm() {
                 type="date"
                 icon={<FiCalendar />}
                 value={form.date}
-                onChange={handleChange}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
               />
             </div>
 
@@ -447,7 +526,9 @@ export default function BillingForm() {
                 <select
                   name="customerId"
                   value={form.customerId}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setForm({ ...form, customerId: e.target.value })
+                  }
                   required
                   className={`w-full p-3 rounded-lg border ${
                     isDark
@@ -487,35 +568,41 @@ export default function BillingForm() {
                 icon={<FiTool />}
                 name="serviceType"
                 value={form.serviceType}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setForm({ ...form, serviceType: e.target.value })
+                }
               />
               <Input
                 label="Service Category"
                 icon={<FiTag />}
                 name="serviceCategory"
                 value={form.serviceCategory}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setForm({ ...form, serviceCategory: e.target.value })
+                }
               />
               <Input
                 label="Service Sub-Category"
                 icon={<FiTag />}
                 name="serviceSubCategory"
                 value={form.serviceSubCategory}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setForm({ ...form, serviceSubCategory: e.target.value })
+                }
               />
               <Input
                 label="Vehicle"
                 icon={<FiTag />}
                 name="vehicle"
                 value={form.vehicle}
-                onChange={handleChange}
+                onChange={(e) => setForm({ ...form, vehicle: e.target.value })}
               />
               <Input
                 label="Mechanic"
                 icon={<FiUser />}
                 name="mechanic"
                 value={form.mechanic}
-                onChange={handleChange}
+                onChange={(e) => setForm({ ...form, mechanic: e.target.value })}
               />
             </div>
 
@@ -527,7 +614,9 @@ export default function BillingForm() {
                 <textarea
                   name="serviceNotes"
                   value={form.serviceNotes}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setForm({ ...form, serviceNotes: e.target.value })
+                  }
                   rows={3}
                   className={`w-full p-3 rounded-lg border resize-none ${
                     isDark
@@ -539,7 +628,7 @@ export default function BillingForm() {
             </div>
           </div>
 
-          {/* Cost Breakdown */}
+          {/* Cost Breakdown - REDESIGNED TO BE USER FRIENDLY */}
           <div
             className={`rounded-xl shadow-lg p-6 ${
               isDark ? "bg-gray-800" : "bg-white"
@@ -548,92 +637,163 @@ export default function BillingForm() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Cost Breakdown</h2>
               <span className="text-sm text-gray-500">
-                Total: ₹{calculateTotalFromItems().toFixed(2)}
+                Total: ₹{calculateGrandTotal(form.costItems).toFixed(2)}
               </span>
             </div>
 
-            {/* Cost Items - Only show if they exist from service data */}
-            {form.costItems.length > 0 ? (
-              <div className="space-y-4">
-                {form.costItems.map((item, index) => {
-                  const partTotal =
-                    Number(item.partCost) +
-                    (Number(item.partCost) * Number(item.partGst)) / 100;
-                  const laborTotal =
-                    Number(item.laborCost) +
-                    (Number(item.laborCost) * Number(item.laborGst)) / 100;
-                  const itemTotal = partTotal + laborTotal;
+            {/* Cost Items - User-friendly design with clear labels */}
+            <div className="space-y-4">
+              {form.costItems.map((row, i) => {
+                const itemTotal = calculateRowTotal(row);
 
-                  return (
-                    <div
-                      key={index}
-                      className={`border rounded-lg p-4 ${
-                        isDark
-                          ? "bg-gray-700 border-gray-600"
-                          : "bg-gray-50 border-gray-200"
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-medium">Item #{index + 1}</h3>
-                        <span className="text-sm text-gray-500">
-                          {item.partName || "Unnamed Item"}
-                        </span>
+                return (
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg shadow-md border p-4"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                      {/* Type */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Type
+                        </label>
+                        <select
+                          value={row.type}
+                          onChange={(e) =>
+                            updateCostItem(i, "type", e.target.value)
+                          }
+                          className={`w-full p-2 border rounded-lg ${
+                            isDark
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-gray-50 border-gray-300"
+                          }`}
+                        >
+                          <option value="part">Part</option>
+                          <option value="labor">Labor</option>
+                        </select>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="font-medium mb-2">Parts</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span>Cost:</span>
-                              <span>₹{Number(item.partCost).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>GST:</span>
-                              <span>{Number(item.partGst)}%</span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>Parts Total:</span>
-                              <span>₹{partTotal.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-medium mb-2">Labor</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span>Cost:</span>
-                              <span>₹{Number(item.laborCost).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>GST:</span>
-                              <span>{Number(item.laborGst)}%</span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>Labor Total:</span>
-                              <span>₹{laborTotal.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </div>
+                      {/* Name or Mechanic */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {row.type === "part" ? "Part Name" : "Mechanic"}
+                        </label>
+                        <input
+                          value={row.name}
+                          onChange={(e) =>
+                            updateCostItem(i, "name", e.target.value)
+                          }
+                          placeholder={
+                            row.type === "part" ? "Head Light" : "Mechanic name"
+                          }
+                          className={`w-full p-2 border rounded-lg ${
+                            isDark
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-gray-50 border-gray-300"
+                          }`}
+                        />
                       </div>
 
-                      <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600 flex justify-between">
-                        <span className="font-medium">Item Total:</span>
-                        <span className="font-bold">
-                          ₹{itemTotal.toFixed(2)}
-                        </span>
+                      {/* Quantity or Hours */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {row.type === "part" ? "Quantity" : "Total Labors"}
+                        </label>
+                        <input
+                          type="number"
+                          value={row.quantity}
+                          onChange={(e) =>
+                            updateCostItem(i, "quantity", e.target.value)
+                          }
+                          className={`w-full p-2 border rounded-lg ${
+                            isDark
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-gray-50 border-gray-300"
+                          }`}
+                        />
+                      </div>
+
+                      {/* Unit Price or Rate */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex align-center ">
+                          {row.type === "part" ? "Unit Price" : "Labor Coast"}{" "}
+                          (₹)
+                        </label>
+                        <input
+                          type="number"
+                          value={row.unitPrice}
+                          onChange={(e) =>
+                            updateCostItem(i, "unitPrice", e.target.value)
+                          }
+                          className={`w-full p-2 border rounded-lg ${
+                            isDark
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-gray-50 border-gray-300"
+                          }`}
+                        />
+                      </div>
+
+                      {/* CGST */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          CGST (%)
+                        </label>
+                        <input
+                          type="number"
+                          value={row.cgstRate}
+                          onChange={(e) =>
+                            updateCostItem(i, "cgstRate", e.target.value)
+                          }
+                          className={`w-full p-2 border rounded-lg ${
+                            isDark
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-gray-50 border-gray-300"
+                          }`}
+                        />
+                      </div>
+
+                      {/* SGST */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          SGST (%)
+                        </label>
+                        <input
+                          type="number"
+                          value={row.sgstRate}
+                          onChange={(e) =>
+                            updateCostItem(i, "sgstRate", e.target.value)
+                          }
+                          className={`w-full p-2 border rounded-lg ${
+                            isDark
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-gray-50 border-gray-300"
+                          }`}
+                        />
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-gray-500">
-                No cost breakdown available. Add cost items in the service form
-                to include them here.
-              </div>
-            )}
+
+                    {/* Total Row */}
+                    <div className="flex justify-between mt-3 pt-3 border-t border-gray-200">
+                      <span className="font-medium">Total</span>
+                      <span className="font-bold text-green-600">
+                        ₹{itemTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add Cost Item Button */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={addCostItem}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <FiPlus /> Add Cost Item
+              </button>
+            </div>
           </div>
 
           {/* Payment Details */}
@@ -647,13 +807,15 @@ export default function BillingForm() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block font-semibold mb-2 flex items-center gap-2">
-                  <FiDollarSign /> Discount
+                  <MdOutlineCurrencyRupee /> Discount
                 </label>
                 <input
                   type="number"
                   name="discounts"
                   value={form.discounts}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setForm({ ...form, discounts: e.target.value })
+                  }
                   className={`w-full p-3 rounded-lg border ${
                     isDark
                       ? "bg-gray-700 border-gray-600"
@@ -672,7 +834,9 @@ export default function BillingForm() {
                 <select
                   name="paymentMode"
                   value={form.paymentMode}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setForm({ ...form, paymentMode: e.target.value })
+                  }
                   className={`w-full p-3 rounded-lg border ${
                     isDark
                       ? "bg-gray-700 border-gray-600"
@@ -694,7 +858,7 @@ export default function BillingForm() {
                 <select
                   name="status"
                   value={form.status}
-                  onChange={handleChange}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
                   className={`w-full p-3 rounded-lg border ${
                     isDark
                       ? "bg-gray-700 border-gray-600"
@@ -716,7 +880,9 @@ export default function BillingForm() {
                   type="date"
                   name="dueDate"
                   value={form.dueDate}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setForm({ ...form, dueDate: e.target.value })
+                  }
                   className={`w-full p-3 rounded-lg border ${
                     isDark
                       ? "bg-gray-700 border-gray-600"
@@ -727,7 +893,7 @@ export default function BillingForm() {
             </div>
           </div>
 
-          {/* Grand Total Calculation Display */}
+          {/* Grand Total Calculation Display - ENHANCED WITH DETAILED BREAKDOWN */}
           <div
             className={`rounded-xl shadow-lg p-6 ${
               isDark
@@ -737,25 +903,122 @@ export default function BillingForm() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold mb-2">
+                <h3 className="text-lg font-semibold mb-4">
                   Grand Total Calculation
                 </h3>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Items Total:</span>
-                    <span className="ml-2">
-                      ₹{calculateTotalFromItems().toFixed(2)}
-                    </span>
+
+                {/* Detailed Tax Breakdown */}
+                <div className="space-y-2 text-sm">
+                  {/* Parts Tax Breakdown */}
+                  {taxBreakdown.partsAmount > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>
+                          CGST(Parts) @{" "}
+                          {taxBreakdown.partsCgst > 0
+                            ? (
+                                (taxBreakdown.partsCgst /
+                                  taxBreakdown.partsAmount) *
+                                100
+                              ).toFixed(2)
+                            : 0}
+                          % on Amount {taxBreakdown.partsAmount.toFixed(2)}
+                        </span>
+                        <span>₹{taxBreakdown.partsCgst.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>
+                          SGST(Parts) @{" "}
+                          {taxBreakdown.partsSgst > 0
+                            ? (
+                                (taxBreakdown.partsSgst /
+                                  taxBreakdown.partsAmount) *
+                                100
+                              ).toFixed(2)
+                            : 0}
+                          % on Amount {taxBreakdown.partsAmount.toFixed(2)}
+                        </span>
+                        <span>₹{taxBreakdown.partsSgst.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Labor Tax Breakdown */}
+                  {taxBreakdown.laborAmount > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>
+                          CGST(Labor) @{" "}
+                          {taxBreakdown.laborCgst > 0
+                            ? (
+                                (taxBreakdown.laborCgst /
+                                  taxBreakdown.laborAmount) *
+                                100
+                              ).toFixed(2)
+                            : 0}
+                          % on Amount {taxBreakdown.laborAmount.toFixed(2)}
+                        </span>
+                        <span>₹{taxBreakdown.laborCgst.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>
+                          SGST(Labor) @{" "}
+                          {taxBreakdown.laborSgst > 0
+                            ? (
+                                (taxBreakdown.laborSgst /
+                                  taxBreakdown.laborAmount) *
+                                100
+                              ).toFixed(2)
+                            : 0}
+                          % on Amount {taxBreakdown.laborAmount.toFixed(2)}
+                        </span>
+                        <span>₹{taxBreakdown.laborSgst.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Net Amount */}
+                  <div className="border-t pt-2 flex justify-between font-medium">
+                    <span>Net Amount</span>
+                    <span>₹{form.netAmount.toFixed(2)}</span>
                   </div>
+
+                  {/* Discount */}
                   <div className="flex justify-between">
-                    <span>Discount:</span>
-                    <span>- ₹{Number(form.discounts).toFixed(2)}</span>
+                    <span>Discount</span>
+                    <span>- ₹{form.discountAmount.toFixed(2)}</span>
                   </div>
+
+                  {/* Amount After Discount */}
+                  <div className="border-t pt-2 flex justify-between font-medium">
+                    <span>Amount After Discount</span>
+                    <span>₹{form.amountAfterDiscount.toFixed(2)}</span>
+                  </div>
+
+                  {/* Round off */}
+                  <div className="flex justify-between">
+                    <span>Round off</span>
+                    <span>- ₹{form.roundOffAmount.toFixed(2)}</span>
+                  </div>
+
+                  {/* Amount Payable */}
                   <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                    <span>Grand Total:</span>
+                    <span>Amount Payable</span>
                     <span className="text-green-500">
-                      ₹{form.total.toFixed(2)}
+                      ₹{form.roundedAmount.toFixed(2)}
                     </span>
+                  </div>
+
+                  {/* Total Amount (In figure) */}
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>Total Amount (In figure)</span>
+                    <span>₹{form.roundedAmount.toFixed(2)}</span>
+                  </div>
+
+                  {/* Total Amount (In Words) */}
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>Total Amount (In Words)</span>
+                    <span>{numberToWords(Math.round(form.roundedAmount))}</span>
                   </div>
                 </div>
               </div>
@@ -772,7 +1035,7 @@ export default function BillingForm() {
             <textarea
               name="notes"
               value={form.notes}
-              onChange={handleChange}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={3}
               className={`w-full p-3 rounded-lg border resize-none ${
                 isDark
@@ -792,47 +1055,26 @@ export default function BillingForm() {
               Cancel
             </button>
 
-            {/* 🔍 PREVIEW BUTTON */}
+            {/* PREVIEW BUTTON */}
             <button
               type="button"
-              onClick={() => {
-                const selectedClient = clients.find(
-                  (c) => String(c.id) === String(form.customerId)
-                );
-
-                const user = JSON.parse(localStorage.getItem("user"));
-
+              onClick={() =>
                 navigate("/billing/preview", {
                   state: {
                     invoiceDraft: {
                       ...form,
-
-                      // totals
-                      grandTotal: Number(form.total),
-                      discount: Number(form.discounts),
-
-                      // client
-                      client: selectedClient,
-
-                      // ✅ GARAGE OWNER (USER)
-                      userProfile: {
-                        companyName: user?.companyName,
-                        username: user?.username,
-                        email: user?.email,
-                        phone: user?.phone,
-                      },
-
-                      costItems: form.costItems || [],
+                      client: selectedClient || null,
+                      userProfile,
                     },
                   },
-                });
-              }}
+                })
+              }
               className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
             >
               Preview Invoice
             </button>
 
-            {/* ✅ FINAL SUBMIT */}
+            {/* FINAL SUBMIT */}
             <button
               type="submit"
               disabled={loading}
@@ -851,7 +1093,10 @@ export default function BillingForm() {
   );
 }
 
-// Reusable Input component
+/* =========================
+   Input Component
+========================= */
+
 function Input({
   label,
   icon,

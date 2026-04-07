@@ -204,7 +204,7 @@ export default function ServiceManagement() {
             <div className={`flex items-center justify-between p-6 mb-6 rounded-xl transition-all duration-300 ${isDark ? "bg-gray-800 shadow-xl" : "bg-white shadow-md"
                 }`}>
                 <div>
-                    <h1 className={`text-3xl font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
+                    <h1 className={`text-3xl font-extrabold ${isDark ? "text-white" : "text-blue-900"}`}>
                         Service Management
                     </h1>
                     <p className={`text-sm ${isDark ? "text-gray-400" : "text-slate-500"}`}>
@@ -215,8 +215,8 @@ export default function ServiceManagement() {
                 <button
                     onClick={() => navigate("/add-service")}
                     className={`group flex items-center gap-2 px-6 py-3 rounded-xl font-medium shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${isDark
-                        ? "bg-gradient-to-r from-sky-500 to-sky-700 text-white"
-                        : "bg-gradient-to-r from-sky-400 to-sky-600 text-white"
+                        ? "bg-gradient-to-r from-blue-500 to-blue-700 text-white"
+                        : "bg-gradient-to-r from-blue-400 to-blue-600 text-white"
                         }`}
                 >
                     <PlusCircle

@@ -25,6 +25,7 @@ import referralRoutes from "./routes/referral.js";
 import washingClientRoutes from "./routes/washingRoutes.js";
 import washingServiceRoutes from "./routes/washingserviceRoutes.js";
 import washBillingRoutes from "./routes/washInvoiceRoutes.js";
+import teamsRoutes from "./routes/teamsRoutes.js"; // adjust path if needed
 
 //bike routes
 import bikeRoutes from "./routes/bikeRoutes.js";
@@ -43,6 +44,12 @@ import { protect } from "./middleware/authMiddleware.js";
 import carRoutes from "./routes/carRoutes.js";
 import staffAuthRoutes from "./routes/staffAuthRoutes.js"
 import carstaffSalaryRoutes from "./routes/carStaffSalaryRoutes.js"
+import serviceApprovalRoutes from "./routes/serviceApprovalRoutes.js";
+import whatsappRoutes from "./routes/whatsappRoutes.js";
+import whatsappWebhookRoutes from "./routes/whatsappWebhookRoutes.js";
+
+
+
 
 console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -85,6 +92,7 @@ app.post(
   "/api/payments/razorpay-webhook",
   express.raw({ type: "application/json" })
 );
+app.use("/api/whatsapp", whatsappWebhookRoutes);
 
 /* -----------------------------------------------------
    🧩 Middleware Configuration
@@ -145,6 +153,9 @@ app.use("/api/car-staff", carStaffRoutes);
 app.use("/api/staff-auth", staffAuthRoutes);
 app.use("/api/carstaff-salary", carstaffSalaryRoutes);
 
+app.use("/api", serviceApprovalRoutes);
+app.use("/api", whatsappRoutes);
+
 /* -----------------------------------------------------
    🚀 Mount API Routes
 ----------------------------------------------------- */
@@ -166,7 +177,7 @@ app.use("/api/referral", referralRoutes);
 app.use("/api/washing-clients", washingClientRoutes);
 app.use("/api/washing-services", washingServiceRoutes);
 app.use("/api/wash-billing", washBillingRoutes);
-
+app.use("/api/teams", teamsRoutes);
 
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)

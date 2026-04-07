@@ -26,6 +26,8 @@ export default function UpgradePlans() {
     const [currentPlan, setCurrentPlan] = useState(null);
     const [loading, setLoading] = useState(true);
 
+
+
     // Fetch current user's plan
     useEffect(() => {
         const fetchCurrentPlan = async () => {
@@ -79,7 +81,22 @@ export default function UpgradePlans() {
                 "Team accounts (up to 3)",
             ],
         },
+        {
+            id: "premium",
+            name: "Premium",
+            tagline: "For growing businesses",
+            numericPrice: 1000,
+            icon: Crown,
+            badge: "BEST VALUE",
+            features: [
+                "Priority support",
+                "Export CSV, PDF",
+                "SMS/WhatsApp Alerts",
+                "Team accounts (up to 10)",
+            ],
+        },
     ];
+
 
     // Get active plans based on selected type
     let activePlans = washingPlans;
@@ -128,9 +145,9 @@ export default function UpgradePlans() {
             <section className="relative z-10 px-4 py-12 sm:px-6">
                 <div className="mx-auto space-y-6 text-center max-w-7xl">
                     <div className="inline-flex items-center gap-2 px-4 py-2 border rounded-full bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border-violet-500/20 backdrop-blur-sm">
-                        <Sparkles className="w-4 h-4 text-violet-400" />
+                        <Sparkles className="w-4 h-4 text-blue-400" />
                         <span
-                            className={`text-sm font-medium ${isDark ? "text-violet-300" : "text-violet-700"
+                            className={`text-sm font-medium ${isDark ? "text-blue-300" : "text-blue-700"
                                 }`}
                         >
                             Upgrade your plan to unlock more features
@@ -155,12 +172,12 @@ export default function UpgradePlans() {
                     <div className="space-y-4">
                         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
                             <span
-                                className={`block mb-2 ${isDark ? "text-white" : "text-gray-900"
+                                className={`block mb-2 ${isDark ? "text-white" : "text-blue-900"
                                     }`}
                             >
                                 Choose Your Perfect Plan
                             </span>
-                            <span className="block text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text">
+                            <span className="block text-transparent bg-gradient-to-r from-blue-400 via-blue-400 to-blue-400 bg-clip-text">
                                 Scale as you grow
                             </span>
                         </h1>
@@ -176,7 +193,7 @@ export default function UpgradePlans() {
                     {/* Billing Period Toggle */}
                     <div className="flex items-center justify-center gap-4 pt-4">
                         <span
-                            className={`text-sm font-medium ${billingPeriod === "monthly" ? "text-white" : "text-gray-500"
+                            className={`text-sm font-medium ${billingPeriod === "monthly" ? "text-gray" : "text-gray-500"
                                 }`}
                         >
                             Monthly
@@ -189,7 +206,7 @@ export default function UpgradePlans() {
                                 )
                             }
                             className={`relative w-16 h-8 rounded-full transition ${billingPeriod === "yearly"
-                                ? "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                                ? "bg-gradient-to-r from-blue-500 to-blue-500"
                                 : "bg-gray-700"
                                 }`}
                         >
@@ -200,31 +217,40 @@ export default function UpgradePlans() {
                         </button>
 
                         <span
-                            className={`text-sm font-medium ${billingPeriod === "yearly" ? "text-white" : "text-gray-500"
+                            className={`text-sm font-medium ${billingPeriod === "yearly" ? "text-gray" : "text-gray-500"
                                 }`}
                         >
                             Yearly
                         </span>
 
-                        <span className="px-3 py-1 text-xs font-bold text-white bg-green-500 rounded-full">
+                        <span className="px-3 py-1 text-xs font-bold text-white bg-blue-500 rounded-full">
                             Save 10%
                         </span>
                     </div>
+
+                    <button
+                        className="px-6 py-3 font-semibold text-white transition-all shadow-lg rounded-xl bg-gradient-to-r from-blue-600 to-blue-600"
+                    >
+                        Wash Plans
+                    </button>
+
                 </div>
             </section>
 
             {/* Pricing Cards */}
-            <section className="relative z-10 px-4 pt-12 pb-20 sm:px-6">
+            <section className="relative z-10 flex justify-center px-4 pt-12 pb-20 sm:px-6">
+
                 <div
-                    className={`max-w-7xl mx-auto gap-8 ${activePlans.length === 1
-                        ? "flex justify-center"
-                        : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                        }`}
+                    className="flex justify-center w-full max-w-5xl gap-10"
                 >
+
                     {activePlans.map((plan) => {
                         const Icon = plan.icon;
                         const isPopular = plan.badge === "POPULAR";
                         const isCurrent = isCurrentPlan(plan);
+                        const isPremium = plan.id === "premium"; // ✅ CORRECT PLACE
+
+
                         const yearlyDiscount = 0.1;
                         const finalPrice =
                             billingPeriod === "yearly"
@@ -238,16 +264,16 @@ export default function UpgradePlans() {
                         return (
                             <div
                                 key={plan.id}
-                                className={`relative ${isPopular ? "lg:scale-105 lg:-mt-4" : ""
-                                    } ${activePlans.length === 1 ? "w-full max-w-[400px]" : ""}`}
+                                className={`relative w-full max-w-[420px] ${isPopular ? "lg:scale-120 lg:-mt-0" : ""}`}
                             >
+
                                 {/* Popular/Current Badge */}
                                 {(plan.badge || isCurrent) && (
                                     <div className="absolute z-10 -translate-x-1/2 -top-4 left-1/2">
                                         <div
                                             className={`px-4 py-1.5 rounded-full text-white text-xs font-bold shadow-lg flex items-center gap-1.5 ${isCurrent
-                                                ? "bg-gradient-to-r from-green-500 to-emerald-500"
-                                                : "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                                                ? "bg-gradient-to-r from-blue-500 to-blue-500"
+                                                : "bg-gradient-to-r from-blue-500 to-blue-500"
                                                 }`}
                                         >
                                             {isCurrent ? (
@@ -266,15 +292,19 @@ export default function UpgradePlans() {
                                 )}
 
                                 <div
-                                    className={`h-full rounded-3xl p-8 transition-all duration-300 hover:scale-[1.02] ${isCurrent
-                                        ? "bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50"
-                                        : isPopular
-                                            ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-2xl shadow-violet-500/25 border-2 border-violet-400/50"
-                                            : isDark
-                                                ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-violet-500/50"
-                                                : "bg-white border-2 border-gray-200 hover:border-violet-500/50 shadow-xl"
+                                    className={`h-full rounded-3xl p-10 transition-all duration-300 ${isPremium ? "scale-[1.04] min-h-[640px]" : "min-h-[600px]"
+                                        } hover:scale-[1.02] ${isCurrent
+                                            ? "bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50"
+                                            : isPremium
+                                                ? "bg-white text-gray-900 border-2 border-gray-200 shadow-2xl"
+                                                : isPopular
+                                                    ? "bg-blue-600 text-white shadow-2xl shadow-violet-500/25 border-2 border-blue-400/50"
+                                                    : isDark
+                                                        ? "bg-gray-800/50 backdrop-blur-xl border-2 border-gray-700/50 hover:border-violet-500/50"
+                                                        : "bg-white border-2 border-gray-200 hover:border-violet-500/50 shadow-xl"
                                         }`}
                                 >
+
                                     {/* Icon */}
                                     <div
                                         className={`inline-flex p-3 rounded-2xl mb-6 ${isPopular
@@ -359,8 +389,8 @@ export default function UpgradePlans() {
                                         className={`w-full py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${isCurrent
                                             ? "bg-gray-500 text-white cursor-not-allowed opacity-60"
                                             : isPopular
-                                                ? "bg-white text-violet-600 hover:bg-gray-50 shadow-lg"
-                                                : "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
+                                                ? "bg-white text-blue-600 hover:bg-gray-50 shadow-lg"
+                                                : "bg-gradient-to-r from-blue-600 to-blue-600 text-white hover:shadow-lg hover:shadow-violet-500/25"
                                             }`}
                                     >
                                         <span>{isCurrent ? "Current Plan" : "Upgrade Now"}</span>
@@ -393,7 +423,7 @@ export default function UpgradePlans() {
                                         className={`inline-flex p-4 rounded-2xl ${isDark ? "bg-violet-500/10" : "bg-violet-50"
                                             }`}
                                     >
-                                        <Icon className="w-8 h-8 text-violet-500" />
+                                        <Icon className="w-8 h-8 text-blue-500" />
                                     </div>
                                     <div>
                                         <p

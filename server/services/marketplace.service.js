@@ -8,28 +8,35 @@ const prisma = new PrismaClient();
 export const getServices = async (crmType) => {
   return prisma.marketplaceService.findMany({
     where: {
-      // crmType,
       isActive: true,
-      ...(crmType && { crmType }), // ✅ SAFE FIX
+      ...(crmType && { crmType }),
     },
     select: {
       id: true,
       name: true,
       slug: true,
-      description: true, // ✅ ADD
-      image: true, // ✅ ADD
+      description: true,
+      image: true,
+      mainCategory: true,
+      subCategory: true,
     },
     orderBy: { name: "asc" },
   });
 };
 
 // ==============================
-// GARAGES BY SERVICE (WITH DISCOUNT)
+// GARAGES BY SERVICE
 // ==============================
-export const getGaragesByService = async (serviceId) => {
+export const getGaragesByService = async (externalServiceId, carType) => {
+  const service = await prisma.marketplaceService.findUnique({
+    where: { externalServiceId },
+  });
+
+  if (!service) throw new Error("Service not found");
+
   const garages = await prisma.garageMarketplaceService.findMany({
     where: {
-      serviceId: Number(serviceId),
+      serviceId: service.id,
       isActive: true,
     },
     include: {
@@ -39,53 +46,168 @@ export const getGaragesByService = async (serviceId) => {
           companyName: true,
         },
       },
-    },
-    orderBy: {
-      price: "asc",
+      pricing: true,
     },
   });
 
-  return garages.map((g) => {
-    const discount = g.discount || 0;
-    const finalPrice = g.price - (g.price * discount) / 100;
+  const results = [];
 
-    return {
-      ...g,
+  for (const g of garages) {
+    const activeBooking = await prisma.marketplaceBooking.findFirst({
+      where: {
+        garageId: g.user.id,
+        status: {
+          in: ["PENDING", "ACCEPTED"],
+        },
+      },
+    });
+
+    if (activeBooking) continue;
+
+    let selectedPricing = null;
+
+    if (carType) {
+      selectedPricing = g.pricing.find((p) => p.carType === carType);
+    }
+
+    if (carType && !selectedPricing) continue;
+
+    const basePrice = service.basePrice || 0;
+
+    let garagePrice = 0;
+    let discount = 0;
+
+    if (selectedPricing) {
+      garagePrice = selectedPricing.price;
+      discount = selectedPricing.discount || 0;
+    } else {
+      garagePrice = g.price || basePrice;
+      discount = g.discount || 0;
+    }
+
+    const finalPrice = garagePrice - discount;
+
+    results.push({
+      garageId: g.user.id,
+      name: g.user.companyName,
+
+      serviceId: service.id,
+      externalServiceId: service.externalServiceId,
+
+      mainCategory: service.mainCategory || "General",
+      subCategory: service.subCategory || "General",
+      
+      basePrice,
+      garagePrice,
       discount,
       finalPrice,
-    };
-  });
+
+      carType: carType || null,
+    });
+  }
+
+  return results;
 };
 
 // ==============================
-// CREATE BOOKING (WITH FINAL PRICE)
+// CREATE BOOKING (FINAL FIXED)
 // ==============================
 export const createBooking = async (data) => {
-  const { serviceId, garageId, scheduledAt, clientId } = data;
+  const { externalServiceId, garageId, scheduledAt, clientId, carType } = data;
 
+  if (!externalServiceId || !garageId || !clientId || !scheduledAt) {
+    throw new Error("Missing required fields");
+  }
+
+  const parsedGarageId = Number(garageId);
+  const parsedClientId = Number(clientId);
+  const parsedDate = new Date(scheduledAt);
+
+  if (isNaN(parsedGarageId) || isNaN(parsedClientId)) {
+    throw new Error("Invalid IDs");
+  }
+
+  if (isNaN(parsedDate.getTime())) {
+    throw new Error("Invalid date");
+  }
+
+  // =========================
+  // STEP 1: Resolve Service
+  // =========================
+  const service = await prisma.marketplaceService.findUnique({
+    where: { externalServiceId },
+  });
+
+  if (!service) throw new Error("Service not found");
+
+  // =========================
+  // STEP 2: Get Garage Service
+  // =========================
   const garageService = await prisma.garageMarketplaceService.findFirst({
     where: {
-      serviceId: Number(serviceId),
-      userId: Number(garageId),
-      isActive: true,
+      serviceId: service.id,
+      userId: parsedGarageId,
+    },
+    include: {
+      pricing: true,
     },
   });
 
-  if (!garageService) {
-    throw new Error("Service not available for this garage");
+  if (!garageService) throw new Error("Garage service not found");
+
+  // =========================
+  // STEP 3: Pricing
+  // =========================
+  const basePrice = service.basePrice || 0;
+
+  let selectedPricing = null;
+
+  if (carType) {
+    selectedPricing = garageService.pricing.find((p) => p.carType === carType);
   }
 
-  const discount = garageService.discount || 0;
-  const finalPrice =
-    garageService.price - (garageService.price * discount) / 100;
+  let garagePrice = 0;
+  let discount = 0;
 
+  if (selectedPricing) {
+    garagePrice = selectedPricing.price;
+    discount = selectedPricing.discount || 0;
+  } else {
+    garagePrice = garageService.price || basePrice;
+    discount = garageService.discount || 0;
+  }
+
+  const finalPrice = garagePrice - discount;
+
+  // =========================
+  // STEP 4: CREATE BOOKING
+  // =========================
   return prisma.marketplaceBooking.create({
     data: {
-      serviceId: Number(serviceId),
-      garageId: Number(garageId),
-      clientId: Number(clientId),
-      scheduledAt: new Date(scheduledAt),
-      priceSnapshot: finalPrice, // ✅ FIXED
+      // 🔥 FIXED RELATION (IMPORTANT)
+      service: {
+        connect: { id: service.id },
+      },
+
+      garage: {
+        connect: { id: parsedGarageId },
+      },
+      client: {
+        connect: { id: parsedClientId },
+      },
+
+      scheduledAt: parsedDate,
+      carType: carType || null,
+
+      serviceName: service.name,
+      mainCategory: service.mainCategory || "General",
+      subCategory: service.subCategory || "General",
+     
+      basePriceSnapshot: basePrice,
+      garagePriceSnapshot: garagePrice,
+      discountSnapshot: discount,
+      finalPrice: finalPrice,
+
       status: "PENDING",
     },
   });
@@ -103,8 +225,6 @@ export const getBookingById = async (id) => {
 // ==============================
 // PACKAGES
 // ==============================
-
-// CREATE PACKAGE
 export const createPackage = async (userId, data) => {
   const { name, price, serviceIds } = data;
 
@@ -117,35 +237,41 @@ export const createPackage = async (userId, data) => {
       },
     });
 
-    if (serviceIds && serviceIds.length > 0) {
-      await tx.marketplacePackageItem.createMany({
-        data: serviceIds.map((sid) => ({
-          packageId: pkg.id,
-          serviceId: Number(sid),
-        })),
-      });
+    if (serviceIds?.length) {
+      for (const sid of serviceIds) {
+        const service = await tx.marketplaceService.findUnique({
+          where: { id: Number(sid) },
+        });
+
+        if (!service) continue;
+
+        await tx.marketplacePackageItem.create({
+          data: {
+            packageId: pkg.id,
+            serviceId: service.id,
+            serviceName: service.name,
+            basePrice: service.basePrice || 0,
+          },
+        });
+      }
     }
 
     return pkg;
   });
 };
 
+// ==============================
 // GET PACKAGES
+// ==============================
 export const getPackages = async (userId) => {
   return prisma.marketplacePackage.findMany({
     where: { userId },
-    include: {
-      items: {
-        include: {
-          service: true,
-        },
-      },
-    },
+    include: { items: true },
     orderBy: { createdAt: "desc" },
   });
 };
 
-// DELETE PACKAGE
+// ==============================
 export const deletePackage = async (id, userId) => {
   return prisma.marketplacePackage.delete({
     where: {
@@ -155,7 +281,7 @@ export const deletePackage = async (id, userId) => {
   });
 };
 
-// TOGGLE PACKAGE
+// ==============================
 export const togglePackage = async (id, userId) => {
   const pkg = await prisma.marketplacePackage.findFirst({
     where: { id: Number(id), userId },
@@ -169,10 +295,10 @@ export const togglePackage = async (id, userId) => {
   });
 };
 
+// ==============================
 export const updateServiceDetails = async (serviceId, data) => {
   const updateData = {};
 
-  // ✅ Only update if provided
   if (data.description !== undefined) {
     updateData.description = data.description;
   }
@@ -181,11 +307,8 @@ export const updateServiceDetails = async (serviceId, data) => {
     updateData.image = data.image;
   }
 
-  // 👉 Update DB
-  const updated = await prisma.marketplaceService.update({
+  return prisma.marketplaceService.update({
     where: { id: Number(serviceId) },
     data: updateData,
   });
-
-  return updated;
 };

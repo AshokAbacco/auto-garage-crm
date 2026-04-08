@@ -1,3 +1,4 @@
+// services/booking.service.js
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -8,6 +9,8 @@ export const acceptBooking = async (bookingId) => {
     include: { service: true },
   });
 
+  console.log("🔥 ACCEPT BOOKING:", bookingId);
+
   if (!booking) throw new Error("Booking not found");
 
   if (booking.status !== "PENDING") {
@@ -15,7 +18,30 @@ export const acceptBooking = async (bookingId) => {
   }
 
   if (!booking.clientId) {
-    throw new Error("Client is required for service creation");
+    throw new Error("Client is required");
+  }
+
+  // =========================
+  // STEP 1: FIND OR CREATE SUBSERVICE
+  // =========================
+  let matchedSubService = await prisma.subService.findFirst({
+    where: {
+      name: {
+        equals: booking.service.name,
+        mode: "insensitive",
+      },
+    },
+  });
+
+  // 🔥 AUTO CREATE (FINAL FIX)
+  if (!matchedSubService) {
+    console.log("⚠️ Creating new SubService:", booking.service.name);
+
+    matchedSubService = await prisma.subService.create({
+      data: {
+        name: booking.service.name,
+      },
+    });
   }
 
   let serviceRecord;
@@ -32,10 +58,12 @@ export const acceptBooking = async (bookingId) => {
           connect: { id: booking.clientId },
         },
 
-        // ⚠️ REQUIRED depending on your schema
-        // You MUST map this properly later
-        // Temporary fallback:
-        // subServiceId: 1
+        // ✅ CORRECT RELATION
+        subService: {
+          connect: { id: matchedSubService.id },
+        },
+
+        status: "PENDING",
       },
     });
 
@@ -60,7 +88,9 @@ export const acceptBooking = async (bookingId) => {
           connect: { id: booking.clientId },
         },
 
-        // subServiceId: 1 (if required)
+        subService: {
+          connect: { id: matchedSubService.id },
+        },
       },
     });
 
@@ -85,7 +115,9 @@ export const acceptBooking = async (bookingId) => {
           connect: { id: booking.clientId },
         },
 
-        // subServiceId: 1 (if required)
+        subService: {
+          connect: { id: matchedSubService.id },
+        },
       },
     });
 
@@ -97,6 +129,8 @@ export const acceptBooking = async (bookingId) => {
       },
     });
   }
+
+  console.log("🎉 BOOKING ACCEPTED:", booking.id);
 
   return { success: true };
 };

@@ -6,6 +6,8 @@ const useTheme = () => ({ isDark: false });
 
 const API_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
+const CAR_TYPES = ["SEDAN", "SUV", "HATCHBACK", "SUV_COUPE", "MPV", "LUXURY"];
+
 /* ── Global styles ─────────────────────────────────────────────────────── */
 const STYLE = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -167,6 +169,30 @@ const STYLE = `
   to   { opacity: 1; transform: translateY(0); }
 }
 
+.mp-pricing-section {
+  margin-bottom: 12px;
+}
+.mp-pricing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.mp-pricing-label {
+  width: 80px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748B;
+}
+.mp-pricing-inputs {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+.mp-pricing-inputs .mp-input {
+  flex: 1;
+}
+
 @keyframes shimmer {
   0%   { background-position: -600px 0; }
   100% { background-position: 600px 0; }
@@ -262,47 +288,108 @@ export default function MarketplacePricing() {
     }
   };
 
+  // Updated helper to handle pricing array
   const gd = (s) => {
     const f = garageServices.find((g) => g.serviceId === s.id);
     return {
       ...s,
-      price: f?.price || "",
-      discount: f?.discount || 0,
       isActive: f?.isActive || false,
+      pricing: f?.pricing || [], // Expecting [{ carType: "SEDAN", price: 100, discount: 0 }, ...]
     };
   };
 
-  const hc = (id, field, value) =>
+  // Handler for isActive toggle
+  const handleToggle = (id, value) => {
     setGarageServices((prev) => {
       const ex = prev.find((g) => g.serviceId === id);
-      if (ex)
+      if (ex) {
         return prev.map((g) =>
-          g.serviceId === id ? { ...g, [field]: value } : g,
+          g.serviceId === id ? { ...g, isActive: value } : g,
         );
+      }
+      return [...prev, { serviceId: id, isActive: value, pricing: [] }];
+    });
+  };
+
+  // Updated handler for pricing changes: hc(id, carType, field, value)
+  const hc = (id, carType, field, value) => {
+    setGarageServices((prev) => {
+      const ex = prev.find((g) => g.serviceId === id);
+
+      if (ex) {
+        return prev.map((g) => {
+          if (g.serviceId !== id) return g;
+
+          const currentPricing = g.pricing || [];
+          const priceIndex = currentPricing.findIndex(
+            (p) => p.carType === carType,
+          );
+
+          let newPricing;
+          if (priceIndex > -1) {
+            // Update existing
+            newPricing = currentPricing.map((p, i) =>
+              i === priceIndex ? { ...p, [field]: value } : p,
+            );
+          } else {
+            // Add new entry
+            const newItem = { carType };
+            if (field === "price") {
+              newItem.price = value;
+              newItem.discount = 0;
+            } else {
+              newItem.price = 0;
+              newItem.discount = value;
+            }
+            newPricing = [...currentPricing, newItem];
+          }
+
+          return { ...g, pricing: newPricing };
+        });
+      }
+
+      // Create new entry
+      const newItem = { carType };
+      if (field === "price") {
+        newItem.price = value;
+        newItem.discount = 0;
+      } else {
+        newItem.price = 0;
+        newItem.discount = value;
+      }
+
       return [
         ...prev,
         {
           serviceId: id,
-          price: field === "price" ? value : "",
-          discount: field === "discount" ? value : 0,
-          isActive: field === "isActive" ? value : false,
+          isActive: false,
+          pricing: [newItem],
         },
       ];
     });
+  };
 
   const hdc = (id, field, value) =>
     setServiceDetails((p) => ({ ...p, [id]: { ...p[id], [field]: value } }));
 
+  // Updated save payload
   const handleSave = async (id) => {
     const item = garageServices.find((g) => g.serviceId === id);
     if (!item) return;
+
+    // Ensure pricing has valid numbers
+    const cleanPricing = (item.pricing || []).map((p) => ({
+      carType: p.carType,
+      price: Number(p.price) || 0,
+      discount: Number(p.discount) || 0,
+    }));
+
     await axios.post(
       `${API_URL}/api/marketplace/garage-services`,
       {
         serviceId: id,
-        price: Number(item.price) || 0,
-        discount: Number(item.discount) || 0,
         isActive: Boolean(item.isActive),
+        pricing: cleanPricing,
       },
       { headers: { Authorization: `Bearer ${token}` } },
     );
@@ -327,6 +414,26 @@ export default function MarketplacePricing() {
     s.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
   const activeCount = garageServices.filter((g) => g.isActive).length;
+
+  // Helper to get price for specific car type
+  const getPriceData = (pricing, carType) => {
+    return (
+      pricing.find((p) => p.carType === carType) || { price: "", discount: 0 }
+    );
+  };
+
+  // Calculate minimum price for display
+  const getMinPrice = (pricing) => {
+    const validPrices = pricing
+      .map((p) => {
+        const base = Number(p.price) || 0;
+        const disc = Number(p.discount) || 0;
+        return base > 0 ? base - (base * disc) / 100 : null;
+      })
+      .filter((p) => p !== null);
+
+    return validPrices.length > 0 ? Math.min(...validPrices) : null;
+  };
 
   return (
     <>
@@ -448,9 +555,7 @@ export default function MarketplacePricing() {
                 const data = gd(s);
                 const detail = serviceDetails[s.id] || {};
                 const isOpen = expanded[s.id];
-                const finalPrice =
-                  Number(data.price || 0) -
-                  (Number(data.price || 0) * Number(data.discount || 0)) / 100;
+                const minPrice = getMinPrice(data.pricing);
                 const imgSrc = detail.image
                   ? URL.createObjectURL(detail.image)
                   : s.image || null;
@@ -474,7 +579,7 @@ export default function MarketplacePricing() {
                         style={{
                           background: data.isActive ? t.accent : t.toggleOff,
                         }}
-                        onClick={() => hc(s.id, "isActive", !data.isActive)}
+                        onClick={() => handleToggle(s.id, !data.isActive)}
                       />
 
                       <div style={{ minWidth: 0 }}>
@@ -501,29 +606,10 @@ export default function MarketplacePricing() {
                       <div className="mp-price-wrap">
                         <div
                           className="mp-price-final"
-                          style={{ color: data.price ? t.accent : t.muted }}
+                          style={{ color: minPrice ? t.accent : t.muted }}
                         >
-                          {data.price ? `₹${finalPrice.toFixed(0)}` : "—"}
+                          {minPrice ? `From ₹${minPrice.toFixed(0)}` : "—"}
                         </div>
-                        {Number(data.discount) > 0 && (
-                          <div className="mp-disc-row">
-                            <span
-                              className="mp-price-orig"
-                              style={{ color: t.muted }}
-                            >
-                              ₹{Number(data.price).toFixed(0)}
-                            </span>
-                            <span
-                              className="mp-disc-badge"
-                              style={{
-                                background: t.discBg,
-                                color: t.discText,
-                              }}
-                            >
-                              -{data.discount}%
-                            </span>
-                          </div>
-                        )}
                       </div>
 
                       <button
@@ -571,68 +657,92 @@ export default function MarketplacePricing() {
                           </p>
                         )}
 
-                        <div className="mp-panel-grid">
-                          <div className="mp-ig">
-                            <label
-                              className="mp-ig-label"
-                              style={{ color: t.muted }}
-                            >
-                              Base Price (₹)
-                            </label>
-                            <input
-                              className="mp-input"
-                              style={{
-                                background: t.inputBg,
-                                borderColor: t.inputBorder,
-                                color: t.text,
-                              }}
-                              type="number"
-                              min="0"
-                              disabled={!data.isActive}
-                              value={data.price}
-                              placeholder="0"
-                              onChange={(e) =>
-                                hc(s.id, "price", e.target.value)
-                              }
-                              onFocus={(e) =>
-                                (e.target.style.borderColor = t.inputFocus)
-                              }
-                              onBlur={(e) =>
-                                (e.target.style.borderColor = t.inputBorder)
-                              }
-                            />
-                          </div>
-                          <div className="mp-ig">
-                            <label
-                              className="mp-ig-label"
-                              style={{ color: t.muted }}
-                            >
-                              Discount (%)
-                            </label>
-                            <input
-                              className="mp-input"
-                              style={{
-                                background: t.inputBg,
-                                borderColor: t.inputBorder,
-                                color: t.text,
-                              }}
-                              type="number"
-                              min="0"
-                              max="100"
-                              disabled={!data.isActive}
-                              value={data.discount}
-                              placeholder="0"
-                              onChange={(e) =>
-                                hc(s.id, "discount", e.target.value)
-                              }
-                              onFocus={(e) =>
-                                (e.target.style.borderColor = t.inputFocus)
-                              }
-                              onBlur={(e) =>
-                                (e.target.style.borderColor = t.inputBorder)
-                              }
-                            />
-                          </div>
+                        {/* Pricing Section */}
+                        <div className="mp-pricing-section">
+                          <label
+                            className="mp-ig-label"
+                            style={{
+                              color: t.muted,
+                              marginBottom: 8,
+                              display: "block",
+                            }}
+                          >
+                            Pricing by Car Type
+                          </label>
+
+                          {CAR_TYPES.map((carType) => {
+                            const priceData = getPriceData(
+                              data.pricing,
+                              carType,
+                            );
+                            return (
+                              <div key={carType} className="mp-pricing-row">
+                                <div
+                                  className="mp-pricing-label"
+                                  style={{ color: t.text }}
+                                >
+                                  {carType}
+                                </div>
+                                <div className="mp-pricing-inputs">
+                                  <input
+                                    className="mp-input"
+                                    style={{
+                                      background: t.inputBg,
+                                      borderColor: t.inputBorder,
+                                      color: t.text,
+                                    }}
+                                    type="number"
+                                    min="0"
+                                    placeholder="Price"
+                                    disabled={!data.isActive}
+                                    value={priceData.price}
+                                    onChange={(e) =>
+                                      hc(s.id, carType, "price", e.target.value)
+                                    }
+                                    onFocus={(e) =>
+                                      (e.target.style.borderColor =
+                                        t.inputFocus)
+                                    }
+                                    onBlur={(e) =>
+                                      (e.target.style.borderColor =
+                                        t.inputBorder)
+                                    }
+                                  />
+                                  <input
+                                    className="mp-input"
+                                    style={{
+                                      background: t.inputBg,
+                                      borderColor: t.inputBorder,
+                                      color: t.text,
+                                      width: "80px",
+                                    }}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    placeholder="Disc %"
+                                    disabled={!data.isActive}
+                                    value={priceData.discount}
+                                    onChange={(e) =>
+                                      hc(
+                                        s.id,
+                                        carType,
+                                        "discount",
+                                        e.target.value,
+                                      )
+                                    }
+                                    onFocus={(e) =>
+                                      (e.target.style.borderColor =
+                                        t.inputFocus)
+                                    }
+                                    onBlur={(e) =>
+                                      (e.target.style.borderColor =
+                                        t.inputBorder)
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
 
                         {data.isActive && (

@@ -10,15 +10,24 @@ const router = express.Router();
 // App APIs
 // ==============================
 router.get("/services", controller.getServices);
+
+// 🔥 IMPORTANT:
+// `:id` here is actually externalServiceId (UUID from App DB)
+// NOT CRM service.id (INT)
+// Used to map App Service → MarketplaceService (CRM)
+// Do NOT change this unless both systems share same IDs
 router.get("/services/:id/garages", controller.getGarages);
+
+// (optional rename → /bookings, keeping /book for now)
 router.post("/book", controller.createBooking);
+
 router.get("/booking/:id", controller.getBooking);
 
 // ==============================
 // 🆕 SERVICE DETAILS (IMAGE + DESCRIPTION)
 // ==============================
 router.patch(
-  "/services/:id/details",
+  "/services/:id/details", // ✅ This uses CRM service.id (INT)
   upload.single("image"),
   protect,
   controller.updateServiceDetails,
@@ -29,6 +38,7 @@ router.patch(
 // ==============================
 router.post("/booking/:id/accept", controller.acceptBooking);
 router.post("/booking/:id/reject", controller.rejectBooking);
+
 router.get("/bookings", protect, controller.getAllBookings);
 
 router.get("/garage-services", protect, controller.getGarageServices);

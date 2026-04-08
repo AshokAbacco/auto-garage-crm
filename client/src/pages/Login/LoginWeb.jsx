@@ -125,7 +125,9 @@ export default function ModernLogin() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("crmType", crmType);
-
+      // ✅ ADD THIS LINE (VERY IMPORTANT)
+      localStorage.setItem("userId", data.user.id);
+      
       // Redirect
       navigate(`/${crmType}-dashboard`);
     } catch (err) {

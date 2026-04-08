@@ -1584,80 +1584,106 @@ model SupportActionLog {
 // ==============================
 
 model MarketplaceService {
-  id      Int     @id @default(autoincrement())
-  name    String
-  slug    String  @unique
+  id   Int    @id @default(autoincrement())
+  name String
+  slug String @unique
+
   crmType CrmType // CAR | BIKE | WASH
 
+  // 🔥 ADD THESE (IMPORTANT)
+  mainCategory String?
+  subCategory  String?
+
+  // 🔥 LINK TO APP DB
+  externalServiceId String? @unique
+
+  // default pricing (fallback)
+  basePrice Float?
+
   description String?
-  image       String? // ✅ ADD THIS
-  basePrice   Float?
+  image       String?
 
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   garageServices          GarageMarketplaceService[]
   bookings                MarketplaceBooking[]
   marketplacePackageItems MarketplacePackageItem[]
 
   @@index([crmType])
+  @@index([externalServiceId])
 }
 
 model GarageMarketplaceService {
   id Int @id @default(autoincrement())
 
-  // Garage Owner (User table)
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Service
   serviceId Int
   service   MarketplaceService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
-  // Garage-specific config
-  price    Float
-  duration Int? // in minutes (optional)
+  // override base price
+  price    Float?
+  duration Int?
 
   isActive Boolean @default(true)
   discount Float?  @default(0)
+
+  pricing GarageServicePricing[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, serviceId])
-  @@index([serviceId])
-  @@index([userId])
+}
+
+model GarageServicePricing {
+  id Int @id @default(autoincrement())
+
+  garageServiceId Int
+  garageService   GarageMarketplaceService @relation(fields: [garageServiceId], references: [id], onDelete: Cascade)
+
+  carType  String // SEDAN, SUV, etc.
+  price    Float
+  discount Float? @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([garageServiceId, carType])
 }
 
 model MarketplaceBooking {
   id Int @id @default(autoincrement())
 
-  // Marketplace Service
   serviceId Int
   service   MarketplaceService @relation(fields: [serviceId], references: [id])
 
-  // Garage (User = owner)
-  garageId Int
-  garage   User @relation(fields: [garageId], references: [id])
+  garageId Int?
+  garage   User? @relation(fields: [garageId], references: [id])
 
-  // App user reference (external system)
   appUserId String?
-
-  // Optional: vehicle reference from app
   vehicleId String?
 
-  // Booking info
+  carType String?
+
   scheduledAt DateTime
 
-  // Snapshot (important!)
-  priceSnapshot Float
+  // 🔥 FULL SNAPSHOT (IMPORTANT)
+  serviceName  String
+  mainCategory String
+  subCategory  String
+
+  basePriceSnapshot   Float
+  garagePriceSnapshot Float?
+  discountSnapshot    Float?
+  finalPrice          Float
 
   status MarketplaceBookingStatus @default(PENDING)
 
-  // CRM linking (after acceptance)
   carServiceId     Int?
   bikeServiceId    Int?
   washingServiceId Int?
@@ -1670,7 +1696,6 @@ model MarketplaceBooking {
 
   @@index([garageId])
   @@index([serviceId])
-  @@index([status])
 }
 
 model MarketplacePackage {
@@ -1679,16 +1704,16 @@ model MarketplacePackage {
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
-  name        String // Basic / Standard / Premium
-  price       Float
-  isActive    Boolean  @default(true)
+  name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  price    Float
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   items MarketplacePackageItem[]
-
-  @@index([userId])
 }
 
 model MarketplacePackageItem {
@@ -1700,8 +1725,11 @@ model MarketplacePackageItem {
   package MarketplacePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
   service MarketplaceService @relation(fields: [serviceId], references: [id])
 
-  @@unique([packageId, serviceId]) // ✅ prevent duplicates
-  @@index([serviceId])
+  // 🔥 SNAPSHOT (IMPORTANT)
+  serviceName String?
+  basePrice   Float?
+
+  @@unique([packageId, serviceId])
 }
 
 // ==============================

@@ -96,8 +96,16 @@ import InvoicePreview from "./bikePages/Billing/InvoicePreview.jsx";
 import WashStaffSalaryContainer from "./washPages/salaryPages/WashStaffSalaryContainer.jsx";
 import Data from "./pages/Data/data.jsx";
 import ProformaRender from "./pages/billing/ProformaRender.jsx";
+import MarketplaceBookings from "./pages/marketplace/MarketplaceBookings.jsx";
+import MarketplacePricing from "./pages/marketplace/MarketplacePricing.jsx";
+import MarketplacePackages from "./pages/marketplace/MarketplacePackages.jsx";
+import SocketProvider from "./providers/SocketProvider";
+import BookingPopupProvider from "./providers/BookingPopupProvider";
+import BookingPopup from "./components/BookingPopup";
 
 function App() {
+  const garageId = localStorage.getItem("userId");
+  console.log("GARAGE ID:", garageId);
   useEffect(() => {
     document.body.style.paddingTop = "env(safe-area-inset-top)";
     document.body.style.paddingBottom = "env(safe-area-inset-bottom)";
@@ -105,168 +113,162 @@ function App() {
   return (
     <ThemeProvider>
       <ScrollToTop />
+      <SocketProvider garageId={garageId}>
+        <BookingPopupProvider>
+          <Routes>
+            {/* ================= PUBLIC ================= */}
+            <Route element={<PublicLayout />}>
+              <Route index element={<Landing />} />
+              <Route path="pricing" element={<PricingPage />} />
+              <Route path="car-garage" element={<CarGarage />} />
+              <Route path="bike-garage" element={<BikeGarage />} />
+              <Route path="washing-center" element={<WashingCenter />} />
+              <Route path="spare-parts/bike" element={<BikeSpareParts />} />
+              <Route path="spare-parts/car" element={<CarSpareParts />} />
+              <Route path="contactus" element={<ContactUs />} />
+              <Route path="terms" element={<TermsPage />} />
+              <Route path="term&conditions" element={<RefundPage />} />
+              <Route path="referencet&c" element={<ReferencePage />} />
+            </Route>
 
-      <Routes>
-        {/* ================= PUBLIC ================= */}
-        <Route element={<PublicLayout />}>
-          <Route index element={<Landing />} />
-          <Route path="pricing" element={<PricingPage />} />
-          <Route path="car-garage" element={<CarGarage />} />
-          <Route path="bike-garage" element={<BikeGarage />} />
-          <Route path="washing-center" element={<WashingCenter />} />
-          <Route path="spare-parts/bike" element={<BikeSpareParts />} />
-          <Route path="spare-parts/car" element={<CarSpareParts />} />
-          <Route path="contactus" element={<ContactUs />} />
-          <Route path="terms" element={<TermsPage />} />
-          <Route path="term&conditions" element={<RefundPage />} />
-          <Route path="referencet&c" element={<ReferencePage />} />
-        </Route>
+            {/* ================= AUTH ================= */}
+            <Route path="login" element={<Login />} />
+            <Route path="car-register" element={<CarRegister />} />
+            <Route path="bike-register" element={<BikeRegister />} />
+            <Route path="washing-register" element={<WashRegister />} />
 
-        {/* ================= AUTH ================= */}
-        <Route path="login" element={<Login />} />
-        <Route path="car-register" element={<CarRegister />} />
-        <Route path="bike-register" element={<BikeRegister />} />
-        <Route path="washing-register" element={<WashRegister />} />
+            {/* Protected routes */}
+            {/* Car routes */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/car-dashboard" />} />
+              <Route path="/car-dashboard" element={<Dashboard />} />
+              {/* More specific routes first */}
+              <Route path="/clients/new" element={<ClientForm />} />
+              <Route path="/clients/:id/edit" element={<ClientForm />} />
+              <Route path="/clients/:id" element={<ClientDetail />} />
+              {/* Less specific routes last */}
+              <Route path="/clients" element={<ClientsList />} />
+              <Route path="/services" element={<ServicesList />} />
+              <Route path="/services/new" element={<ServiceForm />} />
+              <Route path="/services/:id" element={<ServiceDetail />} />
+              <Route path="/services/:id/edit" element={<ServiceForm />} />
+              <Route path="/billing" element={<BillingList />} />
+              <Route path="/billing/new" element={<BillingForm />} />
+              <Route path="/billing/:id/edit" element={<BillingForm />} />
+              // Edit billing
+              <Route path="/billing/:id" element={<Invoice />} />
+              <Route path="/reminders" element={<RemindersList />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/details" element={<DetailsPage />} />
+              <Route path="/ocr-Scanner" element={<DetailsPage />} />
+              <Route
+                path="/marketplace/bookings"
+                element={<MarketplaceBookings />}
+              />
+              <Route
+                path="/marketplace/pricing"
+                element={<MarketplacePricing />}
+              />
+              <Route
+                path="/marketplace/packages"
+                element={<MarketplacePackages />}
+              />
+              <Route path="/plan" element={<Plans />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/reference" element={<Reference />} />
+              <Route path="/upgrade" element={<UpgradePlans />} />
+              <Route path="/billing/preview" element={<ProformaInvoice />} />
+              <Route path="/dynamic-data" element={<Data />} />
+              <Route path="/staff-management" element={<StaffManagement />} />
+              <Route path="/salary-management" element={<SalaryManagement />} />
+              // App.jsx
+              <Route
+                path="/billing/proforma-render/:token"
+                element={<ProformaRender />}
+              />
+            </Route>
 
-        {/* Protected routes */}
-        {/* Car routes */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/car-dashboard" />} />
-          <Route path="/car-dashboard" element={<Dashboard />} />
-          {/* More specific routes first */}
-          <Route path="/clients/new" element={<ClientForm />} />
-          <Route path="/clients/:id/edit" element={<ClientForm />} />
-          <Route path="/clients/:id" element={<ClientDetail />} />
-          {/* Less specific routes last */}
-          <Route path="/clients" element={<ClientsList />} />
-          <Route path="/services" element={<ServicesList />} />
-          <Route path="/services/new" element={<ServiceForm />} />
-          <Route path="/services/:id" element={<ServiceDetail />} />
-          <Route path="/services/:id/edit" element={<ServiceForm />} />
-          <Route path="/billing" element={<BillingList />} />
-          <Route path="/billing/new" element={<BillingForm />} />
-          <Route path="/billing/:id/edit" element={<BillingForm />} />
-          // Edit billing
-          <Route path="/billing/:id" element={<Invoice />} />
-          <Route path="/reminders" element={<RemindersList />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/details" element={<DetailsPage />} />
-          <Route path="/ocr-Scanner" element={<DetailsPage />} />
-          <Route path="/plan" element={<Plans />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/reference" element={<Reference />} />
-          <Route path="/upgrade" element={<UpgradePlans />} />
-          <Route path="/billing/preview" element={<ProformaInvoice />} />
-          <Route path="/dynamic-data" element={<Data />} />
-          <Route path="/staff-management" element={<StaffManagement />} />
-          <Route path="/salary-management" element={<SalaryManagement />} />
-          // App.jsx
-          <Route
-            path="/billing/proforma-render/:token"
-            element={<ProformaRender />}
-          />
-        </Route>
-        {/* 
-        <Route>
-         
-          <Route index element={<Navigate to="car-dashboard" />} />
-          <Route path="car-dashboard" element={<Dashboard />} />
+            {/* ================= BIKE CRM ================= */}
+            <Route path="/" element={<BikeLayoutPage />}>
+              <Route path="bike-dashboard" element={<BikeDashboard />} />
+              <Route path="/bike-profile" element={<BikeProfile />} />
+              <Route path="bike-clients" element={<Clients />} />
+              <Route path="bike-services" element={<Services />} />
+              <Route path="bike-billing" element={<Billings />} />
+              <Route path="bike-reminders" element={<Reminders />} />
+              <Route path="bike-reports" element={<Report />} />
+              <Route path="bike-plan" element={<Plans />} />
+              <Route path="bike-reference" element={<Reference />} />
+              <Route path="/bike-plans" element={<Upgrade />} />
+              <Route path="/bike-ocr-scanner" element={<OCRScanner />} />
+              <Route path="/editclient/:id" element={<AddClients />} />
+              <Route path="/editclient/new" element={<AddClients />} />
+              <Route path="/bikes/:id" element={<BikeDetail />} />
+              <Route path="/bike-services/add" element={<AddService />} />
+              <Route path="/bike-services/:id" element={<ServiceDetails />} />
+              <Route path="/bike-services/:id/edit" element={<AddService />} />
+              <Route path="/bill/new" element={<AddBilling />} />
+              <Route path="/bill/:id/edit" element={<AddBilling />} />
+              <Route path="/bill/:id" element={<InvoiceBill />} />
+              <Route
+                path="/bike-billing/preview"
+                element={<InvoicePreview />}
+              />
 
-          <Route path="clients" element={<ClientsList />} />
-          <Route path="clients/new" element={<ClientForm />} />
-          <Route path="clients/:id" element={<ClientDetail />} />
-          <Route path="clients/:id/edit" element={<ClientForm />} />
+              <Route path="/team-register" element={<TeamRegister />} />
+              <Route path="/salary-manage" element={<StaffSalaryContainer />} />
+            </Route>
 
-          <Route path="services" element={<ServicesList />} />
-          <Route path="services/new" element={<ServiceForm />} />
-          <Route path="services/:id" element={<ServiceDetail />} />
-          <Route path="services/:id/edit" element={<ServiceForm />} />
+            {/* Washing CRM Routes */}
 
-          <Route path="billing" element={<BillingList />} />
-          <Route path="billing/new" element={<BillingForm />} />
-          <Route path="billing/:id" element={<Invoice />} />
-          <Route path="billing/:id/edit" element={<BillingForm />} />
+            {/* ================= WASHING CRM ================= */}
+            <Route element={<WashingLayout />}>
+              <Route path="wash-dashboard" element={<WashDashboard />} />
+              <Route path="washing-clients" element={<Client />} />
+              <Route path="washing-services" element={<Service />} />
+              <Route path="washing-billing" element={<Bill />} />
+              <Route path="washing-reports" element={<Repor />} />
+              <Route path="washing-reference" element={<Referenc />} />
+              <Route path="washing-upgrade" element={<Upgra />} />
+              <Route path="washing-alerts" element={<SMSalert />} />
+              <Route path="washing-plan" element={<Plan />} />
+              <Route
+                path="wservices-details/:id"
+                element={<WServiceDetails />}
+              />
+              <Route path="/add-service" element={<AddNewServiceForm />} />
+              <Route path="/add-service/:id" element={<AddNewServiceForm />} />
+              <Route path="washProfile" element={<WashingProfile />} />
+              <Route path="/client-details/:id" element={<ClientsDetails />} />
+              <Route path="addclient" element={<Newclient />} />
+              <Route path="/addclient/:id" element={<Newclient />} />
+              <Route path="/billing" element={<Billing />} />
+              <Route
+                path="/washing-salary-management"
+                element={<WashStaffSalaryContainer />}
+              />
+              <Route path="/teams" element={<Teams />} />
+              <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
+              <Route path="/billing/create-invoice" element={<NewInvoice />} />
+              <Route path="/team-login" element={<TeamLogin />} />
+              <Route
+                path="/billing/create-invoice/:serviceId"
+                element={<NewInvoice />}
+              />
+            </Route>
 
-          <Route path="reminders" element={<RemindersList />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="plan" element={<Plans />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="reference" element={<Reference />} />
-          <Route path="upgrade" element={<UpgradePlans />} />
-        </Route> */}
-
-        {/* ================= BIKE CRM ================= */}
-        <Route path="/" element={<BikeLayoutPage />}>
-          <Route path="bike-dashboard" element={<BikeDashboard />} />
-          <Route path="/bike-profile" element={<BikeProfile />} />
-          <Route path="bike-clients" element={<Clients />} />
-          <Route path="bike-services" element={<Services />} />
-          <Route path="bike-billing" element={<Billings />} />
-          <Route path="bike-reminders" element={<Reminders />} />
-          <Route path="bike-reports" element={<Report />} />
-          <Route path="bike-plan" element={<Plans />} />
-          <Route path="bike-reference" element={<Reference />} />
-          <Route path="/bike-plans" element={<Upgrade />} />
-          <Route path="/bike-ocr-scanner" element={<OCRScanner />} />
-          <Route path="/editclient/:id" element={<AddClients />} />
-          <Route path="/editclient/new" element={<AddClients />} />
-          <Route path="/bikes/:id" element={<BikeDetail />} />
-          <Route path="/bike-services/add" element={<AddService />} />
-          <Route path="/bike-services/:id" element={<ServiceDetails />} />
-          <Route path="/bike-services/:id/edit" element={<AddService />} />
-          <Route path="/bill/new" element={<AddBilling />} />
-          <Route path="/bill/:id/edit" element={<AddBilling />} />
-          <Route path="/bill/:id" element={<InvoiceBill />} />
-          <Route path="/bike-billing/preview" element={<InvoicePreview />} />
-
-          <Route path="/team-register" element={<TeamRegister />} />
-          <Route path="/salary-manage" element={<StaffSalaryContainer />} />
-        </Route>
-
-        {/* Washing CRM Routes */}
-
-        {/* ================= WASHING CRM ================= */}
-        <Route element={<WashingLayout />}>
-          <Route path="wash-dashboard" element={<WashDashboard />} />
-          <Route path="washing-clients" element={<Client />} />
-          <Route path="washing-services" element={<Service />} />
-          <Route path="washing-billing" element={<Bill />} />
-          <Route path="washing-reports" element={<Repor />} />
-          <Route path="washing-reference" element={<Referenc />} />
-          <Route path="washing-upgrade" element={<Upgra />} />
-          <Route path="washing-alerts" element={<SMSalert />} />
-          <Route path="washing-plan" element={<Plan />} />
-          <Route path="wservices-details/:id" element={<WServiceDetails />} />
-          <Route path="/add-service" element={<AddNewServiceForm />} />
-          <Route path="/add-service/:id" element={<AddNewServiceForm />} />
-          <Route path="washProfile" element={<WashingProfile />} />
-          <Route path="/client-details/:id" element={<ClientsDetails />} />
-          <Route path="addclient" element={<Newclient />} />
-          <Route path="/addclient/:id" element={<Newclient />} />
-          <Route path="/billing" element={<Billing />} />
-          <Route
-            path="/washing-salary-management"
-            element={<WashStaffSalaryContainer />}
-          />
-          <Route path="/teams" element={<Teams />} />
-          <Route path="/billing/invoice/:id" element={<BillingInvoice />} />
-          <Route path="/billing/create-invoice" element={<NewInvoice />} />
-          <Route path="/team-login" element={<TeamLogin />} />
-          <Route
-            path="/billing/create-invoice/:serviceId"
-            element={<NewInvoice />}
-          />
-        </Route>
-
-        {/* ================= FALLBACK ================= */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            {/* ================= FALLBACK ================= */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <BookingPopup />
+        </BookingPopupProvider>
+      </SocketProvider>
     </ThemeProvider>
   );
 }

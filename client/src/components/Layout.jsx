@@ -22,6 +22,7 @@ import {
   UserRoundCog,
   Database,
   LockKeyhole,
+  ListTree,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -39,14 +40,15 @@ export default function Layout() {
 
   const canAccessStaff = ["STANDARD", "PREMIUM"].includes(userPlan);
   const canAccessSalary = ["PREMIUM"].includes(userPlan);
-  const isPlanExpired = user?.planExpiry && new Date(user.planExpiry) < new Date();
+  const isPlanExpired =
+    user?.planExpiry && new Date(user.planExpiry) < new Date();
 
-const ALLOWED_WHEN_EXPIRED = [
-  "/car-dashboard",
-  "/plan",
-  "/reference",
-  "/upgrade",
-];
+  const ALLOWED_WHEN_EXPIRED = [
+    "/car-dashboard",
+    "/plan",
+    "/reference",
+    "/upgrade",
+  ];
 
   /* ================================
       LOAD PROFILE (OWNER / STAFF)
@@ -122,6 +124,15 @@ const ALLOWED_WHEN_EXPIRED = [
     { to: "/staff-management", label: "Staff Management", icon: UserRoundPlus },
     { to: "/salary-management", label: "Salary Management", icon: Wallet },
     { to: "/dynamic-data", label: "Data", icon: Database },
+    {
+      label: "Marketplace",
+      icon: ListTree,
+      children: [
+        { to: "/marketplace/bookings", label: "Bookings" },
+        { to: "/marketplace/pricing", label: "Pricing" },
+        { to: "/marketplace/packages", label: "Packages" },
+      ],
+    },
     { to: "/plan", label: "Your Plan", icon: IndianRupee },
     { to: "/reference", label: "Reference", icon: Network },
     { to: "/upgrade", label: "Upgrade", icon: Crown },
@@ -155,6 +166,7 @@ const ALLOWED_WHEN_EXPIRED = [
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
 
   const logout = () => {
     localStorage.clear();
@@ -248,87 +260,164 @@ const ALLOWED_WHEN_EXPIRED = [
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
-            {filteredMenu.map((item) => {
-  const ALLOWED_WHEN_EXPIRED = [
-    "/car-dashboard",
-    "/plan",
-    "/reference",
-    "/upgrade",
-  ];
+            {filteredMenu.map((item, index) => {
+              const ALLOWED_WHEN_EXPIRED = [
+                "/car-dashboard",
+                "/plan",
+                "/reference",
+                "/upgrade",
+              ];
 
-  const isLocked =
-    !isStaff &&
-    isPlanExpired &&
-    !ALLOWED_WHEN_EXPIRED.includes(item.to);
+              // ✅ HANDLE GROUP (Marketplace)
+              if (item.children) {
+                const isOpen = openMenu === index;
+                const Icon = item.icon;
 
-  return (
-    <NavLink
-      key={item.to}
-      to={isLocked ? "/upgrade" : item.to}
-      onClick={(e) => {
-        if (isLocked) {
-          e.preventDefault();
-          navigate("/upgrade");
-          return;
-        }
-        setSidebarOpen(false);
-      }}
-      className={({ isActive }) => `
-        flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group
-        ${isActive ? "shadow-lg" : ""}
-      `}
-      style={({ isActive }) => ({
-        backgroundColor: isActive
-          ? colors.primaryButton
-          : "transparent",
-        color: isLocked
-          ? "#94A3B8"
-          : isActive
-          ? "#FFFFFF"
-          : colors.textSecondary,
-        opacity: isLocked ? 0.6 : 1,
-        cursor: isLocked ? "not-allowed" : "pointer",
-      })}
-    >
-      {({ isActive }) => {
-        const Icon = item.icon;
-        return (
-          <>
-            <Icon
-              className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
-              style={{
-                color: isLocked
-                  ? "#94A3B8"
-                  : isActive
-                  ? "#FFFFFF"
-                  : colors.textSecondary,
-              }}
-            />
+                return (
+                  <div key={index}>
+                    {/* Parent Button */}
+                    <button
+                      onClick={() => setOpenMenu(isOpen ? null : index)}
+                      className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200"
+                      style={{
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
 
-            {/* ANIMATED MENU LABEL */}
-            <span
-              className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${
-                sidebarExpanded
-                  ? "opacity-100 w-auto ml-3"
-                  : "opacity-0 w-0 ml-0"
-              }`}
-            >
-              {item.label}
-      {isLocked && (
-  <span className="ml-2 flex items-center flex-end leading-none">
-    <LockKeyhole className="h-4 w-4 shrink-0" />
-  </span>
-)}
+                      <span
+                        className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${
+                          sidebarExpanded
+                            ? "opacity-100 w-auto ml-3"
+                            : "opacity-0 w-0 ml-0"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </button>
 
+                    {/* Children */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ${
+                        isOpen ? "max-h-40 mt-1" : "max-h-0"
+                      }`}
+                    >
+                      <div className="ml-6 space-y-1">
+                        {item.children.map((child) => {
+                          const isLocked =
+                            !isStaff &&
+                            isPlanExpired &&
+                            !ALLOWED_WHEN_EXPIRED.includes(child.to);
 
-            </span>
-          </>
-        );
-      }}
-    </NavLink>
-  );
-})}
+                          return (
+                            <NavLink
+                              key={child.to}
+                              to={isLocked ? "/upgrade" : child.to}
+                              onClick={(e) => {
+                                if (isLocked) {
+                                  e.preventDefault();
+                                  navigate("/upgrade");
+                                  return;
+                                }
+                                setSidebarOpen(false);
+                              }}
+                              className={({ isActive }) => `
+                      flex items-center px-3 py-2 rounded-lg font-medium transition-all duration-200 group text-sm
+                      ${isActive ? "shadow-lg" : ""}
+                    `}
+                              style={({ isActive }) => ({
+                                backgroundColor: isActive
+                                  ? colors.primaryButton
+                                  : "transparent",
+                                color: isLocked
+                                  ? "#94A3B8"
+                                  : isActive
+                                    ? "#FFFFFF"
+                                    : colors.textSecondary,
+                                opacity: isLocked ? 0.6 : 1,
+                                cursor: isLocked ? "not-allowed" : "pointer",
+                              })}
+                            >
+                              {child.label}
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
 
+              // ✅ NORMAL ITEM (UNCHANGED)
+              const isLocked =
+                !isStaff &&
+                isPlanExpired &&
+                !ALLOWED_WHEN_EXPIRED.includes(item.to);
+
+              return (
+                <NavLink
+                  key={item.to}
+                  to={isLocked ? "/upgrade" : item.to}
+                  onClick={(e) => {
+                    if (isLocked) {
+                      e.preventDefault();
+                      navigate("/upgrade");
+                      return;
+                    }
+                    setSidebarOpen(false);
+                  }}
+                  className={({ isActive }) => `
+          flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group
+          ${isActive ? "shadow-lg" : ""}
+        `}
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive
+                      ? colors.primaryButton
+                      : "transparent",
+                    color: isLocked
+                      ? "#94A3B8"
+                      : isActive
+                        ? "#FFFFFF"
+                        : colors.textSecondary,
+                    opacity: isLocked ? 0.6 : 1,
+                    cursor: isLocked ? "not-allowed" : "pointer",
+                  })}
+                >
+                  {({ isActive }) => {
+                    const Icon = item.icon;
+                    return (
+                      <>
+                        <Icon
+                          className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
+                          style={{
+                            color: isLocked
+                              ? "#94A3B8"
+                              : isActive
+                                ? "#FFFFFF"
+                                : colors.textSecondary,
+                          }}
+                        />
+
+                        <span
+                          className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${
+                            sidebarExpanded
+                              ? "opacity-100 w-auto ml-3"
+                              : "opacity-0 w-0 ml-0"
+                          }`}
+                        >
+                          {item.label}
+                          {isLocked && (
+                            <span className="ml-2 flex items-center leading-none">
+                              <LockKeyhole className="h-4 w-4 shrink-0" />
+                            </span>
+                          )}
+                        </span>
+                      </>
+                    );
+                  }}
+                </NavLink>
+              );
+            })}
           </nav>
 
           {/* Logout Button */}

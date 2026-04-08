@@ -64,9 +64,10 @@ import { startBikeReviewScheduler } from "./services/bikeReviewScheduler.js";
 import washWhatsappRoutes from "./routes/washWhatsAppRoutes.js";
 import { startWashReviewScheduler } from "./services/washReviewScheduler.js";
 import washingReminderRoutes from "./routes/washingReminderRoutes.js";
-import {washReminderscheduler} from "./services/washReminderScheduler.js";
+import { washReminderscheduler } from "./services/washReminderScheduler.js";
 import userKycRoutes from "./routes/userKyc.routes.js";
-
+import marketplaceRoutes from "./routes/marketplace.routes.js";
+import externalRoutes from "./externalApi/external.routes.js";
 // console.log("Models in Prisma:", Object.keys(prisma));
 
 // Load environment variables
@@ -156,6 +157,11 @@ app.use(express.urlencoded({ extended: true, limit: BODY_LIMIT }));
 app.use("/api/payments", paymentRoutes);
 
 /* -----------------------------------------------------
+   🚀 External API Routes (with API key protection)
+----------------------------------------------------- */
+app.use("/api/v1/external", externalRoutes);
+
+/* -----------------------------------------------------
    🧠 Health Check Route
 ----------------------------------------------------- */
 app.get("/api/health", (req, res) =>
@@ -239,6 +245,7 @@ app.use("/api/test", testRoutes);
 app.use("/api", serviceMediaRoutes);
 app.use("/api/washing-reminders", washingReminderRoutes);
 
+app.use("/api/marketplace", marketplaceRoutes);
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)
 ----------------------------------------------------- */
@@ -262,11 +269,41 @@ app.use((err, req, res, next) => {
   });
 });
 
+import http from "http";
+import { Server } from "socket.io";
+import { initSocket } from "./services/socket.service.js";
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+// ✅ VERY IMPORTANT
+initSocket(io);
+
+// ✅ SOCKET LOGIC
+io.on("connection", (socket) => {
+  console.log("🔥 Client connected:", socket.id);
+
+  socket.on("join_garage", (garageId) => {
+    socket.join(`garage_${garageId}`);
+    console.log("✅ Garage joined:", garageId);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Disconnected:", socket.id);
+  });
+});
+
 /* -----------------------------------------------------
    🧩 Start Server
 ----------------------------------------------------- */
-const server = app.listen(PORT, () => {
-  console.log(`✅ Server running in ${NODE_ENV} mode on port ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log("🚀 Server + Socket running on port", PORT);
 });
 
 /* -----------------------------------------------------

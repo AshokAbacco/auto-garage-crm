@@ -8,7 +8,7 @@ import { jwtDecode } from "jwt-decode";
  */
 const API_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
-  "https://naggingly-undeliberating-belia.ngrok-free.dev";
+  "https://nefariously-unglistening-maryann.ngrok-free.dev";
 
 
 export default function ProtectedRoute({ children, requiredPlan }) {

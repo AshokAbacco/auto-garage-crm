@@ -1,6 +1,6 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
-  "https://naggingly-undeliberating-belia.ngrok-free.dev";
+  "https://nefariously-unglistening-maryann.ngrok-free.dev";
 
 export async function apiFetch(path, options = {}) {
   const token = localStorage.getItem("token");

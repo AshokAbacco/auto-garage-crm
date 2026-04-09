@@ -32,6 +32,7 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
       take: limit,
       orderBy: { createdAt: "desc" },
       select: {
+        id: true, 
         email: true,
         username: true,
         phone: true,

@@ -49,54 +49,33 @@ export const createBooking = async (req, res) => {
   try {
     console.log("REQUEST BODY:", req.body);
 
-    const { externalServiceId, garageId, clientId, scheduledAt } = req.body;
+    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } = req.body;
 
-    // ✅ STRICT VALIDATION
     if (!externalServiceId || !garageId || !clientId || !scheduledAt) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    // =========================
-    // STEP 1: CREATE BOOKING
-    // =========================
-    const booking = await marketplaceService.createBooking(req.body);
+    const bookingData = {
+      externalServiceId,
+      garageId,
+      clientId,
+      scheduledAt,
+      appPrice: appPrice ? Number(appPrice) : null,
+      carType: req.body.carType || "SEDAN",
+      serviceName: req.body.serviceName || null,
+    };
 
-    // =========================
-    // STEP 2: SOCKET NOTIFICATION (🔥 IMPORTANT)
-    // =========================
-    try {
-      await notifyGarage(garageId, booking);
-      console.log("📡 SOCKET SENT TO GARAGE:", garageId);
-    } catch (socketError) {
-      console.error("SOCKET ERROR (IGNORED):", socketError.message);
-    }
+    console.log("📦 bookingData:", bookingData);
 
-    // =========================
-    // STEP 3: DISPATCH (SAFE MODE)
-    // =========================
-    try {
-      await dispatchService.startDispatch(booking.id);
-    } catch (dispatchError) {
-      console.error("DISPATCH ERROR (IGNORED):", dispatchError.message);
-    }
+    const booking = await marketplaceService.createBooking(bookingData);
 
-    // =========================
-    // RESPONSE
-    // =========================
-    res.json({
-      success: true,
-      data: booking,
-    });
+    try { await notifyGarage(garageId, booking); } catch (e) { console.error("SOCKET ERROR:", e.message); }
+    try { await dispatchService.startDispatch(booking.id); } catch (e) { console.error("DISPATCH ERROR:", e.message); }
+
+    res.json({ success: true, data: booking });
   } catch (err) {
     console.error("BOOKING ERROR:", err);
-
-    res.status(400).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
@@ -146,16 +125,16 @@ export const getAllBookings = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    // 🔥 USE SNAPSHOT (IMPORTANT FIX)
     const formatted = bookings.map((b) => ({
       id: b.id,
-      serviceName: b.serviceName || "Service",
-      clientName: b.client?.name || "Client",
+      serviceName: b.serviceName || "Service",  // ← shows "Oil Change, Tire Rotation"
+      clientName: b.client?.fullName || "Client",
       status: b.status,
-      price: b.finalPrice, // 🔥 correct value
+      price: b.finalPrice,                      // ← shows total cart price ✅
       scheduledAt: b.scheduledAt,
       createdAt: b.createdAt,
       garageId: b.garageId,
+      // ← REMOVE: totalCartPrice line
     }));
 
     res.json({ success: true, data: formatted });
@@ -330,5 +309,50 @@ export const updateServiceDetails = async (req, res) => {
       success: false,
       message: err.message,
     });
+  }
+};
+
+
+export const clientLookup = async (req, res) => {
+  try {
+    const { phone, name, email } = req.body;
+ 
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number is required",
+      });
+    }
+ 
+    // Try to find existing Client by phone number
+    let client = await prisma.client.findFirst({
+      where: { phone },
+    });
+ 
+    // Not found — create a minimal Client record so booking can proceed
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          fullName: name || "App User",
+          phone,
+          email: email || null,
+          // Required fields with safe defaults:
+          vehicleMake: "Unknown",
+          vehicleModel: "Unknown",
+          vehicleYear: new Date().getFullYear(),
+          regNumber: `APP-${phone}`,   // temporary unique value
+          userId: null,                // not tied to any specific garage owner
+        },
+      });
+      console.log("✅ Created new CRM client for app user:", phone, "id:", client.id);
+    }
+ 
+    return res.json({
+      success: true,
+      data: { clientId: client.id },  // integer — what MarketplaceBooking.clientId expects
+    });
+  } catch (err) {
+    console.error("CLIENT LOOKUP ERROR:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };

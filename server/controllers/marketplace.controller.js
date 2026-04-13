@@ -1,19 +1,20 @@
-//cntroller/marketplace.controller.js
+// src/controllers/marketplace.controller.js
 import * as marketplaceService from "../services/marketplace.service.js";
 import * as bookingService from "../services/booking.service.js";
 import { PrismaClient } from "@prisma/client";
 import { uploadToR2 } from "../utils/r2Upload.js";
 import * as dispatchService from "../services/dispatch.service.js";
 import { notifyGarage } from "../services/socket.service.js";
+
 const prisma = new PrismaClient();
 
 // ==============================
-// SERVICES
+// SERVICES (App View)
 // ==============================
 export const getServices = async (req, res) => {
   try {
-    const { type } = req.query;
-    const data = await marketplaceService.getServices(type);
+    const { vehicleTypeId } = req.query;
+    const data = await marketplaceService.getServices(vehicleTypeId);
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -25,8 +26,6 @@ export const getServices = async (req, res) => {
 // ==============================
 export const getGarages = async (req, res) => {
   try {
-    // 🔥 IMPORTANT:
-    // `id` here is externalServiceId (UUID from App DB)
     const { id: externalServiceId } = req.params;
     const { carType } = req.query;
 
@@ -44,33 +43,40 @@ export const getGarages = async (req, res) => {
 // ==============================
 // CREATE BOOKING
 // ==============================
-
 export const createBooking = async (req, res) => {
   try {
-    console.log("REQUEST BODY:", req.body);
-
-    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } = req.body;
+    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } =
+      req.body;
 
     if (!externalServiceId || !garageId || !clientId || !scheduledAt) {
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     const bookingData = {
       externalServiceId,
-      garageId,
-      clientId,
+      garageId: Number(garageId),
+      clientId: Number(clientId),
       scheduledAt,
       appPrice: appPrice ? Number(appPrice) : null,
       carType: req.body.carType || "SEDAN",
       serviceName: req.body.serviceName || null,
     };
 
-    console.log("📦 bookingData:", bookingData);
-
     const booking = await marketplaceService.createBooking(bookingData);
 
-    try { await notifyGarage(garageId, booking); } catch (e) { console.error("SOCKET ERROR:", e.message); }
-    try { await dispatchService.startDispatch(booking.id); } catch (e) { console.error("DISPATCH ERROR:", e.message); }
+    // Notifications & Background Tasks
+    try {
+      await notifyGarage(garageId, booking);
+    } catch (e) {
+      console.error("SOCKET ERROR:", e.message);
+    }
+    try {
+      await dispatchService.startDispatch(booking.id);
+    } catch (e) {
+      console.error("DISPATCH ERROR:", e.message);
+    }
 
     res.json({ success: true, data: booking });
   } catch (err) {
@@ -113,7 +119,7 @@ export const rejectBooking = async (req, res) => {
 };
 
 // ==============================
-// ALL BOOKINGS (CRM VIEW)
+// ALL BOOKINGS (CRM LIST VIEW)
 // ==============================
 export const getAllBookings = async (req, res) => {
   try {
@@ -121,20 +127,17 @@ export const getAllBookings = async (req, res) => {
 
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { garageId: userId },
-      include: { client: true },
-      orderBy: { createdAt: "desc" },
+      include: { service: true }, // Updated relation
+      orderBy: { scheduledAt: "desc" },
     });
 
     const formatted = bookings.map((b) => ({
       id: b.id,
-      serviceName: b.serviceName || "Service",  // ← shows "Oil Change, Tire Rotation"
-      clientName: b.client?.fullName || "Client",
+      serviceName: b.serviceName || b.service?.name || "Service",
       status: b.status,
-      price: b.finalPrice,                      // ← shows total cart price ✅
+      price: b.finalPrice,
       scheduledAt: b.scheduledAt,
-      createdAt: b.createdAt,
       garageId: b.garageId,
-      // ← REMOVE: totalCartPrice line
     }));
 
     res.json({ success: true, data: formatted });
@@ -144,7 +147,7 @@ export const getAllBookings = async (req, res) => {
 };
 
 // ==============================
-// GET GARAGE SERVICES (WITH PRICING)
+// GET GARAGE SERVICES (PRICING SETTINGS)
 // ==============================
 export const getGarageServices = async (req, res) => {
   try {
@@ -170,28 +173,30 @@ export const getGarageServices = async (req, res) => {
 export const saveGarageService = async (req, res) => {
   try {
     const userId = req.user.id;
+    let { serviceId, isActive, duration, pricing } = req.body;
 
-    const { serviceId, price, discount, isActive, duration, pricing } =
-      req.body;
+    // ⚡️ FIX: If serviceId is a UUID string, we must resolve it to the INT ID first
+    if (isNaN(Number(serviceId))) {
+      const resolved = await marketplaceService.resolveService(serviceId);
+      serviceId = resolved.id;
+    } else {
+      serviceId = Number(serviceId);
+    }
 
-    const service = await prisma.garageMarketplaceService.upsert({
+    const garageService = await prisma.garageMarketplaceService.upsert({
       where: {
         userId_serviceId: {
           userId,
-          serviceId: Number(serviceId),
+          serviceId: serviceId,
         },
       },
       update: {
-        price: price ? Number(price) : null,
-        discount: Number(discount) || 0,
         isActive: Boolean(isActive),
         duration: duration ? Number(duration) : null,
       },
       create: {
         userId,
-        serviceId: Number(serviceId),
-        price: price ? Number(price) : null,
-        discount: Number(discount) || 0,
+        serviceId: serviceId,
         isActive: Boolean(isActive),
         duration: duration ? Number(duration) : null,
       },
@@ -199,36 +204,27 @@ export const saveGarageService = async (req, res) => {
 
     if (pricing && Array.isArray(pricing)) {
       await prisma.garageServicePricing.deleteMany({
-        where: { garageServiceId: service.id },
+        where: { garageServiceId: garageService.id },
       });
 
       const pricingData = pricing.map((p) => ({
-        garageServiceId: service.id,
+        garageServiceId: garageService.id,
         carType: p.carType,
-        price: Number(p.price),
-        discount: Number(p.discount) || 0,
+        price: parseFloat(p.price) || 0, // Use parseFloat for decimals
+        discount: parseFloat(p.discount) || 0,
       }));
 
-      if (pricingData.length > 0) {
-        await prisma.garageServicePricing.createMany({
-          data: pricingData,
-        });
-      }
+      await prisma.garageServicePricing.createMany({ data: pricingData });
     }
 
-    const finalService = await prisma.garageMarketplaceService.findUnique({
-      where: { id: service.id },
-      include: { pricing: true },
-    });
-
-    res.json({ success: true, data: finalService });
+    res.json({ success: true, data: garageService });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
 };
 
 // ==============================
-// PACKAGES
+// PACKAGES (BUNDLED SERVICES)
 // ==============================
 export const createPackage = async (req, res) => {
   try {
@@ -271,88 +267,98 @@ export const togglePackage = async (req, res) => {
 };
 
 // ==============================
-// UPDATE SERVICE DETAILS
+// UPDATE SERVICE DETAILS (CRM METADATA)
 // ==============================
+// src/controllers/marketplace.controller.js
 export const updateServiceDetails = async (req, res) => {
   try {
-    const serviceId = Number(req.params.id);
-    const { description } = req.body;
+    const { id } = req.params;
+    // Extract everything from req.body
+    let { description, isActive, pricing } = req.body;
+
+    const isLocalId = !isNaN(Number(id));
+
+    // ✅ FIX 1: Convert string "true"/"false" to actual Boolean
+    const activeStatus = isActive === "true" || isActive === true;
+
+    // ✅ FIX 2: Parse stringified pricing JSON
+    let parsedPricing = [];
+    if (pricing) {
+      try {
+        parsedPricing =
+          typeof pricing === "string" ? JSON.parse(pricing) : pricing;
+      } catch (e) {
+        console.error("Pricing Parse Error:", e);
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid pricing format" });
+      }
+    }
 
     let imageUrl;
-
     if (req.file) {
       const { buffer, mimetype } = req.file;
-
       const result = await uploadToR2({
         buffer,
         mimeType: mimetype,
-        folder: `services/${serviceId}`,
+        folder: `services/${id}`,
       });
-
       imageUrl = result.url;
     }
 
+    // Pass the cleaned data to the service layer
     const updatedService = await marketplaceService.updateServiceDetails(
-      serviceId,
+      id,
       {
         description,
         image: imageUrl,
+        isActive: activeStatus,
+        pricing: parsedPricing,
       },
+      isLocalId,
+      req.user.id,
     );
 
-    return res.json({
-      success: true,
-      data: updatedService,
-    });
+    return res.json({ success: true, data: updatedService });
   } catch (err) {
-    return res.status(400).json({
-      success: false,
-      message: err.message,
-    });
+    console.error("UPDATE DETAILS ERROR:", err);
+    return res.status(400).json({ success: false, message: err.message });
   }
 };
 
-
+// ==============================
+// CLIENT LOOKUP (APP USER SYNC)
+// ==============================
 export const clientLookup = async (req, res) => {
   try {
     const { phone, name, email } = req.body;
- 
+
     if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone number is required",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Phone number is required" });
     }
- 
-    // Try to find existing Client by phone number
-    let client = await prisma.client.findFirst({
-      where: { phone },
-    });
- 
-    // Not found — create a minimal Client record so booking can proceed
+
+    let client = await prisma.client.findFirst({ where: { phone } });
+
     if (!client) {
       client = await prisma.client.create({
         data: {
           fullName: name || "App User",
           phone,
           email: email || null,
-          // Required fields with safe defaults:
           vehicleMake: "Unknown",
           vehicleModel: "Unknown",
           vehicleYear: new Date().getFullYear(),
-          regNumber: `APP-${phone}`,   // temporary unique value
-          userId: null,                // not tied to any specific garage owner
+          regNumber: `APP-${phone}`,
+          userId: null,
         },
       });
-      console.log("✅ Created new CRM client for app user:", phone, "id:", client.id);
     }
- 
-    return res.json({
-      success: true,
-      data: { clientId: client.id },  // integer — what MarketplaceBooking.clientId expects
-    });
+
+    res.json({ success: true, data: { clientId: client.id } });
   } catch (err) {
     console.error("CLIENT LOOKUP ERROR:", err);
-    return res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };

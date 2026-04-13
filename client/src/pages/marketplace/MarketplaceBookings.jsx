@@ -11,12 +11,17 @@ import {
   FiLayers,
   FiDollarSign,
 } from "react-icons/fi";
+
 const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function MarketplaceDashboard() {
   const { isDark } = useTheme();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("ALL");
+
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     fetchBookings();
@@ -25,12 +30,9 @@ export default function MarketplaceDashboard() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
       const res = await axios.get(
         `${API_URL}/api/marketplace/bookings`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        config,
       );
       setBookings(res.data?.data || []);
     } catch (err) {
@@ -45,6 +47,8 @@ export default function MarketplaceDashboard() {
     try {
       await axios.post(
         `${API_URL}/api/marketplace/booking/${id}/${type}`,
+        {},
+        config,
       );
       fetchBookings();
     } catch (e) {
@@ -60,57 +64,54 @@ export default function MarketplaceDashboard() {
     total: bookings.length,
     pending: bookings.filter((b) => b.status === "PENDING").length,
     revenue: bookings
-      .filter((b) => b.status === "ACCEPTED")
-      .reduce((acc, curr) => acc + curr.price, 0),
+      .filter((b) => b.status === "ACCEPTED" || b.status === "CONFIRMED")
+      .reduce((acc, curr) => acc + (Number(curr.price) || 0), 0),
   };
 
+  // High contrast styles for status
   const getStatusStyles = (status) => {
     switch (status) {
       case "PENDING":
-        return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20";
+        return isDark
+          ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+          : "bg-amber-50 text-amber-700 border-amber-200";
       case "ACCEPTED":
-        return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20";
-      case "REJECTED":
-        return "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20";
+      case "CONFIRMED":
+        return isDark
+          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+          : "bg-emerald-50 text-emerald-700 border-emerald-200";
       default:
-        return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400";
+        return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400";
     }
   };
 
   return (
     <div
-      className={`min-h-screen transition-all duration-500 md:ml-20 pb-12 ${
-        isDark ? "bg-[#0f1115] text-slate-200" : "bg-[#f8fafc] text-slate-900"
-      }`}
+      className={`min-h-screen md:ml-20 pb-12 transition-all duration-300 ${isDark ? "bg-[#0b0e14] text-slate-200" : "bg-[#f1f5f9] text-slate-900"}`}
     >
       {/* HEADER */}
       <header
-        className={`sticky top-0 z-40 border-b backdrop-blur-md px-6 py-4 ${
-          isDark
-            ? "bg-[#0f1115]/80 border-slate-800"
-            : "bg-white/80 border-slate-200"
-        }`}
+        className={`sticky top-0 z-40 border-b backdrop-blur-md px-8 py-5 ${isDark ? "bg-[#0b0e14]/80 border-slate-800" : "bg-white/90 border-slate-200"}`}
       >
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Marketplace</h1>
+            <h1 className="text-xl font-black uppercase italic tracking-tighter">
+              Marketplace
+            </h1>
             <p
-              className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}
+              className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDark ? "text-blue-400" : "text-blue-600"}`}
             >
-              Manage your incoming service requests
+              Live Service Requests
             </p>
           </div>
-
-          <div className="flex bg-slate-200/50 dark:bg-slate-900 p-1 rounded-xl border border-slate-300/50 dark:border-slate-800">
+          <div
+            className={`flex p-1 rounded-xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-slate-100 border-slate-200"}`}
+          >
             {["ALL", "PENDING", "ACCEPTED"].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  filter === s
-                    ? "bg-white dark:bg-slate-800 text-blue-600 shadow-sm"
-                    : "text-slate-600 dark:text-slate-500 hover:text-blue-600"
-                }`}
+                className={`px-5 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-all ${filter === s ? (isDark ? "bg-slate-800 text-blue-400 shadow-lg" : "bg-white text-blue-600 shadow-sm") : "text-slate-500"}`}
               >
                 {s}
               </button>
@@ -119,116 +120,124 @@ export default function MarketplaceDashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 mt-8">
-        {/* STATS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+      <main className="max-w-6xl mx-auto px-6 mt-10">
+        {/* STATS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {[
             {
-              label: "Total Bookings",
+              label: "Requests",
               val: stats.total,
               icon: <FiLayers />,
-              color: "text-blue-600 dark:text-blue-400",
+              color: "text-blue-500",
             },
             {
-              label: "Pending Requests",
+              label: "Pending",
               val: stats.pending,
               icon: <FiClock />,
-              color: "text-amber-600 dark:text-amber-400",
+              color: "text-amber-500",
             },
             {
-              label: "Total Revenue",
-              val: `₹${stats.revenue}`,
+              label: "Revenue",
+              val: `₹${stats.revenue.toLocaleString()}`,
               icon: <FiDollarSign />,
-              color: "text-emerald-600 dark:text-emerald-400",
+              color: "text-emerald-500",
             },
           ].map((stat, i) => (
             <div
               key={i}
-              className={`p-5 rounded-2xl border transition-all ${
-                isDark
-                  ? "bg-[#16191f] border-slate-800"
-                  : "bg-white border-slate-200 shadow-sm"
-              }`}
+              className={`p-6 rounded-[2rem] border ${isDark ? "bg-[#161920] border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}
             >
               <div className="flex items-center gap-4">
                 <div
-                  className={`p-3 rounded-xl ${isDark ? "bg-slate-800" : "bg-slate-100"} ${stat.color}`}
+                  className={`p-3 rounded-2xl ${isDark ? "bg-slate-800" : "bg-slate-50"} ${stat.color}`}
                 >
                   {stat.icon}
                 </div>
                 <div>
-                  <p
-                    className={`text-[11px] uppercase tracking-wider font-bold ${isDark ? "text-slate-500" : "text-slate-500"}`}
-                  >
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
                     {stat.label}
                   </p>
-                  <p className="text-2xl font-bold mt-0.5">{stat.val}</p>
+                  <p className="text-xl font-black italic tracking-tighter">
+                    {stat.val}
+                  </p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* FEED */}
+        {/* BOOKING CARDS */}
         <div className="space-y-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 opacity-50">
-              <FiRefreshCw className="animate-spin text-2xl mb-4" />
-              <p className="text-sm font-medium">Synchronizing data...</p>
-            </div>
-          ) : filteredBookings.length === 0 ? (
-            <div
-              className={`text-center py-24 border-2 border-dashed rounded-3xl ${isDark ? "border-slate-800" : "border-slate-200"}`}
-            >
-              <p className="text-slate-400 font-medium">
-                No bookings found in this category.
-              </p>
+            <div className="py-20 text-center opacity-50">
+              <FiRefreshCw className="animate-spin mx-auto mb-2" />{" "}
+              <span className="text-[10px] font-bold uppercase">
+                Syncing...
+              </span>
             </div>
           ) : (
             filteredBookings.map((b) => (
               <div
                 key={b.id}
-                className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
-                  isDark
-                    ? "bg-[#16191f] border-slate-800 hover:border-blue-500/50"
-                    : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/5"
-                }`}
+                className={`rounded-[2.5rem] border transition-all ${isDark ? "bg-[#161920] border-slate-800" : "bg-white border-slate-200 hover:shadow-lg shadow-blue-500/5"}`}
               >
-                <div className="p-5 md:p-7 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex gap-5 items-start">
+                <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between gap-8">
+                  <div className="flex gap-6">
+                    {/* Avatar */}
                     <div
-                      className={`hidden sm:flex w-12 h-12 rounded-full items-center justify-center font-bold text-lg ${
-                        isDark
-                          ? "bg-blue-500/10 text-blue-400"
-                          : "bg-blue-100 text-blue-600"
-                      }`}
+                      className={`hidden sm:flex w-14 h-14 rounded-2xl items-center justify-center font-bold text-lg border ${isDark ? "bg-slate-800 border-slate-700 text-blue-400" : "bg-slate-50 border-slate-100 text-blue-600"}`}
                     >
-                      {b.clientName.charAt(0)}
+                      {b.clientName?.charAt(0) || "U"}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${getStatusStyles(b.status)}`}
+                          className={`text-[8px] px-2.5 py-1 rounded-md font-black uppercase border ${getStatusStyles(b.status)}`}
                         >
                           {b.status}
                         </span>
                         <span
-                          className={`text-[11px] font-bold ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                          className={`text-[9px] font-bold uppercase tracking-widest ${isDark ? "text-slate-600" : "text-slate-400"}`}
                         >
-                          #{String(b.id).slice(-5)}
+                          ID: {String(b.id).padStart(5, "0")}
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold leading-tight mb-2">
-                        {b.serviceName}
-                      </h3>
+
+                      {/* SERVICES LIST - One per line */}
+                      <div className="space-y-2">
+                        {b.serviceName?.split(",").map((svc, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div
+                              className={`w-1 h-1 rounded-full ${isDark ? "bg-blue-500" : "bg-blue-600"}`}
+                            ></div>
+                            <h3
+                              className={`text-[12px] font-medium uppercase italic tracking-tight ${isDark ? "text-slate-100" : "text-slate-800"}`}
+                            >
+                              {svc.trim()}
+                            </h3>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* USER & DATE */}
                       <div
-                        className={`flex flex-wrap gap-y-1 gap-x-4 text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-600"}`}
+                        className={`flex flex-wrap gap-x-6 gap-y-1 text-[10px] font-semibold uppercase tracking-wide ${isDark ? "text-slate-500" : "text-slate-500"}`}
                       >
                         <span className="flex items-center gap-1.5">
-                          <FiUser className="text-blue-500" /> {b.clientName}
+                          <FiUser
+                            className={
+                              isDark ? "text-blue-400" : "text-blue-600"
+                            }
+                          />{" "}
+                          {b.clientName}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <FiCalendar className="text-blue-500" />{" "}
+                          <FiCalendar
+                            className={
+                              isDark ? "text-blue-400" : "text-blue-600"
+                            }
+                          />{" "}
                           {new Date(b.scheduledAt).toLocaleDateString(
                             undefined,
                             {
@@ -243,48 +252,39 @@ export default function MarketplaceDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-t-0 pt-4 md:pt-0 border-slate-100 dark:border-slate-800">
+                  {/* PRICE & ACTION */}
+                  <div className="flex items-center justify-between md:justify-end gap-12 border-t md:border-t-0 pt-6 md:pt-0 border-slate-500/10">
                     <div className="md:text-right">
-                      <p
-                        className={`text-[10px] uppercase font-bold tracking-widest mb-1 ${isDark ? "text-slate-500" : "text-slate-500"}`}
-                      >
-                        Fee
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">
+                        Final Total
                       </p>
                       <p
-                        className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}
+                        className={`text-4xl font-black italic tracking-tighter ${isDark ? "text-blue-400" : "text-slate-900"}`}
                       >
                         ₹{b.price}
                       </p>
                     </div>
 
                     {b.status === "PENDING" ? (
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <button
                           onClick={() => handleAction(b.id, "reject")}
-                          className={`p-3 rounded-xl border transition-colors ${
-                            isDark
-                              ? "border-slate-700 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500"
-                              : "border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600"
-                          }`}
+                          className={`p-4 rounded-2xl border transition-all ${isDark ? "border-slate-800 text-slate-500 hover:bg-rose-500/10" : "border-slate-200 text-slate-400 hover:bg-rose-50"}`}
                         >
-                          <FiX size={18} />
+                          <FiX size={20} />
                         </button>
                         <button
                           onClick={() => handleAction(b.id, "accept")}
-                          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/25 active:scale-95"
+                          className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20 active:scale-95"
                         >
-                          <FiCheck /> Accept
+                          Accept
                         </button>
                       </div>
                     ) : (
                       <div
-                        className={`h-10 flex items-center px-4 rounded-xl border text-[10px] font-bold uppercase tracking-widest ${
-                          isDark
-                            ? "bg-slate-800/50 border-slate-700 text-slate-500"
-                            : "bg-slate-100 border-slate-200 text-slate-500"
-                        }`}
+                        className={`px-8 py-3 rounded-2xl border text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? "bg-slate-800/30 border-slate-800 text-slate-600" : "bg-slate-100 border-slate-200 text-slate-500"}`}
                       >
-                        Archive Logged
+                        Processed
                       </div>
                     )}
                   </div>
@@ -294,17 +294,6 @@ export default function MarketplaceDashboard() {
           )}
         </div>
       </main>
-
-      <button
-        onClick={fetchBookings}
-        className={`fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all active:rotate-180 md:hidden ${
-          isDark
-            ? "bg-slate-800 text-blue-400 border border-slate-700"
-            : "bg-white text-blue-600 border border-slate-200"
-        }`}
-      >
-        <FiRefreshCw />
-      </button>
     </div>
   );
 }

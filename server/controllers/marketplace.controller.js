@@ -226,43 +226,118 @@ export const saveGarageService = async (req, res) => {
 // ==============================
 // PACKAGES (BUNDLED SERVICES)
 // ==============================
+// ==============================
+// PACKAGES (BUNDLED SERVICES)
+// ==============================
+
+// CREATE PACKAGE
 export const createPackage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const data = await marketplaceService.createPackage(userId, req.body);
-    res.json({ success: true, data });
+    const { name, price, serviceIds, description } = req.body;
+
+    // 🔒 Basic validation
+    if (
+      !name ||
+      !price ||
+      !Array.isArray(serviceIds) ||
+      serviceIds.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, price and at least one service are required",
+      });
+    }
+
+    const data = await marketplaceService.createPackage(userId, {
+      name,
+      price,
+      serviceIds,
+      description,
+    });
+
+    return res.json({
+      success: true,
+      message: "Package created successfully",
+      data,
+    });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("CREATE PACKAGE ERROR:", err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Failed to create package",
+    });
   }
 };
 
+// GET PACKAGES (CRM - Garage specific)
 export const getPackages = async (req, res) => {
   try {
     const userId = req.user.id;
+
     const data = await marketplaceService.getPackages(userId);
-    res.json({ success: true, data });
+
+    return res.json({
+      success: true,
+      count: data.length,
+      data,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("GET PACKAGES ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Failed to fetch packages",
+    });
   }
 };
 
+// DELETE PACKAGE
 export const deletePackage = async (req, res) => {
   try {
     const userId = req.user.id;
-    await marketplaceService.deletePackage(req.params.id, userId);
-    res.json({ success: true });
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Package ID is required",
+      });
+    }
+
+    await marketplaceService.deletePackage(id, userId);
+
+    return res.json({
+      success: true,
+      message: "Package deleted successfully",
+    });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("DELETE PACKAGE ERROR:", err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Failed to delete package",
+    });
   }
 };
 
+// TOGGLE PACKAGE STATUS
 export const togglePackage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const data = await marketplaceService.togglePackage(req.params.id, userId);
-    res.json({ success: true, data });
+    const { id } = req.params;
+
+    const data = await marketplaceService.togglePackage(id, userId);
+
+    return res.json({
+      success: true,
+      message: `Package ${data.isActive ? "activated" : "paused"}`,
+      data,
+    });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error("TOGGLE PACKAGE ERROR:", err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Failed to update package status",
+    });
   }
 };
 

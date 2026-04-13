@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 /**
  * Ensures the External UUID has a record in the local CRM DB.
  */
-export const resolveService = async (externalServiceId, serviceName) => {
+export const resolveService = async (externalServiceId, fallbackName) => {
   console.log(
     `[MarketplaceService] Resolving Service for UUID: ${externalServiceId}`,
   );
@@ -19,18 +19,65 @@ export const resolveService = async (externalServiceId, serviceName) => {
     where: { externalServiceId: String(externalServiceId) },
   });
 
-  if (!service) {
-    console.log(
-      `[MarketplaceService] Syncing new service from App DB: ${serviceName || "Unnamed"}`,
+  // 🔥 ALWAYS fetch from external DB
+  let externalName = null;
+
+  try {
+    const result = await queryExternal(
+      `SELECT name FROM "Service" WHERE id = $1`,
+      [externalServiceId],
     );
-    service = await prisma.marketplaceService.create({
-      data: {
-        name: serviceName || "App Service",
-        externalServiceId: String(externalServiceId),
-        description: "Synced from App",
-      },
-    });
+
+    externalName = result.rows?.[0]?.name;
+  } catch (err) {
+    console.error("External DB fetch failed:", err.message);
   }
+
+  const safeName = externalName || fallbackName || "Unknown Service";
+
+  // ==============================
+  // ✅ CASE 1: SERVICE EXISTS → UPDATE IF WRONG
+  // ==============================
+  if (service) {
+    if (
+      externalName &&
+      (service.name === "App Service" ||
+        service.name === "Unknown Service" ||
+        service.name !== externalName)
+    ) {
+      console.log(
+        `[MarketplaceService] Updating service name → ${externalName}`,
+      );
+
+      service = await prisma.marketplaceService.update({
+        where: { id: service.id },
+        data: { name: externalName },
+      });
+    }
+
+    return service;
+  }
+
+  // ==============================
+  // ✅ CASE 2: CREATE NEW
+  // ==============================
+  const baseSlug = safeName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  const uniqueSlug = `${baseSlug}-${Date.now()}`;
+
+  service = await prisma.marketplaceService.create({
+    data: {
+      name: safeName,
+      externalServiceId: String(externalServiceId),
+      description: "Synced from External DB",
+      slug: uniqueSlug,
+      crmType: "CAR",
+    },
+  });
+
   return service;
 };
 
@@ -240,53 +287,109 @@ export const updateServiceDetails = async (id, data, isLocalId, userId) => {
 // PACKAGES (BUNDLED SERVICES)
 // ==============================
 export const createPackage = async (userId, data) => {
-  const { name, price, serviceIds } = data;
+  const { name, price, serviceIds, description } = data;
+
   console.log(
     `[MarketplaceService] Creating Package: ${name} for User: ${userId}`,
   );
 
   return prisma.$transaction(async (tx) => {
+    // 1️⃣ Create Package
     const pkg = await tx.marketplacePackage.create({
-      data: { userId: Number(userId), name, price: Number(price) },
+      data: {
+        userId: Number(userId),
+        name,
+        price: Number(price),
+        description: description || null, // ✅ ADD THIS
+      },
     });
 
+    // 2️⃣ Process Services
     if (serviceIds?.length) {
-      for (const sid of serviceIds) {
-        const service = await tx.marketplaceService.findFirst({
-          where: {
-            OR: [
-              { id: !isNaN(Number(sid)) ? Number(sid) : undefined },
-              { externalServiceId: String(sid) },
-            ],
+      for (const item of serviceIds) {
+        // 🔥 Support BOTH formats:
+        // 1. Old → "uuid"
+        // 2. New → { id, name }
+        const externalId = typeof item === "string" ? item : item.id;
+
+        const serviceName = typeof item === "string" ? undefined : item.name;
+
+        // 🔥 Resolve with name (IMPORTANT FIX)
+        const service = await resolveService(externalId, serviceName);
+
+        if (!service) continue;
+
+        await tx.marketplacePackageItem.create({
+          data: {
+            packageId: pkg.id,
+            serviceId: service.id,
+
+            // 🔥 Bridge
+            externalServiceId: service.externalServiceId,
+
+            // 🔥 SNAPSHOT (NOW CORRECT)
+            serviceName: service.name,
+
+            basePrice: service.basePrice || 0,
           },
         });
-
-        if (service) {
-          await tx.marketplacePackageItem.create({
-            data: {
-              packageId: pkg.id,
-              serviceId: service.id,
-              serviceName: service.name,
-              basePrice: 0,
-            },
-          });
-        }
       }
     }
+
     return pkg;
   });
 };
 
 export const getPackages = async (userId) => {
-  return prisma.marketplacePackage.findMany({
+  const packages = await prisma.marketplacePackage.findMany({
     where: { userId: Number(userId) },
     include: {
-      items: {
-        include: { marketplaceService: true },
+      user: {
+        select: {
+          id: true,
+          username: true,
+          companyName: true,
+          phone: true,
+          address: true,
+        },
       },
+      items: true,
     },
     orderBy: { createdAt: "desc" },
   });
+
+  // 🔥 Attach pricing for each service inside package
+  const enrichedPackages = await Promise.all(
+    packages.map(async (pkg) => {
+      const itemsWithPricing = await Promise.all(
+        pkg.items.map(async (item) => {
+          const garageService = await prisma.garageMarketplaceService.findFirst(
+            {
+              where: {
+                userId: pkg.userId,
+                serviceId: item.serviceId,
+              },
+              include: {
+                pricing: true,
+              },
+            },
+          );
+
+          return {
+            ...item,
+            pricing: garageService?.pricing || [],
+          };
+        }),
+      );
+
+      return {
+        ...pkg,
+        items: itemsWithPricing,
+      };
+    }),
+  );
+
+  return enrichedPackages;
 };
 
 export const deletePackage = async (id, userId) => {

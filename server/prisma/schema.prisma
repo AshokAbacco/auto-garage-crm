@@ -1714,6 +1714,8 @@ model MarketplacePackage {
   updatedAt DateTime @updatedAt
 
   items MarketplacePackageItem[]
+
+  @@index([userId])
 }
 
 model MarketplacePackageItem {
@@ -1722,14 +1724,24 @@ model MarketplacePackageItem {
   packageId Int
   serviceId Int
 
+  // 🔗 RELATIONS
   package MarketplacePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
   service MarketplaceService @relation(fields: [serviceId], references: [id])
 
-  // 🔥 SNAPSHOT (IMPORTANT)
-  serviceName String?
+  // 🔥 CRITICAL: External reference (bridge)
+  externalServiceId String
+
+  // 🔥 SNAPSHOT (for stability)
+  serviceName String
   basePrice   Float?
 
+  createdAt DateTime @default(now())
+
   @@unique([packageId, serviceId])
+  // ⚡ Important indexes
+  @@index([packageId])
+  @@index([serviceId])
+  @@index([externalServiceId])
 }
 
 // ==============================

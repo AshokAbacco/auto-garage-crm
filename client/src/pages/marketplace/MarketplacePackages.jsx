@@ -14,6 +14,7 @@ export default function MarketplacePackages() {
   const [price, setPrice] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [description, setDescription] = useState("");
 
   const token = localStorage.getItem("token");
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -36,6 +37,7 @@ export default function MarketplacePackages() {
           section.services.forEach((svc) => {
             flattened.push({
               ...svc,
+              externalServiceId: svc.id,
               category: main.name,
               section: section.name,
             });
@@ -58,19 +60,33 @@ export default function MarketplacePackages() {
     );
   };
 
+  // ✅ ONLY CHANGE HERE
   const createPackage = async () => {
     if (!name || !price || selectedServices.length === 0)
       return alert("Please complete all fields");
+
     try {
+      const servicePayload = selectedServices.map((id) => {
+        const svc = flatServices.find((s) => s.externalServiceId === id);
+        return {
+          id,
+          name: svc?.name,
+        };
+      });
+
+      // ONLY CHANGE → inside createPackage()
+
       await axios.post(
         `${API_URL}/api/marketplace/packages`,
         {
           name,
           price: Number(price),
-          serviceIds: selectedServices,
+          description, // ✅ ADDED
+          serviceIds: servicePayload,
         },
         config,
       );
+
       setName("");
       setPrice("");
       setSelectedServices([]);
@@ -176,6 +192,12 @@ export default function MarketplacePackages() {
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-transparent border-b-2 border-slate-700/30 py-2 font-bold outline-none focus:border-blue-500 transition-all"
                 />
+                <textarea
+                  placeholder="Package Description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full mt-5 bg-transparent border-b-2 border-slate-700/30 py-2 font-medium outline-none focus:border-blue-500 transition-all mt-2"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
@@ -214,10 +236,10 @@ export default function MarketplacePackages() {
                 )
                 .map((s) => (
                   <button
-                    key={s.id}
-                    onClick={() => toggleService(s.id)}
+                    key={s.externalServiceId}
+                    onClick={() => toggleService(s.externalServiceId)}
                     className={`p-4 rounded-xl text-[10px] font-bold uppercase border transition-all ${
-                      selectedServices.includes(s.id)
+                      selectedServices.includes(s.externalServiceId)
                         ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20"
                         : isDark
                           ? "border-slate-800 bg-slate-900/50 text-slate-500 hover:border-slate-600"
@@ -238,7 +260,6 @@ export default function MarketplacePackages() {
             </button>
           </div>
         ) : (
-          /* LIST CONTENT */
           <div className="grid gap-6">
             {packages.length === 0 && !loading && (
               <div className="text-center py-20 opacity-30 font-black uppercase tracking-widest">
@@ -259,6 +280,11 @@ export default function MarketplacePackages() {
                     <h2 className="text-2xl font-black uppercase italic tracking-tighter">
                       {pkg.name}
                     </h2>
+                    {pkg.description && (
+                      <p className="text-xs opacity-60 mt-2">
+                        {pkg.description}
+                      </p>
+                    )}
                     <p
                       className={`text-[9px] font-black mt-2 tracking-widest ${
                         pkg.isActive ? "text-emerald-500" : "text-slate-500"
@@ -291,6 +317,11 @@ export default function MarketplacePackages() {
                       }`}
                     >
                       {item.serviceName}
+                      {item.pricing?.length > 0 && (
+                        <span className="block text-[8px] opacity-60">
+                          ₹{item.pricing[0]?.price}
+                        </span>
+                      )}
                     </span>
                   ))}
                 </div>

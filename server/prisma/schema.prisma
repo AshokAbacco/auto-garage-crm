@@ -1584,26 +1584,19 @@ model SupportActionLog {
 // ==============================
 
 model MarketplaceService {
-  id   Int    @id @default(autoincrement())
+  id   Int     @id @default(autoincrement())
   name String
-  slug String @unique
+  slug String? @unique    // ← make optional (resolveService doesn't send it)
 
-  crmType CrmType // CAR | BIKE | WASH
+  crmType CrmType?        // ← make optional
 
-  // 🔥 ADD THESE (IMPORTANT)
-  mainCategory String?
-  subCategory  String?
-
-  // 🔥 LINK TO APP DB
+  mainCategory      String?
+  subCategory       String?
   externalServiceId String? @unique
-
-  // default pricing (fallback)
-  basePrice Float?
-
-  description String?
-  image       String?
-
-  isActive Boolean @default(true)
+  basePrice         Float?
+  description       String?
+  image             String?
+  isActive          Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1667,20 +1660,19 @@ model MarketplaceBooking {
 
   appUserId String?
   vehicleId String?
-
-  carType String?
+  carType   String?
 
   scheduledAt DateTime
 
-  // 🔥 FULL SNAPSHOT (IMPORTANT)
-  serviceName  String
-  mainCategory String
-  subCategory  String
+  // Make these optional — snapshot filled from app data
+  serviceName  String?   // ← was String (non-null), now optional
+  mainCategory String?   // ← was String, now optional
+  subCategory  String?   // ← was String, now optional
 
-  basePriceSnapshot   Float
+  basePriceSnapshot   Float  @default(0)   // ← was Float (required), now has default
   garagePriceSnapshot Float?
   discountSnapshot    Float?
-  finalPrice          Float
+  finalPrice          Float  @default(0)   // ← add default
 
   status MarketplaceBookingStatus @default(PENDING)
 
@@ -1697,7 +1689,6 @@ model MarketplaceBooking {
   @@index([garageId])
   @@index([serviceId])
 }
-
 model MarketplacePackage {
   id Int @id @default(autoincrement())
 

@@ -94,4 +94,6 @@ router.get("/packages", protect, controller.getPackages);
 router.delete("/packages/:id", protect, controller.deletePackage);
 router.patch("/packages/:id/toggle", protect, controller.togglePackage);
 
+router.get("/my-bookings", controller.getMyBookings);
+
 export default router;

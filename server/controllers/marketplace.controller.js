@@ -362,3 +362,49 @@ export const clientLookup = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+export const getMyBookings = async (req, res) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return res.status(400).json({ success: false, message: "Phone required" });
+    }
+
+    const client = await prisma.client.findFirst({ where: { phone } });
+
+    if (!client) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const bookings = await prisma.marketplaceBooking.findMany({
+      where: { clientId: client.id },
+      include: {
+        service: true,
+        garage: {
+          select: { companyName: true, address: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const formatted = bookings.map((b) => ({
+      id: b.id,
+      serviceName: b.serviceName || b.service?.name || "Service",
+      garageName: b.garage?.companyName || "Garage",
+      garageAddress: b.garage?.address || "",
+      garagePhone: b.garage?.phone || "",
+      status: b.status,
+      scheduledAt: b.scheduledAt,
+      finalPrice: b.finalPrice,
+      carType: b.carType,
+      createdAt: b.createdAt,
+    }));
+
+    res.json({ success: true, data: formatted });
+  } catch (err) {
+    console.error("MY BOOKINGS ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

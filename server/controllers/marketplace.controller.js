@@ -1,6 +1,7 @@
 // src/controllers/marketplace.controller.js
 import * as marketplaceService from "../services/marketplace.service.js";
 import * as bookingService from "../services/booking.service.js";
+import * as notificationService from "../services/notification.service.js"; // 🔔 Notification triggers
 import { PrismaClient } from "@prisma/client";
 import { uploadToR2 } from "../utils/r2Upload.js";
 import * as dispatchService from "../services/dispatch.service.js";
@@ -28,12 +29,7 @@ export const getGarages = async (req, res) => {
   try {
     const { id: externalServiceId } = req.params;
     const { carType } = req.query;
-
-    const data = await marketplaceService.getGaragesByService(
-      externalServiceId,
-      carType,
-    );
-
+    const data = await marketplaceService.getGaragesByService(externalServiceId, carType);
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -45,8 +41,7 @@ export const getGarages = async (req, res) => {
 // ==============================
 export const createBooking = async (req, res) => {
   try {
-    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } =
-      req.body;
+    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } = req.body;
 
     if (!externalServiceId || !garageId || !clientId || !scheduledAt) {
       return res
@@ -66,7 +61,7 @@ export const createBooking = async (req, res) => {
 
     const booking = await marketplaceService.createBooking(bookingData);
 
-    // Notifications & Background Tasks
+    // Fire-and-forget side effects
     try {
       await notifyGarage(garageId, booking);
     } catch (e) {
@@ -98,20 +93,37 @@ export const getBooking = async (req, res) => {
 };
 
 // ==============================
-// ACCEPT / REJECT
+// ACCEPT BOOKING
+// 🔔 Stores a USER-scoped AppNotification in CRM DB for that client's phone
 // ==============================
 export const acceptBooking = async (req, res) => {
   try {
     await bookingService.acceptBooking(req.params.id);
+
+    // Create notification in CRM DB — fire-and-forget so it never breaks the response
+    notificationService
+      .notifyBookingAccepted(req.params.id)
+      .catch((e) => console.error("NOTIFICATION (accept) ERROR:", e.message));
+
     res.json({ success: true });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
 };
 
+// ==============================
+// REJECT BOOKING
+// 🔔 Stores a USER-scoped AppNotification in CRM DB for that client's phone
+// ==============================
 export const rejectBooking = async (req, res) => {
   try {
     await bookingService.rejectBooking(req.params.id);
+
+    // Create notification in CRM DB — fire-and-forget
+    notificationService
+      .notifyBookingRejected(req.params.id)
+      .catch((e) => console.error("NOTIFICATION (reject) ERROR:", e.message));
+
     res.json({ success: true });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -127,7 +139,7 @@ export const getAllBookings = async (req, res) => {
 
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { garageId: userId },
-      include: { service: true }, // Updated relation
+      include: { service: true },
       orderBy: { scheduledAt: "desc" },
     });
 
@@ -155,10 +167,7 @@ export const getGarageServices = async (req, res) => {
 
     const services = await prisma.garageMarketplaceService.findMany({
       where: { userId },
-      include: {
-        pricing: true,
-        service: true,
-      },
+      include: { pricing: true, service: true },
     });
 
     res.json({ success: true, data: services });
@@ -175,7 +184,6 @@ export const saveGarageService = async (req, res) => {
     const userId = req.user.id;
     let { serviceId, isActive, duration, pricing } = req.body;
 
-    // ⚡️ FIX: If serviceId is a UUID string, we must resolve it to the INT ID first
     if (isNaN(Number(serviceId))) {
       const resolved = await marketplaceService.resolveService(serviceId);
       serviceId = resolved.id;
@@ -184,19 +192,14 @@ export const saveGarageService = async (req, res) => {
     }
 
     const garageService = await prisma.garageMarketplaceService.upsert({
-      where: {
-        userId_serviceId: {
-          userId,
-          serviceId: serviceId,
-        },
-      },
+      where: { userId_serviceId: { userId, serviceId } },
       update: {
         isActive: Boolean(isActive),
         duration: duration ? Number(duration) : null,
       },
       create: {
         userId,
-        serviceId: serviceId,
+        serviceId,
         isActive: Boolean(isActive),
         duration: duration ? Number(duration) : null,
       },
@@ -206,15 +209,14 @@ export const saveGarageService = async (req, res) => {
       await prisma.garageServicePricing.deleteMany({
         where: { garageServiceId: garageService.id },
       });
-
-      const pricingData = pricing.map((p) => ({
-        garageServiceId: garageService.id,
-        carType: p.carType,
-        price: parseFloat(p.price) || 0, // Use parseFloat for decimals
-        discount: parseFloat(p.discount) || 0,
-      }));
-
-      await prisma.garageServicePricing.createMany({ data: pricingData });
+      await prisma.garageServicePricing.createMany({
+        data: pricing.map((p) => ({
+          garageServiceId: garageService.id,
+          carType: p.carType,
+          price: parseFloat(p.price) || 0,
+          discount: parseFloat(p.discount) || 0,
+        })),
+      });
     }
 
     res.json({ success: true, data: garageService });
@@ -224,25 +226,15 @@ export const saveGarageService = async (req, res) => {
 };
 
 // ==============================
-// PACKAGES (BUNDLED SERVICES)
+// PACKAGES — CREATE
+// 🔔 Stores a GLOBAL AppNotification so every app user sees the new bundle
 // ==============================
-// ==============================
-// PACKAGES (BUNDLED SERVICES)
-// ==============================
-
-// CREATE PACKAGE
 export const createPackage = async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, price, serviceIds, description } = req.body;
 
-    // 🔒 Basic validation
-    if (
-      !name ||
-      !price ||
-      !Array.isArray(serviceIds) ||
-      serviceIds.length === 0
-    ) {
+    if (!name || !price || !Array.isArray(serviceIds) || serviceIds.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Name, price and at least one service are required",
@@ -255,6 +247,11 @@ export const createPackage = async (req, res) => {
       serviceIds,
       description,
     });
+
+    // 🔔 Create GLOBAL notification in CRM DB — fire-and-forget
+    notificationService
+      .notifyNewPackage(data.id, userId)
+      .catch((e) => console.error("NOTIFICATION (new package) ERROR:", e.message));
 
     return res.json({
       success: true,
@@ -270,18 +267,14 @@ export const createPackage = async (req, res) => {
   }
 };
 
-// GET PACKAGES (CRM - Garage specific)
+// ==============================
+// PACKAGES — GET (CRM)
+// ==============================
 export const getPackages = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const data = await marketplaceService.getPackages(userId);
-
-    return res.json({
-      success: true,
-      count: data.length,
-      data,
-    });
+    return res.json({ success: true, count: data.length, data });
   } catch (err) {
     console.error("GET PACKAGES ERROR:", err);
     return res.status(500).json({
@@ -291,25 +284,20 @@ export const getPackages = async (req, res) => {
   }
 };
 
-// DELETE PACKAGE
+// ==============================
+// PACKAGES — DELETE
+// ==============================
 export const deletePackage = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
 
     if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Package ID is required",
-      });
+      return res.status(400).json({ success: false, message: "Package ID is required" });
     }
 
     await marketplaceService.deletePackage(id, userId);
-
-    return res.json({
-      success: true,
-      message: "Package deleted successfully",
-    });
+    return res.json({ success: true, message: "Package deleted successfully" });
   } catch (err) {
     console.error("DELETE PACKAGE ERROR:", err);
     return res.status(400).json({
@@ -319,14 +307,14 @@ export const deletePackage = async (req, res) => {
   }
 };
 
-// TOGGLE PACKAGE STATUS
+// ==============================
+// PACKAGES — TOGGLE
+// ==============================
 export const togglePackage = async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-
     const data = await marketplaceService.togglePackage(id, userId);
-
     return res.json({
       success: true,
       message: `Package ${data.isActive ? "activated" : "paused"}`,
@@ -344,52 +332,33 @@ export const togglePackage = async (req, res) => {
 // ==============================
 // UPDATE SERVICE DETAILS (CRM METADATA)
 // ==============================
-// src/controllers/marketplace.controller.js
 export const updateServiceDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    // Extract everything from req.body
     let { description, isActive, pricing } = req.body;
-
     const isLocalId = !isNaN(Number(id));
-
-    // ✅ FIX 1: Convert string "true"/"false" to actual Boolean
     const activeStatus = isActive === "true" || isActive === true;
 
-    // ✅ FIX 2: Parse stringified pricing JSON
     let parsedPricing = [];
     if (pricing) {
       try {
-        parsedPricing =
-          typeof pricing === "string" ? JSON.parse(pricing) : pricing;
+        parsedPricing = typeof pricing === "string" ? JSON.parse(pricing) : pricing;
       } catch (e) {
         console.error("Pricing Parse Error:", e);
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid pricing format" });
+        return res.status(400).json({ success: false, message: "Invalid pricing format" });
       }
     }
 
     let imageUrl;
     if (req.file) {
       const { buffer, mimetype } = req.file;
-      const result = await uploadToR2({
-        buffer,
-        mimeType: mimetype,
-        folder: `services/${id}`,
-      });
+      const result = await uploadToR2({ buffer, mimeType: mimetype, folder: `services/${id}` });
       imageUrl = result.url;
     }
 
-    // Pass the cleaned data to the service layer
     const updatedService = await marketplaceService.updateServiceDetails(
       id,
-      {
-        description,
-        image: imageUrl,
-        isActive: activeStatus,
-        pricing: parsedPricing,
-      },
+      { description, image: imageUrl, isActive: activeStatus, pricing: parsedPricing },
       isLocalId,
       req.user.id,
     );
@@ -409,9 +378,7 @@ export const clientLookup = async (req, res) => {
     const { phone, name, email } = req.body;
 
     if (!phone) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Phone number is required" });
+      return res.status(400).json({ success: false, message: "Phone number is required" });
     }
 
     let client = await prisma.client.findFirst({ where: { phone } });
@@ -438,7 +405,9 @@ export const clientLookup = async (req, res) => {
   }
 };
 
-
+// ==============================
+// MY BOOKINGS (App)
+// ==============================
 export const getMyBookings = async (req, res) => {
   try {
     const { phone } = req.query;
@@ -457,9 +426,7 @@ export const getMyBookings = async (req, res) => {
       where: { clientId: client.id },
       include: {
         service: true,
-        garage: {
-          select: { companyName: true, address: true, phone: true },
-        },
+        garage: { select: { companyName: true, address: true, phone: true } },
       },
       orderBy: { createdAt: "desc" },
     });

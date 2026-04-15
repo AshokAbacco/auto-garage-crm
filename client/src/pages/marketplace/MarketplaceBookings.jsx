@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useBookingPopup } from "../../providers/BookingPopupProvider";
 import {
   FiCheck,
   FiX,
@@ -16,6 +17,7 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function MarketplaceDashboard() {
   const { isDark } = useTheme();
+  const { onBookingAction } = useBookingPopup();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("ALL");
@@ -26,6 +28,14 @@ export default function MarketplaceDashboard() {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // ✅ Subscribe to popup accept/reject — refresh the list whenever popup resolves
+  useEffect(() => {
+    const unsubscribe = onBookingAction(() => {
+      fetchBookings();
+    });
+    return unsubscribe;
+  }, [onBookingAction]);
 
   const fetchBookings = async () => {
     try {

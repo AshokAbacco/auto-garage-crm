@@ -123,6 +123,7 @@ model User {
   staffMembers     CarStaff[]
   carStaffLogins   CarStaffLogin[]
   carStaffSalaries CarStaffSalary[]
+  appNotifications AppNotification[]
 
   referredByPartnerId Int?
   referredByPartner   ReferralPartner? @relation(fields: [referredByPartnerId], references: [id])
@@ -1586,9 +1587,9 @@ model SupportActionLog {
 model MarketplaceService {
   id   Int     @id @default(autoincrement())
   name String
-  slug String? @unique    // ← make optional (resolveService doesn't send it)
+  slug String? @unique // ← make optional (resolveService doesn't send it)
 
-  crmType CrmType?        // ← make optional
+  crmType CrmType? // ← make optional
 
   mainCategory      String?
   subCategory       String?
@@ -1665,14 +1666,14 @@ model MarketplaceBooking {
   scheduledAt DateTime
 
   // Make these optional — snapshot filled from app data
-  serviceName  String?   // ← was String (non-null), now optional
-  mainCategory String?   // ← was String, now optional
-  subCategory  String?   // ← was String, now optional
+  serviceName  String? // ← was String (non-null), now optional
+  mainCategory String? // ← was String, now optional
+  subCategory  String? // ← was String, now optional
 
-  basePriceSnapshot   Float  @default(0)   // ← was Float (required), now has default
+  basePriceSnapshot   Float  @default(0) // ← was Float (required), now has default
   garagePriceSnapshot Float?
   discountSnapshot    Float?
-  finalPrice          Float  @default(0)   // ← add default
+  finalPrice          Float  @default(0) // ← add default
 
   status MarketplaceBookingStatus @default(PENDING)
 
@@ -1686,9 +1687,12 @@ model MarketplaceBooking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  notifications AppNotification[]
+
   @@index([garageId])
   @@index([serviceId])
 }
+
 model MarketplacePackage {
   id Int @id @default(autoincrement())
 
@@ -1704,7 +1708,8 @@ model MarketplacePackage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items MarketplacePackageItem[]
+  items         MarketplacePackageItem[]
+  notifications AppNotification[]
 
   @@index([userId])
 }
@@ -1745,4 +1750,53 @@ enum MarketplaceBookingStatus {
   REJECTED
   TIMEOUT
   CANCELLED
+}
+
+// Notification scope: GLOBAL = all app users, USER = specific client by phone
+enum NotificationScope {
+  GLOBAL
+  USER
+}
+
+enum NotificationType {
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  NEW_PACKAGE
+  GENERAL
+}
+
+model AppNotification {
+  id Int @id @default(autoincrement())
+
+  // Who created this (CRM garage owner or system)
+  createdByUserId Int?
+  createdBy       User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  // Notification content
+  type    NotificationType
+  title   String
+  body    String
+  iconKey String? // e.g. "car", "package", "shield" — frontend maps to icon
+
+  // Scope: GLOBAL = everyone, USER = specific client phone
+  scope       NotificationScope @default(GLOBAL)
+  clientPhone String? // only set when scope = USER
+
+  // Booking link (optional — for booking notifications)
+  bookingId Int?
+  booking   MarketplaceBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  // Package link (optional — for package notifications)
+  packageId Int?
+  package   MarketplacePackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  // Soft metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scope])
+  @@index([clientPhone])
+  @@index([type])
+  @@index([createdAt])
 }

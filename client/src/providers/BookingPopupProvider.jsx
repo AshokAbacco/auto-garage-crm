@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSocket } from "./SocketProvider";
 
 const BookingPopupContext = createContext();
@@ -12,6 +12,23 @@ export default function BookingPopupProvider({ children }) {
   // 🔊 GLOBAL AUDIO
   const alertAudioRef = useRef(null);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
+
+  // ✅ Subscribers that want to know when a popup action (accept/reject/timeout) completes
+  const actionListenersRef = useRef([]);
+
+  const onBookingAction = useCallback((fn) => {
+    actionListenersRef.current.push(fn);
+    // Return unsubscribe function
+    return () => {
+      actionListenersRef.current = actionListenersRef.current.filter((f) => f !== fn);
+    };
+  }, []);
+
+  const notifyListeners = useCallback(() => {
+    actionListenersRef.current.forEach((fn) => {
+      try { fn(); } catch (e) { console.error("BookingPopup listener error:", e); }
+    });
+  }, []);
 
   // ==============================
   // INIT AUDIO
@@ -120,18 +137,22 @@ export default function BookingPopupProvider({ children }) {
 
   // ==============================
   // CLEAR BOOKING
+  // ✅ Notify dashboard subscribers so they re-fetch after popup action
   // ==============================
-  const clearBooking = () => {
+  const clearBooking = useCallback(() => {
     if (alertAudioRef.current) {
       alertAudioRef.current.pause();
       alertAudioRef.current.currentTime = 0;
     }
 
     setBooking(null);
-  };
+
+    // ✅ Tell any subscriber (e.g. MarketplaceDashboard) to refresh
+    notifyListeners();
+  }, [notifyListeners]);
 
   return (
-    <BookingPopupContext.Provider value={{ booking, clearBooking }}>
+    <BookingPopupContext.Provider value={{ booking, clearBooking, onBookingAction }}>
       {children}
     </BookingPopupContext.Provider>
   );

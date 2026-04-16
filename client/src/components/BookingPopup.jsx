@@ -42,12 +42,21 @@ export default function BookingPopup() {
 
   const progress = (timeLeft / 30) * 100;
 
+  // ✅ Helper: always attach auth token so protect middleware accepts the request
+  const authHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   const handleAccept = async () => {
     setStatus("accepted");
     try {
       await fetch(`${API_BASE}/api/marketplace/booking/${booking.id}/accept`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
       });
     } catch (e) {
       console.error(e);
@@ -60,7 +69,7 @@ export default function BookingPopup() {
     try {
       await fetch(`${API_BASE}/api/marketplace/booking/${booking.id}/reject`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
       });
     } catch (e) {
       console.error(e);

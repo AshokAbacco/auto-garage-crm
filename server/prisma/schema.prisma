@@ -123,6 +123,7 @@ model User {
   staffMembers     CarStaff[]
   carStaffLogins   CarStaffLogin[]
   carStaffSalaries CarStaffSalary[]
+  appNotifications AppNotification[]
 
   referredByPartnerId Int?
   referredByPartner   ReferralPartner? @relation(fields: [referredByPartnerId], references: [id])
@@ -1686,6 +1687,8 @@ model MarketplaceBooking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  notifications AppNotification[]
+
   @@index([garageId])
   @@index([serviceId])
 }
@@ -1705,7 +1708,8 @@ model MarketplacePackage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items MarketplacePackageItem[]
+  items         MarketplacePackageItem[]
+  notifications AppNotification[]
 
   @@index([userId])
 }
@@ -1746,4 +1750,53 @@ enum MarketplaceBookingStatus {
   REJECTED
   TIMEOUT
   CANCELLED
+}
+
+// Notification scope: GLOBAL = all app users, USER = specific client by phone
+enum NotificationScope {
+  GLOBAL
+  USER
+}
+
+enum NotificationType {
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  NEW_PACKAGE
+  GENERAL
+}
+
+model AppNotification {
+  id Int @id @default(autoincrement())
+
+  // Who created this (CRM garage owner or system)
+  createdByUserId Int?
+  createdBy       User? @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  // Notification content
+  type    NotificationType
+  title   String
+  body    String
+  iconKey String? // e.g. "car", "package", "shield" — frontend maps to icon
+
+  // Scope: GLOBAL = everyone, USER = specific client phone
+  scope       NotificationScope @default(GLOBAL)
+  clientPhone String? // only set when scope = USER
+
+  // Booking link (optional — for booking notifications)
+  bookingId Int?
+  booking   MarketplaceBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  // Package link (optional — for package notifications)
+  packageId Int?
+  package   MarketplacePackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  // Soft metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scope])
+  @@index([clientPhone])
+  @@index([type])
+  @@index([createdAt])
 }

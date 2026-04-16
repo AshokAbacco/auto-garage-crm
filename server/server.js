@@ -68,6 +68,8 @@ import { washReminderscheduler } from "./services/washReminderScheduler.js";
 import userKycRoutes from "./routes/userKyc.routes.js";
 import marketplaceRoutes from "./routes/marketplace.routes.js";
 import externalRoutes from "./externalApi/external.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
+
 // console.log("Models in Prisma:", Object.keys(prisma));
 
 // Load environment variables
@@ -246,6 +248,7 @@ app.use("/api", serviceMediaRoutes);
 app.use("/api/washing-reminders", washingReminderRoutes);
 
 app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/notifications", notificationRoutes);
 /* -----------------------------------------------------
    ⚠️ 404 Handler (For undefined routes)
 ----------------------------------------------------- */

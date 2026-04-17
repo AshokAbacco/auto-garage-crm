@@ -98,6 +98,8 @@ export default function MarketplacePricing() {
       found || {
         isActive: false,
         pricing: [],
+        description: null, // ✅ ADD
+        image: null, // ✅ ADD
         service: { externalServiceId: externalId },
       }
     );
@@ -256,7 +258,8 @@ export default function MarketplacePricing() {
                       const gData = getGarageData(svc.id);
                       const isExpanded = expanded[svc.id];
                       const detail = localDetails[svc.id] || {};
-                      const previewImg = detail.imagePreview || svc.image;
+                      const previewImg =
+                        detail.imagePreview || gData.image || svc.image;
                       const isProcessing = actionLoading[svc.id];
 
                       return (
@@ -408,6 +411,7 @@ export default function MarketplacePricing() {
                                     }}
                                     value={
                                       detail.description ??
+                                      gData.description ??
                                       svc.description ??
                                       ""
                                     }
@@ -478,7 +482,9 @@ export default function MarketplacePricing() {
                                     onClick={() =>
                                       saveDetails(
                                         svc.id,
-                                        svc.description || svc.name,
+                                        gData.description ||
+                                          svc.description ||
+                                          svc.name,
                                       )
                                     }
                                   >

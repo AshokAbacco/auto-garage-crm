@@ -20,7 +20,7 @@ const fileFilter = (req, file, cb) => {
 // LIMITS
 // ==============================
 const limits = {
-  fileSize: 2 * 1024 * 1024, // 2MB
+  fileSize: 1024 * 1024 * 10, // 10 MB file size limit
 };
 
 // ==============================

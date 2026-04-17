@@ -149,21 +149,54 @@ export const getServices = async (vehicleTypeId = null) => {
 
 // ==============================
 // GARAGES BY SERVICE
+// Read pricing from App (external) DB
 // ==============================
 export const getGaragesByService = async (externalServiceId, carType) => {
   const service = await resolveService(externalServiceId);
 
+  // Fetch garage toggle status from CRM DB
   const garages = await prisma.garageMarketplaceService.findMany({
     where: { serviceId: service.id, isActive: true },
-    include: {
-      pricing: true,
-      service: true,
-    },
+    include: { service: true },
+  });
+
+  if (garages.length === 0) return [];
+
+  const garageUserIds = garages.map((g) => g.userId);
+
+  // Fetch pricing from external App DB for these garages + service
+  let pricingRows = [];
+  try {
+    const { rows } = await queryExternal(
+      `SELECT garage_user_id, car_type, price, discount
+       FROM "GarageServicePricing"
+       WHERE external_service_id = $1
+         AND garage_user_id = ANY($2::int[])`,
+      [externalServiceId, garageUserIds],
+    );
+    pricingRows = rows;
+  } catch (err) {
+    console.error(
+      "[getGaragesByService] External pricing fetch failed:",
+      err.message,
+    );
+  }
+
+  // Build a map: garageUserId → pricing[]
+  const pricingMap = {};
+  pricingRows.forEach((row) => {
+    if (!pricingMap[row.garage_user_id]) pricingMap[row.garage_user_id] = [];
+    pricingMap[row.garage_user_id].push({
+      carType: row.car_type,
+      price: parseFloat(row.price),
+      discount: parseFloat(row.discount),
+    });
   });
 
   return garages.map((g) => {
+    const garagePricing = pricingMap[g.userId] || [];
     const selectedPricing = carType
-      ? g.pricing.find(
+      ? garagePricing.find(
           (p) => p.carType?.toUpperCase() === carType.toUpperCase(),
         )
       : null;
@@ -182,6 +215,191 @@ export const getGaragesByService = async (externalServiceId, carType) => {
       carType: carType || null,
     };
   });
+};
+
+// ==============================
+// GET GARAGE SERVICES WITH PRICING
+// Reads pricing from external App DB
+// ==============================
+export const getGarageServicesWithPricing = async (userId) => {
+  const garageServices = await prisma.garageMarketplaceService.findMany({
+    where: { userId },
+    include: { service: true },
+  });
+
+  if (garageServices.length === 0) return [];
+
+  const externalServiceIds = garageServices
+    .map((gs) => gs.service?.externalServiceId)
+    .filter(Boolean);
+
+  let pricingRows = [];
+
+  if (externalServiceIds.length > 0) {
+    try {
+      const { rows } = await queryExternal(
+        `SELECT 
+           p.external_service_id, 
+           p.car_type, 
+           p.price, 
+           p.discount,
+           m.description,
+           m.image
+         FROM "GarageServicePricing" p
+         LEFT JOIN "GarageServiceMeta" m
+           ON p.external_service_id = m.external_service_id
+          AND p.garage_user_id = m.garage_user_id
+         WHERE p.garage_user_id = $1
+           AND p.external_service_id = ANY($2::text[])`,
+        [userId, externalServiceIds],
+      );
+
+      pricingRows = rows;
+    } catch (err) {
+      console.error(
+        "[getGarageServicesWithPricing] External pricing fetch failed:",
+        err.message,
+      );
+    }
+  }
+
+  const pricingMap = {};
+  const metaMap = {};
+
+  pricingRows.forEach((row) => {
+    if (!pricingMap[row.external_service_id]) {
+      pricingMap[row.external_service_id] = [];
+    }
+
+    pricingMap[row.external_service_id].push({
+      carType: row.car_type,
+      price: parseFloat(row.price),
+      discount: parseFloat(row.discount),
+    });
+
+    if (!metaMap[row.external_service_id]) {
+      metaMap[row.external_service_id] = {
+        description: row.description || null,
+        image: row.image || null,
+      };
+    }
+  });
+
+  return garageServices.map((gs) => {
+    const externalId = gs.service?.externalServiceId;
+    const meta = metaMap[externalId] || {};
+
+    return {
+      id: gs.id,
+      userId: gs.userId,
+      isActive: gs.isActive,
+      duration: gs.duration,
+
+      description: meta.description,
+      image: meta.image,
+
+      service: {
+        id: gs.service.id,
+        externalServiceId: externalId,
+        name: gs.service.name,
+      },
+
+      pricing: pricingMap[externalId] || [],
+    };
+  });
+};
+
+// ==============================
+// SAVE GARAGE SERVICE PRICING
+// Writes pricing to external App DB, toggle to CRM DB
+// ==============================
+export const saveGarageServicePricing = async (
+  userId,
+  serviceId,
+  isActive,
+  duration,
+  pricing,
+) => {
+  console.log("INPUT:", { userId, serviceId, isActive, pricing });
+
+  let resolvedServiceId = serviceId;
+  let externalServiceId = null;
+
+  if (isNaN(Number(serviceId))) {
+    const service = await resolveService(serviceId);
+    resolvedServiceId = service.id;
+    externalServiceId = service.externalServiceId;
+  } else {
+    const service = await prisma.marketplaceService.findUnique({
+      where: { id: Number(serviceId) },
+    });
+    if (!service) throw new Error(`Service not found: ${serviceId}`);
+    resolvedServiceId = service.id;
+    externalServiceId = service.externalServiceId;
+  }
+
+  // ✅ CRM toggle
+  const garageService = await prisma.garageMarketplaceService.upsert({
+    where: { userId_serviceId: { userId, serviceId: resolvedServiceId } },
+    update: {
+      isActive: Boolean(isActive),
+      duration: duration ? Number(duration) : null,
+    },
+    create: {
+      userId,
+      serviceId: resolvedServiceId,
+      isActive: Boolean(isActive),
+      duration: duration ? Number(duration) : null,
+    },
+  });
+
+  // ✅ Pricing → external DB
+  if (pricing && Array.isArray(pricing) && externalServiceId) {
+    try {
+      await queryExternal(
+        `DELETE FROM "GarageServicePricing"
+         WHERE garage_user_id = $1 AND external_service_id = $2`,
+        [userId, externalServiceId],
+      );
+
+      for (const p of pricing) {
+        if (!p.carType) continue;
+
+        await queryExternal(
+          `INSERT INTO "GarageServicePricing"
+           (
+             garage_user_id,
+             external_service_id,
+             car_type,
+             price,
+             discount,
+             created_at,
+             updated_at
+           )
+           VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+          [
+            userId,
+            externalServiceId,
+            p.carType,
+            parseFloat(p.price) || 0,
+            parseFloat(p.discount) || 0,
+          ],
+        );
+      }
+
+      console.log(
+        `[saveGarageServicePricing] Written ${pricing.length} pricing rows`,
+      );
+    } catch (err) {
+      console.error(
+        "[saveGarageServicePricing] External pricing write failed:",
+        err.message,
+      );
+      throw new Error(`Failed to save pricing to App DB: ${err.message}`);
+    }
+  }
+
+  return garageService;
 };
 
 // ==============================
@@ -224,42 +442,41 @@ export const getBookingById = async (id) => {
 };
 
 // ==============================
-// UPDATE DETAILS (WITH AUTO-SYNC)
+// UPDATE SERVICE METADATA (CRM only — description, image)
+// Pricing is handled separately via saveGarageServicePricing
 // ==============================
 export const updateServiceDetails = async (id, data, isLocalId, userId) => {
   console.log(
     `[MarketplaceService] Updating Details. Target ID: ${id}, Local: ${isLocalId}, Garage: ${userId}`,
   );
+
   let service;
 
-  // 1. Update core service record
+  // 1. Resolve service
   if (isLocalId) {
-    service = await prisma.marketplaceService.update({
+    service = await prisma.marketplaceService.findUnique({
       where: { id: Number(id) },
-      data: { description: data.description, image: data.image },
     });
   } else {
     service = await resolveService(id, data.description);
-    service = await prisma.marketplaceService.update({
-      where: { id: service.id },
-      data: { image: data.image, description: data.description },
-    });
   }
 
-  // 2. Update Garage-specific settings if pricing provided
-  if (data.pricing && userId) {
-    console.log(
-      `[MarketplaceService] Saving Garage-specific pricing for Service ${service.id}`,
-    );
+  if (!service) {
+    throw new Error("Service not found");
+  }
 
-    const garageService = await prisma.garageMarketplaceService.upsert({
+  // 2. Update ONLY toggle in CRM DB
+  if (userId) {
+    await prisma.garageMarketplaceService.upsert({
       where: {
         userId_serviceId: {
           userId: Number(userId),
           serviceId: service.id,
         },
       },
-      update: { isActive: data.isActive },
+      update: {
+        isActive: data.isActive,
+      },
       create: {
         userId: Number(userId),
         serviceId: service.id,
@@ -267,20 +484,64 @@ export const updateServiceDetails = async (id, data, isLocalId, userId) => {
       },
     });
 
-    // Replace pricing segments
-    await prisma.garageServicePricing.deleteMany({
-      where: { garageServiceId: garageService.id },
-    });
+    try {
+      // ==============================
+      // 🔥 3. UPSERT META (CORRECT TABLE)
+      // ==============================
+      await queryExternal(
+        `INSERT INTO "GarageServiceMeta"
+         (garage_user_id, external_service_id, description, image, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, NOW(), NOW())
+         ON CONFLICT (garage_user_id, external_service_id)
+         DO UPDATE SET
+           description = EXCLUDED.description,
+           image = EXCLUDED.image,
+           updated_at = NOW()`,
+        [
+          userId,
+          service.externalServiceId,
+          data.description || null,
+          data.image || null,
+        ],
+      );
 
-    if (data.pricing.length > 0) {
-      await prisma.garageServicePricing.createMany({
-        data: data.pricing.map((p) => ({
-          garageServiceId: garageService.id,
-          carType: p.carType,
-          price: Number(p.price) || 0,
-          discount: Number(p.discount) || 0,
-        })),
-      });
+      // ==============================
+      // 🔥 4. UPDATE PRICING (FIXED)
+      // ==============================
+      if (data.pricing && data.pricing.length > 0) {
+        await queryExternal(
+          `DELETE FROM "GarageServicePricing"
+           WHERE garage_user_id = $1 AND external_service_id = $2`,
+          [userId, service.externalServiceId],
+        );
+
+        for (const p of data.pricing) {
+          if (!p.carType) continue;
+
+          await queryExternal(
+            `INSERT INTO "GarageServicePricing"
+             (garage_user_id, external_service_id, car_type, price, discount, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+            [
+              userId,
+              service.externalServiceId,
+              p.carType,
+              Number(p.price) || 0,
+              Number(p.discount) || 0,
+            ],
+          );
+        }
+      }
+
+      console.log(
+        `[updateServiceDetails] Meta + pricing saved for garage ${userId}, service ${service.externalServiceId}`,
+      );
+    } catch (err) {
+      console.error(
+        "[updateServiceDetails] External DB write failed:",
+        err.message,
+      );
+      throw new Error(`Failed to save to App DB: ${err.message}`);
     }
   }
 
@@ -304,21 +565,15 @@ export const createPackage = async (userId, data) => {
         userId: Number(userId),
         name,
         price: Number(price),
-        description: description || null, // ✅ ADD THIS
+        description: description || null,
       },
     });
 
     // 2️⃣ Process Services
     if (serviceIds?.length) {
       for (const item of serviceIds) {
-        // 🔥 Support BOTH formats:
-        // 1. Old → "uuid"
-        // 2. New → { id, name }
         const externalId = typeof item === "string" ? item : item.id;
-
         const serviceName = typeof item === "string" ? undefined : item.name;
-
-        // 🔥 Resolve with name (IMPORTANT FIX)
         const service = await resolveService(externalId, serviceName);
 
         if (!service) continue;
@@ -327,13 +582,8 @@ export const createPackage = async (userId, data) => {
           data: {
             packageId: pkg.id,
             serviceId: service.id,
-
-            // 🔥 Bridge
             externalServiceId: service.externalServiceId,
-
-            // 🔥 SNAPSHOT (NOW CORRECT)
             serviceName: service.name,
-
             basePrice: service.basePrice || 0,
           },
         });
@@ -362,38 +612,52 @@ export const getPackages = async (userId) => {
     orderBy: { createdAt: "desc" },
   });
 
-  // 🔥 Attach pricing for each service inside package
-  const enrichedPackages = await Promise.all(
-    packages.map(async (pkg) => {
-      const itemsWithPricing = await Promise.all(
-        pkg.items.map(async (item) => {
-          const garageService = await prisma.garageMarketplaceService.findFirst(
-            {
-              where: {
-                userId: pkg.userId,
-                serviceId: item.serviceId,
-              },
-              include: {
-                pricing: true,
-              },
-            },
-          );
+  // Fetch pricing from external DB for all services in these packages
+  const allExternalIds = [
+    ...new Set(
+      packages.flatMap((pkg) =>
+        pkg.items.map((item) => item.externalServiceId).filter(Boolean),
+      ),
+    ),
+  ];
 
-          return {
-            ...item,
-            pricing: garageService?.pricing || [],
-          };
-        }),
+  let pricingMap = {}; // externalServiceId → pricing[]
+
+  if (allExternalIds.length > 0) {
+    try {
+      const { rows } = await queryExternal(
+        `SELECT external_service_id, car_type, price, discount, description, image
+         FROM "GarageServicePricing"
+         WHERE garage_user_id = $1
+           AND external_service_id = ANY($2::text[])`,
+        [userId, allExternalIds],
       );
+      rows.forEach((row) => {
+        if (!pricingMap[row.external_service_id])
+          pricingMap[row.external_service_id] = [];
+        pricingMap[row.external_service_id].push({
+          carType: row.car_type,
+          price: parseFloat(row.price),
+          discount: parseFloat(row.discount),
+          description: row.description,
+          image: row.image,
+        });
+      });
+    } catch (err) {
+      console.error(
+        "[getPackages] External pricing fetch failed:",
+        err.message,
+      );
+    }
+  }
 
-      return {
-        ...pkg,
-        items: itemsWithPricing,
-      };
-    }),
-  );
-
-  return enrichedPackages;
+  return packages.map((pkg) => ({
+    ...pkg,
+    items: pkg.items.map((item) => ({
+      ...item,
+      pricing: pricingMap[item.externalServiceId] || [],
+    })),
+  }));
 };
 
 export const deletePackage = async (id, userId) => {

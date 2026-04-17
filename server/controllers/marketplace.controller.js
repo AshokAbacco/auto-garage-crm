@@ -29,7 +29,10 @@ export const getGarages = async (req, res) => {
   try {
     const { id: externalServiceId } = req.params;
     const { carType } = req.query;
-    const data = await marketplaceService.getGaragesByService(externalServiceId, carType);
+    const data = await marketplaceService.getGaragesByService(
+      externalServiceId,
+      carType,
+    );
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -41,7 +44,8 @@ export const getGarages = async (req, res) => {
 // ==============================
 export const createBooking = async (req, res) => {
   try {
-    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } = req.body;
+    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } =
+      req.body;
 
     if (!externalServiceId || !garageId || !clientId || !scheduledAt) {
       return res
@@ -100,7 +104,6 @@ export const acceptBooking = async (req, res) => {
   try {
     await bookingService.acceptBooking(req.params.id);
 
-    // Create notification in CRM DB — fire-and-forget so it never breaks the response
     notificationService
       .notifyBookingAccepted(req.params.id)
       .catch((e) => console.error("NOTIFICATION (accept) ERROR:", e.message));
@@ -119,7 +122,6 @@ export const rejectBooking = async (req, res) => {
   try {
     await bookingService.rejectBooking(req.params.id);
 
-    // Create notification in CRM DB — fire-and-forget
     notificationService
       .notifyBookingRejected(req.params.id)
       .catch((e) => console.error("NOTIFICATION (reject) ERROR:", e.message));
@@ -160,15 +162,15 @@ export const getAllBookings = async (req, res) => {
 
 // ==============================
 // GET GARAGE SERVICES (PRICING SETTINGS)
+// Now reads pricing from external App DB via service layer
 // ==============================
 export const getGarageServices = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const services = await prisma.garageMarketplaceService.findMany({
-      where: { userId },
-      include: { pricing: true, service: true },
-    });
+    // Use the new service function that reads pricing from external DB
+    const services =
+      await marketplaceService.getGarageServicesWithPricing(userId);
 
     res.json({ success: true, data: services });
   } catch (err) {
@@ -178,46 +180,27 @@ export const getGarageServices = async (req, res) => {
 
 // ==============================
 // SAVE GARAGE SERVICE + PRICING
+// Now writes pricing to external App DB
 // ==============================
 export const saveGarageService = async (req, res) => {
   try {
+    console.log("BODY:", req.body);  
     const userId = req.user.id;
-    let { serviceId, isActive, duration, pricing } = req.body;
+    const { serviceId, isActive, duration, pricing } = req.body;
 
-    if (isNaN(Number(serviceId))) {
-      const resolved = await marketplaceService.resolveService(serviceId);
-      serviceId = resolved.id;
-    } else {
-      serviceId = Number(serviceId);
+    if (!serviceId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "serviceId is required" });
     }
 
-    const garageService = await prisma.garageMarketplaceService.upsert({
-      where: { userId_serviceId: { userId, serviceId } },
-      update: {
-        isActive: Boolean(isActive),
-        duration: duration ? Number(duration) : null,
-      },
-      create: {
-        userId,
-        serviceId,
-        isActive: Boolean(isActive),
-        duration: duration ? Number(duration) : null,
-      },
-    });
-
-    if (pricing && Array.isArray(pricing)) {
-      await prisma.garageServicePricing.deleteMany({
-        where: { garageServiceId: garageService.id },
-      });
-      await prisma.garageServicePricing.createMany({
-        data: pricing.map((p) => ({
-          garageServiceId: garageService.id,
-          carType: p.carType,
-          price: parseFloat(p.price) || 0,
-          discount: parseFloat(p.discount) || 0,
-        })),
-      });
-    }
+    const garageService = await marketplaceService.saveGarageServicePricing(
+      userId,
+      serviceId,
+      isActive,
+      duration,
+      pricing,
+    );
 
     res.json({ success: true, data: garageService });
   } catch (err) {
@@ -234,7 +217,12 @@ export const createPackage = async (req, res) => {
     const userId = req.user.id;
     const { name, price, serviceIds, description } = req.body;
 
-    if (!name || !price || !Array.isArray(serviceIds) || serviceIds.length === 0) {
+    if (
+      !name ||
+      !price ||
+      !Array.isArray(serviceIds) ||
+      serviceIds.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Name, price and at least one service are required",
@@ -251,7 +239,9 @@ export const createPackage = async (req, res) => {
     // 🔔 Create GLOBAL notification in CRM DB — fire-and-forget
     notificationService
       .notifyNewPackage(data.id, userId)
-      .catch((e) => console.error("NOTIFICATION (new package) ERROR:", e.message));
+      .catch((e) =>
+        console.error("NOTIFICATION (new package) ERROR:", e.message),
+      );
 
     return res.json({
       success: true,
@@ -293,7 +283,9 @@ export const deletePackage = async (req, res) => {
     const { id } = req.params;
 
     if (!id) {
-      return res.status(400).json({ success: false, message: "Package ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Package ID is required" });
     }
 
     await marketplaceService.deletePackage(id, userId);
@@ -330,10 +322,11 @@ export const togglePackage = async (req, res) => {
 };
 
 // ==============================
-// UPDATE SERVICE DETAILS (CRM METADATA)
+// UPDATE SERVICE DETAILS (CRM METADATA + PRICING → App DB)
 // ==============================
 export const updateServiceDetails = async (req, res) => {
   try {
+    console.log("BODY:", req.body);  
     const { id } = req.params;
     let { description, isActive, pricing } = req.body;
     const isLocalId = !isNaN(Number(id));
@@ -342,23 +335,35 @@ export const updateServiceDetails = async (req, res) => {
     let parsedPricing = [];
     if (pricing) {
       try {
-        parsedPricing = typeof pricing === "string" ? JSON.parse(pricing) : pricing;
+        parsedPricing =
+          typeof pricing === "string" ? JSON.parse(pricing) : pricing;
       } catch (e) {
         console.error("Pricing Parse Error:", e);
-        return res.status(400).json({ success: false, message: "Invalid pricing format" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid pricing format" });
       }
     }
 
     let imageUrl;
     if (req.file) {
       const { buffer, mimetype } = req.file;
-      const result = await uploadToR2({ buffer, mimeType: mimetype, folder: `services/${id}` });
+      const result = await uploadToR2({
+        buffer,
+        mimeType: mimetype,
+        folder: `services/${id}`,
+      });
       imageUrl = result.url;
     }
 
     const updatedService = await marketplaceService.updateServiceDetails(
       id,
-      { description, image: imageUrl, isActive: activeStatus, pricing: parsedPricing },
+      {
+        description,
+        image: imageUrl,
+        isActive: activeStatus,
+        pricing: parsedPricing,
+      },
       isLocalId,
       req.user.id,
     );
@@ -378,7 +383,9 @@ export const clientLookup = async (req, res) => {
     const { phone, name, email } = req.body;
 
     if (!phone) {
-      return res.status(400).json({ success: false, message: "Phone number is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Phone number is required" });
     }
 
     let client = await prisma.client.findFirst({ where: { phone } });
@@ -413,7 +420,9 @@ export const getMyBookings = async (req, res) => {
     const { phone } = req.query;
 
     if (!phone) {
-      return res.status(400).json({ success: false, message: "Phone required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Phone required" });
     }
 
     const client = await prisma.client.findFirst({ where: { phone } });

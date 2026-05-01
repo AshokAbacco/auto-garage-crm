@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useTheme } from "../../contexts/ThemeContext";
+import {
+  FiPackage,
+  FiPlus,
+  FiTrash2,
+  FiPower,
+  FiSearch,
+  FiCheckCircle,
+  FiZap,
+  FiShoppingBag,
+} from "react-icons/fi";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -60,7 +70,6 @@ export default function MarketplacePackages() {
     );
   };
 
-  // ✅ ONLY CHANGE HERE
   const createPackage = async () => {
     if (!name || !price || selectedServices.length === 0)
       return alert("Please complete all fields");
@@ -68,20 +77,15 @@ export default function MarketplacePackages() {
     try {
       const servicePayload = selectedServices.map((id) => {
         const svc = flatServices.find((s) => s.externalServiceId === id);
-        return {
-          id,
-          name: svc?.name,
-        };
+        return { id, name: svc?.name };
       });
-
-      // ONLY CHANGE → inside createPackage()
 
       await axios.post(
         `${API_URL}/api/marketplace/packages`,
         {
           name,
           price: Number(price),
-          description, // ✅ ADDED
+          description,
           serviceIds: servicePayload,
         },
         config,
@@ -89,6 +93,7 @@ export default function MarketplacePackages() {
 
       setName("");
       setPrice("");
+      setDescription("");
       setSelectedServices([]);
       setActiveTab("list");
       fetchAll();
@@ -125,231 +130,291 @@ export default function MarketplacePackages() {
 
   return (
     <div
-      className={`min-h-screen pb-20 md:ml-16 transition-all ${
-        isDark ? "bg-[#0b0e11] text-slate-300" : "bg-[#f8fafc] text-slate-900"
-      }`}
+      className={`min-h-screen pb-24 transition-all duration-300 ${
+        isDark ? "bg-[#080a0f] text-slate-300" : "bg-[#f1f5f9] text-slate-900"
+      } md:ml-20`}
     >
-      {/* HEADER SECTION */}
-      <div
-        className={`sticky top-0 z-40 border-b backdrop-blur-md p-6 flex justify-between items-center ${
+      {/* HEADER */}
+      <header
+        className={`sticky top-0 z-50 backdrop-blur-xl border-b px-4 py-4 transition-all ${
           isDark
-            ? "bg-[#0b0e11]/80 border-slate-800"
-            : "bg-white/80 border-slate-100"
+            ? "bg-[#080a0f]/80 border-white/5"
+            : "bg-white/80 border-slate-200"
         }`}
       >
-        <div>
-          <h1 className="text-xl font-black uppercase tracking-tighter italic">
-            Bundle Studio
-          </h1>
-          <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">
-            Cross-Platform Bundles
-          </p>
-        </div>
-        <div
-          className={`flex p-1 rounded-2xl ${isDark ? "bg-slate-900" : "bg-slate-100"}`}
-        >
-          <button
-            onClick={() => setActiveTab("list")}
-            className={`px-6 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${
-              activeTab === "list"
-                ? "bg-blue-600 text-white shadow-lg"
-                : "text-slate-500"
-            }`}
-          >
-            All Packages
-          </button>
-          <button
-            onClick={() => setActiveTab("create")}
-            className={`px-6 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${
-              activeTab === "create"
-                ? "bg-blue-600 text-white shadow-lg"
-                : "text-slate-500"
-            }`}
-          >
-            + New Package
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto p-4 md:p-8">
-        {activeTab === "create" ? (
-          <div
-            className={`p-8 rounded-[2.5rem] border shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 ${
-              isDark
-                ? "bg-[#161b22] border-slate-800"
-                : "bg-white border-slate-100"
-            }`}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                  Package Identity
-                </label>
-                <input
-                  type="text"
-                  placeholder="Package Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-slate-700/30 py-2 font-bold outline-none focus:border-blue-500 transition-all"
-                />
-                <textarea
-                  placeholder="Package Description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full mt-5 bg-transparent border-b-2 border-slate-700/30 py-2 font-medium outline-none focus:border-blue-500 transition-all mt-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                  Selling Price (₹)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Total Price"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-slate-700/30 py-2 font-black outline-none focus:border-blue-500 text-blue-500 text-xl"
-                />
-              </div>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-600 rounded-xl shadow-lg text-white">
+              <FiPackage size={18} />
             </div>
-
-            <div className="mb-6 flex justify-between items-center">
-              <span className="text-[10px] font-black uppercase text-slate-500">
-                Inventory Items ({flatServices.length})
+            <div className="leading-tight">
+              <h1 className="text-lg font-black uppercase tracking-tighter italic">
+                Studio
+              </h1>
+              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-blue-500">
+                Inventory Engine
               </span>
-              <input
-                type="text"
-                placeholder="Filter inventory..."
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`p-2 rounded-lg text-[10px] border outline-none ${
-                  isDark
-                    ? "bg-slate-900 border-slate-700"
-                    : "bg-slate-50 border-slate-200"
-                }`}
-              />
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10 max-h-[300px] overflow-y-auto p-2 custom-scrollbar">
-              {flatServices
-                .filter((s) =>
-                  s.name.toLowerCase().includes(searchTerm.toLowerCase()),
-                )
-                .map((s) => (
-                  <button
-                    key={s.externalServiceId}
-                    onClick={() => toggleService(s.externalServiceId)}
-                    className={`p-4 rounded-xl text-[10px] font-bold uppercase border transition-all ${
-                      selectedServices.includes(s.externalServiceId)
-                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20"
-                        : isDark
-                          ? "border-slate-800 bg-slate-900/50 text-slate-500 hover:border-slate-600"
-                          : "border-slate-200 bg-white text-slate-500 hover:border-blue-200"
+          <div
+            className={`flex w-full md:w-auto p-1 rounded-xl border ${isDark ? "bg-black/40 border-white/10" : "bg-slate-200/50 border-slate-200"}`}
+          >
+            {[
+              { id: "list", label: "Collection", icon: <FiShoppingBag /> },
+              { id: "create", label: "Architect", icon: <FiPlus /> },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2 text-[9px] font-black uppercase rounded-lg transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
+                    : "text-slate-500 hover:text-slate-400"
+                }`}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto p-4 md:p-8">
+        {activeTab === "create" ? (
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-500 max-w-4xl mx-auto">
+            <div
+              className={`rounded-[2rem] md:rounded-[3rem] border overflow-hidden transition-all shadow-xl ${
+                isDark
+                  ? "bg-[#11141b] border-white/5"
+                  : "bg-white border-slate-200"
+              }`}
+            >
+              <div className="p-6 md:p-12 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+                  <div className="md:col-span-2 space-y-5">
+                    <div>
+                      <label className="text-[9px] font-black uppercase text-blue-500 tracking-widest block mb-1">
+                        Designation
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Package Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className={`w-full text-lg font-bold bg-transparent border-b py-2 outline-none transition-all ${
+                          isDark
+                            ? "border-white/10 focus:border-blue-500"
+                            : "border-slate-200 focus:border-blue-600"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-widest block mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        rows="2"
+                        placeholder="Bundle details..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className={`w-full bg-transparent border-b py-2 text-sm font-medium outline-none transition-all resize-none ${
+                          isDark
+                            ? "border-white/10 focus:border-blue-500"
+                            : "border-slate-200 focus:border-blue-600"
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  <div
+                    className={`p-5 rounded-2xl border flex flex-col justify-center items-center ${
+                      isDark
+                        ? "bg-black/20 border-white/5"
+                        : "bg-blue-50 border-blue-100"
                     }`}
                   >
-                    {s.name} <br />
-                    <span className="text-[8px] opacity-50">{s.section}</span>
-                  </button>
-                ))}
-            </div>
+                    <label className="text-[9px] font-black uppercase text-blue-500 mb-1">
+                      Price
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xl font-black italic opacity-50">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="bg-transparent w-full text-3xl font-black italic outline-none tracking-tighter"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            <button
-              onClick={createPackage}
-              className="w-full bg-blue-600 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all"
-            >
-              Publish Bundle
-            </button>
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                  <div className="flex flex-col sm:flex-row justify-between gap-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <FiZap className="text-amber-500" /> Inventory (
+                      {selectedServices.length})
+                    </h3>
+                    <div
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
+                        isDark
+                          ? "bg-black/20 border-white/10"
+                          : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
+                      <FiSearch size={12} className="text-slate-500" />
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-transparent text-[10px] font-bold outline-none w-full sm:w-32"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
+                    {flatServices
+                      .filter((s) =>
+                        s.name.toLowerCase().includes(searchTerm.toLowerCase()),
+                      )
+                      .map((s) => (
+                        <button
+                          key={s.externalServiceId}
+                          onClick={() => toggleService(s.externalServiceId)}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            selectedServices.includes(s.externalServiceId)
+                              ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/20"
+                              : isDark
+                                ? "bg-[#161b22] border-white/5 text-slate-500"
+                                : "bg-white border-slate-200 text-slate-600 shadow-sm"
+                          }`}
+                        >
+                          <p className="text-[9px] font-black uppercase leading-tight truncate">
+                            {s.name}
+                          </p>
+                          <p
+                            className={`text-[7px] mt-0.5 font-bold opacity-60 uppercase`}
+                          >
+                            {s.section}
+                          </p>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={createPackage}
+                  className="w-full bg-blue-600 py-4 md:py-5 rounded-2xl font-black text-white uppercase tracking-[0.2em] shadow-xl shadow-blue-600/30 hover:bg-blue-500 active:scale-[0.97] transition-all flex items-center justify-center gap-3 text-[11px]"
+                >
+                  <FiPackage /> Publish Bundle
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in duration-500">
             {packages.length === 0 && !loading && (
-              <div className="text-center py-20 opacity-30 font-black uppercase tracking-widest">
-                No active bundles
+              <div className="col-span-full py-20 text-center opacity-20">
+                <FiPackage size={48} className="mx-auto mb-2" />
+                <p className="text-sm font-black uppercase italic tracking-widest">
+                  No Active Bundles
+                </p>
               </div>
             )}
+
             {packages.map((pkg) => (
               <div
                 key={pkg.id}
-                className={`group p-8 rounded-[2.5rem] border transition-all ${
+                className={`group rounded-[2rem] border transition-all duration-300 overflow-hidden ${
                   isDark
-                    ? "bg-[#161b22] border-slate-800"
-                    : "bg-white border-slate-100 shadow-sm"
+                    ? "bg-[#11141b] border-white/5"
+                    : "bg-white border-slate-200 shadow-sm"
                 }`}
               >
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h2 className="text-2xl font-black uppercase italic tracking-tighter">
-                      {pkg.name}
-                    </h2>
-                    {pkg.description && (
-                      <p className="text-xs opacity-60 mt-2">
-                        {pkg.description}
-                      </p>
-                    )}
-                    <p
-                      className={`text-[9px] font-black mt-2 tracking-widest ${
-                        pkg.isActive ? "text-emerald-500" : "text-slate-500"
-                      }`}
-                    >
-                      {pkg.isActive
-                        ? "● LIVE IN MARKETPLACE"
-                        : "○ PAUSED / HIDDEN"}
-                    </p>
-                  </div>
-                  <div
-                    className={`px-6 py-3 rounded-2xl text-2xl font-black ${
-                      isDark
-                        ? "bg-[#0d1117] text-blue-500"
-                        : "bg-blue-50 text-blue-600"
-                    }`}
-                  >
-                    ₹{pkg.price}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-8 border-t border-slate-500/10 pt-6">
-                  {pkg.items?.map((item) => (
-                    <span
-                      key={item.id}
-                      className={`text-[9px] font-bold px-3 py-1.5 border rounded-lg ${
-                        isDark
-                          ? "bg-[#0d1117] border-slate-800 text-slate-500"
-                          : "bg-gray-50 border-slate-200 text-slate-400"
-                      }`}
-                    >
-                      {item.serviceName}
-                      {item.pricing?.length > 0 && (
-                        <span className="block text-[8px] opacity-60">
-                          ₹{item.pricing[0]?.price}
+                <div className="p-6 md:p-8 flex flex-col gap-6">
+                  {/* Top Bar: Status and Price - REFACTORED FOR RESPONSIVENESS */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${pkg.isActive ? "bg-emerald-500" : "bg-slate-500"}`}
+                        />
+                        <span className="text-[8px] font-black tracking-widest uppercase opacity-50">
+                          {pkg.isActive ? "Operational" : "Offline"}
                         </span>
-                      )}
-                    </span>
-                  ))}
-                </div>
+                      </div>
+                      <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter leading-tight break-words max-w-[250px] md:max-w-full">
+                        {pkg.name}
+                      </h2>
+                    </div>
 
-                <div className="flex items-center justify-between border-t border-slate-500/10 pt-6">
-                  <button
-                    onClick={() => togglePackageStatus(pkg.id)}
-                    className={`text-[10px] font-black uppercase transition-colors ${
-                      pkg.isActive
-                        ? "text-slate-500 hover:text-orange-500"
-                        : "text-blue-500 hover:text-blue-600"
-                    }`}
+                    <div
+                      className={`px-4 py-2 rounded-xl border flex items-baseline gap-1 shrink-0 ${
+                        isDark
+                          ? "bg-white/5 border-white/10 text-blue-400"
+                          : "bg-blue-50 border-blue-100 text-blue-600"
+                      }`}
+                    >
+                      <span className="text-[10px] font-black italic opacity-60">
+                        ₹
+                      </span>
+                      <span className="text-2xl font-black italic tracking-tighter">
+                        {pkg.price}
+                      </span>
+                    </div>
+                  </div>
+
+                  {pkg.description && (
+                    <p className="text-[11px] font-medium opacity-50 -mt-2 leading-relaxed">
+                      {pkg.description}
+                    </p>
+                  )}
+
+                  {/* Service Pills */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {pkg.items?.map((item) => (
+                      <span
+                        key={item.id}
+                        className={`text-[8px] font-black uppercase px-2.5 py-1.5 rounded-lg border ${
+                          isDark
+                            ? "bg-black/20 border-white/5 text-slate-500"
+                            : "bg-slate-50 border-slate-100 text-slate-400"
+                        }`}
+                      >
+                        {item.serviceName}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div
+                    className={`flex items-center justify-between border-t pt-5 ${isDark ? "border-white/5" : "border-slate-100"}`}
                   >
-                    {pkg.isActive ? "Pause Listing" : "Resume Listing"}
-                  </button>
-                  <button
-                    onClick={() => deletePackage(pkg.id)}
-                    className="text-[10px] font-black uppercase text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-2"
-                  >
-                    <span>Remove Bundle</span>
-                    <span className="text-sm">🗑️</span>
-                  </button>
+                    <button
+                      onClick={() => togglePackageStatus(pkg.id)}
+                      className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all ${
+                        pkg.isActive
+                          ? "text-slate-500 hover:text-orange-500"
+                          : "text-blue-500"
+                      }`}
+                    >
+                      <FiPower /> {pkg.isActive ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      onClick={() => deletePackage(pkg.id)}
+                      className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

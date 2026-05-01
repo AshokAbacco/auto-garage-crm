@@ -1,15 +1,23 @@
+// external.controller.js
+
 import { fetchExternalUsers } from "./external.service.js";
 
 export const getExternalUsers = async (req, res) => {
   try {
     let { page = 1, limit = 20, search = "", crm } = req.query;
 
-    page = Number(page);
-    limit = Number(limit);
+    // -------------------------------
+    // Normalize Inputs
+    // -------------------------------
+    page = Number(page) || 1;
+    limit = Number(limit) || 20;
 
-    // safety limits
+    // Safety cap
     if (limit > 100) limit = 100;
 
+    // -------------------------------
+    // Fetch Data
+    // -------------------------------
     const { users, total } = await fetchExternalUsers({
       page,
       limit,
@@ -17,6 +25,9 @@ export const getExternalUsers = async (req, res) => {
       crm,
     });
 
+    // -------------------------------
+    // Response
+    // -------------------------------
     return res.json({
       success: true,
       meta: {
@@ -25,7 +36,7 @@ export const getExternalUsers = async (req, res) => {
         limit,
         totalPages: Math.ceil(total / limit),
       },
-      data: users,
+      data: users, // ✅ includes: user + avgRating + services (external DB)
     });
   } catch (error) {
     console.error("External Users Error:", error);

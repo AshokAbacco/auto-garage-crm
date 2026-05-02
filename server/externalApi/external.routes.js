@@ -5,6 +5,7 @@ import { verifyExternalApiKey } from "./external.middleware.js";
 const router = express.Router();
 
 // GET /api/v1/external/users
+// Supports: pagination, search, crm filter
 router.get("/users", verifyExternalApiKey, getExternalUsers);
 
 export default router;

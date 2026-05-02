@@ -42,45 +42,69 @@ export const getGarages = async (req, res) => {
 // ==============================
 // CREATE BOOKING
 // ==============================
+// ==============================
+// CREATE BOOKING
+// ==============================
 export const createBooking = async (req, res) => {
   try {
-    const { externalServiceId, garageId, clientId, scheduledAt, appPrice } =
-      req.body;
+    const { 
+      externalServiceId, 
+      garageId, 
+      clientId, 
+      scheduledAt, 
+      appPrice,
+      carType,
+      serviceName 
+    } = req.body;
 
+    // 1. Validation check
     if (!externalServiceId || !garageId || !clientId || !scheduledAt) {
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields" });
     }
 
+    // 2. Prepare Data 
+    // We remove the strict Number() casting here to allow the Service layer 
+    // and Prisma to handle the ID mapping based on your schema (Int vs UUID).
     const bookingData = {
       externalServiceId,
-      garageId: Number(garageId),
-      clientId: Number(clientId),
+      garageId: garageId, 
+      clientId: clientId, 
       scheduledAt,
       appPrice: appPrice ? Number(appPrice) : null,
-      carType: req.body.carType || "SEDAN",
-      serviceName: req.body.serviceName || null,
+      carType: carType || "SEDAN",
+      serviceName: serviceName || null,
     };
 
+    // 3. Call Service Layer
     const booking = await marketplaceService.createBooking(bookingData);
 
-    // Fire-and-forget side effects
+    // 4. Fire-and-forget side effects
+    // Ensure we use the garageId as it exists in the created booking record
+    const targetGarageId = booking.garageId || garageId;
+
     try {
-      await notifyGarage(garageId, booking);
+      await notifyGarage(targetGarageId, booking);
     } catch (e) {
       console.error("SOCKET ERROR:", e.message);
     }
+
     try {
       await dispatchService.startDispatch(booking.id);
     } catch (e) {
       console.error("DISPATCH ERROR:", e.message);
     }
 
+    // 5. Success Response
     res.json({ success: true, data: booking });
+
   } catch (err) {
-    console.error("BOOKING ERROR:", err);
-    res.status(400).json({ success: false, message: err.message });
+    console.error("BOOKING ERROR DETAILS:", err);
+    res.status(400).json({ 
+      success: false, 
+      message: err.message || "An error occurred while creating the booking" 
+    });
   }
 };
 

@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
+import CompanyLocationMap from "../components/CompanyLocationMap";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
-
 export default function Profile() {
   const [user, setUser] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -29,8 +29,10 @@ export default function Profile() {
     newPassword: "",
     phone: "",
     companyName: "",
+    companyAddress: "",
+    companyLatitude: "",
+    companyLongitude: "",
   });
-
   const [kycData, setKycData] = useState({
     upiId: "",
     panNumber: "",
@@ -53,6 +55,9 @@ export default function Profile() {
       newPassword: "",
       phone: storedUser?.phone || "",
       companyName: storedUser?.companyName || "",
+      companyAddress: storedUser?.companyAddress || "",
+      companyLatitude: storedUser?.companyLatitude || "",
+      companyLongitude: storedUser?.companyLongitude || "",
     });
 
     if (storedUser?.profileImage) {
@@ -300,6 +305,37 @@ export default function Profile() {
                 className={inputClass}
               />
             </div>
+           <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Latitude
+            </label>
+
+            <input
+              type="text"
+              step="any"
+              name="companyLatitude"
+              value={formData.companyLatitude}
+              onChange={handleInputChange}
+              className={inputClass}
+              placeholder="13.0623"
+            />
+          </div>
+
+<div className="space-y-2">
+  <label className="text-sm font-medium">
+    Longitude
+  </label>
+
+  <input
+    type="text"
+    step="any"
+    name="companyLongitude"
+    value={formData.companyLongitude}
+    onChange={handleInputChange}
+    className={inputClass}
+    placeholder="77.5612"
+  />
+</div>
             <div className="space-y-2 relative">
               <label className="text-sm font-medium">Current Password</label>
               <input
@@ -338,7 +374,23 @@ export default function Profile() {
             <Save size={18} /> Save Changes
           </button>
         </div>
+<div
+  className={`p-6 rounded-2xl shadow-sm border ${
+    isDark
+      ? "bg-gray-800 border-gray-700"
+      : "bg-white border-gray-200"
+  }`}
+>
+  <h2 className="text-xl font-bold mb-4">
+    Company Location
+  </h2>
 
+<CompanyLocationMap
+  latitude={formData.companyLatitude}
+  longitude={formData.companyLongitude}
+  companyName={formData.companyName}
+/>
+</div>
         {/* KYC Section */}
         <div
           className={`p-8 rounded-2xl shadow-sm border ${

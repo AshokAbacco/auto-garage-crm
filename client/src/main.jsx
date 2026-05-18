@@ -4,6 +4,7 @@ import { unstable_HistoryRouter as HistoryRouter } from "react-router-dom";
 import { createBrowserHistory } from "history";
 import App from "./App.jsx";
 import "./index.css";
+import "leaflet/dist/leaflet.css";
 
 const history = createBrowserHistory();
 

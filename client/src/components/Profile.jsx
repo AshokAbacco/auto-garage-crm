@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
+import CompanyLocationMap from "../components/CompanyLocationMap";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
-
 export default function Profile() {
   const [user, setUser] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -29,8 +29,10 @@ export default function Profile() {
     newPassword: "",
     phone: "",
     companyName: "",
+    companyAddress: "",
+    companyLatitude: "",
+    companyLongitude: "",
   });
-
   const [kycData, setKycData] = useState({
     upiId: "",
     panNumber: "",
@@ -53,6 +55,9 @@ export default function Profile() {
       newPassword: "",
       phone: storedUser?.phone || "",
       companyName: storedUser?.companyName || "",
+      companyAddress: storedUser?.companyAddress || "",
+      companyLatitude: storedUser?.companyLatitude || "",
+      companyLongitude: storedUser?.companyLongitude || "",
     });
 
     if (storedUser?.profileImage) {
@@ -300,6 +305,104 @@ export default function Profile() {
                 className={inputClass}
               />
             </div>
+           <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Latitude
+            </label>
+
+            <input
+              type="text"
+              step="any"
+              name="companyLatitude"
+              value={formData.companyLatitude}
+              onChange={handleInputChange}
+              className={inputClass}
+              placeholder="13.0623"
+            />
+          </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Longitude
+          </label>
+
+          <input
+            type="text"
+            step="any"
+            name="companyLongitude"
+            value={formData.companyLongitude}
+            onChange={handleInputChange}
+            className={inputClass}
+            placeholder="77.5612"
+          />
+        </div>
+<div className="md:col-span-2">
+  <div
+    className={`p-4 rounded-2xl border ${
+      isDark
+        ? "bg-gray-900 border-gray-700"
+        : "bg-blue-50 border-blue-200"
+    }`}
+  >
+    <h3 className="text-lg font-semibold mb-3">
+      How to Get Latitude & Longitude
+    </h3>
+
+    <div className="space-y-3 text-sm">
+      <div>
+        <p className="font-medium mb-1">
+          💻 For PC / Laptop:
+        </p>
+
+        <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+          Open Google Maps, search your company location, right click on the
+          exact location, then copy the coordinates.
+
+          <br />
+          Example: <strong>12.9716, 77.5946</strong>
+
+          <br />
+          First value = <strong>Latitude (12.9716)</strong>
+
+          <br />
+          Second value = <strong>Longitude (77.5946)</strong>
+        </p>
+      </div>
+
+      <div>
+        <p className="font-medium mb-1">
+          📱 For Mobile:
+        </p>
+
+        <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+          Open Google Maps, search your company location, then press and hold
+          the exact location on the map to drop a pin.
+
+          <br />
+          The coordinates will appear below.
+
+          <br />
+          Example: <strong>12.9716, 77.5946</strong>
+
+          <br />
+          First value = <strong>Latitude (12.9716)</strong>
+
+          <br />
+          Second value = <strong>Longitude (77.5946)</strong>
+        </p>
+      </div>
+
+      <a
+        href="https://www.youtube.com/watch?v=GUenyBF9C5I"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition"
+      >
+        ▶ Watch Tutorial Video
+      </a>
+    </div>
+  </div>
+</div>
             <div className="space-y-2 relative">
               <label className="text-sm font-medium">Current Password</label>
               <input
@@ -338,7 +441,23 @@ export default function Profile() {
             <Save size={18} /> Save Changes
           </button>
         </div>
+          <div
+            className={`p-6 rounded-2xl shadow-sm border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <h2 className="text-xl font-bold mb-4">
+              Company Location
+            </h2>
 
+          <CompanyLocationMap
+            latitude={formData.companyLatitude}
+            longitude={formData.companyLongitude}
+            companyName={formData.companyName}
+          />
+          </div>
         {/* KYC Section */}
         <div
           className={`p-8 rounded-2xl shadow-sm border ${

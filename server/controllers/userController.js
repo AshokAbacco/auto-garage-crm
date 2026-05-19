@@ -19,6 +19,9 @@ export const getProfile = async (req, res) => {
         phone: true,
         address: true,
         companyName: true,
+        companyAddress: true,
+        companyLatitude: true,
+        companyLongitude: true,
         plan: true,
         planExpiry: true,
         role: true,
@@ -41,27 +44,49 @@ export const getProfile = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    const { username, email, phone, companyName } = req.body;
-
+    const {
+      username,
+      email,
+      phone,
+      companyName,
+      companyAddress,
+      companyLatitude,
+      companyLongitude,
+    } = req.body;
     // Update user table
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
-      data: {
-        username,
-        email,
-        phone,
-        companyName,
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        phone: true,
-        companyName: true,
-        profileImage: true,
-        role: true,
-        updatedAt: true,
-      },
+    data: {
+      username,
+      email,
+      phone,
+      companyName,
+      companyAddress,
+    companyLatitude:
+      companyLatitude !== undefined &&
+      companyLatitude !== ""
+        ? Number(companyLatitude)
+        : null,
+
+    companyLongitude:
+      companyLongitude !== undefined &&
+      companyLongitude !== ""
+        ? Number(companyLongitude)
+        : null,
+        },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      phone: true,
+      companyName: true,
+      companyAddress: true,
+      companyLatitude: true,
+      companyLongitude: true,
+      profileImage: true,
+      role: true,
+      updatedAt: true,
+    },
     });
 
     // Update payment table (all records for this user)

@@ -223,6 +223,20 @@ function App() {
 
               <Route path="/team-register" element={<TeamRegister />} />
               <Route path="/salary-manage" element={<StaffSalaryContainer />} />
+              <Route
+                path="/bike-marketplace/bookings"
+                element={<MarketplaceBookings />}
+              />
+
+              <Route
+                path="/bike-marketplace/pricing"
+                element={<MarketplacePricing />}
+              />
+
+              <Route
+                path="/bike-marketplace/packages"
+                element={<MarketplacePackages />}
+              />
             </Route>
 
             {/* Washing CRM Routes */}
@@ -260,6 +274,20 @@ function App() {
               <Route
                 path="/billing/create-invoice/:serviceId"
                 element={<NewInvoice />}
+              />
+              <Route
+                 path="/washing-marketplace/bookings"
+                element={<MarketplaceBookings />}
+              />
+
+              <Route
+                path="/washing-marketplace/pricing"
+                element={<MarketplacePricing />}
+              />
+
+              <Route
+                path="/washing-marketplace/packages"
+                element={<MarketplacePackages />}
               />
             </Route>
 

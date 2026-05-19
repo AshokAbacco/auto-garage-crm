@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Camera, Save, Mail, User, Lock, Eye, EyeOff, ArrowRight, Sparkles, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
+import CompanyLocationMap from "../components/CompanyLocationMap";
+
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -13,14 +15,17 @@ export default function Profile() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const { isDark } = useTheme();
 
-    const [formData, setFormData] = useState({
+        const [formData, setFormData] = useState({
         username: "",
         email: "",
         password: "",
         newPassword: "",
         phone: "",
         companyName: "",
-    });
+        companyAddress: "",
+        companyLatitude: "",
+        companyLongitude: "",
+        });
 
     const navigate = useNavigate();
 
@@ -31,14 +36,17 @@ export default function Profile() {
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         setUser(storedUser);
 
-        setFormData({
-            username: storedUser?.username || "",
-            email: storedUser?.email || "",
-            password: "",
-            newPassword: "",
-            phone: storedUser?.phone || "",
-            companyName: storedUser?.companyName || "",
-        });
+    setFormData({
+    username: storedUser?.username || "",
+    email: storedUser?.email || "",
+    password: "",
+    newPassword: "",
+    phone: storedUser?.phone || "",
+    companyName: storedUser?.companyName || "",
+    companyAddress: storedUser?.companyAddress || "",
+    companyLatitude: storedUser?.companyLatitude || "",
+    companyLongitude: storedUser?.companyLongitude || "",
+    });
     }, []);
 
     useEffect(() => {
@@ -113,10 +121,13 @@ export default function Profile() {
                 Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-                username: formData.username,
-                email: formData.email,
-                phone: formData.phone,
-                companyName: formData.companyName,
+            username: formData.username,
+            email: formData.email,
+            phone: formData.phone,
+            companyName: formData.companyName,
+            companyAddress: formData.companyAddress,
+            companyLatitude: formData.companyLatitude,
+            companyLongitude: formData.companyLongitude,
             }),
         });
 
@@ -150,8 +161,35 @@ export default function Profile() {
         }
 
         // 3️⃣ Update local storage
-        localStorage.setItem("user", JSON.stringify(profileResponse.user));
-        setUser(profileResponse.user);
+const existingUser = JSON.parse(
+  localStorage.getItem("user") || "{}"
+);
+
+const updatedUser = {
+  ...existingUser,
+  ...profileResponse.user,
+};
+
+localStorage.setItem(
+  "user",
+  JSON.stringify(updatedUser)
+);
+
+setUser(updatedUser);
+setFormData((prev) => ({
+  ...prev,
+  username: updatedUser.username || "",
+  email: updatedUser.email || "",
+  phone: updatedUser.phone || "",
+  companyName: updatedUser.companyName || "",
+  companyAddress: updatedUser.companyAddress || "",
+  companyLatitude: updatedUser.companyLatitude || "",
+  companyLongitude: updatedUser.companyLongitude || "",
+}));
+
+window.dispatchEvent(
+  new Event("user-updated")
+);
 
         // 4️⃣ Success message
         alert("Profile Updated Successfully!");
@@ -479,6 +517,103 @@ export default function Profile() {
                   `}
                                 />
                             </div>
+                            {/* LATITUDE */}
+                            <div className="space-y-2">
+                            <label
+                                className={`text-sm font-semibold ${
+                                isDark ? "text-gray-300" : "text-gray-700"
+                                }`}
+                            >
+                                Latitude
+                            </label>
+
+                            <input
+                                type="text"
+                                name="companyLatitude"
+                                value={formData.companyLatitude}
+                                onChange={handleInputChange}
+                                placeholder="12.9716"
+                                className={`w-full pl-4 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                                ${
+                                    isDark
+                                    ? "bg-gray-800/50 border-gray-700 text-white"
+                                    : "bg-white border-gray-300 text-gray-900"
+                                }`}
+                            />
+                            </div>
+
+                            {/* LONGITUDE */}
+                            <div className="space-y-2">
+                            <label
+                                className={`text-sm font-semibold ${
+                                isDark ? "text-gray-300" : "text-gray-700"
+                                }`}
+                            >
+                                Longitude
+                            </label>
+
+                            <input
+                                type="text"
+                                name="companyLongitude"
+                                value={formData.companyLongitude}
+                                onChange={handleInputChange}
+                                placeholder="77.5946"
+                                className={`w-full pl-4 pr-4 py-4 rounded-xl border-2 transition-all duration-300
+                                ${
+                                    isDark
+                                    ? "bg-gray-800/50 border-gray-700 text-white"
+                                    : "bg-white border-gray-300 text-gray-900"
+                                }`}
+                            />
+                            </div>
+                            <div
+                            className={`p-4 rounded-2xl border ${
+                                isDark
+                                ? "bg-gray-900 border-gray-700"
+                                : "bg-blue-50 border-blue-200"  
+                            }`}
+                            >
+                            <h3 className="text-lg font-semibold mb-3">
+                                How to Get Latitude & Longitude
+                            </h3>
+
+                            <div className="space-y-3 text-sm">
+                                <a
+                                href="https://www.youtube.com/watch?v=GUenyBF9C5I"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition"
+                                >
+                                ▶ Watch Tutorial Video
+                                </a>
+                                <div>
+                                <p className="font-medium mb-1">💻 For PC / Laptop:</p>
+
+                                <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+                                    Open Google Maps, search your company location, right click on the
+                                    exact location, then copy the coordinates.
+
+                                    <br />
+                                    Example: <strong>12.9716, 77.5946</strong>
+
+                                    <br />
+                                    First value = <strong>Latitude</strong>
+
+                                    <br />
+                                    Second value = <strong>Longitude</strong>
+                                </p>
+                                </div>
+
+                                <div>
+                                <p className="font-medium mb-1">📱 For Mobile:</p>
+
+                                <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+                                    Open Google Maps, search your company location, then press and hold
+                                    the exact location on the map to drop a pin.
+                                </p>
+                                </div>
+                            </div>
+                            </div>
 
                             {/* SAVE BUTTON */}
                             <button
@@ -495,7 +630,23 @@ export default function Profile() {
                                 </div>
                             </button>
                         </form>
+                        <div
+                        className={`p-6 rounded-2xl shadow-sm border ${
+                            isDark
+                            ? "bg-gray-800 border-gray-700"
+                            : "bg-white border-gray-200"
+                        }`}
+                        >
+                        <h2 className="text-xl font-bold mb-4">
+                            Company Location
+                        </h2>
 
+                        <CompanyLocationMap
+                            latitude={formData.companyLatitude}
+                            longitude={formData.companyLongitude}
+                            companyName={formData.companyName}
+                        />
+                        </div>
                         {/* Info Box */}
                         <div className={`p-4 rounded-xl border-2 ${isDark
                             ? 'bg-indigo-900/20 border-indigo-700/50'

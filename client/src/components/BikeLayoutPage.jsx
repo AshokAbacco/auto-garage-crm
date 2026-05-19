@@ -18,7 +18,10 @@ import {
   Settings,
   IndianRupee,
   Network,
-  Crown
+  Crown,
+  ListTree,
+ChevronDown,
+ChevronRight,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useNavigate, Outlet  } from "react-router-dom";
@@ -106,11 +109,31 @@ const menu = [
     icon: Crown,
     roles: ["owner"],
   },
+  {
+  label: "Marketplace",
+  icon: ListTree,
+  roles: ["owner", "bike_team"],
+  children: [
+    {
+      to: "/bike-marketplace/bookings",
+      label: "Bookings",
+    },
+    {
+      to: "/bike-marketplace/pricing",
+      label: "Pricing",
+    },
+    {
+      to: "/bike-marketplace/packages",
+      label: "Packages",
+    },
+  ],
+},
 ];
 
 
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState({});
 
   const [user, setUser] = useState(null);
 
@@ -201,46 +224,123 @@ const logout = () => {
             {menu
               // ✅ FILTER BASED ON ROLE
               .filter(item => item.roles.includes(user?.type))
-              .map((item) => {
-                const isActive = activeRoute === item.to;
-                const Icon = item.icon;
+          .map((item) => {
+            const Icon = item.icon;
 
-                return (
+            // ===============================
+            // DROPDOWN MENU
+            // ===============================
+            if (item.children) {
+              const isOpen = openDropdowns[item.label];
+
+              return (
+                <div key={item.label}>
                   <button
-                    key={item.to}
-                    onClick={() => {
-                      setActiveRoute(item.to);
-                      setSidebarOpen(false);
-                      routerNavigate(item.to);
-                    }}
+                    onClick={() =>
+                      setOpenDropdowns((prev) => ({
+                        ...prev,
+                        [item.label]: !prev[item.label],
+                      }))
+                    }
                     className={`
-                      w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
+                      w-full flex items-center justify-between px-3 py-3 rounded-xl font-medium transition-all duration-200
                       ${
-                        isActive
-                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
-                          : isDark
+                        isDark
                           ? "text-gray-300 hover:bg-gray-700 hover:text-white"
                           : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                       }
                     `}
                   >
-                    <Icon
-                      className={`w-5 h-5 flex-shrink-0 ${
-                        isActive
-                          ? "text-white"
-                          : isDark
-                          ? "text-gray-400"
-                          : "text-gray-500"
-                      }`}
-                    />
-                    {sidebarExpanded && (
-                      <span className="transition-opacity duration-300">
-                        {item.label}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+
+                      {sidebarExpanded && (
+                        <span className="transition-opacity duration-300">
+                          {item.label}
+                        </span>
+                      )}
+                    </div>
+
+                    {sidebarExpanded &&
+                      (isOpen ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      ))}
                   </button>
-                );
-              })}
+
+                  {sidebarExpanded && isOpen && (
+                    <div className="pl-8 mt-1 space-y-1">
+                      {item.children.map((child) => (
+                        <button
+                          key={child.to}
+                          onClick={() => {
+                            setActiveRoute(child.to);
+                            setSidebarOpen(false);
+                            routerNavigate(child.to);
+                          }}
+                          className={`
+                            w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200
+                            ${
+                              activeRoute === child.to
+                                ? "bg-blue-500 text-white"
+                                : isDark
+                                ? "text-gray-300 hover:bg-gray-700"
+                                : "text-gray-700 hover:bg-blue-50"
+                            }
+                          `}
+                        >
+                          {child.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // ===============================
+            // NORMAL MENU
+            // ===============================
+            const isActive = activeRoute === item.to;
+
+            return (
+              <button
+                key={item.to}
+                onClick={() => {
+                  setActiveRoute(item.to);
+                  setSidebarOpen(false);
+                  routerNavigate(item.to);
+                }}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200
+                  ${
+                    isActive
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+                      : isDark
+                      ? "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                  }
+                `}
+              >
+                <Icon
+                  className={`w-5 h-5 flex-shrink-0 ${
+                    isActive
+                      ? "text-white"
+                      : isDark
+                      ? "text-gray-400"
+                      : "text-gray-500"
+                  }`}
+                />
+
+                {sidebarExpanded && (
+                  <span className="transition-opacity duration-300">
+                    {item.label}
+                  </span>
+                )}
+              </button>
+            );
+          })}
           </nav>
 
 

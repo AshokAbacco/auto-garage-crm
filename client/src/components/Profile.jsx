@@ -321,20 +321,87 @@ export default function Profile() {
             />
           </div>
 
-<div className="space-y-2">
-  <label className="text-sm font-medium">
-    Longitude
-  </label>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Longitude
+          </label>
 
-  <input
-    type="text"
-    step="any"
-    name="companyLongitude"
-    value={formData.companyLongitude}
-    onChange={handleInputChange}
-    className={inputClass}
-    placeholder="77.5612"
-  />
+          <input
+            type="text"
+            step="any"
+            name="companyLongitude"
+            value={formData.companyLongitude}
+            onChange={handleInputChange}
+            className={inputClass}
+            placeholder="77.5612"
+          />
+        </div>
+<div className="md:col-span-2">
+  <div
+    className={`p-4 rounded-2xl border ${
+      isDark
+        ? "bg-gray-900 border-gray-700"
+        : "bg-blue-50 border-blue-200"
+    }`}
+  >
+    <h3 className="text-lg font-semibold mb-3">
+      How to Get Latitude & Longitude
+    </h3>
+
+    <div className="space-y-3 text-sm">
+      <div>
+        <p className="font-medium mb-1">
+          💻 For PC / Laptop:
+        </p>
+
+        <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+          Open Google Maps, search your company location, right click on the
+          exact location, then copy the coordinates.
+
+          <br />
+          Example: <strong>12.9716, 77.5946</strong>
+
+          <br />
+          First value = <strong>Latitude (12.9716)</strong>
+
+          <br />
+          Second value = <strong>Longitude (77.5946)</strong>
+        </p>
+      </div>
+
+      <div>
+        <p className="font-medium mb-1">
+          📱 For Mobile:
+        </p>
+
+        <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+          Open Google Maps, search your company location, then press and hold
+          the exact location on the map to drop a pin.
+
+          <br />
+          The coordinates will appear below.
+
+          <br />
+          Example: <strong>12.9716, 77.5946</strong>
+
+          <br />
+          First value = <strong>Latitude (12.9716)</strong>
+
+          <br />
+          Second value = <strong>Longitude (77.5946)</strong>
+        </p>
+      </div>
+
+      <a
+        href="https://www.youtube.com/watch?v=GUenyBF9C5I"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition"
+      >
+        ▶ Watch Tutorial Video
+      </a>
+    </div>
+  </div>
 </div>
             <div className="space-y-2 relative">
               <label className="text-sm font-medium">Current Password</label>
@@ -374,23 +441,23 @@ export default function Profile() {
             <Save size={18} /> Save Changes
           </button>
         </div>
-<div
-  className={`p-6 rounded-2xl shadow-sm border ${
-    isDark
-      ? "bg-gray-800 border-gray-700"
-      : "bg-white border-gray-200"
-  }`}
->
-  <h2 className="text-xl font-bold mb-4">
-    Company Location
-  </h2>
+          <div
+            className={`p-6 rounded-2xl shadow-sm border ${
+              isDark
+                ? "bg-gray-800 border-gray-700"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <h2 className="text-xl font-bold mb-4">
+              Company Location
+            </h2>
 
-<CompanyLocationMap
-  latitude={formData.companyLatitude}
-  longitude={formData.companyLongitude}
-  companyName={formData.companyName}
-/>
-</div>
+          <CompanyLocationMap
+            latitude={formData.companyLatitude}
+            longitude={formData.companyLongitude}
+            companyName={formData.companyName}
+          />
+          </div>
         {/* KYC Section */}
         <div
           className={`p-8 rounded-2xl shadow-sm border ${

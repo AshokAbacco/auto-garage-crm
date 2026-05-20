@@ -26,15 +26,24 @@ const useTrial = (process.env.USE_TRIAL || "true").toLowerCase() === "true";
 // Razorpay Plan IDs (ENV)
 const RAZORPAY_PLAN_MAP = {
   basic: process.env.RAZORPAY_PLAN_CAR_BASIC,
+  basicnode: process.env.RAZORPAY_PLAN_CAR_BASIC,
+
   standard: process.env.RAZORPAY_PLAN_CAR_STANDARD,
+  standardnode: process.env.RAZORPAY_PLAN_CAR_STANDARD,
+
   premium: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
+  premiumnode: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
 };
 
-// Prisma Enum mapping
 const PRISMA_PLAN_MAP = {
   basic: "BASIC",
+  basicnode: "BASIC",
+
   standard: "STANDARD",
+  standardnode: "STANDARD",
+
   premium: "PREMIUM",
+  premiumnode: "PREMIUM",
 };
 
 /* ----------------------------------------------
@@ -54,20 +63,72 @@ function addInterval(date, billingPeriod) {
    1️⃣ CREATE SUBSCRIPTION
 ========================================================= */
 router.post("/create-subscription", async (req, res) => {
+  console.log("\n================ CREATE SUBSCRIPTION ================");
+  console.log("FULL BODY:");
+  console.log(JSON.stringify(req.body, null, 2));
+
+  const { plan, billingPeriod, customer } = req.body || {};
+
+  console.log("\nPLAN OBJECT:");
+  console.log(plan);
+
+  console.log("\nCUSTOMER OBJECT:");
+  console.log(customer);
+
+  console.log("\nRAW VALUES:");
+  console.log("plan.name =>", plan?.name);
+  console.log("plan.numericPrice =>", plan?.numericPrice);
+  console.log("typeof numericPrice =>", typeof plan?.numericPrice);
+  console.log("billingPeriod =>", billingPeriod);
+
+  const rawPlanName = plan?.name?.toLowerCase()?.trim()?.replace(/\s+/g, "");
+
+  console.log("\nNORMALIZED PLAN:");
+  console.log(rawPlanName);
+
+  console.log("\nENV PLAN MAP:");
+  console.log({
+    basic: process.env.RAZORPAY_PLAN_CAR_BASIC,
+    standard: process.env.RAZORPAY_PLAN_CAR_STANDARD,
+    premium: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
+  });
+
+  console.log("\nVALIDATION CHECKS:");
+  console.log("HAS PLAN NAME =>", !!plan?.name);
+  console.log("PRICE IS NUMBER =>", typeof plan?.numericPrice === "number");
+  console.log(
+    "VALID BILLING =>",
+    ["monthly", "yearly"].includes(billingPeriod?.toLowerCase?.()),
+  );
+  console.log("HAS CUSTOMER EMAIL =>", !!customer?.email);
+  console.log("HAS CUSTOMER NAME =>", !!customer?.name);
+  console.log("HAS CUSTOMER PHONE =>", !!customer?.phone);
+
+  console.log("====================================================\n");
   try {
     const { plan, billingPeriod, customer } = req.body || {};
 
-    if (!plan?.name || typeof plan.numericPrice !== "number") {
+    if (!plan?.name) {
+      console.log("FAILED: PLAN NAME MISSING");
       return res.status(400).json({
         success: false,
-        error: "Invalid plan data",
+        error: "PLAN NAME MISSING",
       });
     }
 
-    if (!["monthly", "yearly"].includes(billingPeriod)) {
+    if (typeof plan.numericPrice !== "number") {
+      console.log("FAILED: PRICE NOT NUMBER");
       return res.status(400).json({
         success: false,
-        error: "Invalid billing period",
+        error: `PRICE TYPE = ${typeof plan.numericPrice}`,
+      });
+    }
+
+    if (!["monthly", "yearly"].includes(billingPeriod?.toLowerCase?.())) {
+      console.log("FAILED: INVALID BILLING");
+      return res.status(400).json({
+        success: false,
+        error: `INVALID BILLING = ${billingPeriod}`,
       });
     }
 
@@ -91,11 +152,17 @@ router.post("/create-subscription", async (req, res) => {
     const prismaPlan = PRISMA_PLAN_MAP[rawPlanName];
 
     if (!razorpayPlanId || !prismaPlan) {
+      console.log("FAILED: PLAN MAP");
+      console.log("rawPlanName =>", rawPlanName);
+      console.log("razorpayPlanId =>", razorpayPlanId);
+      console.log("prismaPlan =>", prismaPlan);
+
       return res.status(400).json({
         success: false,
-        error: `Invalid plan name: ${plan.name}`,
+        error: `INVALID PLAN MAP = ${rawPlanName}`,
       });
     }
+
     const prismaPlanMap = {
       basic: PlanType.BASIC,
       standard: PlanType.STANDARD,

@@ -159,8 +159,11 @@ const PaymentModal = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plan: { name: plan.name, numericPrice: plan.numericPrice },
-          billingPeriod,
+          plan: {
+            name: plan.name.replace(" NODE", "").toLowerCase(),
+            numericPrice: Number(plan.numericPrice),
+          },
+          billingPeriod: billingPeriod.toLowerCase(),
           customer: { ...formData },
         }),
       });

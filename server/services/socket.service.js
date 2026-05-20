@@ -83,6 +83,9 @@ export const notifyGarage = async (garageId, booking) => {
   }
 };
 
+
+
+
 // //socket.service.js
 // let io = null;
 
@@ -109,3 +112,4 @@ export const notifyGarage = async (garageId, booking) => {
 //     });
 //   }, 300); // 🔥 KEY FIX
 // };
+

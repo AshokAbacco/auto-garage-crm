@@ -23,7 +23,7 @@ export default function ModernPricingPage() {
   const carPlans = [
     {
       id: "basic",
-      name: "Basic Node",
+      name: "Basic Package",
       tagline: "Entry-level infrastructure",
       numericPrice: 1000,
       icon: FiZap,
@@ -37,7 +37,7 @@ export default function ModernPricingPage() {
     },
     {
       id: "standard",
-      name: "Standard Node",
+      name: "Standard Package",
       tagline: "Optimized for high-volume",
       numericPrice: 2000,
       icon: FiStar,
@@ -48,19 +48,19 @@ export default function ModernPricingPage() {
         "Priority Support Tier",
         "Advanced Data Export",
         "SMS/WhatsApp Protocols",
-        "Team Access (3 Nodes)",
+        "Team Access (3 Logins)",
       ],
     },
     {
       id: "premium",
-      name: "Premium Node",
+      name: "Premium Package",
       tagline: "Enterprise-grade control",
       numericPrice: 3000,
       icon: FiAward,
       badge: "BEST VALUE",
       features: [
         "Full Standard Features",
-        "Team Access (10 Nodes)",
+        "Team Access (10 Logins)",
         "Maintenance Alert Logic",
         "Bulk Processing Engine",
         "Dedicated Account Manager",
@@ -74,7 +74,7 @@ export default function ModernPricingPage() {
   const bikePlans = [
     {
       id: "basic",
-      name: "Basic Node",
+      name: "Basic Package",
       tagline: "Compact garage setup",
       numericPrice: 600,
       icon: FiZap,
@@ -88,7 +88,7 @@ export default function ModernPricingPage() {
     },
     {
       id: "standard",
-      name: "Standard Node",
+      name: "Standard Package",
       tagline: "Enhanced efficiency",
       numericPrice: 1200,
       icon: FiStar,
@@ -99,19 +99,19 @@ export default function ModernPricingPage() {
         "Priority Support Tier",
         "Advanced Data Export",
         "SMS/WhatsApp Protocols",
-        "Team Access (3 Nodes)",
+        "Team Access (3 Logins)",
       ],
     },
     {
       id: "premium",
-      name: "Premium Node",
+      name: "Premium Package",
       tagline: "Elite fleet management",
       numericPrice: 2000,
       icon: FiAward,
       badge: "BEST VALUE",
       features: [
         "Full Standard Features",
-        "Team Access (10 Nodes)",
+        "Team Access (10 Logins)",
         "Maintenance Alert Logic",
         "Bulk Processing Engine",
         "Dedicated Account Manager",
@@ -125,7 +125,7 @@ export default function ModernPricingPage() {
   const washingPlans = [
     {
       id: "standard",
-      name: "Standard Node",
+      name: "Standard Package",
       tagline: "Queue management ready",
       numericPrice: 500,
       icon: FiStar,
@@ -135,19 +135,19 @@ export default function ModernPricingPage() {
         "Priority Support Tier",
         "Advanced Data Export",
         "SMS/WhatsApp Protocols",
-        "Team Access (3 Nodes)",
+        "Team Access (3 Logins)",
       ],
     },
     {
       id: "premium",
-      name: "Premium Node",
+      name: "Premium Package",
       tagline: "Scale-ready infrastructure",
       numericPrice: 1000,
       icon: FiAward,
       badge: "BEST VALUE",
       features: [
         "Full Standard Features",
-        "Team Access (10 Nodes)",
+        "Team Access (10 Logins)",
         "Maintenance Alert Logic",
         "Bulk Processing Engine",
         "Dedicated Account Manager",

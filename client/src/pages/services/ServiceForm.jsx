@@ -67,12 +67,15 @@ export default function ServiceForm() {
     advancePaid: "",
   });
 
-  /** 🔹 Sub-service typing state */
-  const [subServiceInput, setSubServiceInput] = useState("");
+  /** 🔹 Multiple Sub-services tracking array */
+  const [selectedSubServices, setSelectedSubServices] = useState([
+    { id: null, name: "", inputValue: "" },
+  ]);
   const [subServiceSuggestions, setSubServiceSuggestions] = useState([]);
-  const [selectedSubService, setSelectedSubService] = useState(null);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(null);
   const [showCreateSubService, setShowCreateSubService] = useState(false);
   const [creatingSubService, setCreatingSubService] = useState(false);
+  const [pendingSubServiceIndex, setPendingSubServiceIndex] = useState(null);
 
   /** 🔹 Cost breakdown rows */
   const [costItems, setCostItems] = useState([
@@ -161,7 +164,7 @@ export default function ServiceForm() {
     loadMechanics();
   }, []);
 
-  // Load sub-services when category changes
+  // Fetch initial base context sub-services when category adjustments happen
   useEffect(() => {
     if (form.categoryId) {
       const loadSubServices = async () => {
@@ -252,18 +255,50 @@ export default function ServiceForm() {
       setCostItems(data.serviceCostItems || []);
       setExistingMedia(data.mediaFiles || []);
 
-      if (data.subService) {
-        setSelectedSubService(data.subService); // 🔥 important
-        setSubServiceInput(data.subService.name); // 🔥 important
-        setForm((f) => ({
-          ...f,
-          subServiceId: data.subService.id,
-        }));
+      if (data.subServices && Array.isArray(data.subServices)) {
+        setSelectedSubServices(
+          data.subServices.map((sub) => ({
+            id: sub.id,
+            name: sub.name,
+            inputValue: sub.name,
+          })),
+        );
+      } else if (data.subService) {
+        setSelectedSubServices([
+          {
+            id: data.subService.id,
+            name: data.subService.name,
+            inputValue: data.subService.name,
+          },
+        ]);
       }
     };
 
     loadService();
   }, [id]);
+
+  // Load mechanics from car-staff table when typing
+  useEffect(() => {
+    if (mechanicInput.trim()) {
+      const loadMechanics = async () => {
+        try {
+          // 🔥 Updated URL to point to your working car-staff endpoint
+          const r = await apiRequest(
+            `/api/car-staff/search-mechanics?q=${encodeURIComponent(mechanicInput)}`,
+          );
+          const data = await r.json();
+          setMechanicSuggestions(Array.isArray(data) ? data : []);
+        } catch (err) {
+          console.error("Error searching mechanics:", err);
+          setMechanicSuggestions([]);
+        }
+      };
+
+      loadMechanics();
+    } else {
+      setMechanicSuggestions([]);
+    }
+  }, [mechanicInput]);
 
   /* ================= COST UTILS ================= */
 
@@ -353,26 +388,91 @@ export default function ServiceForm() {
     setShowCreateMechanic(false);
   };
 
+  /* ================= MULTI SUB-SERVICE ACTIONS ================= */
+
+  const addSubServiceRow = () => {
+    setSelectedSubServices((p) => [
+      ...p,
+      { id: null, name: "", inputValue: "" },
+    ]);
+  };
+
+  const removeSubServiceRow = (idx) => {
+    if (selectedSubServices.length === 1) {
+      setSelectedSubServices([{ id: null, name: "", inputValue: "" }]);
+    } else {
+      setSelectedSubServices((p) => p.filter((_, i) => i !== idx));
+    }
+    setActiveSuggestionIndex(null);
+  };
+
+  const handleSubServiceInputChange = async (idx, val) => {
+    const updated = [...selectedSubServices];
+    updated[idx].inputValue = val;
+    updated[idx].id = null;
+    updated[idx].name = "";
+    setSelectedSubServices(updated);
+    setActiveSuggestionIndex(idx);
+
+    if (form.categoryId && val.trim() !== "") {
+      try {
+        const r = await apiRequest(
+          `/api/services/sub-services/search?categoryId=${
+            form.categoryId
+          }&q=${encodeURIComponent(val)}`,
+        );
+        const data = await r.json();
+        setSubServiceSuggestions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error searching sub-services:", err);
+        setSubServiceSuggestions([]);
+      }
+    } else if (form.categoryId && val.trim() === "") {
+      try {
+        const r = await apiRequest(
+          `/api/services/sub-services/search?categoryId=${form.categoryId}`,
+        );
+        const data = await r.json();
+        setSubServiceSuggestions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching sub-services:", err);
+        setSubServiceSuggestions([]);
+      }
+    } else {
+      setSubServiceSuggestions([]);
+    }
+  };
+
   // Create a new sub-service
   const createNewSubService = async () => {
-    if (!subServiceInput.trim() || !form.categoryId) return;
+    if (pendingSubServiceIndex === null) return;
+    const textValue =
+      selectedSubServices[pendingSubServiceIndex].inputValue.trim();
+    if (!textValue || !form.categoryId) return;
 
     setCreatingSubService(true);
     try {
       const res = await apiRequest("/api/services/sub-services", {
         method: "POST",
         body: JSON.stringify({
-          name: subServiceInput.trim(),
+          name: textValue,
           categoryId: form.categoryId,
         }),
       });
 
       if (res.ok) {
         const newSubService = await res.json();
-        setSelectedSubService(newSubService);
-        setSubServiceInput(newSubService.name);
+        const updated = [...selectedSubServices];
+        updated[pendingSubServiceIndex] = {
+          id: newSubService.id,
+          name: newSubService.name,
+          inputValue: newSubService.name,
+        };
+        setSelectedSubServices(updated);
         setSubServiceSuggestions([...subServiceSuggestions, newSubService]);
         setShowCreateSubService(false);
+        setPendingSubServiceIndex(null);
+        setActiveSuggestionIndex(null);
       } else {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to create sub-service");
@@ -441,9 +541,6 @@ export default function ServiceForm() {
       formData.append("notes", form.notes);
       formData.append("status", form.status);
       formData.append("priority", form.priority);
-      // formData.append("serviceInDate", form.serviceInDate);
-      // formData.append("serviceOutDate", form.serviceOutDate);
-      // formData.append("expectedDelivery", form.expectedDelivery);
       formData.append("internalNotes", form.internalNotes);
       formData.append("assignedMechanic", mechanicInput);
       formData.append("cost", totalAmount.toFixed(2));
@@ -451,10 +548,20 @@ export default function ServiceForm() {
       formData.append("advancePaid", form.advancePaid || "0");
       formData.append("balanceDue", balanceDue.toFixed(2));
 
-      if (selectedSubService)
-        formData.append("subServiceId", selectedSubService.id);
-      else formData.append("subServiceName", subServiceInput);
+      // Build out array payloads for all populated entries
+      const subServiceIds = [];
+      const subServiceNames = [];
 
+      selectedSubServices.forEach((sub) => {
+        if (sub.id) {
+          subServiceIds.push(sub.id);
+        } else if (sub.inputValue.trim()) {
+          subServiceNames.push(sub.inputValue.trim());
+        }
+      });
+
+      formData.append("subServiceIds", JSON.stringify(subServiceIds));
+      formData.append("subServiceNames", JSON.stringify(subServiceNames));
       formData.append("costItems", JSON.stringify(costItems));
 
       media.forEach((file) => {
@@ -728,9 +835,18 @@ export default function ServiceForm() {
                 <input
                   value={mechanicInput}
                   onChange={handleMechanicChange}
-                  onFocus={() => {
+                  onFocus={async () => {
                     if (mechanicInput.trim() === "") {
-                      setMechanicSuggestions(mechanics);
+                      try {
+                        const r = await apiRequest(
+                          "/api/car-staff/search-mechanics",
+                        );
+                        const data = await r.json();
+                        setMechanicSuggestions(Array.isArray(data) ? data : []);
+                      } catch (err) {
+                        console.error("Error loading initial mechanics:", err);
+                        setMechanicSuggestions([]);
+                      }
                     }
                   }}
                   placeholder="Type mechanic name"
@@ -755,11 +871,16 @@ export default function ServiceForm() {
                           setMechanicInput(m.name);
                           setMechanicSuggestions([]);
                         }}
-                        className={`p-3 cursor-pointer ${
+                        className={`p-3 cursor-pointer flex justify-between items-center ${
                           isDark ? "hover:bg-gray-600" : "hover:bg-gray-100"
                         }`}
                       >
-                        {m.name}
+                        <span className="font-medium">{m.name}</span>
+                        {m.role && (
+                          <span className="text-xs opacity-60 px-2 py-0.5 rounded bg-slate-500/10 uppercase tracking-wider text-[10px]">
+                            {m.role}
+                          </span>
+                        )}
                       </div>
                     ))}
 
@@ -767,137 +888,164 @@ export default function ServiceForm() {
                       !mechanicSuggestions.some(
                         (m) =>
                           m.name.toLowerCase() === mechanicInput.toLowerCase(),
-                      ) && (
-                        <div
-                          onClick={() => setShowCreateMechanic(true)}
-                          className={`p-3 cursor-pointer border-t ${
-                            isDark
-                              ? "border-gray-600 hover:bg-gray-600"
-                              : "border-gray-200 hover:bg-gray-100"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <FiPlus className="text-green-500" />
-                            <span>Create "{mechanicInput.trim()}"</span>
-                          </div>
-                        </div>
-                      )}
+                      ) 
+                      // && (
+                      //   <div
+                      //     onClick={() => setShowCreateMechanic(true)}
+                      //     className={`p-3 cursor-pointer border-t ${
+                      //       isDark
+                      //         ? "border-gray-600 hover:bg-gray-600"
+                      //         : "border-gray-200 hover:bg-gray-100"
+                      //     }`}
+                      //   >
+                      //     <div className="flex items-center gap-2">
+                      //       <FiPlus className="text-green-500" />
+                      //       <span>Create "{mechanicInput.trim()}"</span>
+                      //     </div>
+                      //   </div>
+                      // )
+                      }
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* SUB-SERVICE TYPEAHEAD */}
-          <div className="space-y-1">
-            <label className="font-semibold flex items-center gap-2">
-              <FiTool /> Sub-Service
+          {/* DYNAMIC MULTIPLE SUB-SERVICES SECTION */}
+          <div className="space-y-4">
+            <label className="font-semibold flex items-center gap-2 text-lg">
+              <FiTool /> Sub-Services Included
             </label>
-            <div className="relative">
-              <input
-                value={subServiceInput}
-                onChange={async (e) => {
-                  const v = e.target.value;
-                  setSubServiceInput(v);
-                  setSelectedSubService(null);
-                  setShowCreateSubService(false);
 
-                  if (form.categoryId && v.trim() !== "") {
-                    try {
-                      const r = await apiRequest(
-                        `/api/services/sub-services/search?categoryId=${
-                          form.categoryId
-                        }&q=${encodeURIComponent(v)}`,
-                      );
-                      const data = await r.json();
-                      setSubServiceSuggestions(Array.isArray(data) ? data : []);
-                    } catch (err) {
-                      console.error("Error searching sub-services:", err);
-                      setSubServiceSuggestions([]);
-                    }
-                  } else if (form.categoryId && v.trim() === "") {
-                    try {
-                      const r = await apiRequest(
-                        `/api/services/sub-services/search?categoryId=${form.categoryId}`,
-                      );
-                      const data = await r.json();
-                      setSubServiceSuggestions(Array.isArray(data) ? data : []);
-                    } catch (err) {
-                      console.error("Error fetching sub-services:", err);
-                      setSubServiceSuggestions([]);
-                    }
-                  } else {
-                    setSubServiceSuggestions([]);
-                  }
-                }}
-                onFocus={() => {
-                  if (form.categoryId && subServiceInput.trim() === "") {
-                    apiRequest(
-                      `/api/services/sub-services/search?categoryId=${form.categoryId}`,
-                    )
-                      .then((r) => r.json())
-                      .then((data) =>
-                        setSubServiceSuggestions(
-                          Array.isArray(data) ? data : [],
-                        ),
-                      )
-                      .catch((err) => {
-                        console.error("Error fetching sub-services:", err);
-                        setSubServiceSuggestions([]);
-                      });
-                  }
-                }}
-                placeholder="Type sub-service name"
-                className={`w-full rounded-lg border p-3 ${
-                  isDark
-                    ? "bg-gray-700 border-gray-600"
-                    : "bg-gray-50 border-gray-300"
-                }`}
-              />
-
-              {subServiceSuggestions.length > 0 && (
+            <div className="space-y-3">
+              {selectedSubServices.map((subService, idx) => (
                 <div
-                  className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
-                    isDark ? "bg-gray-700" : "bg-white"
-                  } border ${isDark ? "border-gray-600" : "border-gray-200"}`}
+                  key={idx}
+                  className={`p-4 rounded-xl relative border ${
+                    isDark
+                      ? "bg-gray-900 border-gray-700"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
                 >
-                  {subServiceSuggestions.map((s) => (
-                    <div
-                      key={s.id}
-                      onClick={() => {
-                        setSelectedSubService(s);
-                        setSubServiceInput(s.name);
-                        setSubServiceSuggestions([]);
-                      }}
-                      className={`p-3 cursor-pointer ${
-                        isDark ? "hover:bg-gray-600" : "hover:bg-gray-100"
-                      }`}
-                    >
-                      {s.name}
-                    </div>
-                  ))}
-
-                  {subServiceInput.trim() !== "" &&
-                    !subServiceSuggestions.some(
-                      (s) =>
-                        s.name.toLowerCase() === subServiceInput.toLowerCase(),
-                    ) && (
-                      <div
-                        onClick={() => setShowCreateSubService(true)}
-                        className={`p-3 cursor-pointer border-t ${
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 relative">
+                      <input
+                        value={subService.inputValue}
+                        onChange={(e) =>
+                          handleSubServiceInputChange(idx, e.target.value)
+                        }
+                        onFocus={() => {
+                          if (
+                            form.categoryId &&
+                            subService.inputValue.trim() === ""
+                          ) {
+                            apiRequest(
+                              `/api/services/sub-services/search?categoryId=${form.categoryId}`,
+                            )
+                              .then((r) => r.json())
+                              .then((data) =>
+                                setSubServiceSuggestions(
+                                  Array.isArray(data) ? data : [],
+                                ),
+                              )
+                              .catch((err) => {
+                                console.error(
+                                  "Error fetching sub-services:",
+                                  err,
+                                );
+                                setSubServiceSuggestions([]);
+                              });
+                          }
+                          setActiveSuggestionIndex(idx);
+                        }}
+                        placeholder="Type sub-service name"
+                        className={`w-full rounded-lg border p-3 ${
                           isDark
-                            ? "border-gray-600 hover:bg-gray-600"
-                            : "border-gray-200 hover:bg-gray-100"
+                            ? "bg-gray-700 border-gray-600"
+                            : "bg-white border-gray-300"
                         }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <FiPlus className="text-green-500" />
-                          <span>Create "{subServiceInput.trim()}"</span>
-                        </div>
-                      </div>
-                    )}
+                      />
+
+                      {activeSuggestionIndex === idx &&
+                        subServiceSuggestions.length > 0 && (
+                          <div
+                            className={`absolute z-20 w-full mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto ${
+                              isDark ? "bg-gray-700" : "bg-white"
+                            } border ${isDark ? "border-gray-600" : "border-gray-200"}`}
+                          >
+                            {subServiceSuggestions.map((s) => (
+                              <div
+                                key={s.id}
+                                onClick={() => {
+                                  const updated = [...selectedSubServices];
+                                  updated[idx] = {
+                                    id: s.id,
+                                    name: s.name,
+                                    inputValue: s.name,
+                                  };
+                                  setSelectedSubServices(updated);
+                                  setSubServiceSuggestions([]);
+                                  setActiveSuggestionIndex(null);
+                                }}
+                                className={`p-3 cursor-pointer ${
+                                  isDark
+                                    ? "hover:bg-gray-600"
+                                    : "hover:bg-gray-100"
+                                }`}
+                              >
+                                {s.name}
+                              </div>
+                            ))}
+
+                            {subService.inputValue.trim() !== "" &&
+                              !subServiceSuggestions.some(
+                                (s) =>
+                                  s.name.toLowerCase() ===
+                                  subService.inputValue.toLowerCase(),
+                              ) && (
+                                <div
+                                  onClick={() => {
+                                    setPendingSubServiceIndex(idx);
+                                    setShowCreateSubService(true);
+                                  }}
+                                  className={`p-3 cursor-pointer border-t ${
+                                    isDark
+                                      ? "border-gray-600 hover:bg-gray-600"
+                                      : "border-gray-200 hover:bg-gray-100"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <FiPlus className="text-green-500" />
+                                    <span>
+                                      Create "{subService.inputValue.trim()}"
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+                        )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeSubServiceRow(idx)}
+                      className="p-3 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      <FiTrash size={18} />
+                    </button>
+                  </div>
                 </div>
-              )}
+              ))}
+            </div>
+
+            <div className="flex justify-start">
+              <button
+                type="button"
+                onClick={addSubServiceRow}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md text-sm font-semibold"
+              >
+                <FiPlus /> Add Sub-Service
+              </button>
             </div>
           </div>
 
@@ -920,7 +1068,7 @@ export default function ServiceForm() {
             />
           </div>
 
-          {/* COST BREAKDOWN - REDESIGNED */}
+          {/* COST BREAKDOWN */}
           <div className="space-y-4">
             <h3 className="font-semibold text-xl flex items-center gap-2">
               <FaIndianRupeeSign /> Cost Breakdown
@@ -1117,7 +1265,7 @@ export default function ServiceForm() {
             </div>
           </div>
 
-          {/* BILLING SUMMARY - HIGHLIGHTED PANEL */}
+          {/* BILLING SUMMARY */}
           <div
             className={`p-6 rounded-xl border-2 border-green-500 ${
               isDark ? "bg-gray-900" : "bg-green-50"
@@ -1250,7 +1398,7 @@ export default function ServiceForm() {
               type="file"
               multiple
               accept="image/*"
-              capture="environment" // 🔥 opens rear camera on mobile
+              capture="environment"
               onChange={(e) => {
                 const files = Array.from(e.target.files || []);
                 setMedia((prev) => [...prev, ...files]);
@@ -1289,32 +1437,6 @@ export default function ServiceForm() {
             )}
           </div>
 
-          {/* Invoice Actions Section */}
-          {/* <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Invoice Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <FiSave /> Save as Draft
-              </button>
-
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <FiSend /> Send Invoice
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <FiDownload /> Preview Invoice
-              </button>
-            </div>
-          </div> */}
-
           {/* Submit */}
           <div className="flex justify-end">
             <button
@@ -1330,12 +1452,8 @@ export default function ServiceForm() {
       </div>
 
       {/* Create Sub-Service Modal */}
-      {showCreateSubService && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center ${
-            isDark ? "bg-black bg-opacity-50" : "bg-black bg-opacity-50"
-          }`}
-        >
+      {showCreateSubService && pendingSubServiceIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div
             className={`w-full max-w-md p-6 rounded-lg ${
               isDark ? "bg-gray-800" : "bg-white"
@@ -1345,13 +1463,19 @@ export default function ServiceForm() {
             <div className="mb-4">
               <p className="text-sm mb-2">
                 Are you sure you want to create a new sub-service named "
-                {subServiceInput.trim()}"?
+                {selectedSubServices[
+                  pendingSubServiceIndex
+                ]?.inputValue?.trim()}
+                "?
               </p>
             </div>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setShowCreateSubService(false)}
+                onClick={() => {
+                  setShowCreateSubService(false);
+                  setPendingSubServiceIndex(null);
+                }}
                 className={`px-4 py-2 rounded-lg ${
                   isDark
                     ? "bg-gray-700 hover:bg-gray-600 text-white"
@@ -1388,11 +1512,7 @@ export default function ServiceForm() {
 
       {/* Create Mechanic Modal */}
       {showCreateMechanic && (
-        <div
-          className={`fixed inset-0 z-50 flex items-center justify-center ${
-            isDark ? "bg-black bg-opacity-50" : "bg-black bg-opacity-50"
-          }`}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div
             className={`w-full max-w-md p-6 rounded-lg ${
               isDark ? "bg-gray-800" : "bg-white"

@@ -159,11 +159,7 @@ export default function Dashboard() {
       </div>
     );
 
-  const {
-    stats,
-    charts,
-    reviewStats = { averageRating: 0, totalReviews: 0, ratingDistribution: [] },
-  } = data;
+  const { stats = {}, charts = {}, reviewStats = {} } = data || {};
 
   return (
     <div
@@ -290,7 +286,7 @@ export default function Dashboard() {
               />
               <StatCard
                 title="Avg Rating"
-                value={reviewStats.averageRating.toFixed(1)}
+                value={Number(reviewStats?.averageRating ?? 0).toFixed(1)}
                 icon={Star}
                 colorClass="text-yellow-500"
                 colors={colors}
@@ -348,7 +344,7 @@ export default function Dashboard() {
               }
             >
               <ServiceStatusPieChart
-                data={charts.serviceStatusDistribution}
+                data={charts?.serviceStatusDistribution || []}
                 isDark={isDark}
               />
             </Suspense>

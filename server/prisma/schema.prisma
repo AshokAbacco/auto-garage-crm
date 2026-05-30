@@ -234,23 +234,23 @@ model Service {
   assignedMechanic String?
   advancePaid      Float?    @default(0)
 
-  // ✅ APPROVAL WORKFLOW (FIXED)
-  approvalStatus String? // ❌ NO DEFAULT
+  // ✅ APPROVAL WORKFLOW
+  approvalStatus String?
   approvalNote   String?
   approvalAt     DateTime?
   approvalSource WhatsAppApprovalSource?
 
-  clientId     Int
-  categoryId   Int?
-  subServiceId Int?
-  invoiceId    Int?
+  clientId   Int
+  categoryId Int?
+  invoiceId  Int?
+
+  // 🔄 CHANGED: Tracks an array of multiple sub-services instead of just one reference ID
+  subServices SubService[]
 
   mediaFiles ServiceMedia[]
-
   client     Client           @relation(fields: [clientId], references: [id])
   invoice    Invoice?         @relation(fields: [invoiceId], references: [id])
   category   ServiceCategory? @relation(fields: [categoryId], references: [id])
-  subService SubService?      @relation(fields: [subServiceId], references: [id])
 
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -265,6 +265,19 @@ model Service {
   reviewMessageId String?
 
   @@index([clientId])
+}
+
+model SubService {
+  id         Int              @id @default(autoincrement())
+  name       String
+  categoryId Int?
+  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  // 🔄 MANY-TO-MANY RELATION RELATION LINK
+  services Service[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ServiceMedia {
@@ -406,16 +419,6 @@ model ServiceCategory {
   services    Service[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-}
-
-model SubService {
-  id         Int              @id @default(autoincrement())
-  name       String
-  categoryId Int?
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  services   Service[]
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
 }
 
 model OcrRecord {

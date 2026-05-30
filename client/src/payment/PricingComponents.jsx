@@ -27,9 +27,9 @@ export const Hero = ({
 }) => (
   <section className="relative z-10 px-6 py-12 sm:py-20">
     <div className="max-w-7xl mx-auto text-center space-y-10 w-full">
-      {/* Infrastructure Tag Protocol */}
+      {/* Category Tag */}
       <span className="text-[#001F3F] font-black text-[10px] uppercase tracking-[0.4em] block mb-2">
-        Infrastructure Costs
+        Pricing Plans
       </span>
       <div className="space-y-4">
         <h1
@@ -41,7 +41,7 @@ export const Hero = ({
           </span>
         </h1>
       </div>
-      {/* --- Premium Hardware Synchronization Banner --- */}
+      {/* --- Special Offer Banner --- */}
       <div className="max-w-7xl mx-auto relative group">
         <div
           className={`p-8 md:p-10 rounded-[2.5rem] border-2 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 transition-all duration-500 ${
@@ -50,7 +50,7 @@ export const Hero = ({
               : "bg-[#001F3F] border-[#001F3F] text-white shadow-xl"
           }`}
         >
-          {/* Decorative Background Node */}
+          {/* Decorative Background Icon */}
           <FiCpu className="absolute right-[-5%] top-[-10%] w-64 h-64 opacity-5 pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-center gap-6 relative z-10 text-center md:text-left">
@@ -64,33 +64,33 @@ export const Hero = ({
                 </span>
               </div>
               <h3 className="text-2xl font-black uppercase tracking-tight italic mb-2">
-                Premium Hardware Synchronization
+                Free Hardware Included
               </h3>
               <p className="text-blue-100/60 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-                Activate Yearly Premium{" "}
+                Choose the Annual Premium plan{" "}
                 <span className="text-white">for Car or Bike CRM</span> to{" "}
                 <br />
-                receive a{" "}
+                get a{" "}
                 <span className="text-amber-400">
-                  Lenovo Tab (₹12,500 Value)
+                  Lenovo Tablet (worth ₹12,500)
                 </span>{" "}
-                free of cost.
+                absolutely free.
               </p>
             </div>
           </div>
 
-          {/* Complimentary Status Widget */}
+          {/* Offer Status Widget */}
           <div className="relative z-10 border-2 border-white/20 bg-white/5 backdrop-blur-md p-6 rounded-2xl min-w-[240px] text-center">
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-1">
-              Equipment Status
+              Offer Status
             </p>
             <p className="text-xl font-black italic uppercase tracking-tighter">
-              Complimentary
+              Free Gift Included
             </p>
           </div>
         </div>
       </div>{" "}
-      {/* Module Selector HUB - Responsive Protocol */}
+      {/* Category Selector Tab */}
       <div className="mt-12 inline-grid grid-cols-2 sm:flex bg-[#F8FAFC] p-1.5 rounded-2xl border border-[#CBD5E1] w-full max-w-sm sm:max-w-max mx-auto gap-1 sm:gap-0 shadow-inner">
         {["car", "bike", "washing"].map((type) => (
           <button
@@ -106,7 +106,7 @@ export const Hero = ({
           </button>
         ))}
       </div>
-      {/* Cycle Toggle HUD */}
+      {/* Billing Cycle Selector */}
       <div className="flex items-center justify-center gap-6">
         <span
           className={`text-[11px] font-black uppercase tracking-widest ${billingPeriod === "monthly" ? "text-[#001F3F]" : "text-slate-400"}`}
@@ -160,7 +160,7 @@ export const PricingCard = ({
 
   return (
     <div className="relative h-full flex flex-col">
-      {/* Industrial Badge Tab */}
+      {/* Plan Ribbon Badge */}
       {plan.badge && (
         <div className="absolute -top-3 left-6 z-20">
           <div className="px-5 py-1.5 rounded-md bg-[#001F3F] text-white text-[9px] font-black uppercase tracking-[0.2em] shadow-md border border-white/10">
@@ -231,24 +231,24 @@ export const PricingCard = ({
                 : "bg-white border-slate-200 text-[#001F3F] hover:border-black"
           }`}
         >
-          Initialize {plan.name} <FiArrowRight className="opacity-50" />
+          Select {plan.name} Plan <FiArrowRight className="opacity-50" />
         </button>
       </div>
     </div>
   );
 };
 
-// --- TRUST REGISTRY ---
+// --- TRUST FEATURES SECTION ---
 export const TrustSection = ({ isDark }) => (
   <section
     className={`py-20 px-6 border-y ${isDark ? "bg-[#000814] border-slate-800" : "bg-slate-50 border-slate-100"}`}
   >
     <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
       {[
-        { icon: FiShield, label: "Secure", desc: "Encrypted Protocol" },
-        { icon: FiActivity, label: "Operational", desc: "24/7 Node Support" },
-        { icon: FiAward, label: "Integrity", desc: "Refund Guarantee" },
-        { icon: FiClock, label: "Instant", desc: "Zero-Latency Setup" },
+        { icon: FiShield, label: "Secure", desc: "Fully Encrypted Data" },
+        { icon: FiActivity, label: "Reliable", desc: "24/7 Customer Support" },
+        { icon: FiAward, label: "Guaranteed", desc: "Money-Back Policy" },
+        { icon: FiClock, label: "Instant", desc: "Quick Account Setup" },
       ].map((item, i) => (
         <div key={i} className="space-y-2 group">
           <item.icon
@@ -269,26 +269,26 @@ export const TrustSection = ({ isDark }) => (
   </section>
 );
 
-// --- TESTIMONIAL AUDIT ---
+// --- TESTIMONIALS SECTION ---
 export const TestimonialSection = ({ isDark }) => {
   const testimonials = [
     {
       name: "R. Kumar",
-      role: "Node Operator",
+      role: "Business Owner",
       icon: <FiUser />,
-      text: "Workflow efficiency maximized. OCR infrastructure is top-tier.",
+      text: "Greatly improved our team's daily efficiency. The automated scanning is excellent.",
     },
     {
       name: "P. Sharma",
-      role: "Fleet Controller",
+      role: "Operations Manager",
       icon: <FiTerminal />,
-      text: "Best-in-class support. Deployment was instantaneous.",
+      text: "Outstanding customer service. Our account setup was finished in no time.",
     },
     {
       name: "A. Patel",
-      role: "Admin Node",
+      role: "System Administrator",
       icon: <FiSettings />,
-      text: "Maintenance protocols are highly reliable. ROI is evident.",
+      text: "The software is highly dependable and easy to manage. The return on investment is clear.",
     },
   ];
 
@@ -347,7 +347,7 @@ export const TestimonialSection = ({ isDark }) => {
   );
 };
 
-// --- STATS LEDGER ---
+// --- STATS SECTION ---
 export const StatsSection = ({ isDark }) => (
   <section className="py-24 px-6">
     <div
@@ -355,10 +355,10 @@ export const StatsSection = ({ isDark }) => (
     >
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
         {[
-          { label: "Active Nodes", val: "50K+" },
-          { label: "Global Uptime", val: "99.9%" },
-          { label: "Performance", val: "4.9/5" },
-          { label: "Latency", val: "<10ms" },
+          { label: "Active Businesses", val: "50K+" },
+          { label: "Platform Uptime", val: "99.9%" },
+          { label: "User Rating", val: "4.9/5" },
+          { label: "System Speed", val: "<10ms" },
         ].map((stat, i) => (
           <div key={i}>
             <div
@@ -376,19 +376,19 @@ export const StatsSection = ({ isDark }) => (
   </section>
 );
 
-// --- FAQ REGISTRY ---
+// --- FAQ SECTION ---
 export const FAQSection = ({ isDark }) => {
   const [open, setOpen] = useState(null);
   const faqs = [
     {
-      question: "Can I adjust node tiers later?",
+      question: "Can I change my plan later?",
       answer:
-        "Yes! You can upgrade or downgrade your plan tier at any time via the terminal console.",
+        "Yes! You can upgrade or downgrade your plan tier at any time directly from your dashboard settings.",
     },
     {
-      question: "Settlement Protocols?",
+      question: "What payment methods do you accept?",
       answer:
-        "UPI, global cards, and industrial banking gateways are fully integrated.",
+        "We support UPI, all major credit/debit cards, and net banking options.",
     },
   ];
 
@@ -398,8 +398,8 @@ export const FAQSection = ({ isDark }) => {
         <h2
           className={`text-2xl font-black uppercase tracking-tighter italic mb-12 text-center ${isDark ? "text-white" : "text-[#001F3F]"}`}
         >
-          Protocol{" "}
-          <span className="font-light italic lowercase">Registry (FAQ).</span>
+          Frequently Asked{" "}
+          <span className="font-light italic lowercase">Questions (FAQ).</span>
         </h2>
         <div className="space-y-4">
           {faqs.map((faq, i) => (

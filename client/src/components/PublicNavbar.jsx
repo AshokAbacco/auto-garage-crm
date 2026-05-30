@@ -45,15 +45,15 @@ export default function PublicNavbar() {
 
   const navItems = [
     { path: "/", label: "Home", icon: <FiHome /> },
-    { path: "/car-garage", label: "Car Node", icon: <FiTruck /> },
-    { path: "/bike-garage", label: "Bike Node", icon: <FiActivity /> },
-    { path: "/washing-center", label: "Wash Node", icon: <FiBox /> },
+    { path: "/car-garage", label: "Car Garage", icon: <FiTruck /> },
+    { path: "/bike-garage", label: "Bike Garage", icon: <FiActivity /> },
+    { path: "/washing-center", label: "Wash Center", icon: <FiBox /> },
     { path: "/pricing", label: "Pricing", icon: <FiTool /> },
   ];
 
   return (
     <header className="w-full fixed top-0 left-0 z-50">
-      {/* ---------- Primary Identity Tier ---------- 
+      {/* ---------- Main Header Bar ---------- 
           Android Optimization: Added 'pt-10' for safe-area status bar spacing 
       */}
       <div
@@ -83,12 +83,12 @@ export default function PublicNavbar() {
                 Motor<span className="font-light italic">Desk.</span>
               </span>
               <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400">
-                Operating System
+                Management Software
               </span>
             </div>
           </Link>
 
-          {/* System Utilities */}
+          {/* Settings & Tools */}
           <div className="flex items-center gap-4">
             <button
               onClick={toggleTheme}
@@ -111,7 +111,7 @@ export default function PublicNavbar() {
                       : "text-[#001F3F] hover:opacity-70"
                   }`}
                 >
-                  Support Hub
+                  Support Center
                 </Link>
                 <button
                   onClick={() => navigate("/login")}
@@ -134,7 +134,7 @@ export default function PublicNavbar() {
         </div>
       </div>
 
-      {/* ---------- Command Tier (Desktop Only) ---------- */}
+      {/* ---------- Navigation Bar (Desktop Only) ---------- */}
       {!isMobile && (
         <nav
           className={`w-full transition-all duration-500 border-b ${
@@ -169,7 +169,7 @@ export default function PublicNavbar() {
               );
             })}
 
-            {/* Clickable Spare Hub Node */}
+            {/* Clickable Spare Parts Menu */}
             <div className="relative ml-auto" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -181,7 +181,7 @@ export default function PublicNavbar() {
                       : "text-[#001F3F]"
                 }`}
               >
-                Spare Hub{" "}
+                Spare Parts Store{" "}
                 <FiChevronDown
                   className={`transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
                 />
@@ -204,7 +204,7 @@ export default function PublicNavbar() {
                         : "text-[#001F3F] hover:bg-slate-50"
                     }`}
                   >
-                    Car Components
+                    Car Parts
                   </Link>
                   <Link
                     to="/spare-parts/bike"
@@ -215,7 +215,7 @@ export default function PublicNavbar() {
                         : "text-[#001F3F] hover:bg-slate-50"
                     }`}
                   >
-                    Bike Components
+                    Bike Parts
                   </Link>
                 </div>
               )}
@@ -224,7 +224,7 @@ export default function PublicNavbar() {
         </nav>
       )}
 
-      {/* ---------- Mobile Deployment ---------- */}
+      {/* ---------- Mobile Menu Menu ---------- */}
       {isMobile && mobileMenuOpen && (
         <div
           className={`w-full h-screen fixed inset-0 z-40 p-6 pt-32 overflow-y-auto animate-in slide-in-from-right duration-300 ${
@@ -247,10 +247,10 @@ export default function PublicNavbar() {
               </Link>
             ))}
 
-            {/* --- ADDED SPARE HUB LINKS FOR MOBILE --- */}
+            {/* --- SPARE PARTS LINKS FOR MOBILE --- */}
             <div className="flex flex-col gap-2 mt-2">
               <span className="px-5 text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">
-                Spare Hub
+                Spare Parts Store
               </span>
               <Link
                 to="/spare-parts/car"
@@ -261,7 +261,7 @@ export default function PublicNavbar() {
                     : "bg-slate-50 text-[#001F3F]"
                 }`}
               >
-                <FiTruck /> Car Components
+                <FiTruck /> Car Parts
               </Link>
               <Link
                 to="/spare-parts/bike"
@@ -272,7 +272,7 @@ export default function PublicNavbar() {
                     : "bg-slate-50 text-[#001F3F]"
                 }`}
               >
-                <FiActivity /> Bike Components
+                <FiActivity /> Bike Parts
               </Link>
             </div>
             {/* --------------------------------------- */}
@@ -284,7 +284,7 @@ export default function PublicNavbar() {
               }}
               className="w-full bg-[#001F3F] text-white p-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] mt-6 border border-white/10 shadow-xl"
             >
-              Initialize System
+              Sign In to Account
             </button>
           </div>
         </div>

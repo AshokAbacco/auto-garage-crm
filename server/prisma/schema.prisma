@@ -446,11 +446,12 @@ model CarStaff {
   owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   // Basic staff info
-  name     String
-  role     String?
-  phone    String?
-  joinDate DateTime @default(now())
-  isActive Boolean  @default(true)
+  name          String
+  role          String?
+  phone         String?
+  joinDate      DateTime @default(now())
+  isActive      Boolean  @default(true)
+  advanceAmount Float    @default(0)
 
   // Salary configuration (DEFAULT RULES)
   baseSalary             Float   @default(0)

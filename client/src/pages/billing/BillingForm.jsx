@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import {
   FiFileText,
@@ -53,7 +53,6 @@ const generateTempInvoiceNumber = () => {
   return `INV-${dateStr}-${random}`;
 };
 
-// ✅ NEW COST UTILS FROM SERVICEFORM
 const num = (v) => (Number.isFinite(+v) ? +v : 0);
 
 const calculateRowTotal = (row) => {
@@ -66,7 +65,6 @@ const calculateRowTotal = (row) => {
 const calculateGrandTotal = (items = []) =>
   items.reduce((sum, row) => sum + calculateRowTotal(row), 0);
 
-// ✅ NEW: Calculate tax breakdown
 const calculateTaxBreakdown = (items = []) => {
   let partsAmount = 0;
   let laborAmount = 0;
@@ -101,7 +99,6 @@ const calculateTaxBreakdown = (items = []) => {
   };
 };
 
-// ✅ NEW: Number to words converter
 const numberToWords = (num) => {
   if (num === 0) return "Zero";
 
@@ -209,12 +206,10 @@ const getInitialFormState = (isEditMode, preSelectedClientId, invoiceData) => {
       status: invoiceData.status || "Pending",
       dueDate: invoiceData.dueDate || "",
       notes: invoiceData.notes || "",
-      // Service details
       serviceType: invoiceData.serviceType || "",
       serviceCategory: invoiceData.serviceCategory || "",
       serviceSubCategory: invoiceData.serviceSubCategory || "",
       serviceNotes: invoiceData.serviceNotes || "",
-      // Cost breakdown items from invoice data
       costItems: invoiceData.invoiceCostItems || [],
     };
   }
@@ -242,7 +237,6 @@ const getInitialFormState = (isEditMode, preSelectedClientId, invoiceData) => {
     status: "Pending",
     dueDate: "",
     notes: "",
-    // Service details
     serviceType: "",
     serviceCategory: "",
     serviceSubCategory: "",
@@ -274,14 +268,10 @@ export default function BillingForm() {
   const invoiceDraft = location.state?.invoiceDraft;
   const autoSubmit = location.state?.autoSubmit;
 
-
   const [form, setForm] = useState(() =>
-    getInitialFormState(isEditMode, preSelectedClientId, null)
+    getInitialFormState(isEditMode, preSelectedClientId, null),
   );
 
-  /* =========================
-     Fetch Clients
-  ========================= */
   useEffect(() => {
     fetchWithAuth(`${API_URL}/api/clients?page=1&limit=200`)
       .then((r) => r.json())
@@ -290,9 +280,8 @@ export default function BillingForm() {
   }, []);
 
   const selectedClient = clients.find(
-    (c) => String(c.id) === String(form.customerId)
+    (c) => String(c.id) === String(form.customerId),
   );
-
 
   useEffect(() => {
     fetchWithAuth(`${API_URL}/api/user/profile`)
@@ -301,9 +290,6 @@ export default function BillingForm() {
       .catch(() => {});
   }, []);
 
-  /* =========================
-     Edit Invoice
-  ========================= */
   useEffect(() => {
     if (!isEditMode || !id) return;
 
@@ -317,24 +303,21 @@ export default function BillingForm() {
   }, [isEditMode, id, preSelectedClientId]);
 
   useEffect(() => {
-  if (restoreForm && invoiceDraft) {
-    setForm(invoiceDraft);
-  }
-}, [restoreForm, invoiceDraft]);
-
+    if (restoreForm && invoiceDraft) {
+      setForm(invoiceDraft);
+    }
+  }, [restoreForm, invoiceDraft]);
 
   useEffect(() => {
     if (autoSubmit && restoreForm && invoiceDraft) {
-      // wait for form to be restored
       setTimeout(() => {
         document.querySelector("form")?.requestSubmit();
       }, 0);
     }
   }, [autoSubmit, restoreForm, invoiceDraft]);
 
-
   /* =========================
-     Service → Invoice
+     Service → Invoice Context Refactor
   ========================= */
   useEffect(() => {
     if (!serviceId || isEditMode) return;
@@ -348,37 +331,31 @@ export default function BillingForm() {
           vehicle: `${data.client.vehicleMake} ${data.client.vehicleModel}`,
           serviceType: data.category?.name || "",
           serviceCategory: data.category?.name || "",
-          mechanic: data.assignedMechanic || "", // ✅ FIX
-          serviceSubCategory: data.subService?.name || "",
+          mechanic: data.assignedMechanic || "",
+          // 🔄 UPDATED: Maps multiple sub-services and joins them cleanly using commas
+          serviceSubCategory:
+            data.subServices && data.subServices.length > 0
+              ? data.subServices.map((sub) => sub.name).join(", ")
+              : "",
           serviceNotes: data.notes || "",
           partsCost: 0,
           laborCost: 0,
-          costItems: data.costItems || [], // ✅ FIXED: Directly use service data
-        }))
+          costItems: data.costItems || [],
+        })),
       )
       .catch(() => setError("Failed to load service billing data"));
   }, [serviceId, isEditMode]);
 
   /* =========================
-     Totals
+     Totals Calculation Block
   ========================= */
   useEffect(() => {
-    // Calculate net amount (before discount)
     const netAmount = calculateGrandTotal(form.costItems);
-
-    // Calculate discount amount
     const discountAmount = Number(form.discounts || 0);
-
-    // Calculate amount after discount
     const amountAfterDiscount = netAmount - discountAmount;
-
-    // Apply proper rounding (always round down)
     const roundedAmount = Math.floor(amountAfterDiscount);
-
-    // Calculate round off amount (difference)
     const roundOffAmount = amountAfterDiscount - roundedAmount;
 
-    // Set form state with proper values
     setForm((p) => ({
       ...p,
       netAmount,
@@ -389,9 +366,6 @@ export default function BillingForm() {
     }));
   }, [form.costItems, form.discounts]);
 
-  /* =========================
-     Submit
-  ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -413,7 +387,7 @@ export default function BillingForm() {
         {
           method: isEditMode ? "PUT" : "POST",
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       const data = await res.json();
@@ -425,9 +399,6 @@ export default function BillingForm() {
     }
   };
 
-
-
-  // ✅ NEW COST ITEM HANDLERS
   const updateCostItem = (index, field, value) => {
     const updated = [...form.costItems];
     updated[index][field] = value;
@@ -458,12 +429,7 @@ export default function BillingForm() {
     }));
   };
 
-  // ✅ NEW: Calculate tax breakdown for display
   const taxBreakdown = calculateTaxBreakdown(form.costItems);
-
-  /* =========================
-     UI
-  ========================= */
 
   return (
     <div
@@ -519,7 +485,7 @@ export default function BillingForm() {
 
             {/* Customer Selection */}
             <div className="md:col-span-2">
-              <div>
+              <div className="mt-4">
                 <label className="block font-semibold mb-2 flex items-center gap-2">
                   <FiUser /> Customer
                 </label>
@@ -606,7 +572,7 @@ export default function BillingForm() {
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 mt-4">
               <div>
                 <label className="block font-semibold mb-2 flex items-center gap-2">
                   <FiFileText /> Service Notes
@@ -628,7 +594,7 @@ export default function BillingForm() {
             </div>
           </div>
 
-          {/* Cost Breakdown - REDESIGNED TO BE USER FRIENDLY */}
+          {/* Cost Breakdown */}
           <div
             className={`rounded-xl shadow-lg p-6 ${
               isDark ? "bg-gray-800" : "bg-white"
@@ -641,7 +607,6 @@ export default function BillingForm() {
               </span>
             </div>
 
-            {/* Cost Items - User-friendly design with clear labels */}
             <div className="space-y-4">
               {form.costItems.map((row, i) => {
                 const itemTotal = calculateRowTotal(row);
@@ -649,12 +614,16 @@ export default function BillingForm() {
                 return (
                   <div
                     key={i}
-                    className="bg-white rounded-lg shadow-md border p-4"
+                    className={`rounded-lg border p-4 ${
+                      isDark
+                        ? "bg-gray-900 border-gray-700"
+                        : "bg-gray-50 border-gray-200"
+                    }`}
                   >
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                       {/* Type */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                           Type
                         </label>
                         <select
@@ -665,7 +634,7 @@ export default function BillingForm() {
                           className={`w-full p-2 border rounded-lg ${
                             isDark
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-300"
+                              : "bg-white border-gray-300"
                           }`}
                         >
                           <option value="part">Part</option>
@@ -675,7 +644,7 @@ export default function BillingForm() {
 
                       {/* Name or Mechanic */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                           {row.type === "part" ? "Part Name" : "Mechanic"}
                         </label>
                         <input
@@ -689,14 +658,14 @@ export default function BillingForm() {
                           className={`w-full p-2 border rounded-lg ${
                             isDark
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-300"
+                              : "bg-white border-gray-300"
                           }`}
                         />
                       </div>
 
-                      {/* Quantity or Hours */}
+                      {/* Quantity */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                           {row.type === "part" ? "Quantity" : "Total Labors"}
                         </label>
                         <input
@@ -708,15 +677,15 @@ export default function BillingForm() {
                           className={`w-full p-2 border rounded-lg ${
                             isDark
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-300"
+                              : "bg-white border-gray-300"
                           }`}
                         />
                       </div>
 
-                      {/* Unit Price or Rate */}
+                      {/* Unit Price */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 flex align-center ">
-                          {row.type === "part" ? "Unit Price" : "Labor Coast"}{" "}
+                        <label className="block text-sm font-medium mb-1">
+                          {row.type === "part" ? "Unit Price" : "Labor Cost"}{" "}
                           (₹)
                         </label>
                         <input
@@ -728,14 +697,14 @@ export default function BillingForm() {
                           className={`w-full p-2 border rounded-lg ${
                             isDark
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-300"
+                              : "bg-white border-gray-300"
                           }`}
                         />
                       </div>
 
                       {/* CGST */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                           CGST (%)
                         </label>
                         <input
@@ -747,14 +716,14 @@ export default function BillingForm() {
                           className={`w-full p-2 border rounded-lg ${
                             isDark
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-300"
+                              : "bg-white border-gray-300"
                           }`}
                         />
                       </div>
 
                       {/* SGST */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                           SGST (%)
                         </label>
                         <input
@@ -766,14 +735,13 @@ export default function BillingForm() {
                           className={`w-full p-2 border rounded-lg ${
                             isDark
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-gray-50 border-gray-300"
+                              : "bg-white border-gray-300"
                           }`}
                         />
                       </div>
                     </div>
 
-                    {/* Total Row */}
-                    <div className="flex justify-between mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                       <span className="font-medium">Total</span>
                       <span className="font-bold text-green-600">
                         ₹{itemTotal.toFixed(2)}
@@ -784,12 +752,11 @@ export default function BillingForm() {
               })}
             </div>
 
-            {/* Add Cost Item Button */}
             <div className="mt-4">
               <button
                 type="button"
                 onClick={addCostItem}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
               >
                 <FiPlus /> Add Cost Item
               </button>
@@ -826,7 +793,7 @@ export default function BillingForm() {
               </div>
             </div>
 
-            <div className="md:col-span-2">
+            <div className="grid md:grid-cols-3 gap-6 mt-4">
               <div>
                 <label className="block font-semibold mb-2 flex items-center gap-2">
                   <FiCreditCard /> Payment Mode
@@ -893,7 +860,7 @@ export default function BillingForm() {
             </div>
           </div>
 
-          {/* Grand Total Calculation Display - ENHANCED WITH DETAILED BREAKDOWN */}
+          {/* Grand Total Calculation Display */}
           <div
             className={`rounded-xl shadow-lg p-6 ${
               isDark
@@ -902,14 +869,12 @@ export default function BillingForm() {
             }`}
           >
             <div className="flex items-center justify-between">
-              <div>
+              <div className="w-full">
                 <h3 className="text-lg font-semibold mb-4">
                   Grand Total Calculation
                 </h3>
 
-                {/* Detailed Tax Breakdown */}
                 <div className="space-y-2 text-sm">
-                  {/* Parts Tax Breakdown */}
                   {taxBreakdown.partsAmount > 0 && (
                     <>
                       <div className="flex justify-between">
@@ -943,7 +908,6 @@ export default function BillingForm() {
                     </>
                   )}
 
-                  {/* Labor Tax Breakdown */}
                   {taxBreakdown.laborAmount > 0 && (
                     <>
                       <div className="flex justify-between">
@@ -977,46 +941,39 @@ export default function BillingForm() {
                     </>
                   )}
 
-                  {/* Net Amount */}
-                  <div className="border-t pt-2 flex justify-between font-medium">
+                  <div className="border-t pt-2 flex justify-between font-medium dark:border-gray-600">
                     <span>Net Amount</span>
                     <span>₹{form.netAmount.toFixed(2)}</span>
                   </div>
 
-                  {/* Discount */}
                   <div className="flex justify-between">
                     <span>Discount</span>
                     <span>- ₹{form.discountAmount.toFixed(2)}</span>
                   </div>
 
-                  {/* Amount After Discount */}
-                  <div className="border-t pt-2 flex justify-between font-medium">
+                  <div className="border-t pt-2 flex justify-between font-medium dark:border-gray-600">
                     <span>Amount After Discount</span>
                     <span>₹{form.amountAfterDiscount.toFixed(2)}</span>
                   </div>
 
-                  {/* Round off */}
                   <div className="flex justify-between">
                     <span>Round off</span>
                     <span>- ₹{form.roundOffAmount.toFixed(2)}</span>
                   </div>
 
-                  {/* Amount Payable */}
-                  <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                  <div className="border-t pt-2 flex justify-between font-bold text-lg dark:border-gray-600">
                     <span>Amount Payable</span>
                     <span className="text-green-500">
                       ₹{form.roundedAmount.toFixed(2)}
                     </span>
                   </div>
 
-                  {/* Total Amount (In figure) */}
-                  <div className="border-t pt-2 flex justify-between font-bold">
+                  <div className="border-t pt-2 flex justify-between font-bold dark:border-gray-600">
                     <span>Total Amount (In figure)</span>
                     <span>₹{form.roundedAmount.toFixed(2)}</span>
                   </div>
 
-                  {/* Total Amount (In Words) */}
-                  <div className="border-t pt-2 flex justify-between font-bold">
+                  <div className="border-t pt-2 flex justify-between font-bold dark:border-gray-600">
                     <span>Total Amount (In Words)</span>
                     <span>{numberToWords(Math.round(form.roundedAmount))}</span>
                   </div>
@@ -1050,12 +1007,11 @@ export default function BillingForm() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100"
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 font-medium transition-colors"
             >
               Cancel
             </button>
 
-            {/* PREVIEW BUTTON */}
             <button
               type="button"
               onClick={() =>
@@ -1069,22 +1025,21 @@ export default function BillingForm() {
                   },
                 })
               }
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
             >
               Preview Invoice
             </button>
 
-            {/* FINAL SUBMIT */}
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors shadow-md"
             >
               {loading
                 ? "Processing..."
                 : isEditMode
-                ? "Update Invoice"
-                : "Create Invoice"}
+                  ? "Update Invoice"
+                  : "Create Invoice"}
             </button>
           </div>
         </form>
@@ -1110,7 +1065,7 @@ function Input({
 
   return (
     <div>
-      <label className="block font-semibold mb-2 flex items-center gap-2">
+      <label className="block font-semibold mb-2 flex items-center gap-2 text-sm">
         {icon} {label}
       </label>
       <input
@@ -1119,9 +1074,11 @@ function Input({
         value={value}
         onChange={onChange}
         readOnly={readOnly}
-        className={`w-full p-3 rounded-lg border ${
-          isDark ? "bg-gray-700 border-gray-600" : "bg-gray-50 border-gray-300"
-        }`}
+        className={`w-full p-3 rounded-lg border text-sm ${
+          isDark
+            ? "bg-gray-700 border-gray-600 text-white"
+            : "bg-gray-50 border-gray-300 text-gray-900"
+        } outline-none`}
       />
     </div>
   );

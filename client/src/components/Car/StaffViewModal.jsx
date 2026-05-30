@@ -1,3 +1,4 @@
+// StaffViewModal.jsx
 import React from "react";
 import { X, TrendingUp, TrendingDown, User, Briefcase } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -12,6 +13,7 @@ export default function StaffViewModal({ staff, onClose }) {
   const baseSalary = staff.baseSalary || 0;
   const bonusDefault = staff.bonusDefault || 0;
   const extraDeductionsDefault = staff.extraDeductionsDefault || 0;
+  const advanceAmount = staff.advanceAmount || 0; // Fallback to 0 if not present
 
   const totalEarnings = baseSalary + bonusDefault;
   const totalDeductions = extraDeductionsDefault;
@@ -19,7 +21,12 @@ export default function StaffViewModal({ staff, onClose }) {
   const yearlyProjection = estimatedNetSalary * 12;
 
   // Helper row
-  const DetailRow = ({ label, value, isNegative = false }) => (
+  const DetailRow = ({
+    label,
+    value,
+    isNegative = false,
+    highlightColor = "",
+  }) => (
     <div className="flex justify-between items-center py-2 border-b border-dashed border-slate-200 dark:border-slate-700 last:border-0">
       <span
         className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
@@ -28,13 +35,15 @@ export default function StaffViewModal({ staff, onClose }) {
       </span>
       <span
         className={`text-sm font-medium ${
-          isNegative
-            ? isDark
-              ? "text-rose-400"
-              : "text-rose-600"
-            : isDark
-            ? "text-slate-100"
-            : "text-slate-900"
+          highlightColor
+            ? highlightColor
+            : isNegative
+              ? isDark
+                ? "text-rose-400"
+                : "text-rose-600"
+              : isDark
+                ? "text-slate-100"
+                : "text-slate-900"
         }`}
       >
         {isNegative ? "- " : ""}₹{value.toLocaleString()}
@@ -127,7 +136,7 @@ export default function StaffViewModal({ staff, onClose }) {
                 <DetailRow label="Base Salary" value={baseSalary} />
                 <DetailRow label="Monthly Bonus" value={bonusDefault} />
 
-                <div className="flex justify-between pt-3 mt-3 border-t">
+                <div className="flex justify-between pt-3 mt-3 border-t dark:border-slate-700">
                   <span className="text-sm font-semibold">Total Earnings</span>
                   <span className="text-base font-bold text-emerald-600">
                     ₹{totalEarnings.toLocaleString()}
@@ -135,18 +144,30 @@ export default function StaffViewModal({ staff, onClose }) {
                 </div>
               </div>
 
-              {/* Deductions */}
+              {/* Deductions & Loans */}
               <div className={`p-5 ${isDark ? "bg-slate-900" : "bg-white"}`}>
                 <div className="flex items-center gap-2 mb-4 text-xs font-bold uppercase text-rose-600">
-                  <TrendingDown size={14} /> Deductions (Defaults)
+                  <TrendingDown size={14} /> Deductions & Balances
                 </div>
+                {/* 🔄 MOVED TO TOP: Outstanding Loan balance sits cleanly at the top of the block */}
+                <DetailRow
+                  label="Outstanding Loan"
+                  value={advanceAmount}
+                  highlightColor={
+                    advanceAmount > 0
+                      ? isDark
+                        ? "text-amber-400"
+                        : "text-amber-600"
+                      : ""
+                  }
+                />
                 <DetailRow
                   label="Extra Deductions"
                   value={extraDeductionsDefault}
                   isNegative
                 />
 
-                <div className="flex justify-between pt-3 mt-3 border-t">
+                <div className="flex justify-between pt-3 mt-3 border-t dark:border-slate-700">
                   <span className="text-sm font-semibold">
                     Total Deductions
                   </span>

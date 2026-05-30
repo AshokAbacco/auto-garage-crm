@@ -23,6 +23,7 @@ export const createStaff = async (req, res) => {
       bonusDefault,
       extraDeductionsDefault,
       includeInPayroll,
+      advanceAmount, // 🔄 Extructured parameter field matching local modal updates
     } = req.body;
 
     if (!name) {
@@ -44,6 +45,7 @@ export const createStaff = async (req, res) => {
         extraDeductionsDefault: Number(extraDeductionsDefault || 0),
         includeInPayroll:
           includeInPayroll !== undefined ? includeInPayroll : true,
+        advanceAmount: Number(advanceAmount || 0), // 🔄 Parsed safe float insertion
       },
     });
 
@@ -53,6 +55,81 @@ export const createStaff = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Create Staff Error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * =============================================
+ * UPDATE STAFF (HR PROFILE + SALARY RULES)
+ * =============================================
+ */
+export const updateStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      name,
+      role,
+      phone,
+      email, // optional (login email)
+      joinDate,
+      baseSalary,
+      deductionPerLeave,
+      bonusDefault,
+      extraDeductionsDefault,
+      includeInPayroll,
+      advanceAmount, // 🔄 Extructured parameter field matching local modal updates
+    } = req.body;
+
+    // 1️⃣ Update staff profile & salary rules
+    const updated = await prisma.carStaff.updateMany({
+      where: {
+        id: Number(id),
+        ownerId: req.user.id,
+      },
+      data: {
+        name,
+        role,
+        phone,
+        joinDate: joinDate ? new Date(joinDate) : undefined,
+
+        baseSalary: baseSalary !== undefined ? Number(baseSalary) : undefined,
+        deductionPerLeave:
+          deductionPerLeave !== undefined
+            ? Number(deductionPerLeave)
+            : undefined,
+        bonusDefault:
+          bonusDefault !== undefined ? Number(bonusDefault) : undefined,
+        extraDeductionsDefault:
+          extraDeductionsDefault !== undefined
+            ? Number(extraDeductionsDefault)
+            : undefined,
+        includeInPayroll:
+          includeInPayroll !== undefined ? includeInPayroll : undefined,
+        advanceAmount:
+          advanceAmount !== undefined ? Number(advanceAmount) : undefined, // 🔄 Parsed safe float mapping record update
+      },
+    });
+
+    if (updated.count === 0) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    // 2️⃣ Update login email (if exists)
+    if (email) {
+      await prisma.carStaffLogin.updateMany({
+        where: {
+          staffId: Number(id),
+          ownerId: req.user.id,
+        },
+        data: { email },
+      });
+    }
+
+    return res.json({ message: "Staff updated successfully" });
+  } catch (error) {
+    console.error("❌ Update Staff Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -81,78 +158,6 @@ export const listStaff = async (req, res) => {
     return res.status(200).json(staff);
   } catch (error) {
     console.error("❌ List Staff Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-/**
- * =============================================
- * UPDATE STAFF (HR PROFILE + SALARY RULES)
- * =============================================
- */
-export const updateStaff = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const {
-      name,
-      role,
-      phone,
-      email, // optional (login email)
-      joinDate,
-      baseSalary,
-      deductionPerLeave,
-      bonusDefault,
-      extraDeductionsDefault,
-      includeInPayroll,
-    } = req.body;
-
-    // 1️⃣ Update staff profile & salary rules
-    const updated = await prisma.carStaff.updateMany({
-      where: {
-        id: Number(id),
-        ownerId: req.user.id,
-      },
-      data: {
-        name,
-        role,
-        phone,
-        joinDate: joinDate ? new Date(joinDate) : undefined,
-
-        baseSalary: baseSalary !== undefined ? Number(baseSalary) : undefined,
-        deductionPerLeave:
-          deductionPerLeave !== undefined
-            ? Number(deductionPerLeave)
-            : undefined,
-        bonusDefault:
-          bonusDefault !== undefined ? Number(bonusDefault) : undefined,
-        extraDeductionsDefault:
-          extraDeductionsDefault !== undefined
-            ? Number(extraDeductionsDefault)
-            : undefined,
-        includeInPayroll:
-          includeInPayroll !== undefined ? includeInPayroll : undefined,
-      },
-    });
-
-    if (updated.count === 0) {
-      return res.status(404).json({ message: "Staff not found" });
-    }
-
-    // 2️⃣ Update login email (if exists)
-    if (email) {
-      await prisma.carStaffLogin.updateMany({
-        where: {
-          staffId: Number(id),
-          ownerId: req.user.id,
-        },
-        data: { email },
-      });
-    }
-
-    return res.json({ message: "Staff updated successfully" });
-  } catch (error) {
-    console.error("❌ Update Staff Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

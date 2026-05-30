@@ -22,6 +22,7 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
     ...staff,
     email: staff.login?.email || "",
     password: "", // Default empty means "don't change"
+    advanceAmount: staff.advanceAmount || 0, // 🔄 Initialized balance parameter state
   });
 
   const handleChange = (e) => {
@@ -165,7 +166,8 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
             >
               Payroll Configuration
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 🔄 CHANGED: Upgraded grid block to columns-3 layout map */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputGroup
                 label="Base Salary"
                 name="baseSalary"
@@ -186,6 +188,17 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
                 isDark={isDark}
                 placeholder="0.00"
               />
+              {/* 🔄 NEW ADVANCE AMOUNT TRACKING INPUT ELEMENT */}
+              <InputGroup
+                label="Advance Amount"
+                name="advanceAmount"
+                icon={IndianRupee}
+                type="number"
+                value={form.advanceAmount}
+                onChange={handleChange}
+                isDark={isDark}
+                placeholder="0.00"
+              />
             </div>
           </div>
 
@@ -200,7 +213,7 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
             >
               Deductions & Attendance
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputGroup
                 label="Deduction Per Leave"
                 name="deductionPerLeave"
@@ -262,7 +275,6 @@ export default function StaffEditModal({ staff, onClose, onSaved }) {
   );
 }
 
-// ✅ MOVED OUTSIDE: This prevents the component from re-mounting on every keystroke
 const InputGroup = ({
   label,
   name,

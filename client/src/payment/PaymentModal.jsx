@@ -159,24 +159,46 @@ const PaymentModal = ({
     try {
       console.log("API URL:", `${API}/api/payments/create-subscription`);
 
+      // 🔥 Normalize plan name safely
+      const normalizedPlanName = (() => {
+        const raw = String(plan?.name || "")
+          .toLowerCase()
+          .trim();
+
+        if (raw.includes("basic")) return "basic";
+        if (raw.includes("standard")) return "standard";
+        if (raw.includes("premium")) return "premium";
+
+        return raw
+          .replace(/node/gi, "")
+          .replace(/package/gi, "")
+          .replace(/\s+/g, "")
+          .trim();
+      })();
+
+      const payload = {
+        plan: {
+          name: normalizedPlanName,
+          numericPrice: Number(plan.numericPrice),
+        },
+
+        billingPeriod: billingPeriod.toLowerCase(),
+
+        customer: {
+          ...formData,
+        },
+      };
+
+      console.log("PLAN FROM UI:", plan.name);
+      console.log("NORMALIZED PLAN:", normalizedPlanName);
+      console.log("PAYLOAD:", payload);
+
       const subRes = await fetch(`${API}/api/payments/create-subscription`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-
-        body: JSON.stringify({
-          plan: {
-            name: plan.name.replace(" NODE", "").toLowerCase(),
-            numericPrice: Number(plan.numericPrice),
-          },
-
-          billingPeriod: billingPeriod.toLowerCase(),
-
-          customer: {
-            ...formData,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       console.log("STATUS:", subRes.status);
@@ -190,29 +212,39 @@ const PaymentModal = ({
       try {
         data = JSON.parse(text);
       } catch (err) {
-        console.log("JSON PARSE ERROR:", err);
-
+        console.error("JSON PARSE ERROR:", err);
         alert("Invalid server response");
-
         return;
       }
 
       console.log("PARSED DATA:", data);
 
-      if (!data.subscription?.id) {
-        console.log("INVALID SUBSCRIPTION:", data);
+      // 🔥 Show actual backend error
+      if (!subRes.ok) {
+        console.error("BACKEND ERROR:", data);
 
-        alert("Subscription ID missing");
+        alert(data?.error || data?.message || "Failed to create subscription");
+
+        return;
+      }
+
+      const subscriptionId = data?.subscription?.id || data?.id;
+
+      if (!subscriptionId) {
+        console.error("INVALID SUBSCRIPTION RESPONSE:", data);
+
+        alert(data?.error || data?.message || "Subscription ID missing");
 
         return;
       }
 
       console.log("RAZORPAY DATA:", data);
+      console.log("SUBSCRIPTION ID:", subscriptionId);
 
       const rzp = new window.Razorpay({
         key: data.razorpayKey,
 
-        subscription_id: data.subscription.id,
+        subscription_id: subscriptionId,
 
         name: "Abacco Technology",
 
@@ -250,7 +282,7 @@ const PaymentModal = ({
       });
 
       rzp.on("payment.failed", function (response) {
-        console.log("PAYMENT FAILED", response);
+        console.error("PAYMENT FAILED:", response);
 
         alert(
           response?.error?.description ||
@@ -263,7 +295,7 @@ const PaymentModal = ({
 
       rzp.open();
     } catch (e) {
-      console.log("PAYMENT ERROR:", e);
+      console.error("PAYMENT ERROR:", e);
 
       alert(e?.message || JSON.stringify(e) || "Initialization Failed");
     } finally {

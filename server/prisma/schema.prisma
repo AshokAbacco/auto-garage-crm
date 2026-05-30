@@ -110,6 +110,17 @@ model User {
   bankProofDocument Bytes?
   bankProofType     String?
 
+  // 🔄 NEW: Identity, Registration numbers & Document Buffers
+  aadharNumber        String?
+  incorporationNumber String?
+
+  aadharDocument            Bytes?
+  aadharDocumentType        String?
+  gstDocument               Bytes?
+  gstDocumentType           String?
+  incorporationDocument     Bytes?
+  incorporationDocumentType String?
+
   kycStatus String @default("NOT_SUBMITTED")
 
   referralsMade  Referral[] @relation("UserReferralsMade")
@@ -1446,6 +1457,18 @@ model ReferralPartner {
 
   bankProofDocument Bytes? // Cancelled cheque / passbook
   bankProofType     String? // MIME type
+
+  // 🔄 NEW: Identity, Registration numbers & Document Buffers
+  aadharNumber        String?
+  gstNumber           String?
+  incorporationNumber String?
+
+  aadharDocument            Bytes?
+  aadharDocumentType        String?
+  gstDocument               Bytes?
+  gstDocumentType           String?
+  incorporationDocument     Bytes?
+  incorporationDocumentType String?
 
   // KYC Status: PENDING, VERIFIED, REJECTED
   kycStatus String @default("PENDING")

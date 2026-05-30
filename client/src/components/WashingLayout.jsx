@@ -103,6 +103,28 @@ export default function WashingLayoutPage() {
             icon: Crown,
             roles: ["user"],
         },
+        {
+            label: "Marketplace",
+            icon: Layers,
+            roles: ["user", "team"],
+            children: [
+                {
+                    to: "/washing-marketplace/bookings",
+                    label: "Bookings",
+                    roles: ["user", "team"],
+                },
+                {
+                    to: "/washing-marketplace/pricing",
+                    label: "Pricing",
+                    roles: ["user", "team"],
+                },
+                {
+                    to: "/washing-marketplace/packages",
+                    label: "Packages",
+                    roles: ["user", "team"],
+                },
+            ],
+        },
     ];
 
 

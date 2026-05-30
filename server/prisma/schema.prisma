@@ -67,15 +67,18 @@ enum PayoutStatus {
 }
 
 model User {
-  id           Int     @id @default(autoincrement())
-  email        String  @unique
-  username     String? @unique
-  password     String
-  profileImage String?
-  phone        String?
-  companyName  String?
-  address      String?
-  gstNumber    String?
+  id               Int     @id @default(autoincrement())
+  email            String  @unique
+  username         String? @unique
+  password         String
+  profileImage     String?
+  phone            String?
+  companyName      String?
+  address          String?
+  companyLatitude  Float?
+  companyLongitude Float?
+  companyAddress   String?
+  gstNumber        String?
 
   // 👑 ROLE (ONLY OWNER)
   role        String    @default("user") // DO NOT STORE TEAM HERE

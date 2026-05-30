@@ -12,11 +12,55 @@ function subtractDays(date, days) {
 /* =======================================================
    GET ALL REMINDERS
 ======================================================= */
+/* =======================================================
+   GET ALL REMINDERS (WITH TIME-RANGE FILTERING)
+======================================================= */
 export const getReminders = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const { range } = req.query; // 🔄 Read the time range filter parameter
 
-    const where = userId ? { userId } : {};
+    // Base query condition
+    let where = userId ? { userId } : {};
+
+    if (range && range !== "all") {
+      const now = new Date();
+      let startDate = new Date();
+      let endDate = new Date();
+
+      if (range === "week") {
+        // Calculate the current week boundary range (Sunday to Saturday)
+        const currentDay = now.getDay();
+
+        startDate.setDate(now.getDate() - currentDay);
+        startDate.setHours(0, 0, 0, 0);
+
+        endDate.setDate(now.getDate() + (6 - currentDay));
+        endDate.setHours(23, 59, 59, 999);
+      } else if (range === "month") {
+        // Calculate the current month boundaries
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        endDate = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
+      } else if (range === "year") {
+        // Calculate the current year boundaries
+        startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+        endDate = new Date(now.getFullYear(), 12, 0, 23, 59, 59, 999);
+      }
+
+      // Add timestamp boundary condition map to Prisma query payload rules
+      where.serviceDate = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
 
     const reminders = await prisma.reminder.findMany({
       where,

@@ -1,3 +1,4 @@
+// server/routes/userKyc.routes.js
 import express from "express";
 import multer from "multer";
 import { protect } from "../middleware/authMiddleware.js";
@@ -9,10 +10,6 @@ import {
 
 const router = express.Router();
 
-/* ======================================================
-   Multer Configuration (Memory Storage for DB Bytes)
-====================================================== */
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -20,23 +17,19 @@ const upload = multer({
   },
 });
 
-/* ======================================================
-   Routes
-====================================================== */
-
-// GET logged-in user's KYC
 router.get("/kyc", protect, getMyKyc);
-
-// UPDATE payout + KYC details
 router.put("/kyc", protect, updateMyKyc);
 
-// Upload documents
+// 🔄 UPDATED: Multi-field file buffer interception allocation array block
 router.post(
   "/kyc/documents",
   protect,
   upload.fields([
     { name: "panDocument", maxCount: 1 },
     { name: "bankProofDocument", maxCount: 1 },
+    { name: "aadharDocument", maxCount: 1 },
+    { name: "gstDocument", maxCount: 1 },
+    { name: "incorporationDocument", maxCount: 1 },
   ]),
   uploadKycDocuments,
 );

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FiSave, FiX, FiCamera } from "react-icons/fi";
+import { FiSave, FiX, FiCamera, FiPlus } from "react-icons/fi";
+import { GrUserWorker } from "react-icons/gr";
 import { Toaster, toast } from "react-hot-toast";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -11,6 +12,21 @@ import ImageUploader from "./components/ImageUploader";
 import { processImage } from "../details/utils/OCRProcessor.js";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+
+// Helper for calling authenticated API routes
+const apiRequest = async (url, options = {}) => {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+  const response = await fetch(`${API_BASE}${url}`, { ...options, headers });
+  if (response.status === 401) {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  }
+  return response;
+};
 
 const EMPTY_FORM = {
   fullName: "",
@@ -29,6 +45,7 @@ const EMPTY_FORM = {
   carImage: "",
   adImage: "",
   damageImages: [],
+  advisorName: "", // Keeps record field alignment intact
 };
 
 export default function ClientForm() {
@@ -54,6 +71,10 @@ export default function ClientForm() {
 
   // NEW: WhatsApp Toggle State
   const [sendWhatsApp, setSendWhatsApp] = useState(true);
+
+  // 🔹 Service Advisor Typeahead States
+  const [advisorInput, setAdvisorInput] = useState("");
+  const [advisorSuggestions, setAdvisorSuggestions] = useState([]);
 
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -253,7 +274,6 @@ export default function ClientForm() {
 
         const mapped = await mapOcrToForm(ocr?.parsed || {});
 
-        // Merge OCR result into form (user can still manually edit afterwards)
         setForm((prev) => ({ ...prev, ...mapped }));
 
         toast.success("RC scanned — details auto-filled!");
@@ -270,7 +290,31 @@ export default function ClientForm() {
   };
 
   // -------------------------------
-  // LOAD META (fuel + seats)
+  // LOAD STAFF SUGGESTIONS WHEN TYPING
+  // -------------------------------
+  useEffect(() => {
+    if (advisorInput.trim()) {
+      const loadAdvisors = async () => {
+        try {
+          const r = await apiRequest(
+            `/api/car-staff/search-mechanics?q=${encodeURIComponent(advisorInput)}`,
+          );
+          const data = await r.json();
+          setAdvisorSuggestions(Array.isArray(data) ? data : []);
+        } catch (err) {
+          console.error("Error searching staff:", err);
+          setAdvisorSuggestions([]);
+        }
+      };
+
+      loadAdvisors();
+    } else {
+      setAdvisorSuggestions([]);
+    }
+  }, [advisorInput]);
+
+  // -------------------------------
+  // LOAD FUEL & SEATS METADATA
   // -------------------------------
   useEffect(() => {
     const loadMeta = async () => {
@@ -295,41 +339,33 @@ export default function ClientForm() {
   // LOAD EXISTING CLIENT (EDIT MODE)
   // -------------------------------
   useEffect(() => {
-    if (!id) return; // Not editing
+    if (!id) return;
 
     const loadClient = async () => {
       try {
         setLoadingClient(true);
 
-        // 1. Try reading React Router passed state
         if (location.state?.clientData) {
-          setForm((prev) => ({
-            ...prev,
-            ...location.state.clientData,
-          }));
+          const clientData = location.state.clientData;
+          setForm((prev) => ({ ...prev, ...clientData }));
+          setAdvisorInput(clientData.advisorName || "");
 
-          // Load models for correct make
-          if (location.state.clientData.vehicleMake) {
-            await fetchCarModels(location.state.clientData.vehicleMake);
+          if (clientData.vehicleMake) {
+            await fetchCarModels(clientData.vehicleMake);
           }
 
           setLoadingClient(false);
-          return; // STOP — skip backend fetch
+          return;
         }
 
-        // 2. If page refreshed OR state missing → fetch from backend
         const token = localStorage.getItem("token");
-
         const res = await fetch(`${API_BASE}/api/clients/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const data = await res.json();
-
-        setForm((prev) => ({
-          ...prev,
-          ...data,
-        }));
+        setForm((prev) => ({ ...prev, ...data }));
+        setAdvisorInput(data.advisorName || "");
 
         if (data.vehicleMake) {
           await fetchCarModels(data.vehicleMake);
@@ -346,7 +382,7 @@ export default function ClientForm() {
   }, [id, location.state]);
 
   // -------------------------------
-  // LOAD MAKES (local)
+  // LOAD MAKES (LOCAL)
   // -------------------------------
   useEffect(() => {
     const loadMakes = async () => {
@@ -357,7 +393,6 @@ export default function ClientForm() {
         });
 
         const data = await res.json();
-        // keep full objects for logo, slug, etc.
         setCarMakes(data.makes || []);
       } catch (err) {
         console.error("Makes load error", err);
@@ -446,14 +481,18 @@ export default function ClientForm() {
     try {
       const token = localStorage.getItem("token");
 
+      const submissionForm = {
+        ...form,
+        advisorName: advisorInput, // Synchronize input text on submit
+      };
+
       const res = await fetch(`${API_BASE}/api/clients${id ? `/${id}` : ""}`, {
         method: id ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        // UPDATED: Now sends form data PLUS the WhatsApp flag
-        body: JSON.stringify({ ...form, sendWhatsApp }),
+        body: JSON.stringify({ ...submissionForm, sendWhatsApp }),
       });
 
       const body = await res.json();
@@ -470,9 +509,6 @@ export default function ClientForm() {
     }
   };
 
-  // -------------------------------
-  // LOADING UI
-  // -------------------------------
   if (loadingClient) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -483,15 +519,11 @@ export default function ClientForm() {
 
   const effectivePlan = user?.plan || "BASIC";
 
-  // -------------------------------
-  // MAIN UI
-  // -------------------------------
   return (
     <div
       className={`min-h-screen lg:ml-16 ${
         isDark ? " text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
-      // 🛑 DISABLE RIGHT CLICK ON ENTIRE PAGE
       onContextMenu={(e) => e.preventDefault()}
     >
       <Toaster position="top-right" />
@@ -559,6 +591,77 @@ export default function ClientForm() {
           <PersonalInfoSection form={form} setForm={setForm} isDark={isDark} />
         </div>
 
+        {/* Service Advisor Section */}
+        <div
+          className={`rounded-3xl p-6 shadow-lg ${
+            isDark ? "bg-gray-800" : "bg-white"
+          }`}
+        >
+          <div className="space-y-2">
+            <label className="font-semibold flex items-center gap-2 text-sm">
+              <GrUserWorker /> Advisor Name
+            </label>
+            <div className="relative max-w-md">
+              <input
+                value={advisorInput}
+                onChange={(e) => setAdvisorInput(e.target.value)}
+                onFocus={async () => {
+                  if (advisorInput.trim() === "") {
+                    try {
+                      const r = await apiRequest(
+                        "/api/car-staff/search-mechanics",
+                      );
+                      const data = await r.json();
+                      setAdvisorSuggestions(Array.isArray(data) ? data : []);
+                    } catch (err) {
+                      console.error("Error loading staff roster:", err);
+                      setAdvisorSuggestions([]);
+                    }
+                  }
+                }}
+                placeholder="Type advisor or mechanic name"
+                className={`w-full rounded-xl border p-3 text-sm ${
+                  isDark
+                    ? "bg-gray-700 border-gray-600 text-white focus:border-blue-500"
+                    : "bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500"
+                } outline-none transition-all`}
+              />
+
+              {advisorSuggestions.length > 0 && (
+                <div
+                  className={`absolute RegalDropdown z-30 w-full mt-1 rounded-xl shadow-xl max-h-60 overflow-y-auto ${
+                    isDark
+                      ? "bg-gray-700 border-gray-600"
+                      : "bg-white border-gray-200"
+                  } border`}
+                >
+                  {advisorSuggestions.map((staff) => (
+                    <div
+                      key={staff.id}
+                      onClick={() => {
+                        setAdvisorInput(staff.name);
+                        setAdvisorSuggestions([]);
+                      }}
+                      className={`p-3 cursor-pointer flex justify-between items-center text-sm ${
+                        isDark
+                          ? "hover:bg-gray-600 text-white"
+                          : "hover:bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <span className="font-medium">{staff.name}</span>
+                      {staff.role && (
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-gray-500/10 opacity-60 uppercase tracking-wider">
+                          {staff.role}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Vehicle Info */}
         <div>
           <VehicleInfoSection
@@ -576,7 +679,6 @@ export default function ClientForm() {
 
         {/* Vehicle Images */}
         <div>
-          {/* Auto-filled image from local dataset */}
           {form.carImage && (
             <div className="mb-4 flex justify-center">
               <img
@@ -597,7 +699,6 @@ export default function ClientForm() {
 
         {/* Action Buttons Section */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-6 pb-10">
-          {/* NEW: WhatsApp Notification Toggle */}
           <label className="flex items-center gap-3 cursor-pointer group">
             <input
               type="checkbox"

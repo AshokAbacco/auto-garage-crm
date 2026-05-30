@@ -147,49 +147,125 @@ const PaymentModal = ({
 
   const handlePayment = async () => {
     if (!validateForm()) return;
-    if (!razorpayLoaded) return alert("System Syncing: Razorpay not ready.");
-    const API =
-      window.location.hostname === "localhost"
-        ? "http://localhost:5001"
-        : "https://auto-garage-crm-zrxc.onrender.com";
+
+    if (!razorpayLoaded) {
+      return alert("System Syncing: Razorpay not ready.");
+    }
+
+    const API = "https://auto-garage-crm-zrxc.onrender.com";
 
     setIsProcessing(true);
+
     try {
+      console.log("API URL:", `${API}/api/payments/create-subscription`);
+
       const subRes = await fetch(`${API}/api/payments/create-subscription`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
+
         body: JSON.stringify({
           plan: {
             name: plan.name.replace(" NODE", "").toLowerCase(),
             numericPrice: Number(plan.numericPrice),
           },
+
           billingPeriod: billingPeriod.toLowerCase(),
-          customer: { ...formData },
+
+          customer: {
+            ...formData,
+          },
         }),
       });
-      const data = await subRes.json();
+
+      console.log("STATUS:", subRes.status);
+
+      const text = await subRes.text();
+
+      console.log("RAW RESPONSE:", text);
+
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.log("JSON PARSE ERROR:", err);
+
+        alert("Invalid server response");
+
+        return;
+      }
+
+      console.log("PARSED DATA:", data);
+
+      if (!data.subscription?.id) {
+        console.log("INVALID SUBSCRIPTION:", data);
+
+        alert("Subscription ID missing");
+
+        return;
+      }
+
+      console.log("RAZORPAY DATA:", data);
+
       const rzp = new window.Razorpay({
         key: data.razorpayKey,
+
         subscription_id: data.subscription.id,
+
         name: "Abacco Technology",
+
         description: `${plan.name} Node Activation`,
-        theme: { color: "#001F3F" },
+
+        theme: {
+          color: "#001F3F",
+        },
+
         prefill: {
           name: formData.name,
           email: formData.email,
           contact: formData.phone,
         },
+
+        modal: {
+          ondismiss: function () {
+            console.log("Razorpay popup closed");
+          },
+
+          escape: false,
+          backdropclose: false,
+        },
+
         handler: async (response) => {
+          console.log("PAYMENT SUCCESS:", response);
+
           setPaymentResponse({
             paymentId: response.razorpay_payment_id,
             subscriptionId: response.razorpay_subscription_id,
           });
+
           setShowSuccess(true);
         },
       });
+
+      rzp.on("payment.failed", function (response) {
+        console.log("PAYMENT FAILED", response);
+
+        alert(
+          response?.error?.description ||
+            response?.error?.reason ||
+            "Payment Failed",
+        );
+      });
+
+      console.log("OPENING RAZORPAY");
+
       rzp.open();
     } catch (e) {
-      alert("Initialization Failed.");
+      console.log("PAYMENT ERROR:", e);
+
+      alert(e?.message || JSON.stringify(e) || "Initialization Failed");
     } finally {
       setIsProcessing(false);
     }
@@ -261,13 +337,13 @@ const PaymentModal = ({
                 <span
                   className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
                 >
-                  Identity Registry
+                  Garage Registration Details
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ProtocolInput
-                  label="Full Identity Name"
+                  label="Full Name"
                   icon={<FiUser />}
                   value={formData.name}
                   error={errors.name}
@@ -276,7 +352,7 @@ const PaymentModal = ({
                   isDark={isDark}
                 />
                 <ProtocolInput
-                  label="Operational Entity"
+                  label="Garage Name"
                   icon={<FiBriefcase />}
                   value={formData.companyName}
                   error={errors.companyName}
@@ -285,7 +361,7 @@ const PaymentModal = ({
                   isDark={isDark}
                 />
                 <ProtocolInput
-                  label="Transmission Email"
+                  label="User Email"
                   icon={<FiMail />}
                   value={formData.email}
                   error={errors.email}
@@ -294,7 +370,7 @@ const PaymentModal = ({
                   isDark={isDark}
                 />
                 <ProtocolInput
-                  label="Contact Protocol"
+                  label="Contact Number"
                   icon={<FiPhone />}
                   value={formData.phone}
                   error={errors.phone}
@@ -304,7 +380,7 @@ const PaymentModal = ({
                 />
                 <div className="md:col-span-2">
                   <ProtocolInput
-                    label="Physical Infrastructure Address"
+                    label="Garage Address"
                     icon={<FiMapPin />}
                     value={formData.address}
                     readOnly={isUpgradePage}
@@ -313,7 +389,7 @@ const PaymentModal = ({
                   />
                 </div>
                 <ProtocolInput
-                  label="GST Identification"
+                  label="GST Number"
                   icon={<FiHash />}
                   value={formData.gstNumber}
                   error={errors.gstNumber}

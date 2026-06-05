@@ -69,6 +69,10 @@ import userKycRoutes from "./routes/userKyc.routes.js";
 import marketplaceRoutes from "./routes/marketplace.routes.js";
 import externalRoutes from "./externalApi/external.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+// Import the new verification router layer
+import garageVerificationRoutes from "./routes/garageVerification.routes.js";
+
+
 
 // console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -162,6 +166,9 @@ app.use("/api/payments", paymentRoutes);
    🚀 External API Routes (with API key protection)
 ----------------------------------------------------- */
 app.use("/api/v1/external", externalRoutes);
+
+// Mount the verification endpoint track
+app.use("/api/garage-verification", garageVerificationRoutes);
 
 /* -----------------------------------------------------
    🧠 Health Check Route

@@ -152,12 +152,13 @@ const PaymentModal = ({
       return alert("System Syncing: Razorpay not ready.");
     }
 
-    const API = "https://auto-garage-crm-zrxc.onrender.com";
+    // const API = "https://auto-garage-crm-zrxc.onrender.com";
+    const API = import.meta.env.VITE_API_BASE_URL;
 
     setIsProcessing(true);
 
     try {
-      console.log("API URL:", `${API}/api/payments/create-subscription`);
+      console.log("API URL:", `${API}/api/payments/create-first-payment-order`);
 
       // 🔥 Normalize plan name safely
       const normalizedPlanName = (() => {
@@ -193,13 +194,16 @@ const PaymentModal = ({
       console.log("NORMALIZED PLAN:", normalizedPlanName);
       console.log("PAYLOAD:", payload);
 
-      const subRes = await fetch(`${API}/api/payments/create-subscription`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const subRes = await fetch(
+        `${API}/api/payments/create-first-payment-order`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       console.log("STATUS:", subRes.status);
 
@@ -228,23 +232,27 @@ const PaymentModal = ({
         return;
       }
 
-      const subscriptionId = data?.subscription?.id || data?.id;
+      // const subscriptionId = data?.subscription?.id || data?.id;
 
-      if (!subscriptionId) {
-        console.error("INVALID SUBSCRIPTION RESPONSE:", data);
+      // if (!subscriptionId) {
+      //   console.error("INVALID SUBSCRIPTION RESPONSE:", data);
 
-        alert(data?.error || data?.message || "Subscription ID missing");
+      //   alert(data?.error || data?.message || "Subscription ID missing");
 
+      //   return;
+      // }
+
+      // console.log("RAZORPAY DATA:", data);
+      // console.log("SUBSCRIPTION ID:", subscriptionId);
+      if (!data?.order?.id) {
+        alert("Order ID missing");
         return;
       }
-
-      console.log("RAZORPAY DATA:", data);
-      console.log("SUBSCRIPTION ID:", subscriptionId);
-
       const rzp = new window.Razorpay({
         key: data.razorpayKey,
 
-        subscription_id: subscriptionId,
+        // subscription_id: subscriptionId,
+        order_id: data.order.id,
 
         name: "Abacco Technology",
 
@@ -270,14 +278,63 @@ const PaymentModal = ({
         },
 
         handler: async (response) => {
-          console.log("PAYMENT SUCCESS:", response);
+          try {
+            const verifyRes = await fetch(
+              `${API}/api/payments/verify-first-payment-order`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  customer: formData,
+                  plan: {
+                    name: normalizedPlanName,
+                    numericPrice: Number(plan.numericPrice),
+                  },
+                  billingPeriod: billingPeriod.toLowerCase(),
+                }),
+              },
+            );
 
-          setPaymentResponse({
-            paymentId: response.razorpay_payment_id,
-            subscriptionId: response.razorpay_subscription_id,
-          });
+            const verifyData = await verifyRes.json();
 
-          setShowSuccess(true);
+            if (!verifyData.success) {
+              alert(verifyData.error || "Payment verification failed");
+              return;
+            }
+
+            const subscriptionRes = await fetch(
+              `${API}/api/payments/create-subscription`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              },
+            );
+
+            const subscriptionData = await subscriptionRes.json();
+
+            if (!subscriptionData.success) {
+              alert(subscriptionData.error || "Subscription creation failed");
+              return;
+            }
+
+            setPaymentResponse({
+              paymentId: response.razorpay_payment_id,
+              subscriptionId: subscriptionData.subscription?.id,
+            });
+
+            setShowSuccess(true);
+          } catch (err) {
+            console.error(err);
+            alert("Verification failed");
+          }
         },
       });
 

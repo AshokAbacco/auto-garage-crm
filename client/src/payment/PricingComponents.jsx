@@ -163,7 +163,7 @@ export const PricingCard = ({
       ? Math.round(baseOriginalPrice / 12)
       : baseOriginalPrice;
 
-  // 2. Apply 50% discount rules for new registers / first payments
+  // 2. Apply 50% discount rules for visual display layout
   const discountedMonthlyEq = Math.round(originalMonthlyEq * 0.5);
 
   return (
@@ -245,13 +245,7 @@ export const PricingCard = ({
 
         {/* --- Button Design --- */}
         <button
-          onClick={() =>
-            onSelect({
-              ...plan,
-              originalPrice: originalMonthlyEq,
-              numericPrice: discountedMonthlyEq,
-            })
-          }
+          onClick={() => onSelect(plan)}
           className={`w-full py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all border-2 flex items-center justify-center gap-3 shadow-lg active:scale-95 ${
             isPopular
               ? "bg-[#001F3F] border-[#001F3F] text-white hover:bg-black"

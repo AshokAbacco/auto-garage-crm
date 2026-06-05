@@ -170,7 +170,9 @@ import { generateToken } from "../utils/generateToken.js";
  */
 export const registerUser = async (req, res) => {
   try {
-    const { username, email, password, crmType } = req.body;
+    // Destructure the new garage service flags along with original fields
+    const { username, email, password, crmType, pickupDrop, towingService } =
+      req.body;
 
     /* ---------- BASIC VALIDATION ---------- */
     if (!username || !email || !password || !crmType) {
@@ -258,6 +260,10 @@ export const registerUser = async (req, res) => {
       allowedCrms: [crmType.toUpperCase()],
       myReferralCode,
 
+      // 🚗 GARAGE CONFIGURATION FIELDS (Fallback safely to false if not provided)
+      pickupDrop: pickupDrop === true,
+      towingService: towingService === true,
+
       // 🔥 PARTNER LINK (New field in User Table)
       referredByPartnerId: referrerPartnerId,
 
@@ -313,6 +319,8 @@ export const registerUser = async (req, res) => {
         username: user.username,
         email: user.email,
         plan: user.plan,
+        pickupDrop: user.pickupDrop,
+        towingService: user.towingService,
       },
     });
   } catch (error) {

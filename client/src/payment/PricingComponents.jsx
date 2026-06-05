@@ -15,6 +15,7 @@ import {
   FiTerminal,
   FiTruck,
   FiSettings,
+  FiPercent,
 } from "react-icons/fi";
 
 // --- HERO COMPONENT ---
@@ -41,7 +42,8 @@ export const Hero = ({
           </span>
         </h1>
       </div>
-      {/* --- Special Offer Banner --- */}
+
+      {/* --- 50% Off Welcome Protocol Banner --- */}
       <div className="max-w-7xl mx-auto relative group">
         <div
           className={`p-8 md:p-10 rounded-[2.5rem] border-2 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 transition-all duration-500 ${
@@ -54,27 +56,25 @@ export const Hero = ({
           <FiCpu className="absolute right-[-5%] top-[-10%] w-64 h-64 opacity-5 pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-center gap-6 relative z-10 text-center md:text-left">
-            <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
-              <FiAward size={32} className="text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg animate-pulse">
+              <FiPercent size={32} className="text-white" />
             </div>
             <div>
-              <div className="inline-flex items-center bg-red-600 px-3 py-1 rounded-md mb-3">
+              <div className="inline-flex items-center bg-emerald-500 px-3 py-1 rounded-md mb-3">
                 <span className="text-[9px] font-black uppercase tracking-widest text-white">
-                  Limited Time Offer
+                  Welcome Protocol Active
                 </span>
               </div>
               <h3 className="text-2xl font-black uppercase tracking-tight italic mb-2">
-                Free Hardware Included
+                50% Discount Applied
               </h3>
               <p className="text-blue-100/60 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-                Choose the Annual Premium plan{" "}
-                <span className="text-white">for Car or Bike CRM</span> to{" "}
+                Exclusive deployment strategy for{" "}
+                <span className="text-white">New Registrations</span> &{" "}
+                <span className="text-amber-400">First-Time Payments</span>.{" "}
                 <br />
-                get a{" "}
-                <span className="text-amber-400">
-                  Lenovo Tablet (worth ₹12,500)
-                </span>{" "}
-                absolutely free.
+                Your operational subscription cost is reduced by half
+                automatically at checkout.
               </p>
             </div>
           </div>
@@ -82,14 +82,15 @@ export const Hero = ({
           {/* Offer Status Widget */}
           <div className="relative z-10 border-2 border-white/20 bg-white/5 backdrop-blur-md p-6 rounded-2xl min-w-[240px] text-center">
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-300 mb-1">
-              Offer Status
+              Verification Status
             </p>
-            <p className="text-xl font-black italic uppercase tracking-tighter">
-              Free Gift Included
+            <p className="text-xl font-black italic uppercase tracking-tighter text-emerald-400">
+              50% Off Auto-Applied
             </p>
           </div>
         </div>
-      </div>{" "}
+      </div>
+
       {/* Category Selector Tab */}
       <div className="mt-12 inline-grid grid-cols-2 sm:flex bg-[#F8FAFC] p-1.5 rounded-2xl border border-[#CBD5E1] w-full max-w-sm sm:max-w-max mx-auto gap-1 sm:gap-0 shadow-inner">
         {["car", "bike", "washing"].map((type) => (
@@ -106,6 +107,7 @@ export const Hero = ({
           </button>
         ))}
       </div>
+
       {/* Billing Cycle Selector */}
       <div className="flex items-center justify-center gap-6">
         <span
@@ -149,14 +151,20 @@ export const PricingCard = ({
   isPopular,
 }) => {
   const Icon = plan.icon;
-  const finalPrice =
+
+  // 1. Calculate the standard original market price based on cycle rules
+  const baseOriginalPrice =
     billingPeriod === "yearly"
       ? Math.round(plan.numericPrice * 12 * 0.8)
       : plan.numericPrice;
-  const monthlyEq =
+
+  const originalMonthlyEq =
     billingPeriod === "yearly"
-      ? Math.round(finalPrice / 12)
-      : plan.numericPrice;
+      ? Math.round(baseOriginalPrice / 12)
+      : baseOriginalPrice;
+
+  // 2. Apply 50% discount rules for new registers / first payments
+  const discountedMonthlyEq = Math.round(originalMonthlyEq * 0.5);
 
   return (
     <div className="relative h-full flex flex-col">
@@ -196,14 +204,29 @@ export const PricingCard = ({
           </div>
         </div>
 
-        <div className="mb-12 flex items-baseline gap-1">
+        {/* --- Pricing Interface with Original Struck-Through & Discount Layout --- */}
+        <div className="mb-4 flex items-baseline gap-2 flex-wrap">
+          {/* After Discount Price */}
           <span
             className={`text-5xl font-black tracking-tighter ${isDark ? "text-white" : "text-[#001F3F]"}`}
           >
-            ₹{monthlyEq}
+            ₹{discountedMonthlyEq}
           </span>
+
+          {/* Original Market Price Struck-through */}
+          <span className="text-xl font-bold text-slate-400 line-through opacity-60 tracking-tight">
+            ₹{originalMonthlyEq}
+          </span>
+
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
             /Month
+          </span>
+        </div>
+
+        {/* Informative First Payment Verification Tag */}
+        <div className="mb-10">
+          <span className="text-[9px] font-black uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md">
+            First Payment Only
           </span>
         </div>
 
@@ -222,7 +245,13 @@ export const PricingCard = ({
 
         {/* --- Button Design --- */}
         <button
-          onClick={() => onSelect(plan)}
+          onClick={() =>
+            onSelect({
+              ...plan,
+              originalPrice: originalMonthlyEq,
+              numericPrice: discountedMonthlyEq,
+            })
+          }
           className={`w-full py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all border-2 flex items-center justify-center gap-3 shadow-lg active:scale-95 ${
             isPopular
               ? "bg-[#001F3F] border-[#001F3F] text-white hover:bg-black"

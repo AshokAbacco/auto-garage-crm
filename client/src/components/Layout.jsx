@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Car,
   Users,
@@ -23,8 +24,13 @@ import {
   Database,
   LockKeyhole,
   ListTree,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import GarageVerificationModal from "../components/GarageVerificationModal"; // ⭐ Imported separate form block
+
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,6 +40,10 @@ export default function Layout() {
 
   const [user, setUser] = useState({});
   const [loadingUser, setLoadingUser] = useState(true);
+
+  // 🏅 Real-Time Verification State Hub
+  const [verification, setVerification] = useState(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   const isStaff = user?.type === "staff";
   const userPlan = user?.plan || "BASIC";
@@ -49,6 +59,24 @@ export default function Layout() {
     "/reference",
     "/upgrade",
   ];
+
+  /* ======================================================
+      FETCH GARAGE VERIFICATION METRICS FROM API
+  ====================================================== */
+  const fetchVerificationState = async () => {
+    if (isStaff) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await axios.get(`${API_URL}/api/garage-verification/state`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setVerification(res.data);
+    } catch (err) {
+      console.error("Verification tracker synchronization loop failure:", err);
+    }
+  };
 
   /* ================================
       LOAD PROFILE (OWNER / STAFF)
@@ -110,6 +138,12 @@ export default function Layout() {
     return () => window.removeEventListener("user-updated", handleUserUpdate);
   }, [navigate]);
 
+  useEffect(() => {
+    if (user?.type === "owner") {
+      fetchVerificationState();
+    }
+  }, [user]);
+
   /* ================================
       MENU CONFIG
    ================================= */
@@ -139,7 +173,6 @@ export default function Layout() {
   ];
 
   const filteredMenu = menu.filter((item) => {
-    // STAFF LOGIN RULES (unchanged)
     if (isStaff) {
       return [
         "/car-dashboard",
@@ -151,16 +184,12 @@ export default function Layout() {
         "/ocr-scanner",
       ].includes(item.to);
     }
-
-    // OWNER PLAN RULES
     if (
       (item.to === "/staff-management" || item.to === "/data") &&
       !canAccessStaff
     )
       return false;
-
     if (item.to === "/salary-management" && !canAccessSalary) return false;
-
     return true;
   });
 
@@ -173,9 +202,6 @@ export default function Layout() {
     navigate("/login", { replace: true });
   };
 
-  /* ================================
-      THEME COLORS
-   ================================= */
   const colors = {
     layoutBg: isDark ? "#020617" : "#FFFFFF",
     mainBg: isDark ? "#020617" : "#F8FAFC",
@@ -188,6 +214,39 @@ export default function Layout() {
     hoverBg: isDark ? "#1E293B" : "#F8FAFC",
   };
 
+  // Define top row badge layouts mapping rules
+  const topBadgeStyles = {
+    NOT_ORDERED: {
+      text: "Unverified Garage",
+      style:
+        "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200/60",
+      icon: ShieldAlert,
+    },
+    PAID_PENDING_DOCS: {
+      text: "Upload Verification Docs",
+      style:
+        "bg-amber-50 text-amber-600 border-amber-200 animate-pulse hover:bg-amber-100/50",
+      icon: ShieldAlert,
+    },
+    UNDER_REVIEW: {
+      text: "Verification Pending Review",
+      style: "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100/50",
+      icon: ShieldAlert,
+    },
+    VERIFIED: {
+      text: "Verified Garage",
+      style: "bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default",
+      icon: ShieldCheck,
+    },
+    REJECTED: {
+      text: "Verification Rejected",
+      style: "bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100/50",
+      icon: ShieldAlert,
+    },
+  };
+  const activeTopBadge =
+    topBadgeStyles[verification?.status] || topBadgeStyles["NOT_ORDERED"];
+
   if (loadingUser) return null;
 
   return (
@@ -195,10 +254,9 @@ export default function Layout() {
       className="min-h-screen flex transition-colors duration-300"
       style={{ backgroundColor: colors.mainBg }}
     >
-      {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 lg:hidden"
+          className="fixed inset-0 z-40"
           onClick={() => setSidebarOpen(false)}
           style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
         />
@@ -206,24 +264,12 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside
-        className={`
-          fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out
-          border-r flex flex-col
-          ${sidebarExpanded ? "w-64" : "w-20"} 
-          lg:translate-x-0
-          ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          }
-        `}
-        style={{
-          backgroundColor: colors.layoutBg,
-          borderColor: colors.border,
-        }}
+        className={`fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out border-r flex flex-col ${sidebarExpanded ? "w-64" : "w-20"} lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+        style={{ backgroundColor: colors.layoutBg, borderColor: colors.border }}
         onMouseEnter={() => setSidebarExpanded(true)}
         onMouseLeave={() => setSidebarExpanded(false)}
       >
         <div className="flex flex-col h-full overflow-hidden">
-          {/* Logo */}
           <div
             className="flex items-center justify-between h-16 px-4 border-b flex-shrink-0"
             style={{ borderColor: colors.border }}
@@ -235,72 +281,43 @@ export default function Layout() {
               >
                 <Car className="w-6 h-6 text-white" />
               </div>
-
-              {/* ANIMATED LOGO TEXT */}
               <div
-                className={`font-poppins font-bold text-xl whitespace-nowrap transition-all duration-300 ease-in-out ${
-                  sidebarExpanded
-                    ? "opacity-100 max-w-[200px]"
-                    : "opacity-0 max-w-0"
-                }`}
+                className={`font-poppins font-bold text-xl whitespace-nowrap transition-all duration-300 ease-in-out ${sidebarExpanded ? "opacity-100 max-w-[200px]" : "opacity-0 max-w-0"}`}
                 style={{ color: isDark ? "#FFFFFF" : colors.brand }}
               >
                 {user?.companyName || user?.company || "Motor Desk"}
               </div>
             </div>
-
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1 transition-colors rounded-lg lg:hidden"
+              className="p-1 rounded-lg lg:hidden"
               style={{ color: colors.textSecondary }}
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
             {filteredMenu.map((item, index) => {
-              const ALLOWED_WHEN_EXPIRED = [
-                "/car-dashboard",
-                "/plan",
-                "/reference",
-                "/upgrade",
-              ];
-
-              // ✅ HANDLE GROUP (Marketplace)
               if (item.children) {
                 const isOpen = openMenu === index;
                 const Icon = item.icon;
-
                 return (
                   <div key={index}>
-                    {/* Parent Button */}
                     <button
                       onClick={() => setOpenMenu(isOpen ? null : index)}
                       className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200"
-                      style={{
-                        color: colors.textSecondary,
-                      }}
+                      style={{ color: colors.textSecondary }}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
-
                       <span
-                        className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${
-                          sidebarExpanded
-                            ? "opacity-100 w-auto ml-3"
-                            : "opacity-0 w-0 ml-0"
-                        }`}
+                        className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${sidebarExpanded ? "opacity-100 w-auto ml-3" : "opacity-0 w-0 ml-0"}`}
                       >
                         {item.label}
                       </span>
                     </button>
-
-                    {/* Children */}
                     <div
-                      className={`overflow-hidden transition-all duration-300 ${
-                        isOpen ? "max-h-40 mt-1" : "max-h-0"
-                      }`}
+                      className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-40 mt-1" : "max-h-0"}`}
                     >
                       <div className="ml-6 space-y-1">
                         {item.children.map((child) => {
@@ -308,23 +325,14 @@ export default function Layout() {
                             !isStaff &&
                             isPlanExpired &&
                             !ALLOWED_WHEN_EXPIRED.includes(child.to);
-
                           return (
                             <NavLink
                               key={child.to}
                               to={isLocked ? "/upgrade" : child.to}
-                              onClick={(e) => {
-                                if (isLocked) {
-                                  e.preventDefault();
-                                  navigate("/upgrade");
-                                  return;
-                                }
-                                setSidebarOpen(false);
-                              }}
-                              className={({ isActive }) => `
-                      flex items-center px-3 py-2 rounded-lg font-medium transition-all duration-200 group text-sm
-                      ${isActive ? "shadow-lg" : ""}
-                    `}
+                              onClick={() => setSidebarOpen(false)}
+                              className={({ isActive }) =>
+                                `flex items-center px-3 py-2 rounded-lg font-medium transition-all duration-200 group text-sm ${isActive ? "shadow-lg" : ""}`
+                              }
                               style={({ isActive }) => ({
                                 backgroundColor: isActive
                                   ? colors.primaryButton
@@ -335,7 +343,6 @@ export default function Layout() {
                                     ? "#FFFFFF"
                                     : colors.textSecondary,
                                 opacity: isLocked ? 0.6 : 1,
-                                cursor: isLocked ? "not-allowed" : "pointer",
                               })}
                             >
                               {child.label}
@@ -348,28 +355,18 @@ export default function Layout() {
                 );
               }
 
-              // ✅ NORMAL ITEM (UNCHANGED)
               const isLocked =
                 !isStaff &&
                 isPlanExpired &&
                 !ALLOWED_WHEN_EXPIRED.includes(item.to);
-
               return (
                 <NavLink
                   key={item.to}
                   to={isLocked ? "/upgrade" : item.to}
-                  onClick={(e) => {
-                    if (isLocked) {
-                      e.preventDefault();
-                      navigate("/upgrade");
-                      return;
-                    }
-                    setSidebarOpen(false);
-                  }}
-                  className={({ isActive }) => `
-          flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group
-          ${isActive ? "shadow-lg" : ""}
-        `}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 group ${isActive ? "shadow-lg" : ""}`
+                  }
                   style={({ isActive }) => ({
                     backgroundColor: isActive
                       ? colors.primaryButton
@@ -379,8 +376,6 @@ export default function Layout() {
                       : isActive
                         ? "#FFFFFF"
                         : colors.textSecondary,
-                    opacity: isLocked ? 0.6 : 1,
-                    cursor: isLocked ? "not-allowed" : "pointer",
                   })}
                 >
                   {({ isActive }) => {
@@ -388,7 +383,7 @@ export default function Layout() {
                     return (
                       <>
                         <Icon
-                          className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
+                          className="w-5 h-5 flex-shrink-0"
                           style={{
                             color: isLocked
                               ? "#94A3B8"
@@ -397,18 +392,13 @@ export default function Layout() {
                                 : colors.textSecondary,
                           }}
                         />
-
                         <span
-                          className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${
-                            sidebarExpanded
-                              ? "opacity-100 w-auto ml-3"
-                              : "opacity-0 w-0 ml-0"
-                          }`}
+                          className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${sidebarExpanded ? "opacity-100 w-auto ml-3" : "opacity-0 w-0 ml-0"}`}
                         >
                           {item.label}
                           {isLocked && (
-                            <span className="ml-2 flex items-center leading-none">
-                              <LockKeyhole className="h-4 w-4 shrink-0" />
+                            <span className="ml-2">
+                              <LockKeyhole className="h-4 w-4" />
                             </span>
                           )}
                         </span>
@@ -420,11 +410,10 @@ export default function Layout() {
             })}
           </nav>
 
-          {/* Logout Button */}
           <div className="p-3 flex-shrink-0">
             <button
               onClick={() => setShowLogoutModal(true)}
-              className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 border hover:bg-opacity-80 overflow-hidden"
+              className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 border overflow-hidden"
               style={{
                 backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
                 borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FECACA",
@@ -432,14 +421,8 @@ export default function Layout() {
               }}
             >
               <LogOut className="w-5 h-5 flex-shrink-0" />
-
-              {/* ANIMATED LOGOUT TEXT */}
               <span
-                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
-                  sidebarExpanded
-                    ? "opacity-100 w-auto ml-3"
-                    : "opacity-0 w-0 ml-0"
-                }`}
+                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${sidebarExpanded ? "opacity-100 w-auto ml-3" : "opacity-0 w-0 ml-0"}`}
               >
                 Logout
               </span>
@@ -462,19 +445,11 @@ export default function Layout() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 transition-colors rounded-lg lg:hidden"
+                className="p-2 rounded-lg lg:hidden"
                 style={{ color: colors.textSecondary }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = colors.hoverBg)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
               >
                 <Menu className="w-5 h-5" />
               </button>
-
-              {/* Mobile Logo View */}
               <div className="flex items-center gap-3 lg:hidden">
                 <div
                   className="flex items-center justify-center w-8 h-8 rounded-lg"
@@ -489,6 +464,21 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center gap-4">
+              {/* ⭐ NEW HIGH-VISIBILITY VERIFICATION STATUS TAG LINK BAR */}
+              {!isStaff && (
+                <button
+                  disabled={verification?.status === "VERIFIED"}
+                  onClick={() => setShowVerificationModal(true)}
+                  className={`hidden sm:flex items-center gap-2 px-3.5 py-1.5 text-xs font-black uppercase tracking-wider border rounded-xl transition-all duration-150 select-none ${activeTopBadge.style}`}
+                >
+                  <activeTopBadge.icon
+                    className="w-4 h-4 shrink-0"
+                    strokeWidth={2.5}
+                  />
+                  <span>{activeTopBadge.text}</span>
+                </button>
+              )}
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -497,12 +487,6 @@ export default function Layout() {
                   color: isDark ? "#FCD34D" : "#475569",
                   border: `1px solid ${colors.border}`,
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = colors.hoverBg)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
               >
                 {isDark ? (
                   <Sun className="w-5 h-5" />
@@ -511,11 +495,11 @@ export default function Layout() {
                 )}
               </button>
 
-              {/* User Profile */}
+              {/* User Profile Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setOpenProfileMenu(!openProfileMenu)}
-                  className="flex items-center gap-3"
+                  className="flex items-center gap-3 p-1.5 rounded-xl border border-transparent hover:border-slate-200/80 hover:bg-slate-50/50"
                 >
                   <div
                     className="w-10 h-10 overflow-hidden border rounded-full"
@@ -526,10 +510,6 @@ export default function Layout() {
                         src={user.profileImage}
                         alt="Profile"
                         className="object-cover w-full h-full"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
-                        }}
                       />
                     ) : (
                       <div
@@ -537,34 +517,36 @@ export default function Layout() {
                         style={{ backgroundColor: colors.primaryButton }}
                       >
                         <span className="font-medium text-white">
-                          {user?.username?.charAt(0)?.toUpperCase() ||
-                            user?.name?.charAt(0)?.toUpperCase() ||
-                            "U"}
+                          {user?.username?.charAt(0)?.toUpperCase() || "U"}
                         </span>
                       </div>
                     )}
                   </div>
-
                   <div className="hidden sm:block text-left">
                     <div
-                      className="font-medium"
+                      className="font-bold text-sm flex items-center gap-1"
                       style={{ color: colors.textPrimary }}
                     >
                       {user?.username || user?.name || "User"}
+                      {verification?.status === "VERIFIED" && (
+                        <ShieldCheck
+                          className="w-4 h-4 text-emerald-500 fill-emerald-50 shrink-0"
+                          strokeWidth={2.5}
+                        />
+                      )}
                     </div>
                     <div
-                      className="text-xs"
+                      className="text-xs font-medium"
                       style={{ color: colors.textSecondary }}
                     >
-                      {user?.email || "no-email@example.com"}
+                      {user?.email}
                     </div>
                   </div>
                 </button>
 
-                {/* Dropdown Menu */}
                 {openProfileMenu && (
                   <div
-                    className="absolute right-0 mt-5 w-40 rounded-xl shadow-lg border p-1 z-50"
+                    className="absolute right-0 mt-2 w-48 rounded-xl shadow-lg border p-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
                     style={{
                       backgroundColor: colors.elementBg,
                       borderColor: colors.border,
@@ -572,24 +554,14 @@ export default function Layout() {
                   >
                     <button
                       onClick={() => {
-                        if (isStaff) {
-                          navigate("/car-dashboard");
-                        } else {
-                          navigate("/profile");
-                        }
+                        navigate(isStaff ? "/car-dashboard" : "/profile");
                         setOpenProfileMenu(false);
                       }}
-                      className="w-full flex items-center justify-center gap-2 text-left px-3 py-2 rounded-lg font-medium transition-colors duration-300"
+                      className="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg font-bold text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                       style={{ color: colors.textPrimary }}
-                      onMouseEnter={(e) =>
-                        (e.target.style.backgroundColor = colors.hoverBg)
-                      }
-                      onMouseLeave={(e) =>
-                        (e.target.style.backgroundColor = "transparent")
-                      }
                     >
-                      <UserRoundCog height={25} />
-                      Profile
+                      <UserRoundCog className="w-4 h-4 text-slate-400" />{" "}
+                      Profile Settings
                     </button>
                   </div>
                 )}
@@ -600,12 +572,20 @@ export default function Layout() {
 
         {/* Page content */}
         <main
-          className="flex-1 p-6 pt-8 transition-colors duration-300"
+          className="flex-1 p-6 pt-8"
           style={{ backgroundColor: colors.mainBg }}
         >
           <Outlet />
         </main>
       </div>
+
+      {/* ⭐ Decoupled Verification Document Processing Modal Overlay */}
+      <GarageVerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        verification={verification}
+        onRefreshState={fetchVerificationState}
+      />
 
       {/* Logout Modal */}
       {showLogoutModal && (
@@ -629,7 +609,6 @@ export default function Layout() {
             <p style={{ color: colors.textSecondary }}>
               Are you sure you want to logout?
             </p>
-
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowLogoutModal(false)}
@@ -641,13 +620,12 @@ export default function Layout() {
               >
                 Cancel
               </button>
-
               <button
                 onClick={() => {
                   setShowLogoutModal(false);
                   logout();
                 }}
-                className="px-4 py-2 font-medium text-white rounded-lg hover:opacity-90 transition-opacity"
+                className="px-4 py-2 font-medium text-white rounded-lg"
                 style={{ backgroundColor: "#DC2626" }}
               >
                 Logout

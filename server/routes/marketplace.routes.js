@@ -6,6 +6,10 @@ import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
+console.log(
+  "⚙️  [DEBUG] [MARKETPLACE ROUTER] Mounting secure endpoints onto Express system...",
+);
+
 // ============================================================
 // App APIs (Mobile/Consumer Facing)
 // ============================================================
@@ -14,7 +18,7 @@ const router = express.Router();
  * @route   GET /api/marketplace/services
  * @desc    Fetch hierarchical services (Main -> Section -> Service)
  */
-router.get("/services", controller.getServices);
+router.get("/services", protect, controller.getServices);
 
 /**
  * @route   GET /api/marketplace/services/:id/garages

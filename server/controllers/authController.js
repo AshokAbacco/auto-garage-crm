@@ -6,165 +6,6 @@ import { generateToken } from "../utils/generateToken.js";
 
 /**
  * =============================================
- * REGISTER USER
- * =============================================
- */
-
-// export const registerUser = async (req, res) => {
-//   try {
-//     const { username, email, password, crmType } = req.body;
-
-//     /* ---------- BASIC VALIDATION ---------- */
-//     if (!username || !email || !password || !crmType) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     const emailLower = email.toLowerCase().trim();
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     /* =================================================
-//        FETCH LATEST PAYMENT (SINGLE SOURCE OF TRUTH)
-//     ================================================= */
-//     const latestPayment = await prisma.payment.findFirst({
-//       where: { email: emailLower },
-//       orderBy: { createdAt: "desc" },
-//     });
-
-//     if (!latestPayment) {
-//       return res.status(400).json({
-//         message:
-//           "No payment found for this email. Please complete payment first.",
-//       });
-//     }
-
-//     /* ---------- EXTRACT FROM PAYMENT ---------- */
-//     const userPlan = latestPayment.plan || "BASIC";
-//     const companyName = latestPayment.companyName || null;
-//     const phone = latestPayment.phone || null;
-//     const gstNumber = latestPayment.gstNumber || null;
-//     const address = latestPayment.address || null;
-//     const referralCodeUsed = latestPayment.referralCode || null;
-
-//     const now = new Date();
-
-// // 7 days trial + 24 hours grace = 8 days
-// const TRIAL_DAYS = 7;
-// const GRACE_HOURS = 24;
-
-// const planExpiry =
-//   latestPayment.expiryDate
-//     ? new Date(latestPayment.expiryDate)
-//     : new Date(
-//         now.getTime() +
-//           (TRIAL_DAYS * 24 + GRACE_HOURS) * 60 * 60 * 1000
-//       );
-
-//     /* =================================================
-//        REFERRAL LOOKUP (OPTIONAL)
-//     ================================================= */
-//     let referredByUserId = null;
-
-//     if (referralCodeUsed) {
-//       const referrer = await prisma.user.findUnique({
-//         where: { myReferralCode: referralCodeUsed },
-//         select: { id: true },
-//       });
-
-//       if (referrer) referredByUserId = referrer.id;
-//     }
-
-//     /* ---------- DUPLICATE CHECK ---------- */
-//     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
-//       prisma.user.findUnique({ where: { email: emailLower } }),
-//       prisma.user.findUnique({ where: { username } }),
-//     ]);
-
-//     if (
-//       existingUserByUsername &&
-//       (!existingUserByEmail ||
-//         existingUserByUsername.id !== existingUserByEmail.id)
-//     ) {
-//       return res.status(400).json({
-//         message: "This username is already taken.",
-//       });
-//     }
-
-//     /* =================================================
-//        CASE 1 — USER ALREADY EXISTS (FROM PAYMENT EMAIL)
-//     ================================================= */
-//     if (existingUserByEmail) {
-//       const updatedUser = await prisma.user.update({
-//         where: { email: emailLower },
-//         data: {
-//           username,
-//           password: hashedPassword,
-//           allowedCrms: [crmType.toUpperCase()],
-//           plan: userPlan,
-//           planExpiry,
-
-//           // 🔥 PAYMENT → USER SYNC
-//           companyName,
-//           phone,
-//           gstNumber,
-//           address,
-//         },
-//       });
-
-//       const token = generateToken(updatedUser);
-
-//       return res.status(200).json({
-//         message: "Registration completed successfully",
-//         token,
-//         user: updatedUser,
-//       });
-//     }
-
-//     /* =================================================
-//        CASE 2 — BRAND NEW USER
-//     ================================================= */
-//     const myReferralCode =
-//       "ATREF-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-
-//     const newUser = await prisma.user.create({
-//       data: {
-//         username,
-//         email: emailLower,
-//         password: hashedPassword,
-//         role: "user",
-//         allowedCrms: [crmType.toUpperCase()],
-//         myReferralCode,
-//         referredByUserId,
-
-//         // 🔥 PAYMENT → USER SYNC
-//         plan: userPlan,
-//         planExpiry,
-//         companyName,
-//         phone,
-//         gstNumber,
-//         address,
-//       },
-//     });
-
-//     const token = generateToken(newUser);
-
-//     return res.status(201).json({
-//       message: "User registered successfully",
-//       token,
-//       user: newUser,
-//     });
-//   } catch (error) {
-//     console.error("❌ Registration Error:", error);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
-/**
- * =============================================
- * REGISTER USER (UPDATED WITH PARTNER SUPPORT)
- * =============================================
- */
-/**
- * =============================================
  * REGISTER USER (UPDATED FOR PARTNER LINKING)
  * =============================================
  */
@@ -251,13 +92,15 @@ export const registerUser = async (req, res) => {
       ? new Date(latestPayment.expiryDate)
       : new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
 
+    const upperCrmType = crmType.toUpperCase();
+
     /* ---------- PREPARE USER DATA ---------- */
     const userData = {
       username,
       email: emailLower,
       password: hashedPassword,
       role: "user",
-      allowedCrms: [crmType.toUpperCase()],
+      allowedCrms: [upperCrmType],
       myReferralCode,
 
       // 🚗 GARAGE CONFIGURATION FIELDS (Fallback safely to false if not provided)
@@ -309,7 +152,14 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const token = generateToken(user);
+    // 🔧 FIXED: Restructured object schema configuration layout signature passed downstream
+    const token = generateToken({
+      id: user.id,
+      type: "owner",
+      role: "user",
+      plan: user.plan,
+      crmType: upperCrmType,
+    });
 
     return res.status(201).json({
       message: "Registration successful",
@@ -321,6 +171,7 @@ export const registerUser = async (req, res) => {
         plan: user.plan,
         pickupDrop: user.pickupDrop,
         towingService: user.towingService,
+        crmType: upperCrmType,
       },
     });
   } catch (error) {
@@ -334,7 +185,6 @@ export const registerUser = async (req, res) => {
  * LOGIN USER
  * =============================================
  */
-
 export const loginUser = async (req, res) => {
   try {
     const { identifier, password, crmType } = req.body;
@@ -350,7 +200,6 @@ export const loginUser = async (req, res) => {
 
     /**
      * 🚫 BLOCK STAFF EMAILS COMPLETELY
-     * Owner login must NEVER authenticate staff
      */
     if (isEmail) {
       const staffExists = await prisma.carStaffLogin.findUnique({
@@ -388,17 +237,25 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    if (!user.allowedCrms.includes(crmType.toUpperCase())) {
+    const upperCrmType = crmType.toUpperCase();
+
+    if (!user.allowedCrms.includes(upperCrmType)) {
       return res.status(403).json({
         message: `You do not have access to the ${crmType} CRM`,
       });
     }
 
+    /**
+     * ==============================================================
+     * 🔐 GENERATE JWT WITH ACTIVE CRM TYPE IN PAYLOAD
+     * ==============================================================
+     */
     const token = generateToken({
       id: user.id,
       type: "owner",
       role: "user",
       plan: user.plan,
+      crmType: upperCrmType, // 🔥 Injected active workspace
     });
 
     return res.status(200).json({
@@ -412,7 +269,7 @@ export const loginUser = async (req, res) => {
         type: "owner",
         plan: user.plan,
         allowedCrms: user.allowedCrms,
-        crmType,
+        crmType: upperCrmType,
       },
     });
   } catch (error) {
@@ -430,7 +287,6 @@ export const loginUser = async (req, res) => {
  */
 export const getProfile = async (req, res) => {
   try {
-    // 🔒 BLOCK TEAM ACCESS
     if (req.user.type !== "owner") {
       return res.status(403).json({
         message: "Access denied",
@@ -500,12 +356,13 @@ export const verifyToken = async (req, res) => {
       return res.status(200).json({
         valid: true,
         user: {
-          id: login.id, // staff id
-          loginId: login.id, // login id
+          id: login.id,
+          loginId: login.id,
           type: "staff",
           role: "staff",
           ownerId: login.ownerId,
           name: login.staff.name,
+          crmType: decoded.crmType ? decoded.crmType.toUpperCase() : "CAR",
         },
       });
     }
@@ -538,6 +395,8 @@ export const verifyToken = async (req, res) => {
         role: user.role,
         plan: user.plan,
         email: user.email,
+        // 🔧 FIXED: Preserves the workspace domain token value across browser refreshes
+        crmType: decoded.crmType ? decoded.crmType.toUpperCase() : "CAR",
       },
     });
   } catch (error) {
@@ -551,33 +410,11 @@ export const verifyToken = async (req, res) => {
  * DELETE ACCOUNT
  * =============================================
  */
-// export const deleteAccount = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-
-//     await prisma.payment.deleteMany({
-//       where: { email: req.user.email },
-//     });
-
-//     await prisma.user.delete({
-//       where: { id: userId },
-//     });
-
-//     res.status(200).json({ message: "Account deleted successfully" });
-//   } catch (error) {
-//     console.error("❌ Delete Account Error:", error);
-//     return res.status(500).json({ message: "Failed to delete account" });
-//   }
-// };
-
 export const deleteAccount = async (req, res) => {
   const userId = req.user.id;
   const email = req.user.email?.toLowerCase();
 
   try {
-    /* =========================
-       CAR CRM (NO TRANSACTION)
-    ========================= */
     const clients = await prisma.client.findMany({
       where: { userId },
       select: { id: true },
@@ -611,9 +448,6 @@ export const deleteAccount = async (req, res) => {
       });
     }
 
-    /* =========================
-       WASH CRM (MAIN PROBLEM)
-    ========================= */
     const washTeams = await prisma.washTeam.findMany({
       where: { createdBy: userId },
       select: { id: true },
@@ -661,9 +495,6 @@ export const deleteAccount = async (req, res) => {
       });
     }
 
-    /* =========================
-       BIKE / STAFF / PAYMENTS
-    ========================= */
     await prisma.carStaffSalary.deleteMany({ where: { ownerId: userId } });
     await prisma.carStaffLogin.deleteMany({ where: { ownerId: userId } });
     await prisma.carStaff.deleteMany({ where: { ownerId: userId } });
@@ -676,9 +507,6 @@ export const deleteAccount = async (req, res) => {
 
     await prisma.payment.deleteMany({ where: { email } });
 
-    /* =========================
-       USER (SHORT TRANSACTION)
-    ========================= */
     await prisma.$transaction([prisma.user.delete({ where: { id: userId } })]);
 
     return res.json({ success: true, message: "Account deleted successfully" });

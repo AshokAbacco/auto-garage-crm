@@ -19,6 +19,20 @@ export const protect = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Capture the active CRM type workspace from the signed token payload
+    const activeCrmType = decoded.crmType
+      ? decoded.crmType.toUpperCase().trim()
+      : null;
+
+    console.log("====================================================");
+    console.log("🛡️  [AUTH MIDDLEWARE] Processing Core Authorization");
+    console.log(`   ↳ Decoded User Type: "${decoded.type || "unknown"}"`);
+    console.log(`   ↳ Decoded User ID: "${decoded.id || "none"}"`);
+    console.log(
+      `   ↳ Decoded Token crmType Payload: ${activeCrmType ? `"${activeCrmType}"` : "None"}`,
+    );
+    console.log("====================================================");
+
     /**
      * =====================================
      * 🧑‍🔧 BIKE TEAM AUTH
@@ -30,7 +44,11 @@ export const protect = async (req, res, next) => {
         type: "bike_team",
         ownerId: decoded.ownerId,
         teamId: decoded.teamId,
+        crmType: activeCrmType || "BIKE", // Fallback to BIKE context for bike team members
       };
+      console.log(
+        `   ⚙️  [AUTH MIDDLEWARE] Assigned Workspace Context: "${req.user.crmType}" (BIKE TEAM)`,
+      );
       return next();
     }
 
@@ -44,9 +62,10 @@ export const protect = async (req, res, next) => {
       });
 
       if (!login || !login.isActive || !login.staff) {
-        return res
-          .status(401)
-          .json({ message: "Staff not found or inactive" });
+        console.log(
+          "   ❌ [AUTH MIDDLEWARE] Staff validation failed or marked inactive",
+        );
+        return res.status(401).json({ message: "Staff not found or inactive" });
       }
 
       const owner = await prisma.user.findUnique({
@@ -60,8 +79,11 @@ export const protect = async (req, res, next) => {
         role: login.staff.role || "staff",
         ownerId: login.ownerId,
         plan: owner?.plan || "BASIC", // ✅ inherit owner plan
+        crmType: activeCrmType || "CAR", // Fallback to CAR context for car staff members
       };
-
+      console.log(
+        `   ⚙️  [AUTH MIDDLEWARE] Assigned Workspace Context: "${req.user.crmType}" (STAFF MEMBERS)`,
+      );
       return next();
     }
 
@@ -74,6 +96,9 @@ export const protect = async (req, res, next) => {
       });
 
       if (!staff || !staff.isActive) {
+        console.log(
+          "   ❌ [AUTH MIDDLEWARE] Wash staff validation failed or marked inactive",
+        );
         return res
           .status(401)
           .json({ message: "Wash staff not found or inactive" });
@@ -84,8 +109,11 @@ export const protect = async (req, res, next) => {
         type: "wash-staff",
         role: "wash-staff",
         teamId: staff.washTeamId,
+        crmType: activeCrmType || "WASHING", // Fallback to WASHING context for wash staff
       };
-
+      console.log(
+        `   ⚙️  [AUTH MIDDLEWARE] Assigned Workspace Context: "${req.user.crmType}" (WASH STAFF)`,
+      );
       return next();
     }
 
@@ -109,13 +137,20 @@ export const protect = async (req, res, next) => {
     });
 
     if (!user) {
+      console.log(
+        "   ❌ [AUTH MIDDLEWARE] Owner match lookup missing in prisma user tables",
+      );
       return res.status(401).json({ message: "User not found" });
     }
 
     req.user = {
       ...user,
       type: "owner", // 🔑 VERY IMPORTANT
+      crmType: activeCrmType, // 🔥 INJECTED: Pass context down to our marketplace services
     };
+    console.log(
+      `   ⚙️  [AUTH MIDDLEWARE] Assigned Workspace Context: "${req.user.crmType || "UNRESOLVED"}" (OWNER PROFILE)`,
+    );
 
     return next();
   } catch (error) {

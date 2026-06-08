@@ -82,29 +82,53 @@ export const resolveService = async (externalServiceId, fallbackName) => {
 };
 
 // ==============================
-// SERVICES (HIERARCHICAL)
+// SERVICES (HIERARCHICAL) — FILTERED BY CRM DOMAIN
 // ==============================
-export const getServices = async (vehicleTypeId = null) => {
+export const getServices = async (
+  vehicleTypeId = null,
+  activeCrmType = null,
+) => {
+  console.log("====================================================");
   console.log(
-    `[MarketplaceService] Fetching Hierarchy. Filter Type: ${vehicleTypeId || "None"}`,
+    `📦 [DEBUG] [MARKETPLACE SERVICE] -> getServices Query Triggered`,
   );
+  console.log(
+    `   ↳ Filtering vehicleTypeId: ${vehicleTypeId || "None Specified"}`,
+  );
+  console.log(
+    `   ↳ Active Workspace Target: ${activeCrmType ? `"${activeCrmType}"` : "None Specified"}`,
+  );
+  console.log("====================================================");
 
-  const sql = `
+  let sql = `
     SELECT 
       ms.id as main_id, ms.name as main_name,
       ss.id as sec_id, ss.name as sec_name,
-      s.id as svc_id, s.name as svc_name, s.price as svc_base_price
+      s.id as svc_id, s.name as svc_name, s.price as svc_base_price,
+      vt.name as vehicle_type_name
     FROM "MainService" ms
     JOIN "ServiceSection" ss ON ss."mainServiceId" = ms.id
     JOIN "Service" s ON s."sectionId" = ss.id
+    JOIN "VehicleType" vt ON s."vehicleTypeId" = vt.id
     WHERE ms."isActive" = true 
-    ${vehicleTypeId ? 'AND s."vehicleTypeId" = $1' : ""}
-    ORDER BY ms.name, ss.name, s.name;
   `;
 
-  const { rows } = await queryExternal(
-    sql,
-    vehicleTypeId ? [vehicleTypeId] : [],
+  const queryParams = [];
+
+  if (vehicleTypeId) {
+    sql += ` AND s."vehicleTypeId" = $1`;
+    queryParams.push(vehicleTypeId);
+  } else if (activeCrmType) {
+    // ⚡ FIX: Bulletproof text normalization trimming whitespaces to prevent empty row collections
+    sql += ` AND UPPER(TRIM(vt.name)) = UPPER(TRIM($1))`;
+    queryParams.push(activeCrmType.toUpperCase());
+  }
+
+  sql += ` ORDER BY ms.name, ss.name, s.name;`;
+
+  const { rows } = await queryExternal(sql, queryParams);
+  console.log(
+    `📦 [DEBUG] [MARKETPLACE SERVICE] -> Database returned ${rows?.length || 0} matching hierarchy rows.`,
   );
 
   const localMeta = await prisma.marketplaceService.findMany();
@@ -218,10 +242,12 @@ export const getGaragesByService = async (externalServiceId, carType) => {
 };
 
 // ==============================
-// GET GARAGE SERVICES WITH PRICING
-// Reads pricing from external App DB
+// GET GARAGE SERVICES WITH PRICING — FILTERED BY CRM DOMAIN
 // ==============================
-export const getGarageServicesWithPricing = async (userId) => {
+export const getGarageServicesWithPricing = async (
+  userId,
+  activeCrmType = null,
+) => {
   const garageServices = await prisma.garageMarketplaceService.findMany({
     where: { userId },
     include: { service: true },
@@ -234,26 +260,39 @@ export const getGarageServicesWithPricing = async (userId) => {
     .filter(Boolean);
 
   let pricingRows = [];
+  const validExternalIds = new Set();
 
   if (externalServiceIds.length > 0) {
     try {
-      const { rows } = await queryExternal(
-        `SELECT 
+      // Fetch pricing rows, joining through service to verify the workspace type match
+      let externalSql = `
+        SELECT 
            p.external_service_id, 
            p.car_type, 
            p.price, 
            p.discount,
            m.description,
-           m.image
+           m.image,
+           vt.name as vehicle_type_name
          FROM "GarageServicePricing" p
          LEFT JOIN "GarageServiceMeta" m
            ON p.external_service_id = m.external_service_id
           AND p.garage_user_id = m.garage_user_id
+         INNER JOIN "Service" s ON s.id = p.external_service_id
+         INNER JOIN "VehicleType" vt ON s."vehicleTypeId" = vt.id
          WHERE p.garage_user_id = $1
-           AND p.external_service_id = ANY($2::text[])`,
-        [userId, externalServiceIds],
-      );
+           AND p.external_service_id = ANY($2::text[])
+      `;
 
+      const externalParams = [userId, externalServiceIds];
+
+      if (activeCrmType) {
+        // ⚡ FIX: Robust text normalization tracking added to settings panels
+        externalSql += ` AND UPPER(TRIM(vt.name)) = UPPER(TRIM($3))`;
+        externalParams.push(activeCrmType.toUpperCase());
+      }
+
+      const { rows } = await queryExternal(externalSql, externalParams);
       pricingRows = rows;
     } catch (err) {
       console.error(
@@ -267,6 +306,8 @@ export const getGarageServicesWithPricing = async (userId) => {
   const metaMap = {};
 
   pricingRows.forEach((row) => {
+    validExternalIds.add(row.external_service_id);
+
     if (!pricingMap[row.external_service_id]) {
       pricingMap[row.external_service_id] = [];
     }
@@ -285,28 +326,33 @@ export const getGarageServicesWithPricing = async (userId) => {
     }
   });
 
-  return garageServices.map((gs) => {
-    const externalId = gs.service?.externalServiceId;
-    const meta = metaMap[externalId] || {};
+  return garageServices
+    .map((gs) => {
+      const externalId = gs.service?.externalServiceId;
 
-    return {
-      id: gs.id,
-      userId: gs.userId,
-      isActive: gs.isActive,
-      duration: gs.duration,
+      // Drop/filter services that belong to a different workspace context
+      if (activeCrmType && !validExternalIds.has(externalId)) {
+        return null;
+      }
 
-      description: meta.description,
-      image: meta.image,
+      const meta = metaMap[externalId] || {};
 
-      service: {
-        id: gs.service.id,
-        externalServiceId: externalId,
-        name: gs.service.name,
-      },
-
-      pricing: pricingMap[externalId] || [],
-    };
-  });
+      return {
+        id: gs.id,
+        userId: gs.userId,
+        isActive: gs.isActive,
+        duration: gs.duration,
+        description: meta.description,
+        image: meta.image,
+        service: {
+          id: gs.service.id,
+          externalServiceId: externalId,
+          name: gs.service.name,
+        },
+        pricing: pricingMap[externalId] || [],
+      };
+    })
+    .filter(Boolean); // Safely purges cross-domain layout mismatches
 };
 
 // ==============================

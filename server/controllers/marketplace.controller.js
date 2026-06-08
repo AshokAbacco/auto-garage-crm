@@ -10,14 +10,48 @@ import { notifyGarage } from "../services/socket.service.js";
 const prisma = new PrismaClient();
 
 // ==============================
-// SERVICES (App View)
+// SERVICES (App View / Catalog Builder)
 // ==============================
 export const getServices = async (req, res) => {
   try {
-    const { vehicleTypeId } = req.query;
-    const data = await marketplaceService.getServices(vehicleTypeId);
+    // 🧼 FORCE CACHE PURGING VIA HTTP HEADERS (Bypasses browser 304 caching completely)
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+
+    const { vehicleTypeId, vehicleType } = req.query;
+
+    // 🎯 Resolve workspace context, prioritizing explicit frontend query inputs over fallback JWT keys
+    const activeCrmType = vehicleType || req.user?.crmType;
+
+    console.log("====================================================");
+    console.log(
+      "🔍 [DEBUG] [MARKETPLACE CONTROLLER] -> getServices API Route Triggered",
+    );
+    console.log(
+      `   ↳ req.query.vehicleType (URL Query): ${vehicleType ? `"${vehicleType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   ↳ req.user.crmType (Token Auth Payload): ${req.user?.crmType ? `"${req.user.crmType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   🚀 FINAL RESOLVED CRM FILTER PASSED DOWNSTREAM: "${activeCrmType ? activeCrmType.toUpperCase() : "CAR"}"`,
+    );
+    console.log("====================================================");
+
+    const data = await marketplaceService.getServices(
+      vehicleTypeId,
+      activeCrmType,
+    );
     res.json({ success: true, data });
   } catch (err) {
+    console.error(
+      "❌ [DEBUG] [MARKETPLACE CONTROLLER] Failure inside getServices:",
+      err.message,
+    );
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -42,19 +76,16 @@ export const getGarages = async (req, res) => {
 // ==============================
 // CREATE BOOKING
 // ==============================
-// ==============================
-// CREATE BOOKING
-// ==============================
 export const createBooking = async (req, res) => {
   try {
-    const { 
-      externalServiceId, 
-      garageId, 
-      clientId, 
-      scheduledAt, 
+    const {
+      externalServiceId,
+      garageId,
+      clientId,
+      scheduledAt,
       appPrice,
       carType,
-      serviceName 
+      serviceName,
     } = req.body;
 
     // 1. Validation check
@@ -64,13 +95,11 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // 2. Prepare Data 
-    // We remove the strict Number() casting here to allow the Service layer 
-    // and Prisma to handle the ID mapping based on your schema (Int vs UUID).
+    // 2. Prepare Data
     const bookingData = {
       externalServiceId,
-      garageId: garageId, 
-      clientId: clientId, 
+      garageId: garageId,
+      clientId: clientId,
       scheduledAt,
       appPrice: appPrice ? Number(appPrice) : null,
       carType: carType || "SEDAN",
@@ -81,7 +110,6 @@ export const createBooking = async (req, res) => {
     const booking = await marketplaceService.createBooking(bookingData);
 
     // 4. Fire-and-forget side effects
-    // Ensure we use the garageId as it exists in the created booking record
     const targetGarageId = booking.garageId || garageId;
 
     try {
@@ -98,12 +126,11 @@ export const createBooking = async (req, res) => {
 
     // 5. Success Response
     res.json({ success: true, data: booking });
-
   } catch (err) {
     console.error("BOOKING ERROR DETAILS:", err);
-    res.status(400).json({ 
-      success: false, 
-      message: err.message || "An error occurred while creating the booking" 
+    res.status(400).json({
+      success: false,
+      message: err.message || "An error occurred while creating the booking",
     });
   }
 };
@@ -122,7 +149,6 @@ export const getBooking = async (req, res) => {
 
 // ==============================
 // ACCEPT BOOKING
-// 🔔 Stores a USER-scoped AppNotification in CRM DB for that client's phone
 // ==============================
 export const acceptBooking = async (req, res) => {
   try {
@@ -140,7 +166,6 @@ export const acceptBooking = async (req, res) => {
 
 // ==============================
 // REJECT BOOKING
-// 🔔 Stores a USER-scoped AppNotification in CRM DB for that client's phone
 // ==============================
 export const rejectBooking = async (req, res) => {
   try {
@@ -186,29 +211,61 @@ export const getAllBookings = async (req, res) => {
 
 // ==============================
 // GET GARAGE SERVICES (PRICING SETTINGS)
-// Now reads pricing from external App DB via service layer
+// Reads pricing from external App DB filtered contextualized by crmType
 // ==============================
 export const getGarageServices = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // 🧼 FORCE CACHE PURGING VIA HTTP HEADERS (Bypasses browser 304 caching completely)
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
 
-    // Use the new service function that reads pricing from external DB
-    const services =
-      await marketplaceService.getGarageServicesWithPricing(userId);
+    const userId = req.user.id;
+    const { vehicleType } = req.query;
+
+    // 🎯 Resolve workspace context, prioritizing explicit frontend query inputs over fallback JWT keys
+    const activeCrmType = vehicleType || req.user?.crmType;
+
+    console.log("====================================================");
+    console.log(
+      "🔍 [DEBUG] [MARKETPLACE CONTROLLER] -> getGarageServices API Route Triggered",
+    );
+    console.log(
+      `   ↳ req.query.vehicleType (URL Query): ${vehicleType ? `"${vehicleType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   ↳ req.user.crmType (Token Auth Payload): ${req.user?.crmType ? `"${req.user.crmType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   🚀 FINAL RESOLVED CRM FILTER PASSED DOWNSTREAM: "${activeCrmType ? activeCrmType.toUpperCase() : "CAR"}"`,
+    );
+    console.log("====================================================");
+
+    // Pass dynamic workspace target to restrict returned service configurations
+    const services = await marketplaceService.getGarageServicesWithPricing(
+      userId,
+      activeCrmType,
+    );
 
     res.json({ success: true, data: services });
   } catch (err) {
+    console.error(
+      "❌ [DEBUG] [MARKETPLACE CONTROLLER] Failure inside getGarageServices:",
+      err.message,
+    );
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 // ==============================
 // SAVE GARAGE SERVICE + PRICING
-// Now writes pricing to external App DB
 // ==============================
 export const saveGarageService = async (req, res) => {
   try {
-    console.log("BODY:", req.body);  
+    console.log("BODY:", req.body);
     const userId = req.user.id;
     const { serviceId, isActive, duration, pricing } = req.body;
 
@@ -234,7 +291,6 @@ export const saveGarageService = async (req, res) => {
 
 // ==============================
 // PACKAGES — CREATE
-// 🔔 Stores a GLOBAL AppNotification so every app user sees the new bundle
 // ==============================
 export const createPackage = async (req, res) => {
   try {
@@ -260,7 +316,6 @@ export const createPackage = async (req, res) => {
       description,
     });
 
-    // 🔔 Create GLOBAL notification in CRM DB — fire-and-forget
     notificationService
       .notifyNewPackage(data.id, userId)
       .catch((e) =>
@@ -350,7 +405,7 @@ export const togglePackage = async (req, res) => {
 // ==============================
 export const updateServiceDetails = async (req, res) => {
   try {
-    console.log("BODY:", req.body);  
+    console.log("BODY:", req.body);
     const { id } = req.params;
     let { description, isActive, pricing } = req.body;
     const isLocalId = !isNaN(Number(id));

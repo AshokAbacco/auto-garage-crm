@@ -158,15 +158,14 @@ const PaymentModal = ({
     setIsProcessing(true);
 
     try {
-      // Normalize plan name safely
+      // Differentiates car, bike, and wash identifiers dynamically before hitting API maps
       const normalizedPlanName = (() => {
-        const raw = String(plan?.name || "")
-          .toLowerCase()
-          .trim();
+        const raw = String(plan?.name || "").toLowerCase().trim();
+        const category = String(planType || "car").toLowerCase().trim();
 
-        if (raw.includes("basic")) return "basic";
-        if (raw.includes("standard")) return "standard";
-        if (raw.includes("premium")) return "premium";
+        if (raw.includes("basic")) return category === "bike" ? "bikebasic" : "basic";
+        if (raw.includes("standard")) return category === "bike" ? "bikestandard" : category === "washing" ? "washstandard" : "standard";
+        if (raw.includes("premium")) return category === "bike" ? "bikepremium" : category === "washing" ? "washpremium" : "premium";
 
         return raw
           .replace(/node/gi, "")
@@ -188,10 +187,10 @@ const PaymentModal = ({
 
       console.log("PLAN FROM UI:", plan.name);
       console.log("NORMALIZED PLAN:", normalizedPlanName);
-      console.log("PAYLOAD:", payload);
+      console.log("PAYLOAD PRICE:", payload.plan.numericPrice);
 
-      // 🔥 EXCLUSIVE TRIAL PATHWAY FOR THE BASIC PLAN
-      if (normalizedPlanName === "basic") {
+      // EXCLUSIVE TRIAL PATHWAY FOR BASIC AND BIKE-BASIC PLANS
+      if (normalizedPlanName === "basic" || normalizedPlanName === "bikebasic") {
         console.log("BASIC PLAN TRIGGERED: INITIALIZING DIRECT 1-MONTH SUBSCRIPTION");
         const subRes = await fetch(`${API}/api/payments/create-subscription`, {
           method: "POST",
@@ -248,7 +247,7 @@ const PaymentModal = ({
         return;
       }
 
-      // 🔥 ORIGINAL STANDALONE ORDER ROUTING FOR STANDARD & PREMIUM PACKAGES
+      // ORIGINAL STANDALONE ORDER ROUTING FOR STANDARD & PREMIUM PACKAGES
       const subRes = await fetch(
         `${API}/api/payments/create-first-payment-order`,
         {
@@ -517,9 +516,7 @@ const PaymentModal = ({
                   icon={<FiActivity />}
                   value={formData.referenceCode}
                   optional
-                  onChange={(v) =>
-                    setFormData({ ...formData, referenceCode: v })
-                  }
+                  onChange={(v) => setFormData({ ...formData, referenceCode: v })}
                   isDark={isDark}
                 />
               </div>

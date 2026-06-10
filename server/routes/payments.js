@@ -23,27 +23,40 @@ const useTrial = (process.env.USE_TRIAL || "true").toLowerCase() === "true";
    🔹 PLAN MAPPINGS
 ---------------------------------------------- */
 
-// Razorpay Plan IDs (ENV)
+// Razorpay Plan IDs mapped directly to match your exact .env variables
 const RAZORPAY_PLAN_MAP = {
+  // Car Categories
   basic: process.env.RAZORPAY_PLAN_CAR_BASIC,
   basicnode: process.env.RAZORPAY_PLAN_CAR_BASIC,
-
   standard: process.env.RAZORPAY_PLAN_CAR_STANDARD,
   standardnode: process.env.RAZORPAY_PLAN_CAR_STANDARD,
-
   premium: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
   premiumnode: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
+
+  // Bike Categories (.env values matched here)
+  bikebasic: process.env.BIKE_BASIC,
+  bikestandard: process.env.BIKE_STANDARD,
+  bikepremium: process.env.BIKE_PREMIUM,
+
+  // Wash Categories (.env casing keys matched here)
+  washstandard: process.env.WASH_STANDARD,
+  washpremium: process.env.Wash_PREMIUM,
 };
 
 const PRISMA_PLAN_MAP = {
   basic: "BASIC",
   basicnode: "BASIC",
+  bikebasic: "BASIC",
 
   standard: "STANDARD",
   standardnode: "STANDARD",
+  bikestandard: "STANDARD",
+  washstandard: "STANDARD",
 
   premium: "PREMIUM",
   premiumnode: "PREMIUM",
+  bikepremium: "PREMIUM",
+  washpremium: "PREMIUM",
 };
 
 /* ----------------------------------------------
@@ -69,42 +82,15 @@ router.post("/create-subscription", async (req, res) => {
 
   const { plan, billingPeriod, customer } = req.body || {};
 
-  console.log("\nPLAN OBJECT:");
-  console.log(plan);
-
-  console.log("\nCUSTOMER OBJECT:");
-  console.log(customer);
-
-  console.log("\nRAW VALUES:");
+  console.log("\nPLAN OBJECT:", plan);
+  console.log("\nCUSTOMER OBJECT:", customer);
   console.log("plan.name =>", plan?.name);
   console.log("plan.numericPrice =>", plan?.numericPrice);
-  console.log("typeof numericPrice =>", typeof plan?.numericPrice);
   console.log("billingPeriod =>", billingPeriod);
 
   const rawPlanName = plan?.name?.toLowerCase()?.trim()?.replace(/\s+/g, "");
+  console.log("\nNORMALIZED PLAN NAME:", rawPlanName);
 
-  console.log("\nNORMALIZED PLAN:");
-  console.log(rawPlanName);
-
-  console.log("\nENV PLAN MAP:");
-  console.log({
-    basic: process.env.RAZORPAY_PLAN_CAR_BASIC,
-    standard: process.env.RAZORPAY_PLAN_CAR_STANDARD,
-    premium: process.env.RAZORPAY_PLAN_CAR_PREMIUM,
-  });
-
-  console.log("\nVALIDATION CHECKS:");
-  console.log("HAS PLAN NAME =>", !!plan?.name);
-  console.log("PRICE IS NUMBER =>", typeof plan?.numericPrice === "number");
-  console.log(
-    "VALID BILLING =>",
-    ["monthly", "yearly"].includes(billingPeriod?.toLowerCase?.()),
-  );
-  console.log("HAS CUSTOMER EMAIL =>", !!customer?.email);
-  console.log("HAS CUSTOMER NAME =>", !!customer?.name);
-  console.log("HAS CUSTOMER PHONE =>", !!customer?.phone);
-
-  console.log("====================================================\n");
   try {
     if (!plan?.name) {
       console.log("FAILED: PLAN NAME MISSING");
@@ -150,9 +136,6 @@ router.post("/create-subscription", async (req, res) => {
     if (!razorpayPlanId || !prismaPlan) {
       console.log("FAILED: PLAN MAP");
       console.log("rawPlanName =>", rawPlanName);
-      console.log("razorpayPlanId =>", razorpayPlanId);
-      console.log("prismaPlan =>", prismaPlan);
-
       return res.status(400).json({
         success: false,
         error: `INVALID PLAN MAP = ${rawPlanName}`,
@@ -160,7 +143,6 @@ router.post("/create-subscription", async (req, res) => {
     }
 
     console.log("\n========== CUSTOMER CHECK ==========");
-
     const existingActiveSubscription = await prisma.payment.findFirst({
       where: {
         email: customer.email.toLowerCase(),
@@ -171,36 +153,26 @@ router.post("/create-subscription", async (req, res) => {
     });
 
     const isUpgrade = !!existingActiveSubscription;
-
     console.log("EMAIL:", customer.email.toLowerCase());
     console.log("HAS PREVIOUS SUBSCRIPTION:", isUpgrade);
     console.log("TRIAL ELIGIBLE:", !isUpgrade);
-    console.log("====================================\n");
 
     let startAt;
 
     // 🔥 MODIFIED TRIAL TIMELINES MATRIX
     if (!isUpgrade && useTrial) {
-      if (rawPlanName.includes("basic")) {
-        // Basic Plan Protocol: Enforce a solid 30-day Free Trial node window
+      if (rawPlanName === "basic" || rawPlanName === "bikebasic") {
+        // Basic / Bike Basic gets a full 30-day Free Trial node window
         startAt = Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000);
         console.log("\n========== BASIC 1-MONTH TRIAL ENABLED ==========");
       } else {
-        // Standard & Premium Plans: Retain original 7-day trial deployment matrix
+        // Standard & Premium retain original 7-day trial deployment matrix
         startAt = Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000);
         console.log("\n========== STANDARD/PREMIUM 7-DAY TRIAL ENABLED ==========");
       }
       console.log("FIRST BILLING DATE:", new Date(startAt * 1000));
-      console.log("===================================================\n");
     } else {
-      console.log("\n========== TRIAL CHECK ==========");
-      console.log("TRIAL ACTIVE: NO");
-      console.log(
-        isUpgrade
-          ? "REASON: Existing subscriber"
-          : "REASON: Trial disabled in ENV",
-      );
-      console.log("=================================\n");
+      console.log("\n========== TRIAL ACTIVE: NO ==========");
     }
 
     const totalCount = billingPeriod === "monthly" ? 12 : 1;
@@ -224,12 +196,7 @@ router.post("/create-subscription", async (req, res) => {
       subscription = await razorpay.subscriptions.create(subscriptionPayload);
       console.log("\n========== SUBSCRIPTION CREATED ==========");
       console.log("SUBSCRIPTION ID:", subscription.id);
-      console.log("PLAN:", plan.name);
-      console.log("BILLING PERIOD:", billingPeriod);
-      console.log(
-        "FIRST DEDUCTION DATE:",
-        startAt ? new Date(startAt * 1000) : "Immediate",
-      );
+      console.log("RAZORPAY PLAN ID DEPLOYED:", razorpayPlanId);
       console.log("==========================================\n");
     } catch (err) {
       console.error("Razorpay error:", err);
@@ -240,7 +207,6 @@ router.post("/create-subscription", async (req, res) => {
     }
 
     console.log("\n========== PAYMENT RECORD CHECK ==========");
-
     const existingFirstPayment = await prisma.payment.findFirst({
       where: {
         email: customer.email.toLowerCase(),
@@ -253,15 +219,8 @@ router.post("/create-subscription", async (req, res) => {
     });
 
     let payment;
-
     if (existingFirstPayment) {
-      console.log("FOUND FIRST PAYMENT RECORD");
-      console.log("PAYMENT ID:", existingFirstPayment.id);
-      console.log(
-        "50% DISCOUNT USED:",
-        existingFirstPayment.firstPaymentDiscountUsed,
-      );
-
+      console.log("FOUND FIRST PAYMENT RECORD:", existingFirstPayment.id);
       payment = await prisma.payment.update({
         where: {
           id: existingFirstPayment.id,
@@ -274,12 +233,8 @@ router.post("/create-subscription", async (req, res) => {
           nextBillingDate: startAt ? new Date(startAt * 1000) : null,
         },
       });
-
-      console.log("UPDATED EXISTING PAYMENT RECORD");
-      console.log("SUBSCRIPTION ID:", subscription.id);
     } else {
-      console.log("NO FIRST PAYMENT RECORD FOUND - CREATING NEW PAYMENT RECORD");
-
+      console.log("NO FIRST PAYMENT RECORD FOUND - CREATING NEW RECORD");
       payment = await prisma.payment.create({
         data: {
           customerName: customer.name,
@@ -308,11 +263,6 @@ router.post("/create-subscription", async (req, res) => {
         },
       });
     }
-
-    console.log("FINAL PAYMENT RECORD ID:", payment.id);
-    console.log("STATUS:", payment.status);
-    console.log("NEXT BILLING:", payment.nextBillingDate);
-    console.log("==========================================\n");
 
     return res.json({
       success: true,
@@ -379,7 +329,7 @@ router.post("/verify-first-payment-order", async (req, res) => {
     const normalizedPlan = plan.name.toLowerCase().trim().replace(/\s+/g, "");
     const isBasicPlan = normalizedPlan.includes("basic");
 
-    // 🔥 MODIFIED: Deny 50% checkout discount calculation logic explicitly on basic package variants
+    // Deny 50% checkout discount calculations explicitly on basic package variants
     const eligible = isBasicPlan ? false : !existingDiscount;
 
     const discountPercent = eligible ? 50 : 0;
@@ -509,13 +459,6 @@ router.post("/verify-payment-localhost", async (req, res) => {
    3️⃣ RAZORPAY WEBHOOK
 ---------------------------------------------- */
 router.post("/razorpay-webhook", async (req, res) => {
-  console.log("\n============================");
-  console.log("📥 Webhook HIT!");
-  console.log("============================\n");
-  console.log("\n================ WEBHOOK RAW BODY ================");
-  console.log("RAW BODY RECEIVED >>>", req.body);
-  console.log("=================================================\n");
-
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
@@ -527,37 +470,27 @@ router.post("/razorpay-webhook", async (req, res) => {
     const payloadBuffer = req.body;
     const signature = req.headers["x-razorpay-signature"];
     if (!signature) {
-      console.error("Missing signature");
       return res
         .status(400)
         .json({ success: false, error: "Missing signature" });
     }
 
-    // Verify signature
     const expected = crypto
       .createHmac("sha256", secret)
       .update(payloadBuffer)
       .digest("hex");
 
     if (expected !== signature) {
-      console.error("❌ Invalid signature");
       return res
         .status(400)
         .json({ success: false, error: "Invalid signature" });
     }
 
-    // Parse raw payload
     const body = JSON.parse(payloadBuffer.toString());
     const event = body.event;
-    console.log("📥 Event:", event);
 
-    /* ---------------------------------------------------
-       EVENT: subscription.authenticated (UPI Mandate Approved)
-    --------------------------------------------------- */
     if (event === "subscription.authenticated") {
       const sub = body.payload.subscription.entity;
-      console.log("subscription.authenticated:", sub.id);
-
       const record = await prisma.payment.findUnique({
         where: { subscriptionId: sub.id },
       });
@@ -571,23 +504,13 @@ router.post("/razorpay-webhook", async (req, res) => {
             trialEndDate: record.trialEndDate,
           },
         });
-
-        console.log("DB updated to TRIAL for:", sub.id);
-      } else {
-        console.warn("No record found for:", sub.id);
       }
-
       return res.json({ success: true });
     }
 
-    /* ---------------------------------------------------
-       EVENT: subscription.charged (Auto-debit successful)
-    --------------------------------------------------- */
     if (event === "subscription.charged") {
       const sub = body.payload.subscription.entity;
       const paymentEntity = body.payload.payment.entity;
-
-      console.log("subscription.charged:", sub.id);
 
       const record = await prisma.payment.findUnique({
         where: { subscriptionId: sub.id },
@@ -621,35 +544,15 @@ router.post("/razorpay-webhook", async (req, res) => {
             phone: record.phone || undefined,
           },
         });
-
-        console.log("DB updated to ACTIVE for:", sub.id);
-      } else {
-        console.warn("No DB record found for subscription.charged:", sub.id);
       }
-
       return res.json({ success: true });
     }
 
-    /* ---------------------------------------------------
-       subscription.cancelled
-    --------------------------------------------------- */
     if (event === "subscription.cancelled") {
       const sub = body.payload.subscription.entity;
       await prisma.payment.updateMany({
         where: { subscriptionId: sub.id },
         data: { status: "CANCELLED" },
-      });
-      return res.json({ success: true });
-    }
-
-    /* ---------------------------------------------------
-       subscription.paused
-    --------------------------------------------------- */
-    if (event === "subscription.paused") {
-      const sub = body.payload.subscription.entity;
-      await prisma.payment.updateMany({
-        where: { subscriptionId: sub.id },
-        data: { status: "PAUSED" },
       });
       return res.json({ success: true });
     }
@@ -705,10 +608,6 @@ router.get("/user-plan/:email", async (req, res) => {
    🏅 5️⃣ NEW: CREATE STANDALONE VERIFICATION BADGE ORDER (₹199)
 ========================================================= */
 router.post("/create-verification-order", protect, async (req, res) => {
-  console.log(
-    `🪙 [CREATE_VERIFICATION_ORDER] Generating order for User ID: ${req.user.id}`,
-  );
-
   try {
     if (req.user.type !== "owner") {
       return res
@@ -734,10 +633,6 @@ router.post("/create-verification-order", protect, async (req, res) => {
       razorpayKey: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
-    console.error(
-      "❌ [CREATE_VERIFICATION_ORDER] Error constructing Razorpay payload:",
-      error,
-    );
     return res.status(500).json({
       success: false,
       error: "Failed to initialize verification order gateway reference.",
@@ -749,24 +644,10 @@ router.post("/create-first-payment-order", async (req, res) => {
   try {
     const { plan, billingPeriod, customer } = req.body || {};
 
-    if (!plan?.name) {
+    if (!plan?.name || typeof plan.numericPrice !== "number" || !customer?.email) {
       return res.status(400).json({
         success: false,
-        error: "PLAN NAME MISSING",
-      });
-    }
-
-    if (typeof plan.numericPrice !== "number") {
-      return res.status(400).json({
-        success: false,
-        error: "PRICE MUST BE NUMBER",
-      });
-    }
-
-    if (!customer?.email) {
-      return res.status(400).json({
-        success: false,
-        error: "EMAIL REQUIRED",
+        error: "Missing required parameters metrics",
       });
     }
 
@@ -782,7 +663,6 @@ router.post("/create-first-payment-order", async (req, res) => {
     const normalizedPlan = plan.name.toLowerCase().trim().replace(/\s+/g, "");
     const isBasicPlan = normalizedPlan.includes("basic");
 
-    // 🔥 MODIFIED: Deny 50% checkout discount order generation explicitly on basic package variants
     const eligible = isBasicPlan ? false : !existingDiscount;
 
     const discountPercent = eligible ? 50 : 0;

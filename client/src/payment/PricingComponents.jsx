@@ -46,11 +46,10 @@ export const Hero = ({
       {/* --- 50% Off Welcome Protocol Banner --- */}
       <div className="max-w-7xl mx-auto relative group">
         <div
-          className={`p-8 md:p-10 rounded-[2.5rem] border-2 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 transition-all duration-500 ${
-            isDark
+          className={`p-8 md:p-10 rounded-[2.5rem] border-2 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 transition-all duration-500 ${isDark
               ? "bg-[#001F3F] border-white/10 shadow-2xl"
               : "bg-[#001F3F] border-[#001F3F] text-white shadow-xl"
-          }`}
+            }`}
         >
           {/* Decorative Background Icon */}
           <FiCpu className="absolute right-[-5%] top-[-10%] w-64 h-64 opacity-5 pointer-events-none" />
@@ -97,11 +96,10 @@ export const Hero = ({
           <button
             key={type}
             onClick={() => setPlanType(type)}
-            className={`px-4 sm:px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${
-              planType === type
+            className={`px-4 sm:px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${planType === type
                 ? "bg-[#001F3F] text-white shadow-xl scale-[1.02] sm:scale-100"
                 : "text-slate-400 hover:text-[#001F3F]"
-            } ${type === "washing" ? "col-span-2 sm:col-span-1" : ""}`}
+              } ${type === "washing" ? "col-span-2 sm:col-span-1" : ""}`}
           >
             {type} CRM
           </button>
@@ -122,9 +120,8 @@ export const Hero = ({
           className="relative w-14 h-7 rounded-full bg-[#001F3F] p-1 transition-all"
         >
           <div
-            className={`w-5 h-5 rounded-full bg-white transition-all duration-300 ${
-              billingPeriod === "yearly" ? "translate-x-7" : "translate-x-0"
-            }`}
+            className={`w-5 h-5 rounded-full bg-white transition-all duration-300 ${billingPeriod === "yearly" ? "translate-x-7" : "translate-x-0"
+              }`}
           />
         </button>
         <div className="flex items-center gap-3">
@@ -151,6 +148,7 @@ export const PricingCard = ({
   isPopular,
 }) => {
   const Icon = plan.icon;
+  const isBasic = plan?.name?.toLowerCase().includes("basic");
 
   // 1. Calculate the standard original market price based on cycle rules
   const baseOriginalPrice =
@@ -163,7 +161,7 @@ export const PricingCard = ({
       ? Math.round(baseOriginalPrice / 12)
       : baseOriginalPrice;
 
-  // 2. Apply 50% discount rules for visual display layout
+  // 2. Apply 50% discount rules for visual display layout (Standard / Premium)
   const discountedMonthlyEq = Math.round(originalMonthlyEq * 0.5);
 
   return (
@@ -178,13 +176,12 @@ export const PricingCard = ({
       )}
 
       <div
-        className={`h-full rounded-[2rem] border-2 p-10 flex flex-col transition-all duration-300 ${
-          isPopular
+        className={`h-full rounded-[2rem] border-2 p-10 flex flex-col transition-all duration-300 ${isPopular
             ? "border-[#001F3F] shadow-2xl bg-white scale-[1.02]"
             : isDark
               ? "bg-[#000814] border-slate-800"
               : "bg-white border-slate-100 shadow-sm"
-        }`}
+          }`}
       >
         <div className="flex justify-between items-start mb-10">
           <div
@@ -204,16 +201,16 @@ export const PricingCard = ({
           </div>
         </div>
 
-        {/* --- Pricing Interface with Original Struck-Through & Discount Layout --- */}
+        {/* --- Pricing Interface --- */}
         <div className="mb-4 flex items-baseline gap-2 flex-wrap">
-          {/* After Discount Price */}
+          {/* Main Display Price: ₹0 for Basic (Free Trial), Discounted Price for others */}
           <span
             className={`text-5xl font-black tracking-tighter ${isDark ? "text-white" : "text-[#001F3F]"}`}
           >
-            ₹{discountedMonthlyEq}
+            ₹{isBasic ? "0" : discountedMonthlyEq}
           </span>
 
-          {/* Original Market Price Struck-through */}
+          {/* Original Market Price Struck-through (Shows standard cost for all plans now) */}
           <span className="text-xl font-bold text-slate-400 line-through opacity-60 tracking-tight">
             ₹{originalMonthlyEq}
           </span>
@@ -223,11 +220,17 @@ export const PricingCard = ({
           </span>
         </div>
 
-        {/* Informative First Payment Verification Tag */}
+        {/* Informative Trial / Verification Tag */}
         <div className="mb-10">
-          <span className="text-[9px] font-black uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md">
-            First Payment Only
-          </span>
+          {isBasic ? (
+            <span className="text-[9px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+              1 Month Free Trial
+            </span>
+          ) : (
+            <span className="text-[9px] font-black uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md">
+              First Payment Only
+            </span>
+          )}
         </div>
 
         <ul className="space-y-5 mb-12 flex-1">
@@ -246,13 +249,12 @@ export const PricingCard = ({
         {/* --- Button Design --- */}
         <button
           onClick={() => onSelect(plan)}
-          className={`w-full py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all border-2 flex items-center justify-center gap-3 shadow-lg active:scale-95 ${
-            isPopular
+          className={`w-full py-5 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all border-2 flex items-center justify-center gap-3 shadow-lg active:scale-95 ${isPopular
               ? "bg-[#001F3F] border-[#001F3F] text-white hover:bg-black"
               : isDark
                 ? "bg-transparent border-slate-800 text-white hover:bg-slate-800"
                 : "bg-white border-slate-200 text-[#001F3F] hover:border-black"
-          }`}
+            }`}
         >
           Select {plan.name} Plan <FiArrowRight className="opacity-50" />
         </button>
@@ -330,19 +332,17 @@ export const TestimonialSection = ({ isDark }) => {
           {testimonials.map((t, i) => (
             <div
               key={i}
-              className={`p-10 rounded-[1.5rem] border-2 transition-all hover:-translate-y-2 ${
-                isDark
+              className={`p-10 rounded-[1.5rem] border-2 transition-all hover:-translate-y-2 ${isDark
                   ? "bg-[#001F3F]/10 border-slate-800"
                   : "bg-white border-slate-100 shadow-xl shadow-slate-100"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-5 mb-8">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${
-                    isDark
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${isDark
                       ? "bg-slate-800 text-white"
                       : "bg-slate-50 text-[#001F3F] border border-slate-100 shadow-inner"
-                  }`}
+                    }`}
                 >
                   {t.icon}
                 </div>

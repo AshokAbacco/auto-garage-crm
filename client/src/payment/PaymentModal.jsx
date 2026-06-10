@@ -120,6 +120,8 @@ const PaymentModal = ({
 
   if (!show || !plan) return null;
 
+  const isBasicPlan = String(plan?.name || "").toLowerCase().includes("basic");
+
   const finalPrice =
     billingPeriod === "yearly"
       ? Math.round(plan.numericPrice * 12 * 0.9)
@@ -152,15 +154,11 @@ const PaymentModal = ({
       return alert("System Syncing: Razorpay not ready.");
     }
 
-    // const API = "https://auto-garage-crm-zrxc.onrender.com";
     const API = import.meta.env.VITE_API_BASE_URL;
-
     setIsProcessing(true);
 
     try {
-      console.log("API URL:", `${API}/api/payments/create-first-payment-order`);
-
-      // 🔥 Normalize plan name safely
+      // Normalize plan name safely
       const normalizedPlanName = (() => {
         const raw = String(plan?.name || "")
           .toLowerCase()
@@ -182,9 +180,7 @@ const PaymentModal = ({
           name: normalizedPlanName,
           numericPrice: Number(plan.numericPrice),
         },
-
         billingPeriod: billingPeriod.toLowerCase(),
-
         customer: {
           ...formData,
         },
@@ -194,6 +190,65 @@ const PaymentModal = ({
       console.log("NORMALIZED PLAN:", normalizedPlanName);
       console.log("PAYLOAD:", payload);
 
+      // 🔥 EXCLUSIVE TRIAL PATHWAY FOR THE BASIC PLAN
+      if (normalizedPlanName === "basic") {
+        console.log("BASIC PLAN TRIGGERED: INITIALIZING DIRECT 1-MONTH SUBSCRIPTION");
+        const subRes = await fetch(`${API}/api/payments/create-subscription`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await subRes.json();
+        console.log("SUBSCRIPTION RESPONSE:", data);
+
+        if (!subRes.ok || !data.success) {
+          alert(data?.error || "Failed to initialize free trial session.");
+          setIsProcessing(false);
+          return;
+        }
+
+        const rzp = new window.Razorpay({
+          key: data.razorpayKey,
+          subscription_id: data.subscription.id,
+          name: "Abacco Technology",
+          description: `${plan.name} Trial Activation`,
+          theme: {
+            color: "#001F3F",
+          },
+          prefill: {
+            name: formData.name,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          modal: {
+            ondismiss: function () {
+              console.log("Razorpay subscription popup closed");
+            },
+            escape: false,
+            backdropclose: false,
+          },
+          handler: async (response) => {
+            setPaymentResponse({
+              paymentId: response.razorpay_payment_id,
+              subscriptionId: data.subscription.id,
+            });
+            setShowSuccess(true);
+          },
+        });
+
+        rzp.on("payment.failed", function (response) {
+          console.error("SUBSCRIPTION MANDATE FAILED:", response);
+          alert(response?.error?.description || "Mandate Initialization Failed");
+        });
+
+        rzp.open();
+        return;
+      }
+
+      // 🔥 ORIGINAL STANDALONE ORDER ROUTING FOR STANDARD & PREMIUM PACKAGES
       const subRes = await fetch(
         `${API}/api/payments/create-first-payment-order`,
         {
@@ -206,13 +261,10 @@ const PaymentModal = ({
       );
 
       console.log("STATUS:", subRes.status);
-
       const text = await subRes.text();
-
       console.log("RAW RESPONSE:", text);
 
       let data;
-
       try {
         data = JSON.parse(text);
       } catch (err) {
@@ -223,60 +275,37 @@ const PaymentModal = ({
 
       console.log("PARSED DATA:", data);
 
-      // 🔥 Show actual backend error
       if (!subRes.ok) {
         console.error("BACKEND ERROR:", data);
-
         alert(data?.error || data?.message || "Failed to create subscription");
-
         return;
       }
 
-      // const subscriptionId = data?.subscription?.id || data?.id;
-
-      // if (!subscriptionId) {
-      //   console.error("INVALID SUBSCRIPTION RESPONSE:", data);
-
-      //   alert(data?.error || data?.message || "Subscription ID missing");
-
-      //   return;
-      // }
-
-      // console.log("RAZORPAY DATA:", data);
-      // console.log("SUBSCRIPTION ID:", subscriptionId);
       if (!data?.order?.id) {
         alert("Order ID missing");
         return;
       }
+
       const rzp = new window.Razorpay({
         key: data.razorpayKey,
-
-        // subscription_id: subscriptionId,
         order_id: data.order.id,
-
         name: "Abacco Technology",
-
         description: `${plan.name} Node Activation`,
-
         theme: {
           color: "#001F3F",
         },
-
         prefill: {
           name: formData.name,
           email: formData.email,
           contact: formData.phone,
         },
-
         modal: {
           ondismiss: function () {
             console.log("Razorpay popup closed");
           },
-
           escape: false,
           backdropclose: false,
         },
-
         handler: async (response) => {
           try {
             const verifyRes = await fetch(
@@ -340,20 +369,17 @@ const PaymentModal = ({
 
       rzp.on("payment.failed", function (response) {
         console.error("PAYMENT FAILED:", response);
-
         alert(
           response?.error?.description ||
-            response?.error?.reason ||
-            "Payment Failed",
+          response?.error?.reason ||
+          "Payment Failed",
         );
       });
 
       console.log("OPENING RAZORPAY");
-
       rzp.open();
     } catch (e) {
       console.error("PAYMENT ERROR:", e);
-
       alert(e?.message || JSON.stringify(e) || "Initialization Failed");
     } finally {
       setIsProcessing(false);
@@ -370,11 +396,10 @@ const PaymentModal = ({
       ></div>
 
       <div
-        className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-[2rem] border transition-all duration-500 transform ${show ? "scale-100" : "scale-95"} ${
-          isDark
-            ? "bg-[#000814] border-white/10 shadow-2xl"
-            : "bg-white border-[#CBD5E1] shadow-xl"
-        }`}
+        className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-[2rem] border transition-all duration-500 transform ${show ? "scale-100" : "scale-95"} ${isDark
+          ? "bg-[#000814] border-white/10 shadow-2xl"
+          : "bg-white border-[#CBD5E1] shadow-xl"
+          }`}
       >
         {/* Header Protocol */}
         <div
@@ -526,7 +551,7 @@ const PaymentModal = ({
                     highlight
                     isDark={isDark}
                   />
-                  {billingPeriod === "yearly" && (
+                  {!isBasicPlan && billingPeriod === "yearly" && (
                     <SummaryLine
                       label="Efficiency Discount"
                       value="-10%"
@@ -543,12 +568,14 @@ const PaymentModal = ({
                   <div
                     className={`text-5xl font-black tracking-tighter mb-1 ${isDark ? "text-white" : "text-[#001F3F]"}`}
                   >
-                    ₹{finalPrice}
+                    ₹{isBasicPlan ? "0" : finalPrice}
                   </div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">
-                    {billingPeriod === "yearly"
-                      ? "Billed Annually"
-                      : "Billed Monthly"}
+                    {isBasicPlan
+                      ? "First 30 Days Free"
+                      : billingPeriod === "yearly"
+                        ? "Billed Annually"
+                        : "Billed Monthly"}
                   </p>
                 </div>
               </div>
@@ -612,13 +639,11 @@ const ProtocolInput = ({
         value={value}
         readOnly={readOnly}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 transition-all text-[12px] font-bold ${
-          readOnly ? "opacity-60 cursor-not-allowed" : ""
-        } ${
-          isDark
+        className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 transition-all text-[12px] font-bold ${readOnly ? "opacity-60 cursor-not-allowed" : ""
+          } ${isDark
             ? "bg-white/5 border-white/10 focus:border-white text-white"
             : "bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#001F3F] text-[#001F3F]"
-        } ${error ? "border-red-500/50" : ""}`}
+          } ${error ? "border-red-500/50" : ""}`}
       />
       {error && (
         <p className="text-[9px] text-red-500 font-bold uppercase mt-1 ml-1">
@@ -635,15 +660,14 @@ const SummaryLine = ({ label, value, highlight, success, isDark }) => (
       {label}
     </span>
     <span
-      className={`text-[12px] font-black uppercase ${
-        success
-          ? "text-green-500"
-          : highlight
-            ? "text-blue-600"
-            : isDark
-              ? "text-white"
-              : "text-[#001F3F]"
-      }`}
+      className={`text-[12px] font-black uppercase ${success
+        ? "text-green-500"
+        : highlight
+          ? "text-blue-600"
+          : isDark
+            ? "text-white"
+            : "text-[#001F3F]"
+        }`}
     >
       {value}
     </span>

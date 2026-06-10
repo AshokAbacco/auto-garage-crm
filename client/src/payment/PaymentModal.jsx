@@ -186,10 +186,10 @@ const PaymentModal = ({
       };
 
       console.log("PLAN FROM UI:", plan.name);
-      console.log("NORMALIZED PLAN:", normalizedPlanName);
+      console.log("NORMALIZED PLAN NAME:", normalizedPlanName);
       console.log("PAYLOAD PRICE:", payload.plan.numericPrice);
 
-      // EXCLUSIVE TRIAL PATHWAY FOR BASIC AND BIKE-BASIC PLANS
+      // 🔥 LOCKED IN PATHWAY FIX: Catching both basic variants securely to invoke direct trial mandates
       if (normalizedPlanName === "basic" || normalizedPlanName === "bikebasic") {
         console.log("BASIC PLAN TRIGGERED: INITIALIZING DIRECT 1-MONTH SUBSCRIPTION");
         const subRes = await fetch(`${API}/api/payments/create-subscription`, {

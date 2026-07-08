@@ -18,6 +18,7 @@ import AddRowModal from "../../components/DynamicData/AddRowModal.jsx";
 import EditRowModal from "../../components/DynamicData/EditRowModal.jsx";
 import TableManager from "../../components/DynamicData/TableManager.jsx";
 import ColumnManager from "../../components/DynamicData/ColumnManager.jsx";
+import ToastStack from "../../components/DynamicData/Toast.jsx";
 
 const DynamicData = () => {
   const { isDark } = useTheme(); // ✅ Get Theme State
@@ -28,19 +29,51 @@ const DynamicData = () => {
   const [rows, setRows] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editRow, setEditRow] = useState(null);
+  const [loadingTable, setLoadingTable] = useState(false);
+  const [importProgress, setImportProgress] = useState(null); // { current, total } | null
+  const [toasts, setToasts] = useState([]);
+
+  /**
+   * TOASTS (replaces blocking window.alert())
+   */
+  const showToast = (message, type = "info") => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  };
+
+  const dismissToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   /**
    * LOADERS
    */
   const loadTables = async () => {
-    const res = await getDynamicTables();
-    setTables(res.data);
+    try {
+      const res = await getDynamicTables();
+      setTables(res.data);
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Failed to load tables",
+        "error",
+      );
+    }
   };
 
   const loadTableDetails = async (tableId) => {
-    const res = await getDynamicTableDetails(tableId);
-    setColumns(res.data.columns);
-    setRows(res.data.rows);
+    try {
+      setLoadingTable(true);
+      const res = await getDynamicTableDetails(tableId);
+      setColumns(res.data.columns);
+      setRows(res.data.rows);
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Failed to load table details",
+        "error",
+      );
+    } finally {
+      setLoadingTable(false);
+    }
   };
 
   useEffect(() => {
@@ -60,21 +93,45 @@ const DynamicData = () => {
    * ACTIONS
    */
   const handleCreateTable = async (name) => {
-    const res = await createDynamicTable(name);
-    setTables((prev) => [...prev, res.data]);
-    setSelectedTableId(res.data.id);
+    try {
+      const res = await createDynamicTable(name);
+      setTables((prev) => [...prev, res.data]);
+      setSelectedTableId(res.data.id);
+      showToast(`Table "${name}" created`, "success");
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Failed to create table",
+        "error",
+      );
+    }
   };
 
   const handleRenameTable = async (id, name) => {
-    await renameDynamicTable(id, name);
-    loadTables();
+    try {
+      await renameDynamicTable(id, name);
+      loadTables();
+      showToast("Table renamed", "success");
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Failed to rename table",
+        "error",
+      );
+    }
   };
 
   const handleDeleteTable = async (id) => {
     if (!window.confirm("Delete table permanently?")) return;
-    await deleteDynamicTable(id);
-    setSelectedTableId("");
-    loadTables();
+    try {
+      await deleteDynamicTable(id);
+      setSelectedTableId("");
+      loadTables();
+      showToast("Table deleted", "success");
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Failed to delete table",
+        "error",
+      );
+    }
   };
 
   const handleAddColumn = async (column) => {
@@ -86,8 +143,13 @@ const DynamicData = () => {
         required: column.required,
       });
       await loadTableDetails(selectedTableId);
+      showToast(`Column "${column.name}" added`, "success");
     } catch (error) {
-      alert(error?.response?.data?.message || "Failed to add column");
+      showToast(
+        error?.response?.data?.message || "Failed to add column",
+        "error",
+      );
+      throw error; // let the modal know so it doesn't close/reset optimistically
     }
   };
 
@@ -98,8 +160,13 @@ const DynamicData = () => {
         required: column.required,
       });
       await loadTableDetails(selectedTableId);
+      showToast("Column updated", "success");
     } catch (error) {
-      alert(error?.response?.data?.message || "Failed to update column");
+      showToast(
+        error?.response?.data?.message || "Failed to update column",
+        "error",
+      );
+      throw error;
     }
   };
 
@@ -109,8 +176,12 @@ const DynamicData = () => {
     try {
       await deleteDynamicColumn(columnId);
       await loadTableDetails(selectedTableId);
+      showToast("Column deleted", "success");
     } catch (error) {
-      alert(error?.response?.data?.message || "Failed to delete column");
+      showToast(
+        error?.response?.data?.message || "Failed to delete column",
+        "error",
+      );
     }
   };
 
@@ -119,52 +190,116 @@ const DynamicData = () => {
     try {
       await deleteDynamicRow(rowId);
       await loadTableDetails(selectedTableId);
+      showToast("Row deleted", "success");
     } catch (error) {
-      alert(error?.response?.data?.message || "Failed to delete row");
+      showToast(
+        error?.response?.data?.message || "Failed to delete row",
+        "error",
+      );
     }
   };
 
+  /**
+   * EXCEL IMPORT
+   * Hardened version: never throws uncaught, dedupes column names within the
+   * same batch (case-insensitively), reports progress, and gives a clear
+   * success/failure summary instead of silently dying partway through.
+   */
   const handleExcelImport = async (excelRows) => {
-    if (!selectedTableId || excelRows.length === 0) return;
+    if (!selectedTableId || excelRows.length === 0 || importProgress) return;
 
-    const firstRow = excelRows[0];
+    try {
+      const firstRow = excelRows[0];
 
-    // 1️⃣ Create missing columns (ALL TEXT)
-    for (const key of Object.keys(firstRow)) {
-      const exists = columns.find(
-        (c) => c.name.toLowerCase() === key.toLowerCase(),
-      );
+      // 1️⃣ Work out which columns are genuinely new, case-insensitively,
+      //    and don't try to create the same "new" column twice in one batch.
+      const existingNames = new Set(columns.map((c) => c.name.toLowerCase()));
+      const plannedNames = new Set();
+      const columnsToCreate = [];
 
-      if (!exists) {
-        await createDynamicColumn({
-          tableId: selectedTableId,
-          name: key,
-          type: "TEXT", // ✅ ALWAYS TEXT
-          required: false,
-        });
+      for (const key of Object.keys(firstRow)) {
+        const lower = key.toLowerCase();
+        if (!existingNames.has(lower) && !plannedNames.has(lower)) {
+          plannedNames.add(lower);
+          columnsToCreate.push(key);
+        }
       }
+
+      for (const key of columnsToCreate) {
+        try {
+          await createDynamicColumn({
+            tableId: selectedTableId,
+            name: key,
+            type: "TEXT", // ✅ ALWAYS TEXT
+            required: false,
+          });
+        } catch (err) {
+          // A 409 (name already exists) is safe to ignore and continue with import.
+          if (err?.response?.status !== 409) {
+            throw new Error(
+              err?.response?.data?.message ||
+                `Failed to create column "${key}"`,
+            );
+          }
+        }
+      }
+
+      // Reload columns to get IDs (including any just created)
+      const updated = await getDynamicTableDetails(selectedTableId);
+      const updatedColumns = updated.data.columns;
+
+      // 2️⃣ Insert rows one at a time, tracking progress + collecting failures
+      //    so one bad row doesn't silently kill the whole import.
+      let successCount = 0;
+      let failCount = 0;
+      setImportProgress({ current: 0, total: excelRows.length });
+
+      for (let i = 0; i < excelRows.length; i++) {
+        const row = excelRows[i];
+        const data = {};
+
+        updatedColumns.forEach((col) => {
+          data[col.id] =
+            row[col.name] !== undefined && row[col.name] !== ""
+              ? String(row[col.name])
+              : null;
+        });
+
+        try {
+          await createDynamicRow({
+            tableId: selectedTableId,
+            data,
+          });
+          successCount++;
+        } catch (err) {
+          failCount++;
+        }
+
+        setImportProgress({ current: i + 1, total: excelRows.length });
+      }
+
+      await loadTableDetails(selectedTableId);
+
+      if (failCount === 0) {
+        showToast(
+          `Imported ${successCount} row${successCount !== 1 ? "s" : ""} successfully`,
+          "success",
+        );
+      } else {
+        showToast(
+          `Imported ${successCount} row${successCount !== 1 ? "s" : ""}, ${failCount} failed`,
+          "warning",
+        );
+      }
+    } catch (error) {
+      showToast(
+        error?.message ||
+          "Import failed. Please check your file and try again.",
+        "error",
+      );
+    } finally {
+      setImportProgress(null);
     }
-
-    // Reload columns to get IDs
-    const updated = await getDynamicTableDetails(selectedTableId);
-    const updatedColumns = updated.data.columns;
-
-    // 2️⃣ Insert rows
-    for (const row of excelRows) {
-      const data = {};
-
-      updatedColumns.forEach((col) => {
-        data[col.id] =
-          row[col.name] !== undefined ? String(row[col.name]) : null;
-      });
-
-      await createDynamicRow({
-        tableId: selectedTableId,
-        data,
-      });
-    }
-
-    await loadTableDetails(selectedTableId);
   };
 
   return (
@@ -173,17 +308,19 @@ const DynamicData = () => {
         isDark ? "bg-gray-900 text-gray-100" : "bg-white text-slate-800"
       }`}
     >
+      <ToastStack toasts={toasts} onDismiss={dismissToast} isDark={isDark} />
+
       {/* Header Section */}
-      <header className="mb-10">
+      <header className="mb-8 md:mb-10">
         <h1
-          className={`text-4xl font-black tracking-tight ${
+          className={`text-3xl md:text-4xl font-black tracking-tight ${
             isDark ? "text-white" : "text-slate-900"
           }`}
         >
           Dynamic Data <span className="text-blue-500">Tables</span>
         </h1>
         <p
-          className={`font-medium mt-2 ${
+          className={`font-medium mt-2 text-sm md:text-base ${
             isDark ? "text-gray-400" : "text-slate-500"
           }`}
         >
@@ -191,18 +328,11 @@ const DynamicData = () => {
         </p>
       </header>
 
-      <div className="flex flex-col gap-10">
-        {/* Passing isDark to child components if needed */}
-        {selectedTableId && (
-          <ExcelUpload isDark={isDark} onProceed={handleExcelImport} />
-        )}
-
+      <div className="flex flex-col gap-6 md:gap-10">
         {/* TABLE MANAGER SECTION */}
         <section
           className={`p-1 rounded-xl border-b-2 transition-all ${
-            isDark
-              ? "bg-gray-800 border-gray-700"
-              : "bg-white border-slate-100"
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-slate-100"
           }`}
         >
           <TableManager
@@ -216,11 +346,20 @@ const DynamicData = () => {
           />
         </section>
 
+        {/* Passing isDark to child components if needed */}
+        {selectedTableId && (
+          <ExcelUpload
+            isDark={isDark}
+            onProceed={handleExcelImport}
+            importProgress={importProgress}
+          />
+        )}
+
         {/* COLUMN MANAGER SECTION */}
         {selectedTableId && (
           <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div
-              className={`p-6 rounded-2xl border shadow-sm ${
+              className={`p-4 md:p-6 rounded-2xl border shadow-sm ${
                 isDark
                   ? "bg-gray-800 border-gray-700"
                   : "bg-white border-slate-200"
@@ -237,6 +376,23 @@ const DynamicData = () => {
           </section>
         )}
 
+        {/* EMPTY STATE: table selected but no columns yet */}
+        {selectedTableId && !loadingTable && columns.length === 0 && (
+          <div
+            className={`rounded-3xl border-2 border-dashed p-10 md:p-14 text-center ${
+              isDark
+                ? "border-gray-700 text-gray-500"
+                : "border-slate-200 text-slate-400"
+            }`}
+          >
+            <p className="font-bold text-lg mb-1">No columns yet</p>
+            <p className="text-sm font-medium">
+              Add at least one column above, or import an Excel file, before
+              adding records.
+            </p>
+          </div>
+        )}
+
         {/* DATA GRID SECTION */}
         {selectedTableId && columns.length > 0 && (
           <div
@@ -247,24 +403,29 @@ const DynamicData = () => {
             }`}
           >
             <div
-              className={`p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
-                isDark ? "border-gray-700 bg-gray-800" : "border-slate-100 bg-slate-50/30"
+              className={`p-4 md:p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 ${
+                isDark
+                  ? "border-gray-700 bg-gray-800"
+                  : "border-slate-100 bg-slate-50/30"
               }`}
             >
               <div>
                 <h2
-                  className={`font-bold text-2xl ${
+                  className={`font-bold text-xl md:text-2xl ${
                     isDark ? "text-white" : "text-slate-900"
                   }`}
                 >
                   Table Records
                 </h2>
-                <p className={`text-sm ${isDark ? "text-gray-500" : "text-slate-400"}`}>
-                  Viewing all active rows
+                <p
+                  className={`text-sm ${isDark ? "text-gray-500" : "text-slate-400"}`}
+                >
+                  {rows.length} row{rows.length !== 1 ? "s" : ""} · viewing all
+                  active records
                 </p>
               </div>
               <button
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all shadow-lg shadow-blue-500/30 active:scale-95 font-bold text-sm"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all shadow-lg shadow-blue-500/30 active:scale-95 font-bold text-sm"
                 onClick={() => setShowAddModal(true)}
               >
                 + Add New Entry
@@ -282,11 +443,14 @@ const DynamicData = () => {
                 >
                   <tr>
                     {columns.map((col) => (
-                      <th key={col.id} className="px-8 py-5 tracking-widest">
+                      <th
+                        key={col.id}
+                        className="px-8 py-5 tracking-widest whitespace-nowrap"
+                      >
                         {col.name}
                       </th>
                     ))}
-                    <th className="px-8 py-5 tracking-widest text-right">
+                    <th className="px-8 py-5 tracking-widest text-right whitespace-nowrap">
                       Actions
                     </th>
                   </tr>
@@ -297,7 +461,18 @@ const DynamicData = () => {
                     isDark ? "divide-gray-700" : "divide-slate-50"
                   }`}
                 >
-                  {rows.length > 0 ? (
+                  {loadingTable ? (
+                    <tr>
+                      <td
+                        colSpan={columns.length + 1}
+                        className={`px-8 py-24 text-center font-bold text-lg ${
+                          isDark ? "text-gray-600" : "text-slate-300"
+                        }`}
+                      >
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : rows.length > 0 ? (
                     rows.map((row) => (
                       <tr
                         key={row.id}
@@ -378,6 +553,7 @@ const DynamicData = () => {
           columns={columns}
           isDark={isDark}
           onClose={() => setShowAddModal(false)}
+          onNotify={showToast}
           onSuccess={() => {
             setShowAddModal(false);
             loadTableDetails(selectedTableId);
@@ -391,6 +567,7 @@ const DynamicData = () => {
           columns={columns}
           isDark={isDark}
           onClose={() => setEditRow(null)}
+          onNotify={showToast}
           onSuccess={() => {
             setEditRow(null);
             loadTableDetails(selectedTableId);

@@ -2,7 +2,7 @@ import prisma from "../models/prismaClient.js";
 
 /**
  * =====================================
- * 🧪 VALUE TYPE VALIDATION
+ * 🧪 VALUE TYPE VALIDATION (shared by create + update)
  * =====================================
  */
 const isValidValue = (type, value) => {
@@ -12,14 +12,41 @@ const isValidValue = (type, value) => {
     case "TEXT":
       return typeof value === "string";
     case "NUMBER":
-      return typeof value === "number";
+      // Reject NaN explicitly — typeof NaN === "number" would otherwise pass.
+      return typeof value === "number" && !Number.isNaN(value);
     case "BOOLEAN":
       return typeof value === "boolean";
     case "DATE":
-      return !isNaN(Date.parse(value));
+      return !Number.isNaN(Date.parse(value));
     default:
       return false;
   }
+};
+
+/**
+ * Validates a data payload against a table's columns.
+ * Returns an error message string, or null if valid.
+ */
+const validateRowData = (columns, data) => {
+  for (const column of columns) {
+    if (
+      column.required &&
+      !(column.id in data && data[column.id] !== null && data[column.id] !== "")
+    ) {
+      return `Missing required field: ${column.name}`;
+    }
+  }
+
+  for (const column of columns) {
+    if (column.id in data) {
+      const value = data[column.id];
+      if (!isValidValue(column.type, value)) {
+        return `Invalid value for column "${column.name}" (expected ${column.type})`;
+      }
+    }
+  }
+
+  return null;
 };
 
 export const createDynamicRow = async (req, res) => {
@@ -72,33 +99,12 @@ export const createDynamicRow = async (req, res) => {
 
     /**
      * =====================================
-     * ✅ REQUIRED COLUMN VALIDATION
+     * ✅ VALIDATION (required + type)
      * =====================================
      */
-    for (const column of table.columns) {
-      if (column.required && !(column.id in data)) {
-        return res.status(400).json({
-          message: `Missing required field: ${column.name}`,
-        });
-      }
-    }
-
-    /**
-     * =====================================
-     * 🔬 TYPE VALIDATION
-     * =====================================
-     */
-    for (const column of table.columns) {
-      if (column.id in data) {
-        const value = data[column.id];
-
-        if (!isValidValue(column.type, value)) {
-          return res.status(400).json({
-            message: `Invalid value for column "${column.name}"`,
-            expectedType: column.type,
-          });
-        }
-      }
+    const validationError = validateRowData(table.columns, data);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     /**
@@ -155,23 +161,10 @@ export const updateDynamicRow = async (req, res) => {
       return res.status(404).json({ message: "Row not found" });
     }
 
-    // ✅ required + type validation
-    for (const col of row.table.columns) {
-      if (col.required && !(col.id in data)) {
-        return res
-          .status(400)
-          .json({ message: `Missing required field: ${col.name}` });
-      }
-    }
-
-    for (const col of row.table.columns) {
-      if (col.id in data) {
-        const value = data[col.id];
-        if (col.type === "NUMBER" && typeof value !== "number")
-          throw new Error(`Invalid number for ${col.name}`);
-        if (col.type === "TEXT" && typeof value !== "string")
-          throw new Error(`Invalid text for ${col.name}`);
-      }
+    // ✅ required + type validation (now covers BOOLEAN and DATE too)
+    const validationError = validateRowData(row.table.columns, data);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const updated = await prisma.dynamicRow.update({
@@ -182,7 +175,7 @@ export const updateDynamicRow = async (req, res) => {
     res.json({ message: "Row updated successfully", row: updated });
   } catch (error) {
     console.error("❌ Update Row Error:", error);
-    res.status(500).json({ message: error.message || "Update failed" });
+    res.status(500).json({ message: "Failed to update row" });
   }
 };
 

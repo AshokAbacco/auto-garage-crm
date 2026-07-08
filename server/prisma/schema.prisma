@@ -288,7 +288,6 @@ model Service {
   assignedMechanic String?
   advancePaid      Float?    @default(0)
 
-  // ✅ APPROVAL WORKFLOW
   approvalStatus String?
   approvalNote   String?
   approvalAt     DateTime?
@@ -298,21 +297,21 @@ model Service {
   categoryId Int?
   invoiceId  Int?
 
-  // 🔄 CHANGED: Tracks an array of multiple sub-services instead of just one reference ID
   subServices SubService[]
 
   mediaFiles ServiceMedia[]
+
   client     Client           @relation(fields: [clientId], references: [id])
   invoice    Invoice?         @relation(fields: [invoiceId], references: [id])
   category   ServiceCategory? @relation(fields: [categoryId], references: [id])
 
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+
   serviceCostItems ServiceCostItem[]
   whatsAppSessions WhatsAppSession[]
   whatsAppMessages WhatsAppMessage[]
 
-  // ===== REVIEW SYSTEM =====
   reviewSentAt    DateTime?
   reviewRating    Int?
   reviewSource    String?
@@ -325,9 +324,9 @@ model SubService {
   id         Int              @id @default(autoincrement())
   name       String
   categoryId Int?
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  // 🔄 MANY-TO-MANY RELATION RELATION LINK
+  category ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   services Service[]
 
   createdAt DateTime @default(now())

@@ -2,6 +2,7 @@ import pkg from "pg";
 const { Pool } = pkg;
 
 const connectionString = process.env.EXTERNAL_CRM_DB || "";
+console.log("🔍 [DEBUG] EXTERNAL_CRM_DB in use:", connectionString);
 
 // 🔄 DYNAMIC CHECK: Disable SSL for local connections, enable it for hosted environments
 const isLocalhost =

@@ -1,4 +1,20 @@
 // external.service.js
+//
+// ✅ FIX: `crmType` (CAR/BIKE/WASH) was available on `gs.service.crmType`
+// in step 3 (it's a real field on your MarketplaceService model) but was
+// being discarded — userServiceMap only kept a Set of externalServiceId
+// strings, so nothing about category ever reached the final response.
+// This is the root cause of the app's category filter buttons doing
+// nothing: there was no field to read at all, at any layer.
+//
+// Only two things changed below, both marked with ✅ FIX:
+//   1. userServiceMap is now a Map(externalServiceId -> crmType) instead
+//      of a Set(externalServiceId).
+//   2. buildUserServices() reads that crmType and includes it as
+//      `vehicleType` on each pushed service object.
+//
+// 🔍 DEBUG: added logging at 3 checkpoints to find why every garage
+// comes back with services: []. Remove this whole block once confirmed.
 
 import prisma from "../models/prismaClient.js";
 import { queryExternal } from "../config/externalDb.js";
@@ -55,8 +71,8 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
         plan: true,
         planExpiry: true,
         kycStatus: true,
-        pickupDrop: true, // ✅ Added pickupDrop configuration
-        towingService: true, // ✅ Added towingService configuration
+        pickupDrop: true,
+        towingService: true,
         createdAt: true,
         updatedAt: true,
         garageVerification: {
@@ -68,6 +84,10 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
     }),
     prisma.user.count({ where }),
   ]);
+
+  console.log(
+    `🔍 [DEBUG] users fetched: ${users.length} (total matching: ${total})`,
+  );
 
   if (!users.length) return { users: [], total };
 
@@ -82,22 +102,53 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
       isActive: true,
     },
     include: {
-      service: true,
+      service: true, // MarketplaceService — has crmType, externalServiceId
     },
   });
 
-  // Map: userId → Set(externalServiceId)
+  // 🔍 DEBUG CHECKPOINT 1 — is GarageMarketplaceService even populated?
+  console.log(`🔍 [DEBUG] activeServices count: ${activeServices.length}`);
+  if (activeServices.length) {
+    console.log(
+      "🔍 [DEBUG] sample activeService:",
+      JSON.stringify(activeServices[0], null, 2),
+    );
+  } else {
+    console.log(
+      "🔍 [DEBUG] NO active GarageMarketplaceService rows found for these userIds — " +
+        "either no garage has an active service yet (isActive: true), or userIds don't match.",
+    );
+  }
+
+  // ✅ FIX: Map: userId → Map(externalServiceId → crmType)
+  // Was: userId → Set(externalServiceId). crmType was sitting right on
+  // gs.service.crmType this whole time and was simply never captured.
   const userServiceMap = {};
   activeServices.forEach((gs) => {
     const extId = gs.service?.externalServiceId;
     if (!extId) return;
 
+    console.log("================================");
+    console.log("GarageMarketplaceService");
+    console.log({
+      garage: gs.userId,
+      marketplaceServiceId: gs.service.id,
+      serviceName: gs.service.name,
+      externalServiceId: extId,
+      crmType: gs.service.crmType,
+    });
+    console.log("================================");
+
     if (!userServiceMap[gs.userId]) {
-      userServiceMap[gs.userId] = new Set();
+      userServiceMap[gs.userId] = new Map();
     }
 
-    userServiceMap[gs.userId].add(extId);
+    userServiceMap[gs.userId].set(extId, gs.service?.crmType || null);
   });
+
+  console.log(
+    `🔍 [DEBUG] userServiceMap size (users with >=1 mapped service): ${Object.keys(userServiceMap).length}`,
+  );
 
   // -------------------------------
   // 4. Pricing (External DB)
@@ -119,6 +170,11 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
     } catch (err) {
       console.error("Pricing fetch error:", err.message);
     }
+  }
+
+  console.log(`🔍 [DEBUG] pricingRows count: ${pricingRows.length}`);
+  if (pricingRows.length) {
+    console.log("🔍 [DEBUG] sample pricingRow:", pricingRows[0]);
   }
 
   // Map: userId → serviceId → pricing[]
@@ -161,11 +217,22 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
   ORDER BY ms.name, ss.name, s.name;
 `);
 
+  // 🔍 DEBUG CHECKPOINT 2 — is the external hierarchy query returning anything?
+  console.log(`🔍 [DEBUG] external hierarchy rows count: ${rows.length}`);
+  if (rows.length) {
+    console.log("🔍 [DEBUG] sample hierarchy row:", rows[0]);
+  } else {
+    console.log(
+      "🔍 [DEBUG] NO rows from MainService/ServiceSection/Service join — " +
+        "check queryExternal's DB connection, or whether ms.isActive=true matches anything.",
+    );
+  }
+
   // -------------------------------
   // 6. Build user-specific hierarchy
   // -------------------------------
   const buildUserServices = (userId) => {
-    const allowedServices = userServiceMap[userId];
+    const allowedServices = userServiceMap[userId]; // ✅ now a Map, not a Set
     if (!allowedServices) return [];
 
     const userPricing = pricingMap[userId] || {};
@@ -199,6 +266,17 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
         pricing,
         image: row.image || null,
         description: row.description || null,
+        // ✅ FIX: the real category, straight from MarketplaceService.crmType
+        // (values: "CAR" | "BIKE" | "WASH" | null). This is what the app's
+        // ServiceCard/search.service.js category filter should read —
+        // no more guessing from garage/group names needed for any
+        // service where this is populated.
+        vehicleType: allowedServices.get(row.svc_id) || null,
+      });
+      console.log({
+        main: row.main_name,
+        service: row.svc_name,
+        vehicleType: allowedServices.get(row.svc_id),
       });
     });
 
@@ -216,6 +294,14 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
       user.kycStatus === "APPROVED" ||
       user.garageVerification?.status === "VERIFIED";
 
+    const builtServices = buildUserServices(user.id);
+
+    // 🔍 DEBUG CHECKPOINT 3 — per-user final service count, to see if it's
+    // truly ALL users at 0, or just some.
+    console.log(
+      `🔍 [DEBUG] user ${user.id} (${user.companyName || user.username}) -> ${builtServices.length} built main-service group(s)`,
+    );
+
     return {
       id: user.id,
       username: user.username,
@@ -225,7 +311,6 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
       address: user.address,
       companyAddress: user.companyAddress,
 
-      // Location data
       latitude: user.companyLatitude,
       longitude: user.companyLongitude,
 
@@ -235,17 +320,15 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
       plan: user.plan,
       planExpiry: user.planExpiry,
 
-      // Garage configuration flags
-      pickupDrop: user.pickupDrop, // ✅ Clean breakdown mapping
-      towingService: user.towingService, // ✅ Clean breakdown mapping
+      pickupDrop: user.pickupDrop,
+      towingService: user.towingService,
 
-      // Verification tracking flags
       kycStatus: user.kycStatus,
       verificationStatus: user.garageVerification?.status || "NOT_ORDERED",
       isVerified: isVerified,
 
       avgRating: 4.0,
-      services: buildUserServices(user.id),
+      services: builtServices,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -253,4 +336,3 @@ export const fetchExternalUsers = async ({ page, limit, search, crm }) => {
 
   return { users: usersWithData, total };
 };
-  

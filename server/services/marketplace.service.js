@@ -19,16 +19,42 @@ export const resolveService = async (externalServiceId, fallbackName) => {
     where: { externalServiceId: String(externalServiceId) },
   });
 
-  // 🔥 ALWAYS fetch from external DB
+  // Always fetch latest metadata from External DB
   let externalName = null;
+  let externalVehicleType = null;
 
   try {
     const result = await queryExternal(
-      `SELECT name FROM "Service" WHERE id = $1`,
+      `
+      SELECT
+        s.name,
+        vt.name AS vehicle_type
+      FROM "Service" s
+      JOIN "VehicleType" vt
+        ON vt.id = s."vehicleTypeId"
+      WHERE s.id = $1
+      `,
       [externalServiceId],
     );
 
-    externalName = result.rows?.[0]?.name;
+    externalName = result.rows?.[0]?.name || null;
+    externalVehicleType = result.rows?.[0]?.vehicle_type || null;
+    if (externalVehicleType) {
+      externalVehicleType = externalVehicleType.toUpperCase();
+    }
+
+    if (externalVehicleType === "WASHING") {
+      externalVehicleType = "WASH";
+    }
+    
+    console.log("====================================");
+    console.log("External Service");
+    console.log({
+      externalServiceId,
+      externalName,
+      externalVehicleType,
+    });
+    console.log("====================================");
   } catch (err) {
     console.error("External DB fetch failed:", err.message);
   }
@@ -36,22 +62,30 @@ export const resolveService = async (externalServiceId, fallbackName) => {
   const safeName = externalName || fallbackName || "Unknown Service";
 
   // ==============================
-  // ✅ CASE 1: SERVICE EXISTS → UPDATE IF WRONG
+  // CASE 1: Already exists
   // ==============================
   if (service) {
-    if (
-      externalName &&
-      (service.name === "App Service" ||
-        service.name === "Unknown Service" ||
-        service.name !== externalName)
-    ) {
-      console.log(
-        `[MarketplaceService] Updating service name → ${externalName}`,
-      );
+    const needsUpdate =
+      (externalName &&
+        (service.name === "App Service" ||
+          service.name === "Unknown Service" ||
+          service.name !== externalName)) ||
+      (externalVehicleType && service.crmType !== externalVehicleType);
+
+    if (needsUpdate) {
+      console.log("[MarketplaceService] Syncing metadata", {
+        oldName: service.name,
+        newName: externalName,
+        oldCrmType: service.crmType,
+        newCrmType: externalVehicleType,
+      });
 
       service = await prisma.marketplaceService.update({
         where: { id: service.id },
-        data: { name: externalName },
+        data: {
+          name: externalName ?? service.name,
+          crmType: externalVehicleType ?? service.crmType,
+        },
       });
     }
 
@@ -59,7 +93,7 @@ export const resolveService = async (externalServiceId, fallbackName) => {
   }
 
   // ==============================
-  // ✅ CASE 2: CREATE NEW
+  // CASE 2: Create new MarketplaceService
   // ==============================
   const baseSlug = safeName
     .toLowerCase()
@@ -68,14 +102,24 @@ export const resolveService = async (externalServiceId, fallbackName) => {
 
   const uniqueSlug = `${baseSlug}-${Date.now()}`;
 
+  console.log("Creating MarketplaceService", {
+    name: safeName,
+    externalVehicleType,
+  });
+
   service = await prisma.marketplaceService.create({
     data: {
       name: safeName,
       externalServiceId: String(externalServiceId),
       description: "Synced from External DB",
       slug: uniqueSlug,
-      crmType: "CAR",
+      crmType: externalVehicleType, // ✅ FIX
     },
+  });
+
+  console.log("Created MarketplaceService", {
+    id: service.id,
+    crmType: service.crmType,
   });
 
   return service;

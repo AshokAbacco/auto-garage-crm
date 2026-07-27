@@ -71,6 +71,7 @@ import externalRoutes from "./externalApi/external.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 // Import the new verification router layer
 import garageVerificationRoutes from "./routes/garageVerification.routes.js";
+import inventoryRoutes from "./routes/carInventoryRoutes.js";
 
 
 
@@ -207,7 +208,7 @@ app.use("/api/bikes-team", bikeTeamRoutes);
 
 //car company names and models
 app.use("/api/cars", carRoutes);
-
+app.use("/api/car-inventory", inventoryRoutes);
 app.use("/api/car-staff", carStaffRoutes);
 app.use("/api/staff-auth", staffAuthRoutes);
 app.use("/api/carstaff-salary", carstaffSalaryRoutes);

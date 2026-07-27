@@ -164,14 +164,14 @@ export default function MarketplaceDashboard() {
             : "bg-white/70 border-slate-200/60"
         }`}
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 mx-auto max-w-7xl sm:flex-row">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl text-white shadow-blue-500/10">
+            <div className="p-3 text-white shadow-xl bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-blue-500/10">
               <FiZap size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight leading-none">
+                <h1 className="text-xl font-bold leading-none tracking-tight">
                   Marketplace Board
                 </h1>
                 <span
@@ -186,7 +186,7 @@ export default function MarketplaceDashboard() {
                   {currentCrmType} Operational Channel
                 </span>
               </div>
-              <p className="text-xs opacity-40 mt-1">
+              <p className="mt-1 text-xs opacity-40">
                 Monitor incoming marketplace pipeline streams and processing
                 workflows.
               </p>
@@ -220,9 +220,9 @@ export default function MarketplaceDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 mt-8">
+      <main className="px-4 mx-auto mt-8 max-w-7xl sm:px-8">
         {/* STATS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 gap-6 mb-10 md:grid-cols-3">
           {[
             {
               label: currentLabels.primary,
@@ -267,14 +267,14 @@ export default function MarketplaceDashboard() {
         {/* BOOKING LIST */}
         <div className="space-y-4">
           {loading ? (
-            <div className="py-32 text-center flex flex-col items-center justify-center gap-3 opacity-50">
-              <FiRefreshCw className="animate-spin text-blue-500" size={24} />
+            <div className="flex flex-col items-center justify-center gap-3 py-32 text-center opacity-50">
+              <FiRefreshCw className="text-blue-500 animate-spin" size={24} />
               <span className="text-[11px] font-medium uppercase tracking-widest">
                 Synchronizing Pipeline Rows...
               </span>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="text-center py-24 opacity-30 text-xs font-medium uppercase tracking-wider">
+            <div className="py-24 text-xs font-medium tracking-wider text-center uppercase opacity-30">
               No live bookings matching this queue stage.
             </div>
           ) : (
@@ -287,17 +287,17 @@ export default function MarketplaceDashboard() {
                     : "bg-white border-slate-200/50 hover:shadow-md hover:shadow-slate-200/30"
                 }`}
               >
-                <div className="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+                <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center">
                   {/* Left Info Stream */}
-                  <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex flex-col items-start flex-1 gap-4 sm:flex-row sm:items-center">
                     {/* Compact Identity Block */}
-                    <div className="flex sm:flex-col items-center justify-center w-14 h-14 rounded-xl border shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 border-none text-white shadow-md shadow-blue-500/5">
+                    <div className="flex items-center justify-center text-white border border-none shadow-md sm:flex-col w-14 h-14 rounded-xl shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/5">
                       <span className="text-[14px] font-bold">
                         #{String(b.id).slice(-3)}
                       </span>
                     </div>
 
-                    <div className="space-y-2 w-full">
+                    <div className="w-full space-y-2">
                       <div className="flex items-center gap-3">
                         <span
                           className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${getStatusStyles(b.status)}`}

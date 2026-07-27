@@ -536,6 +536,8 @@ export const createBooking = async (data) => {
       vehicleMake: data.vehicleMake || null,
       vehicleModel: data.vehicleModel || null,
       vehicleRegNumber: data.vehicleRegNumber || null,
+      vehicleYear: data.vehicleYear || null,
+      vehicleFuelType: data.vehicleFuelType || null,
     },
   });
 };

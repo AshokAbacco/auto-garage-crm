@@ -301,12 +301,12 @@ model Service {
 
   mediaFiles ServiceMedia[]
 
-  client   Client           @relation(fields: [clientId], references: [id])
-  invoice  Invoice?         @relation(fields: [invoiceId], references: [id])
-  category ServiceCategory? @relation(fields: [categoryId], references: [id])
+  client     Client           @relation(fields: [clientId], references: [id])
+  invoice    Invoice?         @relation(fields: [invoiceId], references: [id])
+  category   ServiceCategory? @relation(fields: [categoryId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   serviceCostItems ServiceCostItem[]
   whatsAppSessions WhatsAppSession[]
@@ -321,7 +321,7 @@ model Service {
 }
 
 model SubService {
-  id         Int    @id @default(autoincrement())
+  id         Int              @id @default(autoincrement())
   name       String
   categoryId Int?
 
@@ -1777,9 +1777,11 @@ model MarketplaceBooking {
   // 🆕 VEHICLE DETAILS (snapshot from app at time of booking)
   // Separate from `carType` (SEDAN/HATCHBACK/etc) which already existed
   // ==============================
-  vehicleMake      String?
-  vehicleModel     String?
-  vehicleRegNumber String?
+  vehicleMake        String?
+  vehicleModel       String?
+  vehicleRegNumber   String?
+  vehicleYear        Int?
+  vehicleFuelType    String?
 
   // ==============================
   // 🆕 PACKAGE / MULTI-SERVICE SUPPORT

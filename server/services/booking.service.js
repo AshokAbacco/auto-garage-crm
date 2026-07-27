@@ -132,12 +132,32 @@ export const acceptBooking = async (bookingId) => {
 
   console.log("🎉 BOOKING ACCEPTED:", booking.id);
 
-  return { success: true };
+  // 🆕 Return the full, up-to-date booking record (not just {success:true}).
+  // This doesn't change existing behavior for callers that ignore the return
+  // value, but makes the complete booking available for anything that wants
+  // to notify/sync the customer app with the latest status + details.
+  const updatedBooking = await prisma.marketplaceBooking.findUnique({
+    where: { id: booking.id },
+    include: {
+      service: true,
+      client: true,
+      garage: { select: { companyName: true, address: true, phone: true } },
+    },
+  });
+
+  return { success: true, booking: updatedBooking };
 };
 
 export const rejectBooking = async (bookingId) => {
-  return prisma.marketplaceBooking.update({
+  const updatedBooking = await prisma.marketplaceBooking.update({
     where: { id: Number(bookingId) },
     data: { status: "REJECTED" },
+    include: {
+      service: true,
+      client: true,
+      garage: { select: { companyName: true, address: true, phone: true } },
+    },
   });
+
+  return { success: true, booking: updatedBooking };
 };

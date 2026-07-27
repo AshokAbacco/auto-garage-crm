@@ -13,6 +13,10 @@ import {
   FiDollarSign,
   FiChevronRight,
   FiZap,
+  FiPhone,
+  FiTruck,
+  FiMapPin,
+  FiFileText,
 } from "react-icons/fi";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -22,6 +26,19 @@ const STATS_VOCABULARY = {
   CAR: { primary: "Total Fleet Load", queue: "In Queue Tiers" },
   BIKE: { primary: "Total Rider Bookings", queue: "In Garage Bay" },
   WASHING: { primary: "Total Wash Queue", queue: "Pending Detail" },
+};
+
+const na = (v) =>
+  v === null || v === undefined || v === "" ? "Not Available" : v;
+
+// 🆕 Builds a clean "Make Model (Year)" string, or "Not Available" if
+// nothing at all is known about the vehicle.
+const vehicleLabel = (b) => {
+  const parts = [b.vehicleMake, b.vehicleModel].filter(Boolean);
+  let label = parts.join(" ");
+  if (b.vehicleYear)
+    label += label ? ` (${b.vehicleYear})` : `(${b.vehicleYear})`;
+  return label || "Not Available";
 };
 
 export default function MarketplaceDashboard() {
@@ -391,7 +408,13 @@ export default function MarketplaceDashboard() {
                         <div className="flex items-center gap-1.5">
                           <FiUser size={13} className="text-blue-500" />
                           <span className="text-xs font-medium">
-                            {b.clientName || "App Client"}
+                            {na(b.clientName)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <FiPhone size={13} className="text-blue-500" />
+                          <span className="text-xs font-medium">
+                            {na(b.clientPhone)}
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -409,6 +432,63 @@ export default function MarketplaceDashboard() {
                           </span>
                         </div>
                       </div>
+
+                      {/* 🆕 VEHICLE DETAILS */}
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1 opacity-60">
+                        <div className="flex items-center gap-1.5">
+                          <FiTruck size={13} className="text-indigo-500" />
+                          <span className="text-xs font-medium">
+                            {vehicleLabel(b)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium opacity-70">
+                            Reg: {na(b.vehicleRegNumber)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium opacity-70">
+                            Type: {na(b.carType)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 🆕 PACKAGE / NOTES / PICKUP-DROP — only shown when present */}
+                      {(b.packageName || b.notes || b.pickupRequired) && (
+                        <div className="flex flex-col gap-1 pt-1">
+                          {b.packageName && (
+                            <div className="flex items-center gap-1.5 opacity-70">
+                              <FiLayers size={12} className="text-purple-500" />
+                              <span className="text-xs font-medium">
+                                Package: {b.packageName}
+                              </span>
+                            </div>
+                          )}
+                          {b.notes && (
+                            <div className="flex items-start gap-1.5 opacity-70">
+                              <FiFileText
+                                size={12}
+                                className="text-slate-500 mt-0.5"
+                              />
+                              <span className="text-xs font-medium">
+                                Note: {b.notes}
+                              </span>
+                            </div>
+                          )}
+                          {b.pickupRequired && (
+                            <div className="flex items-start gap-1.5 opacity-70">
+                              <FiMapPin
+                                size={12}
+                                className="text-rose-500 mt-0.5"
+                              />
+                              <span className="text-xs font-medium">
+                                Pickup: {na(b.pickupAddress)} → Drop:{" "}
+                                {na(b.dropAddress)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 

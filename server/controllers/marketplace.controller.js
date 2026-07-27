@@ -266,7 +266,20 @@ export const getAllBookings = async (req, res) => {
 
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { garageId: userId },
-      include: { service: true },
+      include: {
+        service: true,
+        client: {
+          select: {
+            fullName: true,
+            phone: true,
+            email: true,
+            vehicleMake: true,
+            vehicleModel: true,
+            vehicleYear: true,
+            regNumber: true,
+          },
+        },
+      },
       orderBy: { scheduledAt: "desc" },
     });
 
@@ -278,6 +291,21 @@ export const getAllBookings = async (req, res) => {
       scheduledAt: b.scheduledAt,
       garageId: b.garageId,
 
+      // 🆕 Client details (from the Client/App-User record)
+      clientName: b.client?.fullName || null,
+      clientPhone: b.client?.phone || null,
+      clientEmail: b.client?.email || null,
+
+      // 🆕 Vehicle details — booking-specific snapshot takes priority
+      // (this is what the customer entered for THIS booking, once the app
+      // collects it), falling back to the client's generic profile vehicle,
+      // which is what's available today.
+      vehicleMake: b.vehicleMake || b.client?.vehicleMake || null,
+      vehicleModel: b.vehicleModel || b.client?.vehicleModel || null,
+      vehicleYear: b.client?.vehicleYear || null,
+      vehicleRegNumber: b.vehicleRegNumber || b.client?.regNumber || null,
+      carType: b.carType || null,
+
       // 🆕 Full booking details for the garage owner
       services: b.services || null,
       packageName: b.packageName || null,
@@ -285,10 +313,6 @@ export const getAllBookings = async (req, res) => {
       pickupRequired: b.pickupRequired || false,
       pickupAddress: b.pickupAddress || null,
       dropAddress: b.dropAddress || null,
-      vehicleMake: b.vehicleMake || null,
-      vehicleModel: b.vehicleModel || null,
-      vehicleRegNumber: b.vehicleRegNumber || null,
-      carType: b.carType || null,
     }));
 
     res.json({ success: true, data: formatted });

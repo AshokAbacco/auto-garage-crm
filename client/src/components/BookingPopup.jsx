@@ -28,7 +28,14 @@ export default function BookingPopup() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          handleReject();
+          // 🆕 Don't call handleReject() here — the server independently
+          // enforces this same 30s window (see booking.service.js /
+          // RESPONSE_WINDOW_MS) and will mark the booking TIMEOUT on its
+          // own the next time it's read or acted on. Calling reject from
+          // here just raced that logic. We only need to reflect the
+          // timeout locally and close the popup.
+          setStatus("timedout");
+          setTimeout(() => clearBooking(), 1500);
           return 0;
         }
         return prev - 1;
@@ -180,7 +187,22 @@ export default function BookingPopup() {
                     : "rgba(255,245,245,0.95)",
             }}
           >
-            {status === "sending" ? (
+            {status === "timedout" ? (
+              <>
+                <div
+                  style={{
+                    ...styles.statusIcon,
+                    background: "#f97316",
+                    boxShadow: "0 10px 25px rgba(249,115,22,0.4)",
+                  }}
+                >
+                  ⏱
+                </div>
+                <p style={{ ...styles.statusText, color: "#9a3412" }}>
+                  Missed — No Response in Time
+                </p>
+              </>
+            ) : status === "sending" ? (
               <>
                 <div
                   style={{
@@ -286,6 +308,23 @@ export default function BookingPopup() {
           </div>
 
           <h2 style={styles.mainTitle}>New Request Incoming</h2>
+
+          {/* 🆕 SERVICE NAME */}
+          {booking.serviceName && (
+            <div style={{ marginBottom: "20px" }}>
+              <span style={styles.gridLabel}>SERVICE</span>
+              <div
+                style={{
+                  fontSize: "17px",
+                  fontWeight: 700,
+                  color: "#1e293b",
+                  marginTop: "2px",
+                }}
+              >
+                {booking.serviceName}
+              </div>
+            </div>
+          )}
 
           {/* INFO GRID */}
           <div style={styles.grid}>

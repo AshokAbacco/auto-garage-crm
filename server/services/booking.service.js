@@ -3,6 +3,17 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// 🆕 Must match the popup's countdown on the CRM frontend (30s).
+// If a booking is still PENDING after this window, it's auto-marked TIMEOUT
+// and can no longer be accepted/rejected — closing the loophole where a
+// garage owner could still accept a booking well after the customer's
+// popup/confirm screen had already given up waiting.
+const RESPONSE_WINDOW_MS = 30 * 1000;
+
+const isExpired = (booking) =>
+  booking.status === "PENDING" &&
+  Date.now() - new Date(booking.createdAt).getTime() > RESPONSE_WINDOW_MS;
+
 export const acceptBooking = async (bookingId) => {
   const booking = await prisma.marketplaceBooking.findUnique({
     where: { id: Number(bookingId) },
@@ -12,6 +23,18 @@ export const acceptBooking = async (bookingId) => {
   console.log("🔥 ACCEPT BOOKING:", bookingId);
 
   if (!booking) throw new Error("Booking not found");
+
+  // 🆕 Enforce the 30s response window server-side, regardless of whether
+  // the customer's popup/countdown ever actually fired a reject call.
+  if (isExpired(booking)) {
+    await prisma.marketplaceBooking.update({
+      where: { id: booking.id },
+      data: { status: "TIMEOUT" },
+    });
+    throw new Error(
+      "This booking's 30-second response window has expired and it was automatically marked as Missed.",
+    );
+  }
 
   if (booking.status !== "PENDING") {
     throw new Error("Booking already processed");
@@ -198,11 +221,21 @@ export const acceptBooking = async (bookingId) => {
 };
 
 export const rejectBooking = async (bookingId) => {
+  const existing = await prisma.marketplaceBooking.findUnique({
+    where: { id: Number(bookingId) },
+  });
+
+  if (!existing) throw new Error("Booking not found");
+
+  // 🆕 If it's already past the response window, record it as TIMEOUT
+  // rather than REJECTED — it's a more accurate status either way.
+  const finalStatus = isExpired(existing) ? "TIMEOUT" : "REJECTED";
+
   // 1. Do the actual status change first, with NO include — this must
   //    succeed/fail on its own, independent of any enrichment data.
   const updated = await prisma.marketplaceBooking.update({
     where: { id: Number(bookingId) },
-    data: { status: "REJECTED" },
+    data: { status: finalStatus },
   });
 
   // 2. Enrichment for the socket push is best-effort only.

@@ -100,6 +100,7 @@ export const notifyGarage = async (garageId, booking) => {
     io.to(room).emit("new_booking", {
       id: booking.id,
       serviceId: booking.serviceId,
+      serviceName: booking.serviceName, // 🆕 for the popup UI
       carType: booking.carType,
       finalPrice: booking.finalPrice,
     });

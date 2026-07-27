@@ -162,10 +162,33 @@ export default function MarketplaceDashboard() {
         return isDark
           ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
           : "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "TIMEOUT":
+        return isDark
+          ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+          : "bg-orange-50 text-orange-700 border-orange-200";
+      case "REJECTED":
+        return isDark
+          ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+          : "bg-rose-50 text-rose-700 border-rose-200";
       default:
         return isDark
           ? "bg-slate-800 text-slate-400 border-white/[0.04]"
           : "bg-slate-100 text-slate-600 border-slate-200";
+    }
+  };
+
+  // 🆕 Human-readable label for the non-actionable "processed" badge
+  const getProcessedLabel = (status) => {
+    switch (status) {
+      case "ACCEPTED":
+      case "CONFIRMED":
+        return "Accepted";
+      case "REJECTED":
+        return "Rejected";
+      case "TIMEOUT":
+        return "Missed";
+      default:
+        return "Processed";
     }
   };
 
@@ -437,7 +460,7 @@ export default function MarketplaceDashboard() {
                               : "bg-slate-50 border-slate-200/60 text-slate-400"
                           }`}
                         >
-                          Processed
+                          {getProcessedLabel(b.status)}
                         </div>
                       )}
                     </div>

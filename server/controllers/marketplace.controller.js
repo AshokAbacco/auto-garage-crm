@@ -9,6 +9,23 @@ import { notifyGarage, notifyClient } from "../services/socket.service.js";
 
 const prisma = new PrismaClient();
 
+// 🆕 Must match booking.service.js's RESPONSE_WINDOW_MS (30s) and the
+// popup's countdown. Run before any booking list is returned so the UI
+// always reflects the true current state, not just at accept-time.
+const RESPONSE_WINDOW_MS = 30 * 1000;
+
+const sweepExpiredBookings = async (where) => {
+  try {
+    const cutoff = new Date(Date.now() - RESPONSE_WINDOW_MS);
+    await prisma.marketplaceBooking.updateMany({
+      where: { ...where, status: "PENDING", createdAt: { lt: cutoff } },
+      data: { status: "TIMEOUT" },
+    });
+  } catch (e) {
+    console.error("⚠️ sweepExpiredBookings failed:", e.message);
+  }
+};
+
 // ==============================
 // SERVICES (App View / Catalog Builder)
 // ==============================
@@ -244,6 +261,8 @@ export const rejectBooking = async (req, res) => {
 export const getAllBookings = async (req, res) => {
   try {
     const userId = req.user.id;
+
+    await sweepExpiredBookings({ garageId: userId }); // 🆕
 
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { garageId: userId },
@@ -578,6 +597,8 @@ export const getMyBookings = async (req, res) => {
     if (!client) {
       return res.json({ success: true, data: [] });
     }
+
+    await sweepExpiredBookings({ clientId: client.id }); // 🆕
 
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { clientId: client.id },

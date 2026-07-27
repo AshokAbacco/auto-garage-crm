@@ -121,6 +121,8 @@ export const createBooking = async (req, res) => {
       vehicleMake,
       vehicleModel,
       vehicleRegNumber,
+      vehicleYear,
+      vehicleFuelType,
     } = req.body;
 
     // 1. Validation check
@@ -154,6 +156,8 @@ export const createBooking = async (req, res) => {
       vehicleMake: vehicleMake || null,
       vehicleModel: vehicleModel || null,
       vehicleRegNumber: vehicleRegNumber || null,
+      vehicleYear: vehicleYear ? Number(vehicleYear) : null,
+      vehicleFuelType: vehicleFuelType || null,
     };
 
     // 3. Call Service Layer
@@ -277,6 +281,7 @@ export const getAllBookings = async (req, res) => {
             vehicleModel: true,
             vehicleYear: true,
             regNumber: true,
+            fuel: true,
           },
         },
       },
@@ -297,13 +302,13 @@ export const getAllBookings = async (req, res) => {
       clientEmail: b.client?.email || null,
 
       // 🆕 Vehicle details — booking-specific snapshot takes priority
-      // (this is what the customer entered for THIS booking, once the app
-      // collects it), falling back to the client's generic profile vehicle,
-      // which is what's available today.
+      // (this is what the customer selected for THIS booking), falling
+      // back to the client's generic profile vehicle if not sent.
       vehicleMake: b.vehicleMake || b.client?.vehicleMake || null,
       vehicleModel: b.vehicleModel || b.client?.vehicleModel || null,
-      vehicleYear: b.client?.vehicleYear || null,
+      vehicleYear: b.vehicleYear || b.client?.vehicleYear || null,
       vehicleRegNumber: b.vehicleRegNumber || b.client?.regNumber || null,
+      vehicleFuelType: b.vehicleFuelType || b.client?.fuel || null,
       carType: b.carType || null,
 
       // 🆕 Full booking details for the garage owner

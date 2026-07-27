@@ -9,7 +9,7 @@ export default function BookingPopup() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [status, setStatus] = useState(null); // 'accepted' | 'rejected' | null
+  const [status, setStatus] = useState(null); // 'sending' | 'accepted' | 'rejected' | 'error' | null
 
   const startXRef = useRef(0);
   const maxDrag = 140;
@@ -52,29 +52,57 @@ export default function BookingPopup() {
   };
 
   const handleAccept = async () => {
-    setStatus("accepted");
+    setStatus("sending");
     try {
-      await fetch(`${API_BASE}/api/marketplace/booking/${booking.id}/accept`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/marketplace/booking/${booking.id}/accept`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+        },
+      );
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || data?.success === false) {
+        const msg = data?.message || `Request failed (${res.status})`;
+        console.error("Accept failed:", msg);
+        setStatus("error");
+        return; // 🆕 don't auto-close on failure — let the owner see it and retry
+      }
+
+      setStatus("accepted");
+      setTimeout(() => clearBooking(), 1500);
     } catch (e) {
-      console.error(e);
+      console.error("Accept failed:", e.message);
+      setStatus("error");
     }
-    setTimeout(() => clearBooking(), 1500);
   };
 
   const handleReject = async () => {
-    setStatus("rejected");
+    setStatus("sending");
     try {
-      await fetch(`${API_BASE}/api/marketplace/booking/${booking.id}/reject`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/marketplace/booking/${booking.id}/reject`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+        },
+      );
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || data?.success === false) {
+        const msg = data?.message || `Request failed (${res.status})`;
+        console.error("Reject failed:", msg);
+        setStatus("error");
+        return;
+      }
+
+      setStatus("rejected");
+      setTimeout(() => clearBooking(), 1500);
     } catch (e) {
-      console.error(e);
+      console.error("Reject failed:", e.message);
+      setStatus("error");
     }
-    setTimeout(() => clearBooking(), 1500);
   };
 
   const handleStart = (e) => {
@@ -139,7 +167,7 @@ export default function BookingPopup() {
         }}
         className="animate-pop"
       >
-        {/* ACTION OVERLAYS (Accept/Reject) */}
+        {/* ACTION OVERLAYS (Accept/Reject/Sending/Error) */}
         {status && (
           <div
             style={{
@@ -147,30 +175,99 @@ export default function BookingPopup() {
               background:
                 status === "accepted"
                   ? "rgba(255,255,255,0.95)"
-                  : "rgba(255,245,245,0.95)",
+                  : status === "sending"
+                    ? "rgba(255,255,255,0.95)"
+                    : "rgba(255,245,245,0.95)",
             }}
           >
-            <div
-              style={{
-                ...styles.statusIcon,
-                background: status === "accepted" ? "#10b981" : "#ef4444",
-                boxShadow:
-                  status === "accepted"
-                    ? "0 10px 25px rgba(16,185,129,0.4)"
-                    : "0 10px 25px rgba(239,68,68,0.4)",
-              }}
-              className={status === "rejected" ? "animate-shake" : ""}
-            >
-              {status === "accepted" ? "✓" : "✕"}
-            </div>
-            <p
-              style={{
-                ...styles.statusText,
-                color: status === "accepted" ? "#065f46" : "#991b1b",
-              }}
-            >
-              {status === "accepted" ? "Booking Confirmed" : "Request Declined"}
-            </p>
+            {status === "sending" ? (
+              <>
+                <div
+                  style={{
+                    ...styles.statusIcon,
+                    background: "#6366f1",
+                    boxShadow: "0 10px 25px rgba(99,102,241,0.4)",
+                  }}
+                >
+                  ⋯
+                </div>
+                <p style={{ ...styles.statusText, color: "#4338ca" }}>
+                  Sending...
+                </p>
+              </>
+            ) : status === "error" ? (
+              <>
+                <div
+                  style={{
+                    ...styles.statusIcon,
+                    background: "#ef4444",
+                    boxShadow: "0 10px 25px rgba(239,68,68,0.4)",
+                  }}
+                  className="animate-shake"
+                >
+                  !
+                </div>
+                <p style={{ ...styles.statusText, color: "#991b1b" }}>
+                  Something went wrong
+                </p>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#991b1b",
+                    opacity: 0.8,
+                    marginTop: "6px",
+                    textAlign: "center",
+                    padding: "0 20px",
+                  }}
+                >
+                  Check the console for details. You can try again below.
+                </p>
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "16px" }}
+                >
+                  <button
+                    onClick={() => setStatus(null)}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "10px",
+                      border: "none",
+                      background: "#ef4444",
+                      color: "#fff",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div
+                  style={{
+                    ...styles.statusIcon,
+                    background: status === "accepted" ? "#10b981" : "#ef4444",
+                    boxShadow:
+                      status === "accepted"
+                        ? "0 10px 25px rgba(16,185,129,0.4)"
+                        : "0 10px 25px rgba(239,68,68,0.4)",
+                  }}
+                  className={status === "rejected" ? "animate-shake" : ""}
+                >
+                  {status === "accepted" ? "✓" : "✕"}
+                </div>
+                <p
+                  style={{
+                    ...styles.statusText,
+                    color: status === "accepted" ? "#065f46" : "#991b1b",
+                  }}
+                >
+                  {status === "accepted"
+                    ? "Booking Confirmed"
+                    : "Request Declined"}
+                </p>
+              </>
+            )}
           </div>
         )}
 

@@ -30,6 +30,8 @@ export default function MarketplaceDashboard() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("ALL");
+  const [actionError, setActionError] = useState(null); // 🆕 surfaces real server errors
+  const [actioningId, setActioningId] = useState(null); // 🆕 disables buttons mid-request
 
   // 1. Extract and decode operational workspace from active token payload
   const token = localStorage.getItem("token");
@@ -108,6 +110,8 @@ export default function MarketplaceDashboard() {
   };
 
   const handleAction = async (id, type) => {
+    setActionError(null);
+    setActioningId(id);
     try {
       await axios.post(
         `${API_URL}/api/marketplace/booking/${id}/${type}`,
@@ -116,7 +120,22 @@ export default function MarketplaceDashboard() {
       );
       fetchBookings();
     } catch (e) {
-      console.error("Action execution rejected:", e);
+      // 🆕 Log + surface the REAL server message instead of just the Axios wrapper
+      const serverMessage = e?.response?.data?.message;
+      console.error(
+        "Action execution rejected:",
+        serverMessage || e.message,
+        "| Full error:",
+        e,
+      );
+      setActionError(
+        `Booking #${id}: ${serverMessage || e.message || "Action failed"}`,
+      );
+      // Refresh anyway — status may have actually changed server-side
+      // even though this particular request errored (e.g. "already processed").
+      fetchBookings();
+    } finally {
+      setActioningId(null);
     }
   };
 
@@ -264,6 +283,25 @@ export default function MarketplaceDashboard() {
           ))}
         </div>
 
+        {/* 🆕 REAL ERROR BANNER — shows the actual server message on accept/reject failure */}
+        {actionError && (
+          <div
+            className={`mb-6 p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+              isDark
+                ? "bg-rose-500/10 border-rose-500/20 text-rose-300"
+                : "bg-rose-50 border-rose-200 text-rose-700"
+            }`}
+          >
+            <span className="text-sm font-medium">{actionError}</span>
+            <button
+              onClick={() => setActionError(null)}
+              className="text-xs font-bold uppercase tracking-wider opacity-70 hover:opacity-100"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* BOOKING LIST */}
         <div className="space-y-4">
           {loading ? (
@@ -373,7 +411,8 @@ export default function MarketplaceDashboard() {
                         <>
                           <button
                             onClick={() => handleAction(b.id, "reject")}
-                            className={`p-2.5 rounded-xl border transition-all active:scale-[0.97] ${
+                            disabled={actioningId === b.id}
+                            className={`p-2.5 rounded-xl border transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none ${
                               isDark
                                 ? "bg-rose-500/5 border-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white"
                                 : "bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-600 hover:text-white"
@@ -383,9 +422,11 @@ export default function MarketplaceDashboard() {
                           </button>
                           <button
                             onClick={() => handleAction(b.id, "accept")}
-                            className="px-6 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold text-xs tracking-wide transition-all active:scale-[0.97] flex items-center gap-1.5 shadow-md shadow-blue-500/5"
+                            disabled={actioningId === b.id}
+                            className="px-6 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold text-xs tracking-wide transition-all active:scale-[0.97] flex items-center gap-1.5 shadow-md shadow-blue-500/5 disabled:opacity-40 disabled:pointer-events-none"
                           >
-                            Accept <FiChevronRight size={14} />
+                            {actioningId === b.id ? "Working..." : "Accept"}{" "}
+                            <FiChevronRight size={14} />
                           </button>
                         </>
                       ) : (

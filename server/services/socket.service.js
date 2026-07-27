@@ -2,6 +2,10 @@
 
 let io = null;
 
+// Helper: normalize a phone number into a stable room name.
+// Strips spaces/dashes so "+91 98765 43210" and "919876543210" map to the same room.
+const clientRoom = (phone) => `client_${String(phone).replace(/[\s-]/g, "")}`;
+
 export const initSocket = (serverIo) => {
   io = serverIo;
 
@@ -22,6 +26,29 @@ export const initSocket = (serverIo) => {
       });
 
       // 🔍 DEBUG: list rooms for this socket
+      console.log("📦 Socket rooms:", Array.from(socket.rooms));
+    });
+
+    // ==============================
+    // 🆕 JOIN CLIENT ROOM (Motor Konnect customer)
+    // Customer app calls socket.emit("join_client", phone) once connected
+    // and logged in, so status updates can be pushed straight to them.
+    // ==============================
+    socket.on("join_client", (phone) => {
+      if (!phone) {
+        console.warn("⚠️ join_client called without a phone number");
+        return;
+      }
+
+      const room = clientRoom(phone);
+      socket.join(room);
+
+      console.log("📱 Client joined:", {
+        socketId: socket.id,
+        phone,
+        room,
+      });
+
       console.log("📦 Socket rooms:", Array.from(socket.rooms));
     });
 
@@ -83,33 +110,51 @@ export const notifyGarage = async (garageId, booking) => {
   }
 };
 
+// ==============================
+// 🆕 EMIT BOOKING STATUS UPDATE TO CUSTOMER (Motor Konnect)
+// Call this any time a booking's status changes on the CRM side
+// (accepted, rejected, in progress, completed, cancelled, etc).
+// ==============================
+export const notifyClient = async (phone, booking) => {
+  if (!io) {
+    console.error("❌ IO NOT INITIALIZED");
+    return;
+  }
 
+  if (!phone) {
+    console.warn("⚠️ notifyClient called without a phone number");
+    return;
+  }
 
+  const room = clientRoom(phone);
 
-// //socket.service.js
-// let io = null;
+  console.log("🚀 notifyClient called");
+  console.log("📡 Target phone:", phone);
+  console.log("📡 Target room:", room);
+  console.log("📦 Booking payload:", booking);
 
-// export const initSocket = (serverIo) => {
-//   io = serverIo;
+  try {
+    const clients = await io.in(room).fetchSockets();
+    console.log("👥 Connected clients in room:", room, clients.length);
 
-//   io.on("connection", (socket) => {
-//     console.log("🔥 SOCKET CONNECTED:", socket.id);
-//   });
-// };
+    if (clients.length === 0) {
+      console.warn(
+        "⚠️ No connected client sockets in room (customer may be offline — that's fine, they'll see the update next time they open the app):",
+        room,
+      );
+    }
 
-// export const notifyGarage = async (garageId, booking) => {
-//   if (!io) return;
+    io.to(room).emit("booking_status_updated", {
+      id: booking.id,
+      status: booking.status,
+      serviceName: booking.serviceName,
+      scheduledAt: booking.scheduledAt,
+      finalPrice: booking.finalPrice,
+      garageName: booking.garage?.companyName || booking.garageName || null,
+    });
 
-//   console.log("🚀 notifyGarage called:", garageId, booking);
-
-//   // ⏳ IMPORTANT: small delay ensures room join completed
-//   setTimeout(() => {
-//     io.to(`garage_${garageId}`).emit("new_booking", {
-//       id: booking.id,
-//       serviceId: booking.serviceId,
-//       carType: booking.carType,
-//       finalPrice: booking.finalPrice,
-//     });
-//   }, 300); // 🔥 KEY FIX
-// };
-
+    console.log("✅ booking_status_updated emitted to room:", room);
+  } catch (err) {
+    console.error("❌ SOCKET EMIT ERROR:", err.message);
+  }
+};

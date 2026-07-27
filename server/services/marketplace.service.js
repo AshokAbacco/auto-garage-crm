@@ -46,7 +46,7 @@ export const resolveService = async (externalServiceId, fallbackName) => {
     if (externalVehicleType === "WASHING") {
       externalVehicleType = "WASH";
     }
-    
+
     console.log("====================================");
     console.log("External Service");
     console.log({
@@ -517,6 +517,25 @@ export const createBooking = async (data) => {
       basePriceSnapshot: data.appPrice ? Number(data.appPrice) : 0,
       finalPrice: data.appPrice ? Number(data.appPrice) : 0,
       status: "PENDING",
+
+      // 🆕 Structured multi-service / package breakdown
+      services:
+        data.services && data.services.length ? data.services : undefined,
+      packageId: data.packageId || null,
+      packageName: data.packageName || null,
+
+      // 🆕 Customer notes / special instructions
+      notes: data.notes || null,
+
+      // 🆕 Pickup / drop details
+      pickupRequired: Boolean(data.pickupRequired),
+      pickupAddress: data.pickupAddress || null,
+      dropAddress: data.dropAddress || null,
+
+      // 🆕 Vehicle details snapshot
+      vehicleMake: data.vehicleMake || null,
+      vehicleModel: data.vehicleModel || null,
+      vehicleRegNumber: data.vehicleRegNumber || null,
     },
   });
 };

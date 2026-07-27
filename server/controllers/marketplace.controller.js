@@ -5,7 +5,7 @@ import * as notificationService from "../services/notification.service.js"; // �
 import { PrismaClient } from "@prisma/client";
 import { uploadToR2 } from "../utils/r2Upload.js";
 import * as dispatchService from "../services/dispatch.service.js";
-import { notifyGarage } from "../services/socket.service.js";
+import { notifyGarage, notifyClient } from "../services/socket.service.js";
 
 const prisma = new PrismaClient();
 
@@ -86,6 +86,24 @@ export const createBooking = async (req, res) => {
       appPrice,
       carType,
       serviceName,
+
+      // 🆕 Structured multi-service / package breakdown
+      services,
+      packageId,
+      packageName,
+
+      // 🆕 Customer notes / special instructions
+      notes,
+
+      // 🆕 Pickup / drop details
+      pickupRequired,
+      pickupAddress,
+      dropAddress,
+
+      // 🆕 Vehicle details snapshot
+      vehicleMake,
+      vehicleModel,
+      vehicleRegNumber,
     } = req.body;
 
     // 1. Validation check
@@ -104,6 +122,21 @@ export const createBooking = async (req, res) => {
       appPrice: appPrice ? Number(appPrice) : null,
       carType: carType || "SEDAN",
       serviceName: serviceName || null,
+
+      // 🆕 Pass through the previously-dropped fields
+      services: Array.isArray(services) ? services : null,
+      packageId: packageId ? Number(packageId) : null,
+      packageName: packageName || null,
+
+      notes: notes || null,
+
+      pickupRequired: Boolean(pickupRequired),
+      pickupAddress: pickupAddress || null,
+      dropAddress: dropAddress || null,
+
+      vehicleMake: vehicleMake || null,
+      vehicleModel: vehicleModel || null,
+      vehicleRegNumber: vehicleRegNumber || null,
     };
 
     // 3. Call Service Layer
@@ -152,11 +185,23 @@ export const getBooking = async (req, res) => {
 // ==============================
 export const acceptBooking = async (req, res) => {
   try {
-    await bookingService.acceptBooking(req.params.id);
+    const result = await bookingService.acceptBooking(req.params.id);
 
     notificationService
       .notifyBookingAccepted(req.params.id)
       .catch((e) => console.error("NOTIFICATION (accept) ERROR:", e.message));
+
+    // 🆕 Real-time push to Motor Konnect (customer app)
+    const clientPhone = result?.booking?.client?.phone;
+    if (clientPhone) {
+      notifyClient(clientPhone, result.booking).catch((e) =>
+        console.error("SOCKET NOTIFY (accept) ERROR:", e.message),
+      );
+    } else {
+      console.warn(
+        "⚠️ acceptBooking: no client phone available, skipping socket push",
+      );
+    }
 
     res.json({ success: true });
   } catch (err) {
@@ -169,11 +214,23 @@ export const acceptBooking = async (req, res) => {
 // ==============================
 export const rejectBooking = async (req, res) => {
   try {
-    await bookingService.rejectBooking(req.params.id);
+    const result = await bookingService.rejectBooking(req.params.id);
 
     notificationService
       .notifyBookingRejected(req.params.id)
       .catch((e) => console.error("NOTIFICATION (reject) ERROR:", e.message));
+
+    // 🆕 Real-time push to Motor Konnect (customer app)
+    const clientPhone = result?.booking?.client?.phone;
+    if (clientPhone) {
+      notifyClient(clientPhone, result.booking).catch((e) =>
+        console.error("SOCKET NOTIFY (reject) ERROR:", e.message),
+      );
+    } else {
+      console.warn(
+        "⚠️ rejectBooking: no client phone available, skipping socket push",
+      );
+    }
 
     res.json({ success: true });
   } catch (err) {
@@ -201,6 +258,18 @@ export const getAllBookings = async (req, res) => {
       price: b.finalPrice,
       scheduledAt: b.scheduledAt,
       garageId: b.garageId,
+
+      // 🆕 Full booking details for the garage owner
+      services: b.services || null,
+      packageName: b.packageName || null,
+      notes: b.notes || null,
+      pickupRequired: b.pickupRequired || false,
+      pickupAddress: b.pickupAddress || null,
+      dropAddress: b.dropAddress || null,
+      vehicleMake: b.vehicleMake || null,
+      vehicleModel: b.vehicleModel || null,
+      vehicleRegNumber: b.vehicleRegNumber || null,
+      carType: b.carType || null,
     }));
 
     res.json({ success: true, data: formatted });
@@ -530,6 +599,17 @@ export const getMyBookings = async (req, res) => {
       finalPrice: b.finalPrice,
       carType: b.carType,
       createdAt: b.createdAt,
+
+      // 🆕 Full booking details for the customer
+      services: b.services || null,
+      packageName: b.packageName || null,
+      notes: b.notes || null,
+      pickupRequired: b.pickupRequired || false,
+      pickupAddress: b.pickupAddress || null,
+      dropAddress: b.dropAddress || null,
+      vehicleMake: b.vehicleMake || null,
+      vehicleModel: b.vehicleModel || null,
+      vehicleRegNumber: b.vehicleRegNumber || null,
     }));
 
     res.json({ success: true, data: formatted });

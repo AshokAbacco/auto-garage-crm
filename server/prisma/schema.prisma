@@ -301,12 +301,12 @@ model Service {
 
   mediaFiles ServiceMedia[]
 
-  client     Client           @relation(fields: [clientId], references: [id])
-  invoice    Invoice?         @relation(fields: [invoiceId], references: [id])
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id])
+  client   Client           @relation(fields: [clientId], references: [id])
+  invoice  Invoice?         @relation(fields: [invoiceId], references: [id])
+  category ServiceCategory? @relation(fields: [categoryId], references: [id])
 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   serviceCostItems ServiceCostItem[]
   whatsAppSessions WhatsAppSession[]
@@ -321,7 +321,7 @@ model Service {
 }
 
 model SubService {
-  id         Int              @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   name       String
   categoryId Int?
 
@@ -1760,6 +1760,37 @@ model MarketplaceBooking {
 
   clientId Int?
   client   Client? @relation(fields: [clientId], references: [id])
+
+  // ==============================
+  // 🆕 CUSTOMER NOTES / SPECIAL INSTRUCTIONS
+  // ==============================
+  notes String?
+
+  // ==============================
+  // 🆕 PICKUP / DROP DETAILS
+  // ==============================
+  pickupRequired Boolean? @default(false)
+  pickupAddress  String?
+  dropAddress    String?
+
+  // ==============================
+  // 🆕 VEHICLE DETAILS (snapshot from app at time of booking)
+  // Separate from `carType` (SEDAN/HATCHBACK/etc) which already existed
+  // ==============================
+  vehicleMake      String?
+  vehicleModel     String?
+  vehicleRegNumber String?
+
+  // ==============================
+  // 🆕 PACKAGE / MULTI-SERVICE SUPPORT
+  // Kept as plain scalars (no FK relation) to avoid touching MarketplacePackage model
+  // ==============================
+  packageId   Int?
+  packageName String?
+
+  // Full structured breakdown of every service included in this booking
+  // (e.g. [{ "serviceName": "Oil Change", "fromPackage": "Basic Combo" }, ...])
+  services Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

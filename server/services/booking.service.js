@@ -132,32 +132,55 @@ export const acceptBooking = async (bookingId) => {
 
   console.log("🎉 BOOKING ACCEPTED:", booking.id);
 
-  // 🆕 Return the full, up-to-date booking record (not just {success:true}).
-  // This doesn't change existing behavior for callers that ignore the return
-  // value, but makes the complete booking available for anything that wants
-  // to notify/sync the customer app with the latest status + details.
-  const updatedBooking = await prisma.marketplaceBooking.findUnique({
-    where: { id: booking.id },
-    include: {
-      service: true,
-      client: true,
-      garage: { select: { companyName: true, address: true, phone: true } },
-    },
-  });
+  // 🆕 Enrich with full details for the socket push — but this is best-effort.
+  // The status change above already succeeded; if this extra read fails for
+  // any reason (relation issue, schema drift, etc.), we must NOT let that
+  // turn a successful accept into a reported failure.
+  let updatedBooking = null;
+  try {
+    updatedBooking = await prisma.marketplaceBooking.findUnique({
+      where: { id: booking.id },
+      include: {
+        service: true,
+        client: true,
+        garage: { select: { companyName: true, address: true, phone: true } },
+      },
+    });
+  } catch (enrichErr) {
+    console.error(
+      "⚠️ acceptBooking: enrichment read failed (status change still succeeded):",
+      enrichErr.message,
+    );
+  }
 
   return { success: true, booking: updatedBooking };
 };
 
 export const rejectBooking = async (bookingId) => {
-  const updatedBooking = await prisma.marketplaceBooking.update({
+  // 1. Do the actual status change first, with NO include — this must
+  //    succeed/fail on its own, independent of any enrichment data.
+  const updated = await prisma.marketplaceBooking.update({
     where: { id: Number(bookingId) },
     data: { status: "REJECTED" },
-    include: {
-      service: true,
-      client: true,
-      garage: { select: { companyName: true, address: true, phone: true } },
-    },
   });
+
+  // 2. Enrichment for the socket push is best-effort only.
+  let updatedBooking = updated;
+  try {
+    updatedBooking = await prisma.marketplaceBooking.findUnique({
+      where: { id: updated.id },
+      include: {
+        service: true,
+        client: true,
+        garage: { select: { companyName: true, address: true, phone: true } },
+      },
+    });
+  } catch (enrichErr) {
+    console.error(
+      "⚠️ rejectBooking: enrichment read failed (status change still succeeded):",
+      enrichErr.message,
+    );
+  }
 
   return { success: true, booking: updatedBooking };
 };

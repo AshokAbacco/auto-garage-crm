@@ -95,8 +95,29 @@ const DynamicData = () => {
   const handleCreateTable = async (name) => {
     try {
       const res = await createDynamicTable(name);
-      setTables((prev) => [...prev, res.data]);
-      setSelectedTableId(res.data.id);
+
+      // 🆕 FIXED: this used to only do an optimistic
+      // `setTables(prev => [...prev, res.data])`, which silently failed to
+      // show the new table unless `res.data` happened to be EXACTLY the
+      // shape TableManager expects. If the backend returns a wrapped
+      // response (e.g. `{ success, data: {...} }` — the pattern used
+      // throughout the rest of this API), the appended item is malformed
+      // and only a full page refresh (which properly calls
+      // getDynamicTables() again) ever showed it correctly.
+      //
+      // Fix: just refetch from the server, exactly like handleRenameTable
+      // and handleDeleteTable already do below — guaranteed correct
+      // regardless of the exact response shape, and still shows up
+      // immediately (no page reload needed).
+      await loadTables();
+
+      // Handle both a raw table object and a { success, data } wrapper
+      // when picking which table to auto-select.
+      const newTable = res?.data?.data ?? res?.data ?? null;
+      if (newTable?.id) {
+        setSelectedTableId(newTable.id);
+      }
+
       showToast(`Table "${name}" created`, "success");
     } catch (error) {
       showToast(

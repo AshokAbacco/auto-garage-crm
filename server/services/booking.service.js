@@ -22,26 +22,30 @@ export const acceptBooking = async (bookingId) => {
   }
 
   // =========================
-  // STEP 1: FIND OR CREATE SUBSERVICE
+  // STEP 1: FIND OR CREATE GENERIC (CAR) SUBSERVICE
+  // Only used for CAR bookings — BIKE/WASH use their own dedicated
+  // sub-service models below, since they're different tables entirely.
   // =========================
-  let matchedSubService = await prisma.subService.findFirst({
-    where: {
-      name: {
-        equals: booking.service.name,
-        mode: "insensitive",
-      },
-    },
-  });
-
-  // 🔥 AUTO CREATE (FINAL FIX)
-  if (!matchedSubService) {
-    console.log("⚠️ Creating new SubService:", booking.service.name);
-
-    matchedSubService = await prisma.subService.create({
-      data: {
-        name: booking.service.name,
+  let matchedSubService = null;
+  if (booking.service.crmType === "CAR") {
+    matchedSubService = await prisma.subService.findFirst({
+      where: {
+        name: {
+          equals: booking.service.name,
+          mode: "insensitive",
+        },
       },
     });
+
+    if (!matchedSubService) {
+      console.log("⚠️ Creating new SubService:", booking.service.name);
+
+      matchedSubService = await prisma.subService.create({
+        data: {
+          name: booking.service.name,
+        },
+      });
+    }
   }
 
   let serviceRecord;
@@ -58,9 +62,11 @@ export const acceptBooking = async (bookingId) => {
           connect: { id: booking.clientId },
         },
 
-        // ✅ CORRECT RELATION
-        subService: {
-          connect: { id: matchedSubService.id },
+        // 🔧 FIXED: the relation field on Service is `subServices` (plural,
+        // many-to-many) — it was previously calling `.connect()` on a
+        // non-existent `subService` field, which threw on every accept.
+        subServices: {
+          connect: [{ id: matchedSubService.id }],
         },
 
         status: "PENDING",
@@ -78,18 +84,37 @@ export const acceptBooking = async (bookingId) => {
 
   // =========================
   // BIKE SERVICE
+  // 🔧 FIXED: bikeService.subService connects to the BikeSubService model,
+  // not the generic SubService model used for CAR. Using the wrong model's
+  // id here would either throw (id not found in BikeSubService) or, worse,
+  // silently link to an unrelated record if the ids happened to collide.
   // =========================
   if (booking.service.crmType === "BIKE") {
+    const bikeSubService = await prisma.bikeSubService.findFirst({
+      where: { name: { equals: booking.service.name, mode: "insensitive" } },
+    });
+
+    if (!bikeSubService) {
+      throw new Error(
+        `No matching BIKE sub-service named "${booking.service.name}" exists in the CRM yet. Please add it under Bike Services first, then accept this booking.`,
+      );
+    }
+
     serviceRecord = await prisma.bikeService.create({
       data: {
         date: new Date(),
+        inDate: new Date(),
 
         client: {
           connect: { id: booking.clientId },
         },
 
         subService: {
-          connect: { id: matchedSubService.id },
+          connect: { id: bikeSubService.id },
+        },
+
+        category: {
+          connect: { id: bikeSubService.categoryId },
         },
       },
     });
@@ -105,8 +130,20 @@ export const acceptBooking = async (bookingId) => {
 
   // =========================
   // WASH SERVICE
+  // 🔧 FIXED: same issue as BIKE — washingService.subService connects to
+  // the WashingSubService model, not the generic SubService model.
   // =========================
   if (booking.service.crmType === "WASH") {
+    const washingSubService = await prisma.washingSubService.findFirst({
+      where: { name: { equals: booking.service.name, mode: "insensitive" } },
+    });
+
+    if (!washingSubService) {
+      throw new Error(
+        `No matching WASH sub-service named "${booking.service.name}" exists in the CRM yet. Please add it under Washing Services first, then accept this booking.`,
+      );
+    }
+
     serviceRecord = await prisma.washingService.create({
       data: {
         date: new Date(),
@@ -116,7 +153,11 @@ export const acceptBooking = async (bookingId) => {
         },
 
         subService: {
-          connect: { id: matchedSubService.id },
+          connect: { id: washingSubService.id },
+        },
+
+        category: {
+          connect: { id: washingSubService.categoryId },
         },
       },
     });

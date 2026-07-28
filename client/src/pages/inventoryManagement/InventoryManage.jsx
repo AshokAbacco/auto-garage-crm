@@ -213,7 +213,7 @@ const InventoryManage = () => {
         setEditingId(null);
         setFormData(emptyForm);
     };
-  // reset the deduct form to a single empty row
+    // reset the deduct form to a single empty row
     const resetDeductForm = () => {
         setDeductData2([{ itemCode: "", quantity: "" }]);
         setDeductList([]);
@@ -462,79 +462,102 @@ const InventoryManage = () => {
                 </div>
 
                 {/* Open Modal of Add Supplier */}
-
                 {modalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
 
-                        <div className="w-full max-w-md p-5 shadow-xl rounded-xl sm:p-6 max-h-[90vh] overflow-y-auto dark:*:bg-[#00112b] dark:text-white bg-white text-black *:">
+                        <div
+                            className={`w-full max-w-md rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto transition-all ${isDark
+                                ? "bg-[#00112b] text-white border border-white/10"
+                                : "bg-white text-slate-900 border border-slate-200"
+                                }`}
+                        >
 
-                            <h2 className="mb-5 text-xl font-bold sm:text-2xl">
-                                Add Supplier
-                            </h2>
-
-                            <div className="space-y-4">
-
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium">
-                                        Supplier Name
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        value={supplierData.supplierName}
-                                        onChange={(e) =>
-                                            setSupplierData({
-                                                ...supplierData,
-                                                supplierName: e.target.value
-                                            })
-                                        }
-                                        className="w-full p-3 border rounded-lg"
-                                        placeholder="Supplier Name"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium">
-                                        Supplier Contact
-                                    </label>
-
-                                    <input
-                                        type="tel"
-                                        maxLength={10}
-                                        value={supplierData.supplierContact}
-                                        onChange={(e) => {
-
-                                            const value = e.target.value.replace(/\D/g, "");
-
-                                            if (value.length <= 10) {
-
-                                                setSupplierData({
-                                                    ...supplierData,
-                                                    supplierContact: value
-                                                });
-
-                                            }
-
-                                        }}
-                                        className="w-full p-3 border rounded-lg"
-                                        placeholder="9876543210"
-                                    />
-                                </div>
-
-                            </div>
-
-                            <div className="flex flex-col-reverse justify-end gap-3 mt-6 sm:flex-row">
+                            {/* Header */}
+                            <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-300 dark:border-white/10">
+                                <h2 className="text-2xl font-bold">
+                                    Add Supplier
+                                </h2>
 
                                 <button
                                     onClick={() => setModalOpen(false)}
-                                    className="w-full px-5 py-2 border rounded-lg sm:w-auto"
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full transition ${isDark
+                                        ? "bg-[#071421] hover:bg-[#0b1d2c] text-white"
+                                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                        }`}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Supplier Name */}
+                            <div className="mb-5">
+                                <label className="block mb-2 text-sm font-semibold">
+                                    Supplier Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={supplierData.supplierName}
+                                    onChange={(e) =>
+                                        setSupplierData({
+                                            ...supplierData,
+                                            supplierName: e.target.value,
+                                        })
+                                    }
+                                    placeholder="Enter supplier name"
+                                    className={`w-full rounded-xl border px-4 py-3 outline-none transition ${isDark
+                                        ? "bg-[#071421] border-white/10 text-white placeholder:text-slate-400"
+                                        : "bg-slate-50 border-slate-300 text-slate-900"
+                                        }`}
+                                />
+                            </div>
+
+                            {/* Supplier Contact */}
+                            <div className="mb-6">
+                                <label className="block mb-2 text-sm font-semibold">
+                                    Supplier Contact
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    maxLength={10}
+                                    value={supplierData.supplierContact}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, "");
+
+                                        if (value.length <= 10) {
+                                            setSupplierData({
+                                                ...supplierData,
+                                                supplierContact: value,
+                                            });
+                                        }
+                                    }}
+                                    placeholder="9876543210"
+                                    className={`w-full rounded-xl border px-4 py-3 outline-none transition ${isDark
+                                        ? "bg-[#071421] border-white/10 text-white placeholder:text-slate-400"
+                                        : "bg-slate-50 border-slate-300 text-slate-900"
+                                        }`}
+                                />
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+                                <button
+                                    type="button"
+                                    onClick={() => setModalOpen(false)}
+                                    className={`w-full rounded-xl px-5 py-3 font-semibold transition sm:w-auto ${isDark
+                                        ? "border border-white/10 bg-[#071421] text-white hover:bg-[#0b1d2c]"
+                                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                                        }`}
                                 >
                                     Cancel
                                 </button>
 
                                 <button
+                                    type="button"
                                     onClick={handleSupplierSubmit}
-                                    className="w-full px-5 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 sm:w-auto"
+                                    className="w-full px-5 py-3 font-semibold text-white transition bg-green-600 rounded-xl hover:bg-green-700 sm:w-auto"
                                 >
                                     Submit
                                 </button>
@@ -756,23 +779,46 @@ const InventoryManage = () => {
                                         }`}
                                 >
                                     {brands.map((brand) => (
-                                        <option key={brand} value={brand}>
+                                        <option
+                                            key={brand}
+                                            value={brand}
+                                            className={
+                                                isDark
+                                                    ? "bg-[#071421] text-white"
+                                                    : "bg-white text-slate-900"
+                                            }
+                                        >
                                             {brand}
                                         </option>
                                     ))}
                                 </select>
                             </div>
                             <div className="w-full lg:min-w-[180px]">
-                                <label className={`mb-2 block text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                                <label
+                                    className={`mb-2 block text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-700"
+                                        }`}
+                                >
                                     Category
                                 </label>
+
                                 <select
                                     value={categoryFilter}
                                     onChange={(event) => setCategoryFilter(event.target.value)}
-                                    className={`w-full rounded-xl border px-3 py-2 outline-none ${isDark ? "border-white/10 bg-[#071421] text-white" : "border-slate-200 bg-white text-slate-900"}`}
+                                    className={`w-full rounded-xl border px-3 py-2 outline-none ${isDark
+                                        ? "border-white/10 bg-[#071421] text-white"
+                                        : "border-slate-200 bg-white text-slate-900"
+                                        }`}
                                 >
                                     {categories.map((category) => (
-                                        <option key={category} value={category}>
+                                        <option
+                                            key={category}
+                                            value={category}
+                                            className={
+                                                isDark
+                                                    ? "bg-[#071421] text-white"
+                                                    : "bg-white text-slate-900"
+                                            }
+                                        >
                                             {category}
                                         </option>
                                     ))}

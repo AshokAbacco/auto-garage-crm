@@ -198,6 +198,12 @@ model User {
   marketplaceBookings       MarketplaceBooking[]
   marketplacePackages       MarketplacePackage[]
 
+  // Inventory
+  inventory Inventory[]
+
+  //Add supplier
+  suppliers Supplier[]
+
   // 🏅 1:1 REVERSE RELATION TO GARAGE VERIFICATION MODEL
   garageVerification GarageVerification?
 }
@@ -301,12 +307,12 @@ model Service {
 
   mediaFiles ServiceMedia[]
 
-  client     Client           @relation(fields: [clientId], references: [id])
-  invoice    Invoice?         @relation(fields: [invoiceId], references: [id])
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id])
+  client   Client           @relation(fields: [clientId], references: [id])
+  invoice  Invoice?         @relation(fields: [invoiceId], references: [id])
+  category ServiceCategory? @relation(fields: [categoryId], references: [id])
 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   serviceCostItems ServiceCostItem[]
   whatsAppSessions WhatsAppSession[]
@@ -321,7 +327,7 @@ model Service {
 }
 
 model SubService {
-  id         Int              @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   name       String
   categoryId Int?
 
@@ -1909,4 +1915,56 @@ model AppNotification {
   @@index([clientPhone])
   @@index([type])
   @@index([createdAt])
+}
+
+model Inventory {
+  id Int @id @default(autoincrement())
+
+  itemCode   String  @unique
+  itemName   String
+  category   String
+  brand      String?
+  model      String?
+  supplier   String?
+  partNumber String?
+
+  purchasePrice Float
+  sellingPrice  Float
+
+  quantity     Int
+  minimumStock Int @default(5)
+
+  unit String
+
+  location    String?
+  description String?
+
+  status String @default("Available")
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+}
+
+model Supplier {
+  id Int @id @default(autoincrement())
+
+  supplierName String
+
+  supplierContact String
+
+  userId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

@@ -153,6 +153,7 @@ export default function Layout() {
     { to: "/services", label: "Services", icon: Wrench },
     { to: "/billing", label: "Billing", icon: Receipt },
     { to: "/reminders", label: "Reminders", icon: Bell },
+    {to: "/inventory-management", label: "Inventory Management", icon: Wrench },
     { to: "/reports", label: "Reports", icon: BarChart2 },
     { to: "/ocr-scanner", label: "OCR Scanner", icon: FileText },
     { to: "/staff-management", label: "Staff Management", icon: UserRoundPlus },
@@ -251,7 +252,7 @@ export default function Layout() {
 
   return (
     <div
-      className="min-h-screen flex transition-colors duration-300"
+      className="flex min-h-screen transition-colors duration-300"
       style={{ backgroundColor: colors.mainBg }}
     >
       {sidebarOpen && (
@@ -271,12 +272,12 @@ export default function Layout() {
       >
         <div className="flex flex-col h-full overflow-hidden">
           <div
-            className="flex items-center justify-between h-16 px-4 border-b flex-shrink-0"
+            className="flex items-center justify-between flex-shrink-0 h-16 px-4 border-b"
             style={{ borderColor: colors.border }}
           >
             <div className="flex items-center gap-3 overflow-hidden">
               <div
-                className="flex items-center justify-center w-10 h-10 rounded-lg shadow-lg flex-shrink-0"
+                className="flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg shadow-lg"
                 style={{ backgroundColor: colors.primaryButton }}
               >
                 <Car className="w-6 h-6 text-white" />
@@ -297,7 +298,7 @@ export default function Layout() {
             </button>
           </div>
 
-          <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
+          <nav className="flex-1 px-3 py-6 space-y-2 overflow-x-hidden overflow-y-auto custom-scrollbar">
             {filteredMenu.map((item, index) => {
               if (item.children) {
                 const isOpen = openMenu === index;
@@ -306,10 +307,10 @@ export default function Layout() {
                   <div key={index}>
                     <button
                       onClick={() => setOpenMenu(isOpen ? null : index)}
-                      className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200"
+                      className="flex items-center w-full px-3 py-3 font-medium transition-all duration-200 rounded-xl"
                       style={{ color: colors.textSecondary }}
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <Icon className="flex-shrink-0 w-5 h-5" />
                       <span
                         className={`whitespace-nowrap flex overflow-hidden transition-all duration-300 ease-in-out ${sidebarExpanded ? "opacity-100 w-auto ml-3" : "opacity-0 w-0 ml-0"}`}
                       >
@@ -383,7 +384,7 @@ export default function Layout() {
                     return (
                       <>
                         <Icon
-                          className="w-5 h-5 flex-shrink-0"
+                          className="flex-shrink-0 w-5 h-5"
                           style={{
                             color: isLocked
                               ? "#94A3B8"
@@ -398,7 +399,7 @@ export default function Layout() {
                           {item.label}
                           {isLocked && (
                             <span className="ml-2">
-                              <LockKeyhole className="h-4 w-4" />
+                              <LockKeyhole className="w-4 h-4" />
                             </span>
                           )}
                         </span>
@@ -410,17 +411,17 @@ export default function Layout() {
             })}
           </nav>
 
-          <div className="p-3 flex-shrink-0">
+          <div className="flex-shrink-0 p-3">
             <button
               onClick={() => setShowLogoutModal(true)}
-              className="w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all duration-200 border overflow-hidden"
+              className="flex items-center w-full px-3 py-3 overflow-hidden font-medium transition-all duration-200 border rounded-xl"
               style={{
                 backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
                 borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FECACA",
                 color: "#DC2626",
               }}
             >
-              <LogOut className="w-5 h-5 flex-shrink-0" />
+              <LogOut className="flex-shrink-0 w-5 h-5" />
               <span
                 className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${sidebarExpanded ? "opacity-100 w-auto ml-3" : "opacity-0 w-0 ml-0"}`}
               >
@@ -432,10 +433,10 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-col w-full min-h-screen lg:pl-2 transition-all duration-300">
+      <div className="flex flex-col w-full min-h-screen transition-all duration-300 lg:pl-2">
         {/* Header */}
         <header
-          className="shadow-sm border-b transition-colors duration-300 sticky top-0 z-30"
+          className="sticky top-0 z-30 transition-colors duration-300 border-b shadow-sm"
           style={{
             backgroundColor: colors.layoutBg,
             borderColor: colors.border,
@@ -482,7 +483,7 @@ export default function Layout() {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg transition-colors"
+                className="p-2 transition-colors rounded-lg"
                 style={{
                   color: isDark ? "#FCD34D" : "#475569",
                   border: `1px solid ${colors.border}`,
@@ -513,7 +514,7 @@ export default function Layout() {
                       />
                     ) : (
                       <div
-                        className="w-full h-full flex items-center justify-center"
+                        className="flex items-center justify-center w-full h-full"
                         style={{ backgroundColor: colors.primaryButton }}
                       >
                         <span className="font-medium text-white">
@@ -522,9 +523,9 @@ export default function Layout() {
                       </div>
                     )}
                   </div>
-                  <div className="hidden sm:block text-left">
+                  <div className="hidden text-left sm:block">
                     <div
-                      className="font-bold text-sm flex items-center gap-1"
+                      className="flex items-center gap-1 text-sm font-bold"
                       style={{ color: colors.textPrimary }}
                     >
                       {user?.username || user?.name || "User"}
@@ -557,7 +558,7 @@ export default function Layout() {
                         navigate(isStaff ? "/car-dashboard" : "/profile");
                         setOpenProfileMenu(false);
                       }}
-                      className="w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg font-bold text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="flex items-center w-full gap-2 px-3 py-2 text-sm font-bold text-left transition-colors rounded-lg text-slate-700 hover:bg-slate-50"
                       style={{ color: colors.textPrimary }}
                     >
                       <UserRoundCog className="w-4 h-4 text-slate-400" />{" "}
@@ -594,7 +595,7 @@ export default function Layout() {
           style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl p-6 shadow-xl border"
+            className="w-full max-w-sm p-6 border shadow-xl rounded-2xl"
             style={{
               backgroundColor: colors.elementBg,
               borderColor: colors.border,
@@ -612,7 +613,7 @@ export default function Layout() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="px-4 py-2 rounded-lg font-medium transition-colors"
+                className="px-4 py-2 font-medium transition-colors rounded-lg"
                 style={{
                   backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
                   color: colors.textPrimary,

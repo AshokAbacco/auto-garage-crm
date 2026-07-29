@@ -23,11 +23,13 @@ export default function ModernPricingPage() {
   const carPlans = [
     {
       id: "basic",
-      name: "Basic Node",
-      tagline: "Entry-level infrastructure",
+      name: "Basic Package",
+      tagline: "1 Month Free Trial Infrastructure",
       numericPrice: 1000,
       icon: FiZap,
       features: [
+        "First 30 Days 100% Free",
+        "100% CHARGE APPLICABLE FROM 2ND MONTH",
         "RC Image Uploads (10/day)",
         "Standard OCR Extraction",
         "Local History Cache",
@@ -37,7 +39,7 @@ export default function ModernPricingPage() {
     },
     {
       id: "standard",
-      name: "Standard Node",
+      name: "Standard Package",
       tagline: "Optimized for high-volume",
       numericPrice: 2000,
       icon: FiStar,
@@ -48,19 +50,19 @@ export default function ModernPricingPage() {
         "Priority Support Tier",
         "Advanced Data Export",
         "SMS/WhatsApp Protocols",
-        "Team Access (3 Nodes)",
+        "Team Access (3 Logins)",
       ],
     },
     {
       id: "premium",
-      name: "Premium Node",
+      name: "Premium Package",
       tagline: "Enterprise-grade control",
       numericPrice: 3000,
       icon: FiAward,
       badge: "BEST VALUE",
       features: [
         "Full Standard Features",
-        "Team Access (10 Nodes)",
+        "Team Access (10 Logins)",
         "Maintenance Alert Logic",
         "Bulk Processing Engine",
         "Dedicated Account Manager",
@@ -74,11 +76,13 @@ export default function ModernPricingPage() {
   const bikePlans = [
     {
       id: "basic",
-      name: "Basic Node",
-      tagline: "Compact garage setup",
+      name: "Basic Package",
+      tagline: "1 Month Free Trial Setup",
       numericPrice: 600,
       icon: FiZap,
       features: [
+        "First 30 Days 100% Free",
+        "100% CHARGE APPLICABLE FROM 2ND MONTH",
         "RC Image Uploads (10/day)",
         "Standard OCR Extraction",
         "Local History Cache",
@@ -88,7 +92,7 @@ export default function ModernPricingPage() {
     },
     {
       id: "standard",
-      name: "Standard Node",
+      name: "Standard Package",
       tagline: "Enhanced efficiency",
       numericPrice: 1200,
       icon: FiStar,
@@ -99,19 +103,19 @@ export default function ModernPricingPage() {
         "Priority Support Tier",
         "Advanced Data Export",
         "SMS/WhatsApp Protocols",
-        "Team Access (3 Nodes)",
+        "Team Access (3 Logins)",
       ],
     },
     {
       id: "premium",
-      name: "Premium Node",
+      name: "Premium Package",
       tagline: "Elite fleet management",
       numericPrice: 2000,
       icon: FiAward,
       badge: "BEST VALUE",
       features: [
         "Full Standard Features",
-        "Team Access (10 Nodes)",
+        "Team Access (10 Logins)",
         "Maintenance Alert Logic",
         "Bulk Processing Engine",
         "Dedicated Account Manager",
@@ -125,7 +129,7 @@ export default function ModernPricingPage() {
   const washingPlans = [
     {
       id: "standard",
-      name: "Standard Node",
+      name: "Standard Package",
       tagline: "Queue management ready",
       numericPrice: 500,
       icon: FiStar,
@@ -135,19 +139,19 @@ export default function ModernPricingPage() {
         "Priority Support Tier",
         "Advanced Data Export",
         "SMS/WhatsApp Protocols",
-        "Team Access (3 Nodes)",
+        "Team Access (3 Logins)",
       ],
     },
     {
       id: "premium",
-      name: "Premium Node",
+      name: "Premium Package",
       tagline: "Scale-ready infrastructure",
       numericPrice: 1000,
       icon: FiAward,
       badge: "BEST VALUE",
       features: [
         "Full Standard Features",
-        "Team Access (10 Nodes)",
+        "Team Access (10 Logins)",
         "Maintenance Alert Logic",
         "Bulk Processing Engine",
         "Dedicated Account Manager",
@@ -172,41 +176,37 @@ export default function ModernPricingPage() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 pt-32 ${
-        isDark ? "bg-[#000814] text-white" : "bg-white text-[#001F3F]"
-      }`}
+      className={`min-h-screen transition-colors duration-500 pt-32 ${isDark ? "bg-[#000814] text-white" : "bg-white text-[#001F3F]"
+        }`}
     >
       {/* --- Section Header --- */}
       <div className="max-w-7xl mx-auto px-6 mb-20 text-center">
         <div
-          className={`inline-flex items-center gap-3 px-4 py-2 rounded-xl border mb-8 ${
-            isDark
-              ? "bg-white/5 border-white/10"
-              : "bg-slate-50 border-slate-200"
-          }`}
+          className={`inline-flex items-center gap-3 px-4 py-2 rounded-xl border mb-8 ${isDark
+            ? "bg-white/5 border-white/10"
+            : "bg-slate-50 border-slate-200"
+            }`}
         >
           <span
             className={`flex gap-3 text-[9px] font-black uppercase tracking-[0.3em] ${isDark ? "text-white" : "text-[#001F3F]"}`}
           >
-            <FiCpu  size={18} />
+            <FiCpu size={18} />
             Subscription Protocols
           </span>
         </div>
 
         {/* Color Correction: Applied #001F3F for Light Mode Headings */}
         <h1
-          className={`text-5xl lg:text-7xl font-black tracking-tighter mb-6 uppercase ${
-            isDark ? "text-white" : "text-[#001F3F]"
-          }`}
+          className={`text-5xl lg:text-7xl font-black tracking-tighter mb-6 uppercase ${isDark ? "text-white" : "text-[#001F3F]"
+            }`}
         >
           Pricing{" "}
           <span className="font-light italic lowercase">Infrastructure.</span>
         </h1>
 
         <p
-          className={`text-lg max-w-2xl mx-auto font-medium ${
-            isDark ? "text-slate-400" : "text-slate-500"
-          }`}
+          className={`text-lg max-w-2xl mx-auto font-medium ${isDark ? "text-slate-400" : "text-slate-500"
+            }`}
         >
           Select the operational tier that aligns with your garage nodes.
           Flexible billing cycles for global scalability.
@@ -227,13 +227,12 @@ export default function ModernPricingPage() {
       {/* --- Pricing Matrix --- */}
       <section className="relative z-10 px-6 pb-24">
         <div
-          className={`max-w-7xl mx-auto gap-8 ${
-            activePlans.length === 1
-              ? "flex justify-center"
-              : activePlans.length === 2
-                ? "grid grid-cols-1 md:grid-cols-2 lg:max-w-4xl"
-                : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-          }`}
+          className={`max-w-7xl mx-auto gap-8 ${activePlans.length === 1
+            ? "flex justify-center"
+            : activePlans.length === 2
+              ? "grid grid-cols-1 md:grid-cols-2 lg:max-w-4xl"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            }`}
         >
           {activePlans.map((plan) => (
             <div

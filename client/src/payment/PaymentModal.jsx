@@ -120,6 +120,8 @@ const PaymentModal = ({
 
   if (!show || !plan) return null;
 
+  const isBasicPlan = String(plan?.name || "").toLowerCase().includes("basic");
+
   const finalPrice =
     billingPeriod === "yearly"
       ? Math.round(plan.numericPrice * 12 * 0.9)
@@ -147,49 +149,237 @@ const PaymentModal = ({
 
   const handlePayment = async () => {
     if (!validateForm()) return;
-    if (!razorpayLoaded) return alert("System Syncing: Razorpay not ready.");
-    const API =
-      window.location.hostname === "localhost"
-        ? "http://localhost:5001"
-        : "https://auto-garage-crm-zrxc.onrender.com";
 
+    if (!razorpayLoaded) {
+      return alert("System Syncing: Razorpay not ready.");
+    }
+
+    const API = import.meta.env.VITE_API_BASE_URL;
     setIsProcessing(true);
+
     try {
-      const subRes = await fetch(`${API}/api/payments/create-subscription`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: {
-            name: plan.name.replace(" NODE", "").toLowerCase(),
-            numericPrice: Number(plan.numericPrice),
+      // Differentiates car, bike, and wash identifiers dynamically before hitting API maps
+      const normalizedPlanName = (() => {
+        const raw = String(plan?.name || "").toLowerCase().trim();
+        const category = String(planType || "car").toLowerCase().trim();
+
+        if (raw.includes("basic")) return category === "bike" ? "bikebasic" : "basic";
+        if (raw.includes("standard")) return category === "bike" ? "bikestandard" : category === "washing" ? "washstandard" : "standard";
+        if (raw.includes("premium")) return category === "bike" ? "bikepremium" : category === "washing" ? "washpremium" : "premium";
+
+        return raw
+          .replace(/node/gi, "")
+          .replace(/package/gi, "")
+          .replace(/\s+/g, "")
+          .trim();
+      })();
+
+      const payload = {
+        plan: {
+          name: normalizedPlanName,
+          numericPrice: Number(plan.numericPrice),
+        },
+        billingPeriod: billingPeriod.toLowerCase(),
+        customer: {
+          ...formData,
+        },
+      };
+
+      console.log("PLAN FROM UI:", plan.name);
+      console.log("NORMALIZED PLAN NAME:", normalizedPlanName);
+      console.log("PAYLOAD PRICE:", payload.plan.numericPrice);
+
+      // 🔥 LOCKED IN PATHWAY FIX: Catching both basic variants securely to invoke direct trial mandates
+      if (normalizedPlanName === "basic" || normalizedPlanName === "bikebasic") {
+        console.log("BASIC PLAN TRIGGERED: INITIALIZING DIRECT 1-MONTH SUBSCRIPTION");
+        const subRes = await fetch(`${API}/api/payments/create-subscription`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          billingPeriod: billingPeriod.toLowerCase(),
-          customer: { ...formData },
-        }),
-      });
-      const data = await subRes.json();
+          body: JSON.stringify(payload),
+        });
+
+        const data = await subRes.json();
+        console.log("SUBSCRIPTION RESPONSE:", data);
+
+        if (!subRes.ok || !data.success) {
+          alert(data?.error || "Failed to initialize free trial session.");
+          setIsProcessing(false);
+          return;
+        }
+
+        const rzp = new window.Razorpay({
+          key: data.razorpayKey,
+          subscription_id: data.subscription.id,
+          name: "Abacco Technology",
+          description: `${plan.name} Trial Activation`,
+          theme: {
+            color: "#001F3F",
+          },
+          prefill: {
+            name: formData.name,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          modal: {
+            ondismiss: function () {
+              console.log("Razorpay subscription popup closed");
+            },
+            escape: false,
+            backdropclose: false,
+          },
+          handler: async (response) => {
+            setPaymentResponse({
+              paymentId: response.razorpay_payment_id,
+              subscriptionId: data.subscription.id,
+            });
+            setShowSuccess(true);
+          },
+        });
+
+        rzp.on("payment.failed", function (response) {
+          console.error("SUBSCRIPTION MANDATE FAILED:", response);
+          alert(response?.error?.description || "Mandate Initialization Failed");
+        });
+
+        rzp.open();
+        return;
+      }
+
+      // ORIGINAL STANDALONE ORDER ROUTING FOR STANDARD & PREMIUM PACKAGES
+      const subRes = await fetch(
+        `${API}/api/payments/create-first-payment-order`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      console.log("STATUS:", subRes.status);
+      const text = await subRes.text();
+      console.log("RAW RESPONSE:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("JSON PARSE ERROR:", err);
+        alert("Invalid server response");
+        return;
+      }
+
+      console.log("PARSED DATA:", data);
+
+      if (!subRes.ok) {
+        console.error("BACKEND ERROR:", data);
+        alert(data?.error || data?.message || "Failed to create subscription");
+        return;
+      }
+
+      if (!data?.order?.id) {
+        alert("Order ID missing");
+        return;
+      }
+
       const rzp = new window.Razorpay({
         key: data.razorpayKey,
-        subscription_id: data.subscription.id,
+        order_id: data.order.id,
         name: "Abacco Technology",
         description: `${plan.name} Node Activation`,
-        theme: { color: "#001F3F" },
+        theme: {
+          color: "#001F3F",
+        },
         prefill: {
           name: formData.name,
           email: formData.email,
           contact: formData.phone,
         },
+        modal: {
+          ondismiss: function () {
+            console.log("Razorpay popup closed");
+          },
+          escape: false,
+          backdropclose: false,
+        },
         handler: async (response) => {
-          setPaymentResponse({
-            paymentId: response.razorpay_payment_id,
-            subscriptionId: response.razorpay_subscription_id,
-          });
-          setShowSuccess(true);
+          try {
+            const verifyRes = await fetch(
+              `${API}/api/payments/verify-first-payment-order`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  customer: formData,
+                  plan: {
+                    name: normalizedPlanName,
+                    numericPrice: Number(plan.numericPrice),
+                  },
+                  billingPeriod: billingPeriod.toLowerCase(),
+                }),
+              },
+            );
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.success) {
+              alert(verifyData.error || "Payment verification failed");
+              return;
+            }
+
+            const subscriptionRes = await fetch(
+              `${API}/api/payments/create-subscription`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              },
+            );
+
+            const subscriptionData = await subscriptionRes.json();
+
+            if (!subscriptionData.success) {
+              alert(subscriptionData.error || "Subscription creation failed");
+              return;
+            }
+
+            setPaymentResponse({
+              paymentId: response.razorpay_payment_id,
+              subscriptionId: subscriptionData.subscription?.id,
+            });
+
+            setShowSuccess(true);
+          } catch (err) {
+            console.error(err);
+            alert("Verification failed");
+          }
         },
       });
+
+      rzp.on("payment.failed", function (response) {
+        console.error("PAYMENT FAILED:", response);
+        alert(
+          response?.error?.description ||
+          response?.error?.reason ||
+          "Payment Failed",
+        );
+      });
+
+      console.log("OPENING RAZORPAY");
       rzp.open();
     } catch (e) {
-      alert("Initialization Failed.");
+      console.error("PAYMENT ERROR:", e);
+      alert(e?.message || JSON.stringify(e) || "Initialization Failed");
     } finally {
       setIsProcessing(false);
     }
@@ -205,11 +395,10 @@ const PaymentModal = ({
       ></div>
 
       <div
-        className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-[2rem] border transition-all duration-500 transform ${show ? "scale-100" : "scale-95"} ${
-          isDark
-            ? "bg-[#000814] border-white/10 shadow-2xl"
-            : "bg-white border-[#CBD5E1] shadow-xl"
-        }`}
+        className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col rounded-[2rem] border transition-all duration-500 transform ${show ? "scale-100" : "scale-95"} ${isDark
+          ? "bg-[#000814] border-white/10 shadow-2xl"
+          : "bg-white border-[#CBD5E1] shadow-xl"
+          }`}
       >
         {/* Header Protocol */}
         <div
@@ -261,13 +450,13 @@ const PaymentModal = ({
                 <span
                   className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-400" : "text-[#001F3F]"}`}
                 >
-                  Identity Registry
+                  Garage Registration Details
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ProtocolInput
-                  label="Full Identity Name"
+                  label="Full Name"
                   icon={<FiUser />}
                   value={formData.name}
                   error={errors.name}
@@ -276,7 +465,7 @@ const PaymentModal = ({
                   isDark={isDark}
                 />
                 <ProtocolInput
-                  label="Operational Entity"
+                  label="Garage Name"
                   icon={<FiBriefcase />}
                   value={formData.companyName}
                   error={errors.companyName}
@@ -285,7 +474,7 @@ const PaymentModal = ({
                   isDark={isDark}
                 />
                 <ProtocolInput
-                  label="Transmission Email"
+                  label="User Email"
                   icon={<FiMail />}
                   value={formData.email}
                   error={errors.email}
@@ -294,7 +483,7 @@ const PaymentModal = ({
                   isDark={isDark}
                 />
                 <ProtocolInput
-                  label="Contact Protocol"
+                  label="Contact Number"
                   icon={<FiPhone />}
                   value={formData.phone}
                   error={errors.phone}
@@ -304,7 +493,7 @@ const PaymentModal = ({
                 />
                 <div className="md:col-span-2">
                   <ProtocolInput
-                    label="Physical Infrastructure Address"
+                    label="Garage Address"
                     icon={<FiMapPin />}
                     value={formData.address}
                     readOnly={isUpgradePage}
@@ -313,7 +502,7 @@ const PaymentModal = ({
                   />
                 </div>
                 <ProtocolInput
-                  label="GST Identification"
+                  label="GST Number"
                   icon={<FiHash />}
                   value={formData.gstNumber}
                   error={errors.gstNumber}
@@ -327,9 +516,7 @@ const PaymentModal = ({
                   icon={<FiActivity />}
                   value={formData.referenceCode}
                   optional
-                  onChange={(v) =>
-                    setFormData({ ...formData, referenceCode: v })
-                  }
+                  onChange={(v) => setFormData({ ...formData, referenceCode: v })}
                   isDark={isDark}
                 />
               </div>
@@ -361,7 +548,7 @@ const PaymentModal = ({
                     highlight
                     isDark={isDark}
                   />
-                  {billingPeriod === "yearly" && (
+                  {!isBasicPlan && billingPeriod === "yearly" && (
                     <SummaryLine
                       label="Efficiency Discount"
                       value="-10%"
@@ -378,12 +565,14 @@ const PaymentModal = ({
                   <div
                     className={`text-5xl font-black tracking-tighter mb-1 ${isDark ? "text-white" : "text-[#001F3F]"}`}
                   >
-                    ₹{finalPrice}
+                    ₹{isBasicPlan ? "0" : finalPrice}
                   </div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">
-                    {billingPeriod === "yearly"
-                      ? "Billed Annually"
-                      : "Billed Monthly"}
+                    {isBasicPlan
+                      ? "First 30 Days Free"
+                      : billingPeriod === "yearly"
+                        ? "Billed Annually"
+                        : "Billed Monthly"}
                   </p>
                 </div>
               </div>
@@ -447,13 +636,11 @@ const ProtocolInput = ({
         value={value}
         readOnly={readOnly}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 transition-all text-[12px] font-bold ${
-          readOnly ? "opacity-60 cursor-not-allowed" : ""
-        } ${
-          isDark
+        className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 transition-all text-[12px] font-bold ${readOnly ? "opacity-60 cursor-not-allowed" : ""
+          } ${isDark
             ? "bg-white/5 border-white/10 focus:border-white text-white"
             : "bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#001F3F] text-[#001F3F]"
-        } ${error ? "border-red-500/50" : ""}`}
+          } ${error ? "border-red-500/50" : ""}`}
       />
       {error && (
         <p className="text-[9px] text-red-500 font-bold uppercase mt-1 ml-1">
@@ -470,15 +657,14 @@ const SummaryLine = ({ label, value, highlight, success, isDark }) => (
       {label}
     </span>
     <span
-      className={`text-[12px] font-black uppercase ${
-        success
-          ? "text-green-500"
-          : highlight
-            ? "text-blue-600"
-            : isDark
-              ? "text-white"
-              : "text-[#001F3F]"
-      }`}
+      className={`text-[12px] font-black uppercase ${success
+        ? "text-green-500"
+        : highlight
+          ? "text-blue-600"
+          : isDark
+            ? "text-white"
+            : "text-[#001F3F]"
+        }`}
     >
       {value}
     </span>

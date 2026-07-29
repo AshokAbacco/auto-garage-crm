@@ -11,11 +11,23 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 /* Force dark input background and text color in dark mode */
-.dark input,
+.dark input:not([type="date"]),
 .dark textarea,
 .dark select {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: white !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+}
+
+input,
+select,
+textarea {
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+}
+
+input[type="date"] {
+    background-color: white !important;
+    color: black !important;
 }
 
 /* Prevent browser autofill from turning input white/yellow */

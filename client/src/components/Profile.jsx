@@ -1,3 +1,4 @@
+// client/src/pages/profile/Profile.jsx
 import React, { useState, useEffect } from "react";
 import {
   Camera,
@@ -15,6 +16,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import CompanyLocationMap from "../components/CompanyLocationMap";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Profile() {
   const [user, setUser] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +35,7 @@ export default function Profile() {
     companyLatitude: "",
     companyLongitude: "",
   });
+
   const [kycData, setKycData] = useState({
     upiId: "",
     panNumber: "",
@@ -41,7 +44,16 @@ export default function Profile() {
     bankName: "",
     branch: "",
     ifscCode: "",
+    aadharNumber: "",
+    gstNumber: "",
+    incorporationNumber: "",
     kycStatus: "NOT_SUBMITTED",
+    // 🔄 Tracks explicit binary presence properties from server API
+    hasPanDocument: false,
+    hasBankProof: false,
+    hasAadharDocument: false,
+    hasGstDocument: false,
+    hasIncorporationDocument: false,
   });
 
   // Fetch User & KYC Data
@@ -74,7 +86,27 @@ export default function Profile() {
         const res = await fetch(`${API_URL}/api/profile/kyc`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) setKycData(await res.json());
+        if (res.ok) {
+          const data = await res.json();
+          setKycData({
+            upiId: data.upiId || "",
+            panNumber: data.panNumber || "",
+            bankAccount: data.bankAccount || "",
+            accountName: data.accountName || "",
+            bankName: data.bankName || "",
+            branch: data.branch || "",
+            ifscCode: data.ifscCode || "",
+            aadharNumber: data.aadharNumber || "",
+            gstNumber: data.gstNumber || "",
+            incorporationNumber: data.incorporationNumber || "",
+            kycStatus: data.kycStatus || "NOT_SUBMITTED",
+            hasPanDocument: data.hasPanDocument || false,
+            hasBankProof: data.hasBankProof || false,
+            hasAadharDocument: data.hasAadharDocument || false,
+            hasGstDocument: data.hasGstDocument || false,
+            hasIncorporationDocument: data.hasIncorporationDocument || false,
+          });
+        }
       } catch (err) {
         console.error("KYC fetch error:", err);
       }
@@ -126,7 +158,6 @@ export default function Profile() {
   const handleSaveProfile = async () => {
     const token = localStorage.getItem("token");
     try {
-      // Update basic info
       const res = await fetch(`${API_URL}/api/user/update`, {
         method: "PUT",
         headers: {
@@ -138,7 +169,6 @@ export default function Profile() {
       const data = await res.json();
       if (!res.ok) return alert(data.message || "Update failed");
 
-      // Update password if provided
       if (formData.password && formData.newPassword) {
         const passRes = await fetch(`${API_URL}/api/user/change-password`, {
           method: "PUT",
@@ -190,12 +220,19 @@ export default function Profile() {
     formDataObj.append(field, file);
     const token = localStorage.getItem("token");
     try {
-      await fetch(`${API_URL}/api/profile/kyc/documents`, {
+      const res = await fetch(`${API_URL}/api/profile/kyc/documents`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formDataObj,
       });
-      alert("Document Uploaded");
+      if (res.ok) {
+        alert("Document Uploaded Successfully");
+        // 🔄 Immediate state toggle to confirm file write transaction
+        const flagKey = `has${field.charAt(0).toUpperCase() + field.slice(1)}`;
+        setKycData((p) => ({ ...p, [flagKey]: true }));
+      } else {
+        alert("Document upload failed");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -218,7 +255,6 @@ export default function Profile() {
     }
   };
 
-  // Reusable Input Class
   const inputClass = `w-full px-4 py-3 rounded-lg border transition-all ${
     isDark
       ? "bg-gray-800 border-gray-700 text-white focus:border-indigo-500"
@@ -305,104 +341,83 @@ export default function Profile() {
                 className={inputClass}
               />
             </div>
-           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Latitude
-            </label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Latitude</label>
+              <input
+                type="text"
+                step="any"
+                name="companyLatitude"
+                value={formData.companyLatitude}
+                onChange={handleInputChange}
+                className={inputClass}
+                placeholder="13.0623"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Longitude</label>
+              <input
+                type="text"
+                step="any"
+                name="companyLongitude"
+                value={formData.companyLongitude}
+                onChange={handleInputChange}
+                className={inputClass}
+                placeholder="77.5612"
+              />
+            </div>
 
-            <input
-              type="text"
-              step="any"
-              name="companyLatitude"
-              value={formData.companyLatitude}
-              onChange={handleInputChange}
-              className={inputClass}
-              placeholder="13.0623"
-            />
-          </div>
+            <div className="md:col-span-2">
+              <div
+                className={`p-4 rounded-2xl border ${
+                  isDark
+                    ? "bg-gray-900 border-gray-700"
+                    : "bg-blue-50 border-blue-200"
+                }`}
+              >
+                <h3 className="text-lg font-semibold mb-3">
+                  How to Get Latitude & Longitude
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-medium mb-1">💻 For PC / Laptop:</p>
+                    <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+                      Open Google Maps, search your company location, right
+                      click on the exact location, then copy the coordinates.
+                      <br />
+                      Example: <strong>12.9716, 77.5946</strong>
+                      <br />
+                      First value = <strong>Latitude (12.9716)</strong>
+                      <br />
+                      Second value = <strong>Longitude (77.5946)</strong>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium mb-1">📱 For Mobile:</p>
+                    <p className={isDark ? "text-gray-400" : "text-gray-700"}>
+                      Open Google Maps, search your company location, then press
+                      and hold the exact location on the map to drop a pin.
+                      <br />
+                      The coordinates will appear below.
+                      <br />
+                      Example: <strong>12.9716, 77.5946</strong>
+                      <br />
+                      First value = <strong>Latitude (12.9716)</strong>
+                      <br />
+                      Second value = <strong>Longitude (77.5946)</strong>
+                    </p>
+                  </div>
+                  <a
+                    href="https://www.youtube.com/watch?v=GUenyBF9C5I"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition"
+                  >
+                    ▶ Watch Tutorial Video
+                  </a>
+                </div>
+              </div>
+            </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Longitude
-          </label>
-
-          <input
-            type="text"
-            step="any"
-            name="companyLongitude"
-            value={formData.companyLongitude}
-            onChange={handleInputChange}
-            className={inputClass}
-            placeholder="77.5612"
-          />
-        </div>
-<div className="md:col-span-2">
-  <div
-    className={`p-4 rounded-2xl border ${
-      isDark
-        ? "bg-gray-900 border-gray-700"
-        : "bg-blue-50 border-blue-200"
-    }`}
-  >
-    <h3 className="text-lg font-semibold mb-3">
-      How to Get Latitude & Longitude
-    </h3>
-
-    <div className="space-y-3 text-sm">
-      <div>
-        <p className="font-medium mb-1">
-          💻 For PC / Laptop:
-        </p>
-
-        <p className={isDark ? "text-gray-400" : "text-gray-700"}>
-          Open Google Maps, search your company location, right click on the
-          exact location, then copy the coordinates.
-
-          <br />
-          Example: <strong>12.9716, 77.5946</strong>
-
-          <br />
-          First value = <strong>Latitude (12.9716)</strong>
-
-          <br />
-          Second value = <strong>Longitude (77.5946)</strong>
-        </p>
-      </div>
-
-      <div>
-        <p className="font-medium mb-1">
-          📱 For Mobile:
-        </p>
-
-        <p className={isDark ? "text-gray-400" : "text-gray-700"}>
-          Open Google Maps, search your company location, then press and hold
-          the exact location on the map to drop a pin.
-
-          <br />
-          The coordinates will appear below.
-
-          <br />
-          Example: <strong>12.9716, 77.5946</strong>
-
-          <br />
-          First value = <strong>Latitude (12.9716)</strong>
-
-          <br />
-          Second value = <strong>Longitude (77.5946)</strong>
-        </p>
-      </div>
-
-      <a
-        href="https://www.youtube.com/watch?v=GUenyBF9C5I"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition"
-      >
-        ▶ Watch Tutorial Video
-      </a>
-    </div>
-  </div>
-</div>
             <div className="space-y-2 relative">
               <label className="text-sm font-medium">Current Password</label>
               <input
@@ -441,23 +456,20 @@ export default function Profile() {
             <Save size={18} /> Save Changes
           </button>
         </div>
-          <div
-            className={`p-6 rounded-2xl shadow-sm border ${
-              isDark
-                ? "bg-gray-800 border-gray-700"
-                : "bg-white border-gray-200"
-            }`}
-          >
-            <h2 className="text-xl font-bold mb-4">
-              Company Location
-            </h2>
 
+        <div
+          className={`p-6 rounded-2xl shadow-sm border ${
+            isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+          }`}
+        >
+          <h2 className="text-xl font-bold mb-4">Company Location</h2>
           <CompanyLocationMap
             latitude={formData.companyLatitude}
             longitude={formData.companyLongitude}
             companyName={formData.companyName}
           />
-          </div>
+        </div>
+
         {/* KYC Section */}
         <div
           className={`p-8 rounded-2xl shadow-sm border ${
@@ -550,19 +562,127 @@ export default function Profile() {
                 placeholder="ABCDE1234F"
               />
             </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Upload PAN Document</label>
+              <label className="text-sm font-medium">Aadhar Number</label>
+              <input
+                name="aadharNumber"
+                value={kycData.aadharNumber || ""}
+                onChange={handleInputChange}
+                className={inputClass}
+                placeholder="0000 0000 0000"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">GST Number</label>
+              <input
+                name="gstNumber"
+                value={kycData.gstNumber || ""}
+                onChange={handleInputChange}
+                className={inputClass}
+                placeholder="22AAAAA0000A1Z5"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Incorporation Certificate Number
+              </label>
+              <input
+                name="incorporationNumber"
+                value={kycData.incorporationNumber || ""}
+                onChange={handleInputChange}
+                className={inputClass}
+                placeholder="U12345KA2026PTC000000"
+              />
+            </div>
+
+            {/* DOCUMENT FILES SEGMENT */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Upload PAN Document
+                </label>
+                {kycData.hasPanDocument && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 border border-emerald-500/20">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
               <input
                 type="file"
                 onChange={(e) => handleDocumentUpload(e, "panDocument")}
                 className={`${inputClass} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100`}
               />
             </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Upload Bank Proof</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Upload Bank Proof</label>
+                {kycData.hasBankProof && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 border border-emerald-500/20">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
               <input
                 type="file"
                 onChange={(e) => handleDocumentUpload(e, "bankProofDocument")}
+                className={`${inputClass} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Upload Aadhar Card
+                </label>
+                {kycData.hasAadharDocument && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 border border-emerald-500/20">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
+              <input
+                type="file"
+                onChange={(e) => handleDocumentUpload(e, "aadharDocument")}
+                className={`${inputClass} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Upload GST Document
+                </label>
+                {kycData.hasGstDocument && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 border border-emerald-500/20">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
+              <input
+                type="file"
+                onChange={(e) => handleDocumentUpload(e, "gstDocument")}
+                className={`${inputClass} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Upload Incorporation Certificate
+                </label>
+                {kycData.hasIncorporationDocument && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20 border border-emerald-500/20">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
+              <input
+                type="file"
+                onChange={(e) =>
+                  handleDocumentUpload(e, "incorporationDocument")
+                }
                 className={`${inputClass} file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100`}
               />
             </div>

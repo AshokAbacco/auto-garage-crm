@@ -5,19 +5,70 @@ import * as notificationService from "../services/notification.service.js"; // �
 import { PrismaClient } from "@prisma/client";
 import { uploadToR2 } from "../utils/r2Upload.js";
 import * as dispatchService from "../services/dispatch.service.js";
-import { notifyGarage } from "../services/socket.service.js";
+import { notifyGarage, notifyClient } from "../services/socket.service.js";
 
 const prisma = new PrismaClient();
 
+// 🆕 Must match booking.service.js's RESPONSE_WINDOW_MS (30s) and the
+// popup's countdown. Run before any booking list is returned so the UI
+// always reflects the true current state, not just at accept-time.
+const RESPONSE_WINDOW_MS = 30 * 1000;
+
+const sweepExpiredBookings = async (where) => {
+  try {
+    const cutoff = new Date(Date.now() - RESPONSE_WINDOW_MS);
+    await prisma.marketplaceBooking.updateMany({
+      where: { ...where, status: "PENDING", createdAt: { lt: cutoff } },
+      data: { status: "TIMEOUT" },
+    });
+  } catch (e) {
+    console.error("⚠️ sweepExpiredBookings failed:", e.message);
+  }
+};
+
 // ==============================
-// SERVICES (App View)
+// SERVICES (App View / Catalog Builder)
 // ==============================
 export const getServices = async (req, res) => {
   try {
-    const { vehicleTypeId } = req.query;
-    const data = await marketplaceService.getServices(vehicleTypeId);
+    // 🧼 FORCE CACHE PURGING VIA HTTP HEADERS (Bypasses browser 304 caching completely)
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+
+    const { vehicleTypeId, vehicleType } = req.query;
+
+    // 🎯 Resolve workspace context, prioritizing explicit frontend query inputs over fallback JWT keys
+    const activeCrmType = vehicleType || req.user?.crmType;
+
+    console.log("====================================================");
+    console.log(
+      "🔍 [DEBUG] [MARKETPLACE CONTROLLER] -> getServices API Route Triggered",
+    );
+    console.log(
+      `   ↳ req.query.vehicleType (URL Query): ${vehicleType ? `"${vehicleType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   ↳ req.user.crmType (Token Auth Payload): ${req.user?.crmType ? `"${req.user.crmType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   🚀 FINAL RESOLVED CRM FILTER PASSED DOWNSTREAM: "${activeCrmType ? activeCrmType.toUpperCase() : "CAR"}"`,
+    );
+    console.log("====================================================");
+
+    const data = await marketplaceService.getServices(
+      vehicleTypeId,
+      activeCrmType,
+    );
     res.json({ success: true, data });
   } catch (err) {
+    console.error(
+      "❌ [DEBUG] [MARKETPLACE CONTROLLER] Failure inside getServices:",
+      err.message,
+    );
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -42,19 +93,36 @@ export const getGarages = async (req, res) => {
 // ==============================
 // CREATE BOOKING
 // ==============================
-// ==============================
-// CREATE BOOKING
-// ==============================
 export const createBooking = async (req, res) => {
   try {
-    const { 
-      externalServiceId, 
-      garageId, 
-      clientId, 
-      scheduledAt, 
+    const {
+      externalServiceId,
+      garageId,
+      clientId,
+      scheduledAt,
       appPrice,
       carType,
-      serviceName 
+      serviceName,
+
+      // 🆕 Structured multi-service / package breakdown
+      services,
+      packageId,
+      packageName,
+
+      // 🆕 Customer notes / special instructions
+      notes,
+
+      // 🆕 Pickup / drop details
+      pickupRequired,
+      pickupAddress,
+      dropAddress,
+
+      // 🆕 Vehicle details snapshot
+      vehicleMake,
+      vehicleModel,
+      vehicleRegNumber,
+      vehicleYear,
+      vehicleFuelType,
     } = req.body;
 
     // 1. Validation check
@@ -64,24 +132,38 @@ export const createBooking = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // 2. Prepare Data 
-    // We remove the strict Number() casting here to allow the Service layer 
-    // and Prisma to handle the ID mapping based on your schema (Int vs UUID).
+    // 2. Prepare Data
     const bookingData = {
       externalServiceId,
-      garageId: garageId, 
-      clientId: clientId, 
+      garageId: garageId,
+      clientId: clientId,
       scheduledAt,
       appPrice: appPrice ? Number(appPrice) : null,
       carType: carType || "SEDAN",
       serviceName: serviceName || null,
+
+      // 🆕 Pass through the previously-dropped fields
+      services: Array.isArray(services) ? services : null,
+      packageId: packageId ? Number(packageId) : null,
+      packageName: packageName || null,
+
+      notes: notes || null,
+
+      pickupRequired: Boolean(pickupRequired),
+      pickupAddress: pickupAddress || null,
+      dropAddress: dropAddress || null,
+
+      vehicleMake: vehicleMake || null,
+      vehicleModel: vehicleModel || null,
+      vehicleRegNumber: vehicleRegNumber || null,
+      vehicleYear: vehicleYear ? Number(vehicleYear) : null,
+      vehicleFuelType: vehicleFuelType || null,
     };
 
     // 3. Call Service Layer
     const booking = await marketplaceService.createBooking(bookingData);
 
     // 4. Fire-and-forget side effects
-    // Ensure we use the garageId as it exists in the created booking record
     const targetGarageId = booking.garageId || garageId;
 
     try {
@@ -98,12 +180,11 @@ export const createBooking = async (req, res) => {
 
     // 5. Success Response
     res.json({ success: true, data: booking });
-
   } catch (err) {
     console.error("BOOKING ERROR DETAILS:", err);
-    res.status(400).json({ 
-      success: false, 
-      message: err.message || "An error occurred while creating the booking" 
+    res.status(400).json({
+      success: false,
+      message: err.message || "An error occurred while creating the booking",
     });
   }
 };
@@ -122,15 +203,26 @@ export const getBooking = async (req, res) => {
 
 // ==============================
 // ACCEPT BOOKING
-// 🔔 Stores a USER-scoped AppNotification in CRM DB for that client's phone
 // ==============================
 export const acceptBooking = async (req, res) => {
   try {
-    await bookingService.acceptBooking(req.params.id);
+    const result = await bookingService.acceptBooking(req.params.id);
 
     notificationService
       .notifyBookingAccepted(req.params.id)
       .catch((e) => console.error("NOTIFICATION (accept) ERROR:", e.message));
+
+    // 🆕 Real-time push to Motor Konnect (customer app)
+    const clientPhone = result?.booking?.client?.phone;
+    if (clientPhone) {
+      notifyClient(clientPhone, result.booking).catch((e) =>
+        console.error("SOCKET NOTIFY (accept) ERROR:", e.message),
+      );
+    } else {
+      console.warn(
+        "⚠️ acceptBooking: no client phone available, skipping socket push",
+      );
+    }
 
     res.json({ success: true });
   } catch (err) {
@@ -140,15 +232,26 @@ export const acceptBooking = async (req, res) => {
 
 // ==============================
 // REJECT BOOKING
-// 🔔 Stores a USER-scoped AppNotification in CRM DB for that client's phone
 // ==============================
 export const rejectBooking = async (req, res) => {
   try {
-    await bookingService.rejectBooking(req.params.id);
+    const result = await bookingService.rejectBooking(req.params.id);
 
     notificationService
       .notifyBookingRejected(req.params.id)
       .catch((e) => console.error("NOTIFICATION (reject) ERROR:", e.message));
+
+    // 🆕 Real-time push to Motor Konnect (customer app)
+    const clientPhone = result?.booking?.client?.phone;
+    if (clientPhone) {
+      notifyClient(clientPhone, result.booking).catch((e) =>
+        console.error("SOCKET NOTIFY (reject) ERROR:", e.message),
+      );
+    } else {
+      console.warn(
+        "⚠️ rejectBooking: no client phone available, skipping socket push",
+      );
+    }
 
     res.json({ success: true });
   } catch (err) {
@@ -163,9 +266,25 @@ export const getAllBookings = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    await sweepExpiredBookings({ garageId: userId }); // 🆕
+
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { garageId: userId },
-      include: { service: true },
+      include: {
+        service: true,
+        client: {
+          select: {
+            fullName: true,
+            phone: true,
+            email: true,
+            vehicleMake: true,
+            vehicleModel: true,
+            vehicleYear: true,
+            regNumber: true,
+            fuel: true,
+          },
+        },
+      },
       orderBy: { scheduledAt: "desc" },
     });
 
@@ -176,6 +295,29 @@ export const getAllBookings = async (req, res) => {
       price: b.finalPrice,
       scheduledAt: b.scheduledAt,
       garageId: b.garageId,
+
+      // 🆕 Client details (from the Client/App-User record)
+      clientName: b.client?.fullName || null,
+      clientPhone: b.client?.phone || null,
+      clientEmail: b.client?.email || null,
+
+      // 🆕 Vehicle details — booking-specific snapshot takes priority
+      // (this is what the customer selected for THIS booking), falling
+      // back to the client's generic profile vehicle if not sent.
+      vehicleMake: b.vehicleMake || b.client?.vehicleMake || null,
+      vehicleModel: b.vehicleModel || b.client?.vehicleModel || null,
+      vehicleYear: b.vehicleYear || b.client?.vehicleYear || null,
+      vehicleRegNumber: b.vehicleRegNumber || b.client?.regNumber || null,
+      vehicleFuelType: b.vehicleFuelType || b.client?.fuel || null,
+      carType: b.carType || null,
+
+      // 🆕 Full booking details for the garage owner
+      services: b.services || null,
+      packageName: b.packageName || null,
+      notes: b.notes || null,
+      pickupRequired: b.pickupRequired || false,
+      pickupAddress: b.pickupAddress || null,
+      dropAddress: b.dropAddress || null,
     }));
 
     res.json({ success: true, data: formatted });
@@ -186,29 +328,61 @@ export const getAllBookings = async (req, res) => {
 
 // ==============================
 // GET GARAGE SERVICES (PRICING SETTINGS)
-// Now reads pricing from external App DB via service layer
+// Reads pricing from external App DB filtered contextualized by crmType
 // ==============================
 export const getGarageServices = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // 🧼 FORCE CACHE PURGING VIA HTTP HEADERS (Bypasses browser 304 caching completely)
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
 
-    // Use the new service function that reads pricing from external DB
-    const services =
-      await marketplaceService.getGarageServicesWithPricing(userId);
+    const userId = req.user.id;
+    const { vehicleType } = req.query;
+
+    // 🎯 Resolve workspace context, prioritizing explicit frontend query inputs over fallback JWT keys
+    const activeCrmType = vehicleType || req.user?.crmType;
+
+    console.log("====================================================");
+    console.log(
+      "🔍 [DEBUG] [MARKETPLACE CONTROLLER] -> getGarageServices API Route Triggered",
+    );
+    console.log(
+      `   ↳ req.query.vehicleType (URL Query): ${vehicleType ? `"${vehicleType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   ↳ req.user.crmType (Token Auth Payload): ${req.user?.crmType ? `"${req.user.crmType}"` : "None Provided"}`,
+    );
+    console.log(
+      `   🚀 FINAL RESOLVED CRM FILTER PASSED DOWNSTREAM: "${activeCrmType ? activeCrmType.toUpperCase() : "CAR"}"`,
+    );
+    console.log("====================================================");
+
+    // Pass dynamic workspace target to restrict returned service configurations
+    const services = await marketplaceService.getGarageServicesWithPricing(
+      userId,
+      activeCrmType,
+    );
 
     res.json({ success: true, data: services });
   } catch (err) {
+    console.error(
+      "❌ [DEBUG] [MARKETPLACE CONTROLLER] Failure inside getGarageServices:",
+      err.message,
+    );
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 // ==============================
 // SAVE GARAGE SERVICE + PRICING
-// Now writes pricing to external App DB
 // ==============================
 export const saveGarageService = async (req, res) => {
   try {
-    console.log("BODY:", req.body);  
+    console.log("BODY:", req.body);
     const userId = req.user.id;
     const { serviceId, isActive, duration, pricing } = req.body;
 
@@ -234,7 +408,6 @@ export const saveGarageService = async (req, res) => {
 
 // ==============================
 // PACKAGES — CREATE
-// 🔔 Stores a GLOBAL AppNotification so every app user sees the new bundle
 // ==============================
 export const createPackage = async (req, res) => {
   try {
@@ -260,7 +433,6 @@ export const createPackage = async (req, res) => {
       description,
     });
 
-    // 🔔 Create GLOBAL notification in CRM DB — fire-and-forget
     notificationService
       .notifyNewPackage(data.id, userId)
       .catch((e) =>
@@ -350,7 +522,7 @@ export const togglePackage = async (req, res) => {
 // ==============================
 export const updateServiceDetails = async (req, res) => {
   try {
-    console.log("BODY:", req.body);  
+    console.log("BODY:", req.body);
     const { id } = req.params;
     let { description, isActive, pricing } = req.body;
     const isLocalId = !isNaN(Number(id));
@@ -455,6 +627,8 @@ export const getMyBookings = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
+    await sweepExpiredBookings({ clientId: client.id }); // 🆕
+
     const bookings = await prisma.marketplaceBooking.findMany({
       where: { clientId: client.id },
       include: {
@@ -475,6 +649,17 @@ export const getMyBookings = async (req, res) => {
       finalPrice: b.finalPrice,
       carType: b.carType,
       createdAt: b.createdAt,
+
+      // 🆕 Full booking details for the customer
+      services: b.services || null,
+      packageName: b.packageName || null,
+      notes: b.notes || null,
+      pickupRequired: b.pickupRequired || false,
+      pickupAddress: b.pickupAddress || null,
+      dropAddress: b.dropAddress || null,
+      vehicleMake: b.vehicleMake || null,
+      vehicleModel: b.vehicleModel || null,
+      vehicleRegNumber: b.vehicleRegNumber || null,
     }));
 
     res.json({ success: true, data: formatted });

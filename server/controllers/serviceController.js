@@ -2,6 +2,7 @@
 import prisma from "../models/prismaClient.js";
 import { uploadToR2 } from "../utils/r2Upload.js";
 import { sendWhatsAppTemplate } from "../services/whatsappService.js";
+
 /**
  * Convert a media file record to a data: URI string (defensive for Buffers, Uint8Array, Array, base64 strings).
  * Expects file to have at least: { data, mimeType, type } where data may be Buffer/Uint8Array/Array/string.
@@ -96,7 +97,7 @@ export const getServices = async (req, res) => {
       include: {
         client: { select: { id: true, fullName: true, regNumber: true } },
         category: true,
-        subService: true,
+        subServices: true, // 🔄 FIXED: Plural field array match
         serviceCostItems: true,
       },
       orderBy: { date: "desc" },
@@ -149,7 +150,7 @@ export const getServicesByClient = async (req, res) => {
         services: {
           include: {
             category: { select: { id: true, name: true } },
-            subService: { select: { id: true, name: true } },
+            subServices: { select: { id: true, name: true } }, // 🔄 FIXED: Plural field array match
             serviceCostItems: true,
           },
           orderBy: { date: "desc" },
@@ -228,7 +229,7 @@ export const getServiceById = async (req, res) => {
       include: {
         client: true,
         category: true,
-        subService: true,
+        subServices: true, // 🔄 FIXED: Plural field array match
         serviceCostItems: true,
       },
     });
@@ -249,14 +250,6 @@ export const getServiceById = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch service" });
   }
 };
-
-/* ============================================================
-   ➕ Create a New Service (with GST fields)
-   @route   POST /api/services
-   @access  Private
-============================================================ *
-
-import prisma from "../models/prismaClient.js";
 
 /* ============================================================
    🛡️ SAFE DATE PARSER (CRITICAL FIX)
@@ -330,7 +323,7 @@ export const createService = async (req, res) => {
     const {
       clientId,
       categoryId,
-      subServiceId,
+      subServiceIds, // 🔄 Extracted array from frontend form logic payload
       notes,
       serviceInDate,
       serviceOutDate,
@@ -384,6 +377,22 @@ export const createService = async (req, res) => {
     const totals = calculateTotals(parsedItems);
 
     /* ----------------------------------------
+       🔄 BUILD SUB-SERVICES RELATION MAPPING
+    ---------------------------------------- */
+    let connectedSubServices = [];
+    if (subServiceIds) {
+      const parsedIds =
+        typeof subServiceIds === "string"
+          ? JSON.parse(subServiceIds)
+          : subServiceIds;
+      if (Array.isArray(parsedIds)) {
+        connectedSubServices = parsedIds.map((subId) => ({
+          id: parseInt(subId),
+        }));
+      }
+    }
+
+    /* ----------------------------------------
        4️⃣ CREATE SERVICE
     ---------------------------------------- */
     const service = await prisma.service.create({
@@ -407,7 +416,10 @@ export const createService = async (req, res) => {
 
         clientId: parseInt(clientId),
         categoryId: categoryId ? parseInt(categoryId) : null,
-        subServiceId: subServiceId ? parseInt(subServiceId) : null,
+        // Establish implicit dynamic join mappings
+        subServices: {
+          connect: connectedSubServices,
+        },
       },
     });
 
@@ -486,7 +498,7 @@ export const updateService = async (req, res) => {
 
     const {
       categoryId,
-      subServiceId,
+      subServiceIds, // 🔄 Track updated structural array selections
       notes,
       serviceInDate,
       serviceOutDate,
@@ -510,6 +522,22 @@ export const updateService = async (req, res) => {
 
     const totals = calculateTotals(parsedItems);
 
+    /* ----------------------------------------
+       🔄 BUILD SUB-SERVICES MIGRATION MAPPING
+    ---------------------------------------- */
+    let connectedSubServices = [];
+    if (subServiceIds) {
+      const parsedIds =
+        typeof subServiceIds === "string"
+          ? JSON.parse(subServiceIds)
+          : subServiceIds;
+      if (Array.isArray(parsedIds)) {
+        connectedSubServices = parsedIds.map((subId) => ({
+          id: parseInt(subId),
+        }));
+      }
+    }
+
     const updateData = {
       date: inDate || undefined,
       serviceInDate: inDate || undefined,
@@ -527,7 +555,10 @@ export const updateService = async (req, res) => {
       cost: totals.totalCost,
 
       categoryId: categoryId ? parseInt(categoryId) : undefined,
-      subServiceId: subServiceId ? parseInt(subServiceId) : undefined,
+      // Completely reset references matching implicit schema requirements
+      subServices: {
+        set: connectedSubServices,
+      },
     };
 
     Object.keys(updateData).forEach(
@@ -559,23 +590,21 @@ export const updateService = async (req, res) => {
       });
     }
 
-    // 🔥 FIXED: SAVE MEDIA FILES ON UPDATE
+    // SAVE MEDIA FILES ON UPDATE
     if (req.files?.length) {
       for (const file of req.files) {
-        // 1️⃣ Upload to R2
         const { url } = await uploadToR2({
           buffer: file.buffer,
           mimeType: file.mimetype,
-          serviceId: service.id, // ✅ FIX
+          serviceId: service.id,
         });
 
-        // 2️⃣ Save metadata + URL
         await prisma.serviceMedia.create({
           data: {
-            serviceId: service.id, // ✅ FIX
+            serviceId: service.id,
             fileName: file.originalname,
             mimeType: file.mimetype,
-            mediaUrl: url, // ✅ REQUIRED
+            mediaUrl: url,
           },
         });
       }
@@ -765,7 +794,8 @@ export const getServiceForBilling = async (req, res) => {
             name: true,
           },
         },
-        subService: {
+        subServices: {
+          // 🔄 FIXED: Plural dynamic many-to-many lookup
           select: {
             name: true,
           },
@@ -823,7 +853,6 @@ export const sendVehicleReadyWhatsApp = async (req, res) => {
       ],
     });
 
-    // ✅ THIS WAS MISSING
     const updatedService = await prisma.service.update({
       where: { id: service.id },
       data: {
@@ -842,4 +871,3 @@ export const sendVehicleReadyWhatsApp = async (req, res) => {
     res.status(500).json({ message: "Failed to send notification" });
   }
 };
-

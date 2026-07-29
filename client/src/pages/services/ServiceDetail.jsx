@@ -60,26 +60,30 @@ const apiRequest = async (url, options = {}) => {
 };
 
 // Helper Component for Info Grids
-const InfoItem = ({ icon: Icon, label, value, colorClass, isDark }) => (
+const InfoItem = ({ icon: Icon, label, value, renderCustom, colorClass, isDark }) => (
   <div className="flex items-start gap-3 p-3 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-colors">
     <div className={`p-2.5 rounded-lg ${colorClass} bg-opacity-10 shrink-0`}>
       <Icon className={`w-5 h-5 ${colorClass.replace("bg-", "text-")}`} />
     </div>
-    <div className="overflow-hidden">
+    <div className="overflow-hidden w-full">
       <p
-        className={`text-xs font-medium mb-0.5 ${
+        className={`text-xs font-medium mb-1 ${
           isDark ? "text-gray-400" : "text-gray-500"
         }`}
       >
         {label}
       </p>
-      <p
-        className={`font-semibold text-sm truncate ${
-          isDark ? "text-gray-100" : "text-gray-900"
-        }`}
-      >
-        {value}
-      </p>
+      {renderCustom ? (
+        renderCustom()
+      ) : (
+        <p
+          className={`font-semibold text-sm truncate ${
+            isDark ? "text-gray-100" : "text-gray-900"
+          }`}
+        >
+          {value}
+        </p>
+      )}
     </div>
   </div>
 );
@@ -95,7 +99,6 @@ export default function ServiceDetail() {
 
   const loadService = async () => {
     try {
-      // Don't set loading to true here to avoid flickering on refresh
       const res = await apiRequest(`/api/services/${id}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to load service");
@@ -192,7 +195,8 @@ export default function ServiceDetail() {
     dueDate: "",
     notes: service.notes || "",
     serviceCategory: service.category?.name || "",
-    serviceSubCategory: service.subService?.name || "",
+    // 🔄 UPDATED: Join selected items gracefully for generic downstream string rendering templates
+    serviceSubCategory: service.subServices?.map(sub => sub.name).join(", ") || "General",
     serviceNotes: service.notes || "",
     clientId: service.client?.id,
     costItems: costItems,
@@ -218,7 +222,6 @@ export default function ServiceDetail() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to send WhatsApp");
 
-      // 🔁 Refresh service after sending
       const refresh = await apiRequest(`/api/services/${service.id}`);
       const updated = await refresh.json();
       setService(updated);
@@ -241,7 +244,6 @@ export default function ServiceDetail() {
 
       if (res.ok) {
         toast.success("Ready alert sent & Status updated to Paid!");
-        // This will now correctly refresh the UI state from the DB
         loadService();
       } else {
         const errData = await res.json();
@@ -258,6 +260,7 @@ export default function ServiceDetail() {
         isDark ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
     >
+      <Toaster position="top-right" />
       {/* Top Navigation Bar */}
       <div
         className={`sticky top-0 z-20 px-4 sm:px-6 py-3 sm:py-4 backdrop-blur-md border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
@@ -288,7 +291,7 @@ export default function ServiceDetail() {
           </div>
         </div>
 
-        {/* Right Side: Actions - Now Scrollable on small mobile */}
+        {/* Right Side: Actions */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
           {service.approvalStatus === "READY_SENT" ? (
             <div className="flex shrink-0 items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-xl text-xs sm:text-sm font-bold border border-green-200">
@@ -345,13 +348,37 @@ export default function ServiceDetail() {
                     colorClass="bg-blue-500"
                     isDark={isDark}
                   />
+                  
+                  {/* 🔄 REDESIGNED: Multiple Sub-Services List View layout block */}
                   <InfoItem
                     icon={FiTool}
-                    label="Service Type"
-                    value={service.subService?.name || "General"}
+                    label="Sub-Services Included"
                     colorClass="bg-indigo-500"
                     isDark={isDark}
+                    renderCustom={() => (
+                      <div className="flex flex-wrap gap-1.5 mt-1 max-w-full">
+                        {service.subServices && service.subServices.length > 0 ? (
+                          service.subServices.map((sub, idx) => (
+                            <span
+                              key={sub.id || idx}
+                              className={`text-xs px-2.5 py-1 rounded-md font-semibold border tracking-wide whitespace-nowrap ${
+                                isDark
+                                  ? "bg-gray-900/40 text-indigo-400 border-indigo-500/20"
+                                  : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              }`}
+                            >
+                              {sub.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm font-medium text-gray-400 italic">
+                            General Service
+                          </span>
+                        )}
+                      </div>
+                    )}
                   />
+
                   <InfoItem
                     icon={FiCalendar}
                     label="Service Date"
@@ -539,8 +566,6 @@ export default function ServiceDetail() {
           {/* --- RIGHT COLUMN (Cost Summary & Actions) --- */}
           <div className="lg:col-span-1">
             <div className="space-y-6">
-              {" "}
-              {/* Removed sticky top-24 here */}
               {/* Cost Breakdown Card */}
               <div
                 className={`${cardClass} overflow-hidden border-t-4 border-t-green-500`}
@@ -550,7 +575,7 @@ export default function ServiceDetail() {
                     <FaRupeeSign className="text-green-500" /> Cost Summary
                   </h2>
 
-                  {/* Scrollable list - Increased Max Height */}
+                  {/* Scrollable list */}
                   <div className="max-h-[500px] overflow-y-auto pr-1 space-y-4 custom-scrollbar mb-4">
                     {costItems.length > 0 ? (
                       costItems.map((item, idx) => (
@@ -620,6 +645,7 @@ export default function ServiceDetail() {
                   </div>
                 </div>
               </div>
+
               {/* Action Card */}
               <div className={cardClass}>
                 <div className="p-6">
@@ -701,27 +727,6 @@ export default function ServiceDetail() {
                   >
                     <FiClipboard className="w-5 h-5" /> Generate Invoice
                   </Link>
-
-                  {/* <div className="grid grid-cols-2 gap-3 mt-3">
-                    <button
-                      className={`flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold border transition-colors ${
-                        isDark
-                          ? "bg-green-900/20 border-green-800 text-green-400 hover:bg-green-900/40"
-                          : "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                      }`}
-                    >
-                      <FaWhatsapp className="w-5 h-5" /> WhatsApp
-                    </button>
-                    <button
-                      className={`flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold border transition-colors ${
-                        isDark
-                          ? "bg-blue-900/20 border-blue-800 text-blue-400 hover:bg-blue-900/40"
-                          : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                      }`}
-                    >
-                      <FiSmartphone className="w-5 h-5" /> SMS
-                    </button>
-                  </div> */}
                 </div>
               </div>
             </div>

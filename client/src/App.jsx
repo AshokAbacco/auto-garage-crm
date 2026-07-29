@@ -80,6 +80,7 @@ import BikeProfile from "./components/BikeProfile.jsx";
 import ProformaInvoice from "./pages/billing/ProformaInvoice.jsx";
 import StaffManagement from "./pages/carStaff/CarStaffManagement.jsx";
 import SalaryManagement from "./pages/carStaff/CarSalaryManagement.jsx";
+import InventoryManage from "./pages/inventoryManagement/InventoryManage.jsx";
 
 import WashDashboard from "./washPages/WashDashboard.jsx";
 import ClientsDetails from "./washPages/client/ClientsDetails.jsx";
@@ -164,6 +165,11 @@ function App() {
               // Edit billing
               <Route path="/billing/:id" element={<Invoice />} />
               <Route path="/reminders" element={<RemindersList />} />
+
+              <Route path="/inventory-management" element={<InventoryManage />} />
+              <Route path="/inventory-management/:id" element={<InventoryManage />} />
+              <Route path="/inventory-management/new" element={<InventoryManage />} />
+              
               <Route path="/reports" element={<Reports />} />
               <Route path="/details" element={<DetailsPage />} />
               <Route path="/ocr-Scanner" element={<DetailsPage />} />

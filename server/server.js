@@ -69,6 +69,11 @@ import userKycRoutes from "./routes/userKyc.routes.js";
 import marketplaceRoutes from "./routes/marketplace.routes.js";
 import externalRoutes from "./externalApi/external.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+// Import the new verification router layer
+import garageVerificationRoutes from "./routes/garageVerification.routes.js";
+import inventoryRoutes from "./routes/carInventoryRoutes.js";
+
+
 
 // console.log("Models in Prisma:", Object.keys(prisma));
 
@@ -163,6 +168,9 @@ app.use("/api/payments", paymentRoutes);
 ----------------------------------------------------- */
 app.use("/api/v1/external", externalRoutes);
 
+// Mount the verification endpoint track
+app.use("/api/garage-verification", garageVerificationRoutes);
+
 /* -----------------------------------------------------
    🧠 Health Check Route
 ----------------------------------------------------- */
@@ -200,7 +208,7 @@ app.use("/api/bikes-team", bikeTeamRoutes);
 
 //car company names and models
 app.use("/api/cars", carRoutes);
-
+app.use("/api/car-inventory", inventoryRoutes);
 app.use("/api/car-staff", carStaffRoutes);
 app.use("/api/staff-auth", staffAuthRoutes);
 app.use("/api/carstaff-salary", carstaffSalaryRoutes);

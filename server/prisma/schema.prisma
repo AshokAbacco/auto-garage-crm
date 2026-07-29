@@ -66,6 +66,14 @@ enum PayoutStatus {
   PAID
 }
 
+enum VerificationStatus {
+  NOT_ORDERED
+  PAID_PENDING_DOCS // Paid ₹199, documents not uploaded yet
+  UNDER_REVIEW // Documents uploaded, waiting for MotorDesk admin
+  VERIFIED // Approved! Badge is active
+  REJECTED // Verification failed (bad scan, wrong details)
+}
+
 model User {
   id               Int     @id @default(autoincrement())
   email            String  @unique
@@ -79,6 +87,10 @@ model User {
   companyLongitude Float?
   companyAddress   String?
   gstNumber        String?
+
+  // 🚗 NEW: Garage Configurations
+  pickupDrop    Boolean @default(false)
+  towingService Boolean @default(false)
 
   // 👑 ROLE (ONLY OWNER)
   role        String    @default("user") // DO NOT STORE TEAM HERE
@@ -109,6 +121,17 @@ model User {
 
   bankProofDocument Bytes?
   bankProofType     String?
+
+  // 🔄 NEW: Identity, Registration numbers & Document Buffers
+  aadharNumber        String?
+  incorporationNumber String?
+
+  aadharDocument            Bytes?
+  aadharDocumentType        String?
+  gstDocument               Bytes?
+  gstDocumentType           String?
+  incorporationDocument     Bytes?
+  incorporationDocumentType String?
 
   kycStatus String @default("NOT_SUBMITTED")
 
@@ -174,6 +197,43 @@ model User {
   garageMarketplaceServices GarageMarketplaceService[]
   marketplaceBookings       MarketplaceBooking[]
   marketplacePackages       MarketplacePackage[]
+
+  // Inventory
+  inventory Inventory[]
+
+  //Add supplier
+  suppliers Supplier[]
+
+  // 🏅 1:1 REVERSE RELATION TO GARAGE VERIFICATION MODEL
+  garageVerification GarageVerification?
+}
+
+model GarageVerification {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique // 1:1 constraint with User
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 🪙 Order Tracking
+  status    VerificationStatus @default(NOT_ORDERED)
+  paymentId String? // Razorpay payment ID for tracking the ₹199
+  paidAt    DateTime?
+
+  // 📝 Document Text Meta (For easy indexing/admin view)
+  panNumber       String?
+  aadharNumber    String?
+  garageRegNumber String?
+  gstNumber       String? // Optional
+
+  // 📂 Cloudflare R2 Storage Keys (Secure path strings)
+  panDocKey       String? // e.g., "verifications/user_42/pan.pdf"
+  aadharDocKey    String?
+  garageRegDocKey String?
+  gstDocKey       String? // Optional
+
+  // 🛠️ Audit Logs
+  adminNotes String? // Reason for rejection if any
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 //car db schemas
@@ -234,37 +294,49 @@ model Service {
   assignedMechanic String?
   advancePaid      Float?    @default(0)
 
-  // ✅ APPROVAL WORKFLOW (FIXED)
-  approvalStatus String? // ❌ NO DEFAULT
+  approvalStatus String?
   approvalNote   String?
   approvalAt     DateTime?
   approvalSource WhatsAppApprovalSource?
 
-  clientId     Int
-  categoryId   Int?
-  subServiceId Int?
-  invoiceId    Int?
+  clientId   Int
+  categoryId Int?
+  invoiceId  Int?
+
+  subServices SubService[]
 
   mediaFiles ServiceMedia[]
 
-  client     Client           @relation(fields: [clientId], references: [id])
-  invoice    Invoice?         @relation(fields: [invoiceId], references: [id])
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id])
-  subService SubService?      @relation(fields: [subServiceId], references: [id])
+  client   Client           @relation(fields: [clientId], references: [id])
+  invoice  Invoice?         @relation(fields: [invoiceId], references: [id])
+  category ServiceCategory? @relation(fields: [categoryId], references: [id])
 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   serviceCostItems ServiceCostItem[]
   whatsAppSessions WhatsAppSession[]
   whatsAppMessages WhatsAppMessage[]
 
-  // ===== REVIEW SYSTEM =====
   reviewSentAt    DateTime?
   reviewRating    Int?
   reviewSource    String?
   reviewMessageId String?
 
   @@index([clientId])
+}
+
+model SubService {
+  id         Int    @id @default(autoincrement())
+  name       String
+  categoryId Int?
+
+  category ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  services Service[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ServiceMedia {
@@ -408,16 +480,6 @@ model ServiceCategory {
   updatedAt   DateTime     @updatedAt
 }
 
-model SubService {
-  id         Int              @id @default(autoincrement())
-  name       String
-  categoryId Int?
-  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  services   Service[]
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-}
-
 model OcrRecord {
   id         Int      @id @default(autoincrement())
   rawText    String
@@ -443,11 +505,12 @@ model CarStaff {
   owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   // Basic staff info
-  name     String
-  role     String?
-  phone    String?
-  joinDate DateTime @default(now())
-  isActive Boolean  @default(true)
+  name          String
+  role          String?
+  phone         String?
+  joinDate      DateTime @default(now())
+  isActive      Boolean  @default(true)
+  advanceAmount Float    @default(0)
 
   // Salary configuration (DEFAULT RULES)
   baseSalary             Float   @default(0)
@@ -541,6 +604,11 @@ model Payment {
   plan          PlanType?
   billingPeriod String?
   amount        Float?
+
+  originalAmount           Float?
+  discountAmount           Float?
+  discountPercent          Float?
+  firstPaymentDiscountUsed Boolean @default(false)
 
   referralCode String?
   gstNumber    String?
@@ -1443,6 +1511,18 @@ model ReferralPartner {
   bankProofDocument Bytes? // Cancelled cheque / passbook
   bankProofType     String? // MIME type
 
+  // 🔄 NEW: Identity, Registration numbers & Document Buffers
+  aadharNumber        String?
+  gstNumber           String?
+  incorporationNumber String?
+
+  aadharDocument            Bytes?
+  aadharDocumentType        String?
+  gstDocument               Bytes?
+  gstDocumentType           String?
+  incorporationDocument     Bytes?
+  incorporationDocumentType String?
+
   // KYC Status: PENDING, VERIFIED, REJECTED
   kycStatus String @default("PENDING")
 
@@ -1687,6 +1767,39 @@ model MarketplaceBooking {
   clientId Int?
   client   Client? @relation(fields: [clientId], references: [id])
 
+  // ==============================
+  // 🆕 CUSTOMER NOTES / SPECIAL INSTRUCTIONS
+  // ==============================
+  notes String?
+
+  // ==============================
+  // 🆕 PICKUP / DROP DETAILS
+  // ==============================
+  pickupRequired Boolean? @default(false)
+  pickupAddress  String?
+  dropAddress    String?
+
+  // ==============================
+  // 🆕 VEHICLE DETAILS (snapshot from app at time of booking)
+  // Separate from `carType` (SEDAN/HATCHBACK/etc) which already existed
+  // ==============================
+  vehicleMake        String?
+  vehicleModel       String?
+  vehicleRegNumber   String?
+  vehicleYear        Int?
+  vehicleFuelType    String?
+
+  // ==============================
+  // 🆕 PACKAGE / MULTI-SERVICE SUPPORT
+  // Kept as plain scalars (no FK relation) to avoid touching MarketplacePackage model
+  // ==============================
+  packageId   Int?
+  packageName String?
+
+  // Full structured breakdown of every service included in this booking
+  // (e.g. [{ "serviceName": "Oil Change", "fromPackage": "Basic Combo" }, ...])
+  services Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1802,4 +1915,56 @@ model AppNotification {
   @@index([clientPhone])
   @@index([type])
   @@index([createdAt])
+}
+
+model Inventory {
+  id Int @id @default(autoincrement())
+
+  itemCode   String  @unique
+  itemName   String
+  category   String
+  brand      String?
+  model      String?
+  supplier   String?
+  partNumber String?
+
+  purchasePrice Float
+  sellingPrice  Float
+
+  quantity     Int
+  minimumStock Int @default(5)
+
+  unit String
+
+  location    String?
+  description String?
+
+  status String @default("Available")
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+}
+
+model Supplier {
+  id Int @id @default(autoincrement())
+
+  supplierName String
+
+  supplierContact String
+
+  userId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

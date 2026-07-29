@@ -1783,11 +1783,11 @@ model MarketplaceBooking {
   // 🆕 VEHICLE DETAILS (snapshot from app at time of booking)
   // Separate from `carType` (SEDAN/HATCHBACK/etc) which already existed
   // ==============================
-  vehicleMake        String?
-  vehicleModel       String?
-  vehicleRegNumber   String?
-  vehicleYear        Int?
-  vehicleFuelType    String?
+  vehicleMake      String?
+  vehicleModel     String?
+  vehicleRegNumber String?
+  vehicleYear      Int?
+  vehicleFuelType  String?
 
   // ==============================
   // 🆕 PACKAGE / MULTI-SERVICE SUPPORT

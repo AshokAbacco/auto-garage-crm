@@ -1,3 +1,4 @@
+// server\routes\referral.js
 import express from "express";
 import prisma from "../models/prismaClient.js";
 import { protect } from "../middleware/authMiddleware.js";

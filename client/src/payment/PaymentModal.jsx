@@ -15,6 +15,7 @@ import {
   FiLock,
   FiChevronRight,
 } from "react-icons/fi";
+import { getStoredReferralCode, saveReferralCode } from "../utils/referralCapture";
 
 const PaymentModal = ({
   show,
@@ -26,6 +27,7 @@ const PaymentModal = ({
   onComplete,
   userData,
   isUpgradePage,
+  referralCode, // 🆕 captured from ?ref= on the pricing page, auto-fills the existing Reference Code field
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -112,11 +114,24 @@ const PaymentModal = ({
         email: userData.email || "",
         phone: userData.phone || "",
         address: userData.address || "",
-        referenceCode: "",
+        // 🆕 was always "" here — now auto-fills from the referral link
+        // (or a previously stored one) the same way the normal flow does.
+        referenceCode: referralCode || getStoredReferralCode() || "",
         gstNumber: "",
       });
     }
-  }, [isUpgradePage, userData]);
+  }, [isUpgradePage, userData, referralCode]);
+
+  // 🆕 Normal (non-upgrade) flow: auto-fill Reference Code from the
+  // referral link when the modal opens, but only if the field is still
+  // empty — never overwrites something the user typed in manually.
+  useEffect(() => {
+    if (!show || isUpgradePage) return;
+    const resolved = referralCode || getStoredReferralCode();
+    if (resolved) {
+      setFormData((prev) => (prev.referenceCode ? prev : { ...prev, referenceCode: resolved }));
+    }
+  }, [show, isUpgradePage, referralCode]);
 
   if (!show || !plan) return null;
 
@@ -152,6 +167,13 @@ const PaymentModal = ({
 
     if (!razorpayLoaded) {
       return alert("System Syncing: Razorpay not ready.");
+    }
+
+    // 🆕 Whatever ends up in the field (auto-filled or manually typed) is
+    // the value actually submitted — persist it here so it's remembered
+    // even if it was typed in by hand rather than auto-captured.
+    if (formData.referenceCode) {
+      saveReferralCode(formData.referenceCode);
     }
 
     const API = import.meta.env.VITE_API_BASE_URL;

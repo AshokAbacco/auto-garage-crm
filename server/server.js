@@ -20,6 +20,7 @@ import userRoutes from "./routes/userRoutes.js";
 import carDashboardRoutes from "./routes/carDashboardRoutes.js";
 
 import referralRoutes from "./routes/referral.js";
+import abaccoReferralRoutes from "./routes/abaccoReferral.routes.js"; // 🆕 brand-new, separate Abacco Tech integration
 
 //washing crm import statements
 import washingClientRoutes from "./routes/washingRoutes.js";
@@ -243,6 +244,10 @@ app.use("/api/ocr", ocrRoutes);
 // app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/dashboard", carDashboardRoutes);
 app.use("/api/referral", referralRoutes);
+
+// 🆕 Brand-new, separate integration for Abacco Tech — pull-based referral
+// sync, entirely independent of the existing /api/referral routes above.
+app.use("/api/abacco", abaccoReferralRoutes);
 
 //washing washing related routes
 app.use("/api/washing-clients", washingClientRoutes);

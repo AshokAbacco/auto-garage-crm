@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import {
   Hero,
@@ -11,13 +12,21 @@ import {
 import PaymentModal from "./PaymentModal";
 import { FiZap, FiStar, FiAward, FiCpu } from "react-icons/fi";
 import Footer from "../components/Footer.jsx";
+import { captureReferralCodeFromLocation } from "../utils/referralCapture";
 
 export default function ModernPricingPage() {
   const { isDark } = useTheme();
+  const location = useLocation();
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [planType, setPlanType] = useState("car");
+
+  // 🆕 Capture ?ref=CODE from the URL (e.g. /pricing?ref=ABARC002) so it
+  // can auto-fill the existing "Reference Code" field in PaymentModal —
+  // no UI change, just wiring an existing referral link through to the
+  // existing field.
+  const referralCode = captureReferralCodeFromLocation(location.search);
 
   // --- Plan Metadata (Standardized pricing nodes) ---
   const carPlans = [
@@ -275,6 +284,7 @@ export default function ModernPricingPage() {
         planType={planType}
         onClose={() => setShowModal(false)}
         onComplete={() => setShowModal(false)}
+        referralCode={referralCode}
       />
     </div>
   );
